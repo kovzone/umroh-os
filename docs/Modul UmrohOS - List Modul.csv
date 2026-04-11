@@ -1,0 +1,203 @@
+No,Kategori,Sub-Kategori,Nama Modul,Deskripsi Modul
+1,B2C,Front-End Company Profile,Modul Homepage Dinamis,"Halaman utama yang menampilkan hero banner, promo unggulan (flash sale), serta fitur pencarian cepat paket keberangkatan."
+2,B2C,Front-End Company Profile,Modul Validasi Legalitas & About Us,"Halaman profil perusahaan, sejarah, manajemen, serta integrasi NIB dan izin Kemenag (PPIU/PIHK) untuk membangun kepercayaan."
+3,B2C,Front-End Company Profile,Modul Galeri & Social Proof,"Etalase digital untuk dokumentasi foto/video keberangkatan, suasana ibadah, dan testimoni jamaah sebelumnya."
+4,B2C,Front-End Company Profile,Modul Blog & Artikel,"Pusat literatur artikel SEO-friendly seputar fiqh Umroh/Haji, tips persiapan, panduan cuaca, dan doa perjalanan."
+5,B2C,Front-End Company Profile,Modul Brand Identity & White-labeling,"Panel pengaturan visual untuk mengubah logo, favicon, dan palet warna antarmuka agar selaras dengan branding travel."
+6,B2C,Front-End Company Profile,Modul Menu Builder & Navigation,Alat bantu drag-and-drop untuk mengatur tata letak menu utama (header) dan bagian bawah website (footer) tanpa coding.
+7,B2C,Front-End Product Catalog,Modul Smart Search & Filter,"Mesin pencarian paket berdasarkan bulan, harga, pembimbing, kelas hotel, atau tipe maskapai (Direct/Transit)."
+8,B2C,Front-End Product Catalog,Modul Detail Produk & Itinerary Interaktif,"Halaman paket yang memuat fasilitas, opsi add-on, dan rincian jadwal kegiatan harian yang interaktif."
+9,B2C,Front-End Product Catalog,Modul Ketersediaan Real-Time,Label otomatis yang tersinkronisasi dengan back-end untuk menampilkan sisa kursi secara langsung (Seat Tracker).
+10,B2C,Front-End Product Catalog,Modul Kalkulator Simulasi Tabungan,Alat bantu interaktif untuk menghitung estimasi setoran bulanan berdasarkan target bulan keberangkatan.
+11,B2C,Front-End Product Detail,Modul Info Esensial & Seat Tracker,"Menampilkan nama paket, tanggal, harga, dan peringatan sisa kursi (Seat Inventory) secara real-time."
+12,B2C,Front-End Product Detail,Modul Spesifikasi Akomodasi Cerdas,"Detail maskapai dan hotel dari database, lengkap dengan jarak ke masjid, foto kamar, dan tur video 360 derajat."
+13,B2C,Front-End Product Detail,Modul Profil Pembimbing,Informasi sosok Muthawwif atau Ustadz pembimbing beserta riwayat pendidikan dan cuplikan video ceramah.
+14,B2C,Front-End Product Detail,Modul Micro-Web Itinerary,"Jadwal harian interaktif yang dilengkapi panduan lokasi dan foto destinasi, bukan sekadar format PDF."
+15,B2C,Front-End Product Detail,Modul Call-to-Action,Tombol tindakan cepat untuk pendaftaran mandiri (Book Now) atau konsultasi via WhatsApp ke Customer Service.
+16,B2C,Front-End Self-Service Booking,Modul Self-Booking Engine,"Alur pemesanan mandiri untuk memilih paket, jumlah peserta, dan konfigurasi kamar (Double/Triple/Quad)."
+17,B2C,Front-End Self-Service Booking,Modul Guest Data Form,"Formulir online untuk pengisian data awal pemesan seperti nama, email, WhatsApp, dan domisili."
+18,B2C,Front-End Self-Service Booking,Modul Payment Gateway B2C,"Integrasi pembayaran untuk menghasilkan Virtual Account (VA), QRIS, atau Kartu Kredit untuk pembayaran DP."
+19,B2C,Front-End Customer Portal,Modul Riwayat Keuangan,"Ringkasan biaya paket, jumlah terbayar, sisa tagihan, tenggat waktu, dan fitur unduh e-kwitansi."
+20,B2C,Front-End Customer Portal,Modul Self-Upload Dokumen,"Formulir digital untuk mengunggah dokumen syarat (KTP, Paspor, dll) secara mandiri dengan keamanan berlapis."
+21,B2C,Front-End Customer Portal,Modul Informasi Logistik & Perlengkapan,Pemantauan status perlengkapan seperti persiapan koper atau pengiriman via ekspedisi beserta nomor resi.
+22,B2C,Front-End Customer Portal,Modul Papan Informasi Keberangkatan,"Menampilkan boarding pass digital, kontak Tour Leader, nomor bus, dan informasi titik kumpul bandara."
+23,B2C,Front-End Help & Support,Modul Knowledge Base,"Direktori pintar berisi FAQ seputar kebijakan refund, pembatalan, syarat mahram, dan teknis lainnya."
+24,B2C,Front-End Help & Support,Modul Floating Chat,Tombol obrolan melayang yang menghubungkan jamaah langsung ke antrean Customer Service sistem pusat.
+25,B2B,Front-End (Cabang & Agen) Onboarding,Modul Pendaftaran Keagenan Mandiri,"Formulir pendaftaran online agen, pemilihan paket kemitraan, dan persetujuan MoU digital."
+26,B2B,Front-End (Cabang & Agen) Onboarding,Modul E-KYC & Verifikasi,"Fitur unggah berkas legalitas agen (KTP, NPWP) untuk validasi pusat sebelum aktivasi akun."
+27,B2B,Front-End (Cabang & Agen) Onboarding,Modul E-Signature,Fitur tanda tangan elektronik yang sah secara hukum untuk dokumen persetujuan atau kontrak keagenan.
+28,B2B,Front-End (Cabang & Agen) Digital Sales Tools,Modul Website Replika,Landing page pribadi agen yang menampilkan katalog pusat dengan tombol WhatsApp langsung ke nomor agen.
+29,B2B,Front-End (Cabang & Agen) Digital Sales Tools,Modul One-Click Social Sharing,"Tombol untuk membagikan produk ke medsos dengan flyer ber-watermark, caption, dan link referral otomatis."
+30,B2B,Front-End (Cabang & Agen) Digital Sales Tools,Modul Kartu Nama Digital,Kartu identitas elektronik agen dengan QR Code yang mengarah ke profil atau website replika.
+31,B2B,Front-End (Cabang & Agen) Digital Sales Tools,Modul Bank Konten,"Pusat aset promosi untuk mengunduh brosur, video ustadz, dan materi pemasaran lainnya."
+32,B2B,Front-End (Cabang & Agen) Digital Sales Tools,Modul Auto-Watermark Flyer & Share,Sistem yang otomatis menempelkan nomor WhatsApp agen ke dalam desain gambar promosi sebelum dibagikan.
+33,B2B,Front-End (Cabang & Agen) Digital Sales Tools,Modul Galeri Dokumentasi per Program,Direktori visual foto/video testimoni yang dikelompokkan berdasarkan program keberangkatan untuk bahan promosi.
+34,B2B,Front-End (Cabang & Agen) Digital Sales Tools,Modul Integrasi Tracking Code Mandiri,Fitur bagi agen untuk menanamkan Facebook Pixel atau Google Analytics ke website replika mereka sendiri.
+35,B2B,Front-End (Cabang & Agen) Lead Management,Modul Leads Tracker,Layar pantauan untuk melihat prospek yang berinteraksi dengan link atau formulir website replika agen.
+36,B2B,Front-End (Cabang & Agen) Lead Management,Modul Reminder & Follow-up Tagging,Buku catatan digital untuk memberikan pengingat tindak lanjut kepada calon jamaah.
+37,B2B,Front-End (Cabang & Agen) Dompet Komisi,Modul Saldo & Status Komisi,"Dasbor keuangan agen untuk memantau status komisi (Pending, Confirmed, Withdrawal)."
+38,B2B,Front-End (Cabang & Agen) Dompet Komisi,Modul Notifikasi Real-Time,Peringatan instan setiap ada pembayaran dari jamaah yang terdaftar melalui link agen tersebut.
+39,B2B,Front-End (Cabang & Agen) Dompet Komisi,Modul Riwayat Transaksi & Pencairan,Laporan detail jamaah per agen dan fitur untuk permintaan pencairan komisi (Withdrawal Request).
+40,B2B,Front-End (Cabang & Agen) Academy & Gamification,Modul LMS,"Video pembelajaran (In-App Learning) mengenai fiqh Umroh, tutorial aplikasi, dan teknik penjualan."
+41,B2B,Front-End (Cabang & Agen) Academy & Gamification,Modul Kuis & Lencana,Ujian pasca-belajar untuk mendapatkan lencana profil guna meningkatkan kredibilitas agen.
+42,B2B,Front-End (Cabang & Agen) Academy & Gamification,Modul Script Jualan,Bank data berisi kumpulan teks jawaban (FAQ Bank) untuk merespons pertanyaan calon jamaah.
+43,B2B,Front-End (Cabang & Agen) Academy & Gamification,Modul Papan Peringkat,Tampilan daftar agen atau perwakilan dengan performa penjualan terbaik untuk motivasi.
+44,B2B,Front-End (Cabang & Agen) Academy & Gamification,Modul Push Notification,Peringatan pop-up instan untuk info promo flash sale agar agen cepat membagikannya.
+45,B2B,Front-End (Cabang & Agen) Khusus Level Perwakilan/Cabang,Modul Dashboard Super-View,Layar pemantauan khusus perwakilan untuk melihat total pendaftar dan performa agen downline di bawahnya.
+46,B2B,Front-End (Cabang & Agen) Khusus Level Perwakilan/Cabang,Modul Leveling Otomatis,"Sistem kenaikan status level agen secara otomatis berdasarkan keaktifan, edukasi, dan jumlah closing."
+47,B2B,Front-End (Cabang & Agen) Khusus Level Perwakilan/Cabang,Modul Overriding Commission,Kalkulator pembagian selisih komisi otomatis antara agen pelaksana dengan perwakilan di atasnya.
+48,Marketing & Sales,Digital Marketing,Modul Ads Manager Lite,"Integrasi API untuk menarik data biaya iklan, impresi, dan klik dari Meta/Google Ads ke dalam sistem."
+49,Marketing & Sales,Digital Marketing,Modul Manajemen UTM & Atribusi Kampanye,Pembuatan link unik otomatis untuk melacak asal prospek dari materi iklan atau video tertentu.
+50,Marketing & Sales,Digital Marketing,Modul Landing Page Builder & A/B Testing,Alat pengubah halaman penawaran cepat dan fitur perbandingan performa antar versi halaman (A/B Test).
+51,Marketing & Sales,Digital Marketing,Modul Content Planner & Calendar,"Papan kerja kolaboratif untuk merencanakan ide konten, draf caption, dan jadwal tayang editorial."
+52,Marketing & Sales,Digital Marketing,Modul Content Publisher & Scheduler,Alat penjadwalan otomatis untuk publikasi konten ke berbagai platform media sosial secara serentak.
+53,Marketing & Sales,Digital Marketing,Modul Omni-Channel Distribution,"Fitur untuk menyebarkan satu aset konten ke website pusat, landing page agen, dan katalog aplikasi sekaligus."
+54,Marketing & Sales,Digital Marketing,Modul Social Media & Content Analytics,"Dasbor analitik terpusat untuk mengevaluasi jangkauan, klik, dan interaksi dari konten yang dipublikasikan."
+55,Marketing & Sales,Perawatan Prospek,Modul Bot Filter & Auto-Classification,"Penyaringan leads spam dan klasifikasi prospek menjadi kategori Cold, Warm, atau Hot secara otomatis."
+56,Marketing & Sales,Perawatan Prospek,Modul Pesan Berantai,Pengiriman pesan edukasi atau promosi otomatis (Auto-Nurturing) via WhatsApp API pada interval waktu tertentu.
+57,Marketing & Sales,Perawatan Prospek,Modul Pemicu Momen,"Pesan otomatis berdasarkan hari besar Islam, momen khusus, atau pengingat keranjang belanja (abandoned interest)."
+58,Marketing & Sales,Perawatan Prospek,Modul Segmentasi Database Cerdas,Pengelompokan nomor WhatsApp berdasarkan minat produk (Haji/Umroh/Alumni) untuk efektivitas siaran.
+59,Marketing & Sales,Perawatan Prospek,Modul Pusat Siaran Massal,Fitur broadcast massal satu klik untuk pengumuman sisa kursi atau undangan kajian ke segmen tertentu.
+60,Marketing & Sales,Manajemen Prospek,Modul Distribusi Adil,Sistem pembagian leads masuk secara bergiliran (Round Robin) kepada masing-masing staf Customer Service.
+61,Marketing & Sales,Manajemen Prospek,Modul Pemicu Kecepatan Respons,"Pengaturan batas waktu respon; jika CS lambat, leads otomatis ditarik dan dialihkan ke CS lain."
+62,Marketing & Sales,Manajemen Prospek,Modul Rekam Jejak Leads & Tagging,"Layar histori interaksi leads dan fitur penandaan status (Tanya, Janji Bayar, Closed)."
+63,Marketing & Sales,Sales Closing,Modul Generator Penawaran Harga,Sistem pembuat estimasi biaya otomatis dalam format PDF/teks WhatsApp yang mencakup opsi add-on.
+64,Marketing & Sales,Sales Closing,Modul Pembuat Link Pembayaran,Alat untuk mengeluarkan link Virtual Account dari sistem keuangan dan mengirimkannya langsung ke WhatsApp jamaah.
+65,Marketing & Sales,Sales Closing,Modul e-Approval Diskon,Alur persetujuan real-time untuk pengajuan potongan harga khusus jamaah melalui dashboard manajemen.
+66,Marketing & Sales,Sales Closing,Modul Loyalitas & Referral Alumni,Sistem perawatan alumni dengan kode referral otomatis untuk mendapatkan cashback atau poin diskon.
+67,Marketing & Sales,Analytics & Re-engagement,Modul Dashboard Kinerja CS,"Laporan performa CS mencakup rata-rata kecepatan balas, rasio konversi, dan konsistensi follow-up."
+68,Marketing & Sales,Analytics & Re-engagement,Modul Kalkulator ROAS,Penghitungan otomatis perbandingan antara uang masuk dengan biaya iklan untuk mengukur profitabilitas kampanye.
+69,Marketing & Sales,Analytics & Re-engagement,Modul Sinkronisasi Retargeting,Fitur pengiriman data prospek yang belum closing kembali ke Facebook Ads untuk kampanye pengejaran (retargeting).
+70,Marketing & Sales,Analytics & Re-engagement,Modul Radar Prospek Lama,"Notifikasi instan jika prospek lama kembali berinteraksi dengan website, agar CS dapat menyapa kembali."
+71,Master Product,Master Data,Modul Database Hotel,"Pusat data profil hotel dengan tautan video 360, fasilitas, dan lokasi Google Maps yang otomatis tertarik ke paket."
+72,Master Product,Master Data,Modul Database Pembimbing,"Profil Ustadz/Muthawwif mencakup riwayat pendidikan, video ceramah, dan aset foto untuk desain flyer."
+73,Master Product,Master Data,Modul Database Transportasi & Maskapai,"Pusat data untuk mengatur jenis maskapai (Direct/Transit), kereta cepat, dan spesifikasi kapasitas bus."
+74,Master Product,Manajemen Produk,Modul Varian Produk Perjalanan,"Alat untuk mengelola detail paket Umroh (Reguler/Plus), Haji (Furoda/Khusus), dan program Badal."
+75,Master Product,Manajemen Produk,Modul Produk Finansial & Retail,"Modul pengelola produk tabungan, talangan, serta ritel perlengkapan ibadah dan oleh-oleh."
+76,Master Product,Manajemen Produk,Modul Input Massal Cerdas,Fitur unggah ratusan paket sekaligus via Excel/CSV dengan pemetaan kolom otomatis oleh sistem.
+77,Master Product,Manajemen Produk,Modul Pembaruan Massal,Kemampuan mengubah harga atau status banyak paket secara serentak dalam satu klik (akibat fluktuasi kurs).
+78,Master Product,Automated Creative,Modul Generator Flyer Dinamis,"Mesin otomasi desain flyer yang menyesuaikan tampilan berdasarkan fokus (harga, ustadz, atau hotel)."
+79,Master Product,Automated Creative,Modul Omni-Flyer,Sistem penggabung jadwal keberangkatan menjadi flyer kalender tahunan atau bulanan otomatis.
+80,Master Product,Automated Creative,Modul Itinerary Interaktif,Fitur konversi PDF itinerary menjadi link interaktif yang memuat video dan detail lokasi per hari.
+81,Master Product,Automated Creative,Modul Otomasi Copywriting,Sistem peracik teks narasi jualan berdasarkan data produk untuk memudahkan CS dan Agen.
+82,Master Product,Omni-Distribution,Modul Sinkronisasi Satu Pintu,Fitur yang memastikan perubahan data produk otomatis terbarui di website pusat saat disimpan.
+83,Master Product,Omni-Distribution,Modul Auto-Update Agen,Sinkronisasi real-time katalog produk pada website replika agen dan aplikasi mobile.
+84,Master Product,Omni-Distribution,Modul Pelacakan Kursi,Kalkulator sisa kuota yang memunculkan label peringatan kursi di semua kanal promosi saat ada closing.
+85,Master Product,Management Dashboard,Modul Tampilan Ganda,Dasbor yang memisahkan tampilan informasi publik (harga/jadwal) dengan ceklis internal manajemen.
+86,Master Product,Management Dashboard,Modul Ceklis Kesiapan Vendor,"Layar pantau status operasional krusial seperti issued tiket, konfirmasi hotel, dan progres visa."
+87,Operational & Handling,Document Vault,Modul Penyimpanan Kolektif,"Pusat penyimpanan digital dokumen esensial jamaah (KTP, Paspor, Buku Nikah, Kartu Meningitis)."
+88,Operational & Handling,Document Vault,Modul OCR Paspor & Mahram Logic,Pemindaian foto paspor otomatis dan sistem verifikasi hubungan mahram berdasarkan dokumen keluarga.
+89,Operational & Handling,Document Vault,Modul Progress Tracker & Expiry Alert,Dasbor pemantau kelengkapan berkas dan notifikasi masa berlaku paspor kurang dari 6 bulan.
+90,Operational & Handling,Automated Letter Engine,Modul Generator Surat Resmi,"Pembuatan PDF surat rekomendasi paspor, izin cuti, dan surat keterangan berangkat secara instan."
+91,Operational & Handling,Automated Letter Engine,Modul Manifest Imigrasi,Pencetakan manifes resmi keberangkatan kolektif sesuai format standar imigrasi.
+92,Operational & Handling,Smart Grouping,Modul Algoritma Penempatan Kamar,"Distribusi kamar (Double/Triple/Quad) otomatis berdasarkan kode keluarga, domisili, atau preferensi."
+93,Operational & Handling,Smart Grouping,Modul Pengatur Transportasi,Alokasi kursi keluarga di pesawat/kereta dan penyusunan daftar absensi per bus keberangkatan.
+94,Operational & Handling,Smart Grouping,Modul Handling Manifest,Daftar manifest khusus untuk tim bandara dalam memantau jamaah lansia atau berkebutuhan khusus.
+95,Operational & Handling,Smart Grouping,Modul ID Card & Staff Assignment,Penugasan staf ke grup dan pembuatan otomatis ID Card serta Luggage Tag berbasis QR Code.
+96,Operational & Handling,Visa & Passport Tracking,Modul Log Fisik Paspor,"Buku catatan digital untuk melacak posisi fisik paspor di agen, pusat, provider, atau kedutaan."
+97,Operational & Handling,Visa & Passport Tracking,Modul Visa Progress Tracker,"Pemantauan langkah demi langkah pembuatan visa mulai dari input data, MOFA, hingga issued."
+98,Operational & Handling,Visa & Passport Tracking,Modul E-Visa Repository,Penyimpanan otomatis file PDF visa yang sudah terbit ke folder masing-masing jamaah.
+99,Operational & Handling,Visa & Passport Tracking,Modul Integrasi API Eksternal Lanjutan,Koneksi langsung ke sistem GDS tiket pesawat atau API Provider Visa Saudi untuk input data otomatis.
+100,Operational & Handling,Cancellation Management,Modul Administrasi Refund & Pinalti,Sistem otomatisasi administrasi pembatalan dengan kalkulasi potongan biaya tiket atau visa yang hangus.
+101,Operational & Handling,Terminal Hub,Modul ALL System,Penggunaan tablet oleh tim handling untuk presensi dan penyerahan dokumen via scan QR Code ID Card.
+102,Operational & Handling,Terminal Hub,Modul Penghitung Koper,Sistem pemindaian koper saat masuk bagasi untuk dicocokkan oleh porter saat tiba di Jeddah/Madinah.
+103,Operational & Handling,Terminal Hub,Modul Broadcast Keberangkatan & Kedatangan,Pengiriman pesan WhatsApp otomatis berisi lokasi titik kumpul dan info jemputan saat mendarat.
+104,Operational & Handling,Field Execution,Modul Smart Bus Boarding,Absensi naik bus menggunakan scan ID Card dan pemantauan waktu tunggu bus (Bus Time Manager).
+105,Operational & Handling,Field Execution,Modul Raudhah Shield & Tasreh Digital,Pendeteksi status visa di aplikasi Nusuk dan penyimpanan arsip digital surat izin (Tasreh) Raudhah.
+106,Operational & Handling,Field Execution,Modul Manajemen Perangkat Audio,Pencatatan barcode receiver yang dipinjamkan guna menghindari kehilangan saat kepulangan.
+107,Operational & Handling,Field Execution,Modul Distribusi Zamzam,Sistem scan ID Card untuk memastikan satu jamaah mendapat jatah satu galon zamzam tanpa terlewat.
+108,Operational & Handling,Field Execution,Modul Check-In Kamar Cepat,Penyajian alokasi nomor kamar aktual dari hotel Saudi yang tersinkronisasi dengan Room List jamaah.
+109,Operational & Handling,Procurement & Purchasing,Modul Permintaan Pembelian,Formulir digital (Digital PR) bagi tim perlengkapan untuk mengajukan kebutuhan barang ke vendor.
+110,Operational & Handling,Procurement & Purchasing,Modul Sinkronisasi Anggaran,Validasi otomatis harga pengajuan barang terhadap batas anggaran produksi yang ditetapkan.
+111,Operational & Handling,Procurement & Purchasing,Modul Persetujuan Berjenjang,Alur verifikasi pengadaan bertingkat (Manager ke Direktur) yang dapat dilakukan via dashboard/ponsel.
+112,Operational & Handling,Procurement & Purchasing,Modul Otomasi Vendor,Pembuatan Purchase Order (PO) otomatis berstempel digital yang dikirim via Email/WhatsApp ke vendor.
+113,Operational & Handling,Inbound & QC,Modul Goods Receipt,Fitur scanning saat barang tiba; stok otomatis bertambah jika jumlah sesuai dengan PO.
+114,Operational & Handling,Inbound & QC,Modul Quality Control,Seleksi barang layak atau cacat; sistem otomatis memicu klaim retur ke vendor jika ada cacat.
+115,Operational & Handling,Inbound & QC,Modul Pemicu Hutang Otomatis,Pengiriman data otomatis ke bagian keuangan untuk pencatatan hutang usaha saat barang diterima.
+116,Operational & Handling,Inbound & QC,Modul Pelabelan Barcode/SKU,Penomoran unik (barcode) tiap item barang untuk pelacakan arus fisik di gudang.
+117,Operational & Handling,Warehouse Management,Modul Multi-Warehouse,"Pemantauan stok real-time yang tersebar di gudang pusat, cabang, maupun stok titipan di agen."
+118,Operational & Handling,Warehouse Management,Modul Peringatan Stok Kritis,Notifikasi otomatis jika stok menyentuh batas minimum untuk segera dilakukan pemesanan ulang.
+119,Operational & Handling,Warehouse Management,Modul Perakitan Paket,"Fitur bundling (koper, kain ihram, dll) menjadi satu Paket Umroh dengan pemotongan stok yang akurat."
+120,Operational & Handling,Warehouse Management,Modul Stock Opname Digital,Rekonsiliasi stok fisik dan sistem dengan rekam jejak permanen untuk mencegah manipulasi.
+121,Operational & Handling,Fulfillment & Shipping,Modul Sinkronisasi Ukuran,Penarikan data ukuran seragam/baju dari form pendaftaran untuk mencegah salah kirim logistik.
+122,Operational & Handling,Fulfillment & Shipping,Modul Pemicu Pengiriman,Validasi otomatis; nama jamaah hanya muncul di daftar siap kirim jika status pembayaran sudah lunas.
+123,Operational & Handling,Fulfillment & Shipping,Modul Integrasi Ekspedisi,Pencetakan label alamat otomatis dan pengiriman nomor resi langsung ke WhatsApp jamaah via API.
+124,Operational & Handling,Fulfillment & Shipping,Modul Pengambilan Mandiri,Pembuatan tanda terima digital berbasis QR Code untuk jamaah yang mengambil barang di kantor.
+125,Operational & Handling,Fulfillment & Shipping,Modul Retur & Penukaran Barang,Pencatatan resmi penukaran ukuran atau barang rusak agar stok tetap terekam secara akurat.
+126,Operational & Handling,Executive Dashboard,Modul Inventory Health,Grafik nilai aset gudang dan visualisasi barang dengan stok kritis untuk manajemen.
+127,Operational & Handling,Executive Dashboard,Modul Fulfillment & PO Monitor,Pemantauan antrean kirim jamaah lunas dan status pesanan barang ke vendor yang belum tiba.
+128,Operational & Handling,Executive Dashboard,Modul Laporan Kerusakan,Pencatatan penghapusan stok (adjustment) akibat barang rusak atau hilang di lapangan.
+129,Finance,Revenue & Receivables,Modul Penagihan Otomatis,"Sistem penerbit tagihan otomatis untuk DP, cicilan tabungan, hingga pelunasan paket."
+130,Finance,Revenue & Receivables,Modul Integrasi Bank,Koneksi Virtual Account yang otomatis memverifikasi uang masuk dan mengubah status transaksi.
+131,Finance,Revenue & Receivables,Modul Buku Pembantu Piutang,Laporan histori per jamaah/keluarga yang mencatat sisa tagihan atau kelebihan bayar.
+132,Finance,Revenue & Receivables,Modul Kwitansi Digital,Pengiriman kwitansi resmi ke WhatsApp jamaah segera setelah dana terdeteksi di sistem bank.
+133,Finance,Revenue & Receivables,Modul Pembayaran Manual & Cek Muka,Pencatatan pembayaran tunai di kasir atau transfer manual yang memerlukan verifikasi admin.
+134,Finance,Disbursement & Payables,Modul Database Vendor,"Penyimpanan data rekening vendor (hotel, maskapai, katering) untuk mempermudah pembayaran."
+135,Finance,Disbursement & Payables,Modul Buku Pembantu Hutang,Pantauan saldo hutang perusahaan ke tiap vendor lengkap dengan riwayat pembayarannya.
+136,Finance,Disbursement & Payables,Modul Otorisasi Pembayaran,Alur persetujuan pencairan dana secara berjenjang (e-Approval) sebelum dikirim ke vendor.
+137,Finance,Disbursement & Payables,Modul Kas Kecil & Bon Sementara,Pengelolaan petty cash harian dan uang muka operasional petugas lapangan dengan unggah struk digital.
+138,Finance,Project-Based Accounting,Modul Pembiayaan Berbasis Proyek,Pengelompokan tiap jadwal keberangkatan sebagai satu proyek independen dengan kode unik.
+139,Finance,Project-Based Accounting,Modul Laba Rugi Keberangkatan,Perhitungan margin kotor tiap grup dengan membandingkan revenue jamaah dan biaya langsung.
+140,Finance,Project-Based Accounting,Modul Analisis Anggaran vs Aktual,Perbandingan rencana anggaran (budget) dengan realisasi biaya lapangan untuk melacak selisih.
+141,Finance,Core Accounting & Tax,Modul Jurnal Otomatis,Mesin pengubah input transaksi harian menjadi jurnal akuntansi debit/kredit sesuai PSAK.
+142,Finance,Core Accounting & Tax,Modul Pengakuan Pendapatan,Algoritma yang mencatat dana jamaah sebagai kewajiban dan baru diakui pendapatan setelah terbang.
+143,Finance,Core Accounting & Tax,Modul Multi-Currency,Konversi otomatis transaksi mata uang asing ke Rupiah dan pencatatan laba/rugi selisih kurs.
+144,Finance,Core Accounting & Tax,Modul Manajemen Aset Tetap,Pencatatan aset tetap perusahaan beserta penghitungan nilai penyusutan (depresiasi) bulanan.
+145,Finance,Core Accounting & Tax,Modul Integrasi Pajak,"Penghitungan otomatis PPh 21, PPh 23, dan PPN sesuai regulasi perpajakan yang berlaku."
+146,Finance,Core Accounting & Tax,Modul Pencairan Komisi Agen,Sistem payroll terintegrasi untuk mengeksekusi pencairan komisi agen ke rekening pribadi.
+147,Finance,Reporting & Governance,Modul Laporan Keuangan Real-Time,"Penyajian Neraca, Laba Rugi Konsolidasi, dan Perubahan Modal yang dapat diakses kapan saja."
+148,Finance,Reporting & Governance,Modul Dashboard Arus Kas,Pemantauan cash flow harian dan saldo konsolidasi seluruh rekening bank dalam satu layar.
+149,Finance,Reporting & Governance,Modul Peringatan Umur Hutang/Piutang,Laporan aging untuk menjaga likuiditas melalui pemantauan tunggakan jamaah dan hutang vendor.
+150,Finance,Reporting & Governance,Modul Jejak Audit & Hak Akses,"Rekam jejak digital antimanipulasi yang mencatat detail input, edit, atau approval transaksi."
+151,Admin & Security,Access Control,Modul Pembuatan Peran Jabatan,"Fitur pembuatan grup peran (Role) seperti Superadmin, Manager, CS, atau Staff Gudang."
+152,Admin & Security,Access Control,Modul Pemetaan Izin Spesifik,"Pengaturan detail aksi (Read, Write, Edit, Delete) untuk setiap peran jabatan dalam sistem."
+153,Admin & Security,Access Control,Modul Hierarki Visibilitas Data,Pembatasan hak akses data (Data Scope) berdasarkan level jabatan atau lokasi cabang.
+154,Admin & Security,User Management,Modul Pendaftaran Akun Staf,Formulir pendaftaran karyawan baru ke sistem lengkap dengan penugasan divisi dan ID.
+155,Admin & Security,User Management,Modul Kontrol Status Pengguna,Fitur blokir atau penangguhan akses akun karyawan yang sudah resign atau bermasalah.
+156,Admin & Security,User Management,Modul Keamanan Akun & Sandi,"Pengaturan reset password, auto-logout, dan integrasi OTP/2FA untuk akun manajerial."
+157,Admin & Security,Security & Audit,Modul Log Aktivitas Terpusat,"Audit trail permanen yang mencatat nama staf, data yang diubah, waktu, serta alamat IP."
+158,Admin & Security,Security & Audit,Modul Peringatan Anomali,Notifikasi otomatis ke Superadmin jika terdeteksi aktivitas mencurigakan (Fraud Detection).
+159,Admin & Security,Security & Audit,Modul Riwayat Sesi Pengguna,Pantauan real-time untuk melihat daftar staf yang sedang online di dalam aplikasi.
+160,Admin & Security,Core Settings,Modul Konfigurasi Integrasi API,"Panel pengelolaan API Keys untuk WhatsApp, Payment Gateway, Email, dan Meta Ads."
+161,Admin & Security,Core Settings,Modul Manajemen Template Komunikasi,Editor terpusat untuk format pesan standar WhatsApp/Email yang dikirim sistem ke jamaah.
+162,Admin & Security,Core Settings,Modul Konfigurasi Global Variabel,"Pengaturan variabel baku seperti kurs default, pajak, zona waktu, dan batas pelunasan invoice."
+163,Admin & Security,Core Settings,Modul Pencadangan Database,Fitur backup otomatis harian/mingguan seluruh data ke server cloud cadangan (GCP Storage).
+164,Jamaah Journey,Pilgrim's Companion,Modul Jadwal & Informasi Langsung,"Halaman pengecekan jadwal harian presisi (jam makan, jam kumpul) bagi jamaah di Tanah Suci."
+165,Jamaah Journey,Pilgrim's Companion,Modul Pengingat Pintar,Notifikasi proaktif via WA/Push untuk panduan persiapan ihram dan info titik kumpul.
+166,Jamaah Journey,Pilgrim's Companion,Modul Panduan Ibadah Digital,Rekaman bimbingan ibadah atau voice note kajian yang dapat didengarkan jamaah via HP.
+167,Jamaah Journey,Pilgrim's Companion,Modul Dompet Dokumen Digital,"Penyimpanan e-KTP, boarding pass, dan E-Tasreh Raudhah untuk ditunjukkan ke petugas Saudi."
+168,Jamaah Journey,Pilgrim's Companion,Modul Tombol Darurat,Fitur SOS berbasis geolocation untuk mengirim koordinat presisi jamaah yang tersesat ke Muthawwif.
+169,Jamaah Journey,Pilgrim's Companion,Modul E-Certificate Generator,Pembuatan sertifikat ibadah otomatis format PDF yang dikirim ke WA jamaah pasca kepulangan.
+170,Jamaah Journey,Field Execution App,Modul Absensi Naik Bus,Fitur scan QR Code ID Card jamaah saat naik bus di Saudi guna mencegah jamaah tertinggal.
+171,Jamaah Journey,Field Execution App,Modul Kontrol Waktu Bus,Pemantauan waktu trip bus; sistem memberi peringatan ke pusat jika bus diam terlalu lama.
+172,Jamaah Journey,Field Execution App,Modul Pelacakan Koper Bandara,Alat pemindai koper di Saudi untuk mencocokkan jumlah bagasi dengan data awal dari Jakarta.
+173,Jamaah Journey,Field Execution App,Modul Manajemen Alat Komunikasi,Sistem checklist pengembalian alat receiver jamaah sebelum kepulangan ke tanah air.
+174,Jamaah Journey,Field Execution App,Modul Pembagian Zamzam,Scanning ID Card untuk validasi distribusi air zamzam agar akurat dan tidak ada yang dobel.
+175,Jamaah Journey,Field Execution App,Modul Pelaporan Isu Harian,Tombol laporan darurat dari lapangan ke pusat jika ada jamaah sakit atau kendala vendor.
+176,Jamaah Journey,Field Execution App,Modul Edukasi Mitigasi,Modul informasi/video otomatis untuk meredam kekecewaan jamaah jika terjadi kendala tak terduga.
+177,Dashboard,Operational Readiness,Modul Eksekusi Vendor,"Ceklis kesiapan tiket, hotel, dan visa untuk memantau risiko paket yang laku terjual."
+178,Dashboard,Operational Readiness,Modul Ketersediaan Kursi,Pantauan angka sisa kursi keberangkatan yang akurat karena sinkron dengan proses closing CS.
+179,Dashboard,Sales & Marketing Engine,Modul Pantauan Anggaran Iklan,Monitoring biaya iklan dan CPL serta peringatan jika spending tinggi namun closing minim.
+180,Dashboard,Sales & Marketing Engine,Modul Papan Kinerja CS,Dasbor evaluasi produktivitas CS mencakup rasio konversi dan total nilai revenue dihasilkan.
+181,Dashboard,Real-Time Field View,Modul Radar Bus,Fitur live tracking untuk memantau pergerakan bus rombongan secara langsung selama di Saudi.
+182,Dashboard,Real-Time Field View,Modul Status Raudhah,Pemantauan persentase keberhasilan jamaah masuk Raudhah dibandingkan target grup.
+183,Dashboard,Real-Time Field View,Modul Pelacakan Koper,"Dasbor posisi presisi koper jamaah (Jakarta, Bagasi Pesawat, atau Hotel Saudi)."
+184,Dashboard,Real-Time Field View,Modul Laporan Insiden,Notifikasi instan ke pusat jika terjadi insiden kesehatan jamaah atau masalah vendor di Saudi.
+185,Dashboard,Inventory Executive View,Modul Kesehatan Gudang,Grafik stok kritis dan kalkulasi total nilai aset fisik di dalam gudang dalam Rupiah.
+186,Dashboard,Inventory Executive View,Modul Pantauan Eksekusi Logistik,Monitoring antrean perlengkapan jamaah lunas dan status pesanan barang (Outstanding PO).
+187,Dashboard,Financial Health Dashboard,Modul Arus Kas Instan,Layar pantauan real-time pergerakan uang masuk/keluar dan saldo konsolidasi kas/bank.
+188,Dashboard,Financial Health Dashboard,Modul Laporan Keuangan Eksekutif,Akses cepat ke laporan Neraca dan Laba Rugi Konsolidasi tanpa menunggu akhir bulan.
+189,Dashboard,Financial Health Dashboard,Modul Likuiditas,Laporan pemantauan umur piutang jamaah dan hutang vendor guna menjaga arus kas.
+190,Fitur Pelengkap & Daily App,Daily Worship,Modul Jadwal Shalat & Adzan,Jadwal shalat akurat berbasis GPS dengan notifikasi suara adzan otomatis sesuai lokasi.
+191,Fitur Pelengkap & Daily App,Daily Worship,Modul Kompas Arah Kiblat,Penunjuk arah kiblat presisi berbasis sensor gyroscope handphone untuk kemudahan shalat.
+192,Fitur Pelengkap & Daily App,Daily Worship,Modul Al-Quran Digital,"Mushaf digital dengan terjemahan, tajwid warna, fitur pencarian, dan audio murottal."
+193,Fitur Pelengkap & Daily App,Daily Worship,Modul Dzikir & Kumpulan Doa,"Buku saku digital dzikir pagi-petang, doa harian, dan doa khusus perjalanan ibadah."
+194,Fitur Pelengkap & Daily App,Islamic Knowledge,Modul Ensiklopedia Manasik,"Panduan langkah demi langkah tata cara Umroh/Haji dalam format teks, audio, dan video."
+195,Fitur Pelengkap & Daily App,Islamic Knowledge,Modul Artikel & Kajian Rutin,Umpan artikel islami harian dan info live streaming kajian ustadz pembimbing travel.
+196,Fitur Pelengkap & Daily App,Islamic Knowledge,Modul Tanya Jawab Agama,Fasilitas bagi alumni untuk konsultasi fiqh keseharian kepada dewan asatidz perusahaan.
+197,Fitur Pelengkap & Daily App,Alumni Hub,Modul Forum Grup Angkatan,Ruang interaksi khusus di aplikasi bagi jamaah yang berangkat pada grup/tanggal yang sama.
+198,Fitur Pelengkap & Daily App,Alumni Hub,Modul Papan Informasi Reuni,"Pengumuman acara kopdar, tabligh akbar, atau silaturahmi akbar khusus untuk alumni."
+199,Fitur Pelengkap & Daily App,Alumni Hub,Modul Pusat Referral Alumni,Layar pengambilan kode kupon referral bagi alumni untuk mengajak rekan mendaftar.
+200,Fitur Pelengkap & Daily App,ZISWAF & Savings,Modul Tabungan Niat Kembali,Fitur visual motivasi tabungan auto-debit bernominal kecil untuk persiapan umroh masa depan.
+201,Fitur Pelengkap & Daily App,ZISWAF & Savings,Modul Kalkulator Zakat,Alat bantu hitung Zakat Maal secara akurat sesuai nisab harga emas terkini.
+202,Fitur Pelengkap & Daily App,ZISWAF & Savings,Modul Sedekah & Infaq Pagi,Gerbang pembayaran sedekah subuh instan yang disalurkan melalui lembaga amil zakat mitra.

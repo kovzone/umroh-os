@@ -1,0 +1,203 @@
+No,Kategori,Sub-Kategori,Modul,MoSCoW,Priority
+1,B2C Front-End,Company Profile,Modul Homepage Dinamis,Must Have,High
+2,B2C Front-End,Company Profile,Modul Validasi Legalitas & About Us,Must Have,High
+3,B2C Front-End,Company Profile,Modul Galeri & Social Proof,Should Have,Medium
+4,B2C Front-End,Company Profile,Modul Blog & Artikel,Could Have,Low
+5,B2C Front-End,Company Profile,Modul Brand Identity & White-labeling,Should Have,Medium
+6,B2C Front-End,Company Profile,Modul Menu Builder & Navigation,Must Have,Medium
+7,B2C Front-End,Product Catalog,Modul Smart Search & Filter,Must Have,High
+8,B2C Front-End,Product Catalog,Modul Detail Produk & Itinerary Interaktif,Must Have,High
+9,B2C Front-End,Product Catalog,Modul Ketersediaan Real-Time,Must Have,High
+10,B2C Front-End,Product Catalog,Modul Kalkulator Simulasi Tabungan,Could Have,Low
+11,B2C Front-End,Product Detail,Info Esensial & Seat Tracker,Must Have,High
+12,B2C Front-End,Product Detail,Spesifikasi Akomodasi Cerdas,Should Have,Medium
+13,B2C Front-End,Product Detail,Profil Pembimbing,Should Have,Medium
+14,B2C Front-End,Product Detail,Micro-Web Itinerary,Should Have,Medium
+15,B2C Front-End,Product Detail,Call-to-Action,Must Have,High
+16,B2C Front-End,Self-Service Booking,Self-Booking Engine,Must Have,High
+17,B2C Front-End,Self-Service Booking,Guest Data Form,Must Have,High
+18,B2C Front-End,Self-Service Booking,Payment Gateway B2C,Must Have,High
+19,B2C Front-End,Customer Portal,Riwayat Keuangan,Should Have,Medium
+20,B2C Front-End,Customer Portal,Self-Upload Dokumen,Should Have,Medium
+21,B2C Front-End,Customer Portal,Informasi Logistik & Perlengkapan,Could Have,Low
+22,B2C Front-End,Customer Portal,Papan Informasi Keberangkatan,Should Have,Medium
+23,B2C Front-End,Help & Support,Knowledge Base,Could Have,Low
+24,B2C Front-End,Help & Support,Floating Chat,Should Have,Medium
+25,B2B Front-End,Onboarding,Pendaftaran Keagenan Mandiri,Must Have,High
+26,B2B Front-End,Onboarding,E-KYC & Verifikasi,Must Have,High
+27,B2B Front-End,Onboarding,E-Signature,Should Have,Medium
+28,B2B Front-End,Digital Sales Tools,Website Replika,Must Have,High
+29,B2B Front-End,Digital Sales Tools,One-Click Social Sharing,Should Have,Medium
+30,B2B Front-End,Digital Sales Tools,Kartu Nama Digital,Could Have,Low
+31,B2B Front-End,Digital Sales Tools,Bank Konten,Should Have,Medium
+32,B2B Front-End,Digital Sales Tools,Auto-Watermark Flyer & Share,Should Have,Medium
+33,B2B Front-End,Digital Sales Tools,Galeri Dokumentasi per Program,Could Have,Low
+34,B2B Front-End,Digital Sales Tools,Integrasi Tracking Code Mandiri,Could Have,Low
+35,B2B Front-End,Lead Management,Leads Tracker,Must Have,High
+36,B2B Front-End,Lead Management,Reminder & Follow-up Tagging,Should Have,Medium
+37,B2B Front-End,Dompet Komisi,Saldo & Status Komisi,Must Have,High
+38,B2B Front-End,Dompet Komisi,Notifikasi Real-Time,Should Have,Medium
+39,B2B Front-End,Dompet Komisi,Riwayat Transaksi & Pencairan,Must Have,High
+40,B2B Front-End,Academy & Gamification,LMS,Should Have,Medium
+41,B2B Front-End,Academy & Gamification,Kuis & Lencana,Could Have,Low
+42,B2B Front-End,Academy & Gamification,Script Jualan,Should Have,Medium
+43,B2B Front-End,Academy & Gamification,Papan Peringkat,Could Have,Low
+44,B2B Front-End,Academy & Gamification,Push Notification,Should Have,Medium
+45,B2B Front-End,Khusus Level Perwakilan/Cabang,Dashboard Super-View,Must Have,High
+46,B2B Front-End,Khusus Level Perwakilan/Cabang,Leveling Otomatis,Should Have,Medium
+47,B2B Front-End,Khusus Level Perwakilan/Cabang,Overriding Commission,Must Have,High
+48,Marketing & Sales,Digital Marketing,Ads Manager Lite,Should Have,Medium
+49,Marketing & Sales,Digital Marketing,Manajemen UTM & Atribusi Kampanye,Should Have,Medium
+50,Marketing & Sales,Digital Marketing,Landing Page Builder & A/B Testing,Should Have,Medium
+51,Marketing & Sales,Digital Marketing,Content Planner & Calendar,Could Have,Low
+52,Marketing & Sales,Digital Marketing,Content Publisher & Scheduler,Could Have,Low
+53,Marketing & Sales,Digital Marketing,Omni-Channel Distribution,Could Have,Low
+54,Marketing & Sales,Digital Marketing,Social Media & Content Analytics,Could Have,Low
+55,Marketing & Sales,Perawatan Prospek,Bot Filter & Auto-Classification,Should Have,Medium
+56,Marketing & Sales,Perawatan Prospek,Pesan Berantai,Should Have,Medium
+57,Marketing & Sales,Perawatan Prospek,Pemicu Momen,Could Have,Low
+58,Marketing & Sales,Perawatan Prospek,Segmentasi Database Cerdas,Should Have,Medium
+59,Marketing & Sales,Perawatan Prospek,Pusat Siaran Massal,Should Have,Medium
+60,Marketing & Sales,Manajemen Prospek,Distribusi Adil,Must Have,High
+61,Marketing & Sales,Manajemen Prospek,Pemicu Kecepatan Respons,Should Have,Medium
+62,Marketing & Sales,Manajemen Prospek,Rekam Jejak Leads & Tagging,Must Have,High
+63,Marketing & Sales,Sales Closing,Generator Penawaran Harga,Should Have,Medium
+64,Marketing & Sales,Sales Closing,Pembuat Link Pembayaran,Must Have,High
+65,Marketing & Sales,Sales Closing,e-Approval Diskon,Should Have,Medium
+66,Marketing & Sales,Sales Closing,Loyalitas & Referral Alumni,Could Have,Low
+67,Marketing & Sales,Analytics & Re-engagement,Dashboard Kinerja CS,Should Have,Medium
+68,Marketing & Sales,Analytics & Re-engagement,Kalkulator ROAS,Should Have,Medium
+69,Marketing & Sales,Analytics & Re-engagement,Sinkronisasi Retargeting,Could Have,Low
+70,Marketing & Sales,Analytics & Re-engagement,Radar Prospek Lama,Could Have,Low
+71,Master Product,Master Data,Database Hotel,Must Have,High
+72,Master Product,Master Data,Database Pembimbing,Must Have,High
+73,Master Product,Master Data,Database Transportasi & Maskapai,Must Have,High
+74,Master Product,Manajemen Produk,Varian Produk Perjalanan,Must Have,High
+75,Master Product,Manajemen Produk,Produk Finansial & Retail,Should Have,Medium
+76,Master Product,Manajemen Produk,Input Massal Cerdas,Should Have,Medium
+77,Master Product,Manajemen Produk,Pembaruan Massal,Should Have,Medium
+78,Master Product,Automated Creative,Generator Flyer Dinamis,Should Have,Medium
+79,Master Product,Automated Creative,Omni-Flyer,Could Have,Low
+80,Master Product,Automated Creative,Itinerary Interaktif,Should Have,Medium
+81,Master Product,Automated Creative,Otomasi Copywriting,Could Have,Low
+82,Master Product,Omni-Distribution,Sinkronisasi Satu Pintu,Must Have,High
+83,Master Product,Omni-Distribution,Auto-Update Agen,Must Have,High
+84,Master Product,Omni-Distribution,Pelacakan Kursi,Must Have,High
+85,Master Product,Management Dashboard,Tampilan Ganda,Should Have,Medium
+86,Master Product,Management Dashboard,Ceklis Kesiapan Vendor,Must Have,High
+87,Operational & Handling,Document Vault,Penyimpanan Kolektif,Must Have,High
+88,Operational & Handling,Document Vault,OCR Paspor & Mahram Logic,Must Have,High
+89,Operational & Handling,Document Vault,Progress Tracker & Expiry Alert,Should Have,Medium
+90,Operational & Handling,Automated Letter Engine,Generator Surat Resmi,Must Have,High
+91,Operational & Handling,Automated Letter Engine,Manifest Imigrasi,Must Have,High
+92,Operational & Handling,Smart Grouping,Algoritma Penempatan Kamar,Must Have,High
+93,Operational & Handling,Smart Grouping,Pengatur Transportasi,Should Have,Medium
+94,Operational & Handling,Smart Grouping,Handling Manifest,Should Have,Medium
+95,Operational & Handling,Smart Grouping,ID Card & Staff Assignment,Must Have,High
+96,Operational & Handling,Visa & Passport Tracking,Log Fisik Paspor,Should Have,Medium
+97,Operational & Handling,Visa & Passport Tracking,Visa Progress Tracker,Must Have,High
+98,Operational & Handling,Visa & Passport Tracking,E-Visa Repository,Should Have,Medium
+99,Operational & Handling,Visa & Passport Tracking,Integrasi API Eksternal Lanjutan,Could Have,Low
+100,Operational & Handling,Cancellation Management,Administrasi Refund & Pinalti,Should Have,Medium
+101,Operational & Handling,Terminal Hub,ALL System,Must Have,High
+102,Operational & Handling,Terminal Hub,Penghitung Koper,Should Have,Medium
+103,Operational & Handling,Terminal Hub,Broadcast Keberangkatan & Kedatangan,Should Have,Medium
+104,Operational & Handling,Field Execution,Smart Bus Boarding,Must Have,High
+105,Operational & Handling,Field Execution,Raudhah Shield & Tasreh Digital,Should Have,Medium
+106,Operational & Handling,Field Execution,Manajemen Perangkat Audio,Could Have,Low
+107,Operational & Handling,Field Execution,Distribusi Zamzam,Should Have,Medium
+108,Operational & Handling,Field Execution,Check-In Kamar Cepat [Tambahan],Could Have,Low
+109,Operational & Handling,Procurement & Purchasing,Permintaan Pembelian,Must Have,High
+110,Operational & Handling,Procurement & Purchasing,Sinkronisasi Anggaran,Must Have,High
+111,Operational & Handling,Procurement & Purchasing,Persetujuan Berjenjang,Should Have,Medium
+112,Operational & Handling,Procurement & Purchasing,Otomasi Vendor,Should Have,Medium
+113,Operational & Handling,Inbound & QC,Goods Receipt,Must Have,High
+114,Operational & Handling,Inbound & QC,Quality Control,Should Have,Medium
+115,Operational & Handling,Inbound & QC,Pemicu Hutang Otomatis,Must Have,High
+116,Operational & Handling,Inbound & QC,Pelabelan Barcode/SKU,Should Have,Medium
+117,Operational & Handling,Warehouse Management,Multi-Warehouse,Should Have,Medium
+118,Operational & Handling,Warehouse Management,Peringatan Stok Kritis,Should Have,Medium
+119,Operational & Handling,Warehouse Management,Perakitan Paket,Should Have,Medium
+120,Operational & Handling,Warehouse Management,Stock Opname Digital,Should Have,Medium
+121,Operational & Handling,Fulfillment & Shipping,Sinkronisasi Ukuran,Must Have,High
+122,Operational & Handling,Fulfillment & Shipping,Pemicu Pengiriman,Must Have,High
+123,Operational & Handling,Fulfillment & Shipping,Integrasi Ekspedisi,Should Have,Medium
+124,Operational & Handling,Fulfillment & Shipping,Pengambilan Mandiri,Should Have,Medium
+125,Operational & Handling,Fulfillment & Shipping,Retur & Penukaran Barang [Tambahan],Could Have,Low
+126,Operational & Handling,Executive Dashboard,Inventory Health,Should Have,Medium
+127,Operational & Handling,Executive Dashboard,Fulfillment & PO Monitor,Should Have,Medium
+128,Operational & Handling,Executive Dashboard,Laporan Kerusakan,Could Have,Low
+129,Finance,Revenue & Receivables,Penagihan Otomatis,Must Have,High
+130,Finance,Revenue & Receivables,Integrasi Bank,Must Have,High
+131,Finance,Revenue & Receivables,Buku Pembantu Piutang,Must Have,High
+132,Finance,Revenue & Receivables,Kwitansi Digital,Must Have,High
+133,Finance,Revenue & Receivables,Pembayaran Manual & Cek Muka [Tambahan],Should Have,Medium
+134,Finance,Disbursement & Payables,Database Vendor,Must Have,High
+135,Finance,Disbursement & Payables,Buku Pembantu Hutang,Must Have,High
+136,Finance,Disbursement & Payables,Otorisasi Pembayaran,Must Have,High
+137,Finance,Disbursement & Payables,Kas Kecil & Bon Sementara,Should Have,Medium
+138,Finance,Project-Based Accounting,Pembiayaan Berbasis Proyek,Must Have,High
+139,Finance,Project-Based Accounting,Laba Rugi Keberangkatan,Must Have,High
+140,Finance,Project-Based Accounting,Analisis Anggaran vs Aktual,Should Have,Medium
+141,Finance,Core Accounting & Tax,Jurnal Otomatis,Must Have,High
+142,Finance,Core Accounting & Tax,Pengakuan Pendapatan,Must Have,High
+143,Finance,Core Accounting & Tax,Multi-Currency,Should Have,Medium
+144,Finance,Core Accounting & Tax,Manajemen Aset Tetap,Should Have,Medium
+145,Finance,Core Accounting & Tax,Integrasi Pajak,Should Have,Medium
+146,Finance,Core Accounting & Tax,Pencairan Komisi Agen,Must Have,High
+147,Finance,Reporting & Governance,Laporan Keuangan Real-Time,Must Have,High
+148,Finance,Reporting & Governance,Dashboard Arus Cash,Must Have,High
+149,Finance,Reporting & Governance,Peringatan Umur Hutang/Piutang,Should Have,Medium
+150,Finance,Reporting & Governance,Jejak Audit & Hak Akses,Must Have,High
+151,Admin & Security,Access Control,Pembuatan Peran Jabatan,Must Have,High
+152,Admin & Security,Access Control,Pemetaan Izin Spesifik,Must Have,High
+153,Admin & Security,Access Control,Hierarki Visibilitas Data,Must Have,High
+154,Admin & Security,User Management,Pendaftaran Akun Staf,Must Have,High
+155,Admin & Security,User Management,Kontrol Status Pengguna,Must Have,High
+156,Admin & Security,User Management,Keamanan Akun & Sandi,Must Have,High
+157,Admin & Security,Security & Audit,Log Aktivitas Terpusat,Must Have,High
+158,Admin & Security,Security & Audit,Peringatan Anomali,Should Have,Medium
+159,Admin & Security,Security & Audit,Riwayat Sesi Pengguna,Should Have,Medium
+160,Admin & Security,Core Settings,Konfigurasi Integrasi API,Must Have,High
+161,Admin & Security,Core Settings,Manajemen Template Komunikasi,Should Have,Medium
+162,Admin & Security,Core Settings,Konfigurasi Global Variabel,Must Have,High
+163,Admin & Security,Core Settings,Pencadangan Database,Must Have,High
+164,Jamaah Journey,Pilgrim's Companion,Jadwal & Informasi Langsung,Must Have,High
+165,Jamaah Journey,Pilgrim's Companion,Pengingat Pintar,Should Have,Medium
+166,Jamaah Journey,Pilgrim's Companion,Panduan Ibadah Digital,Should Have,Medium
+167,Jamaah Journey,Pilgrim's Companion,Dompet Dokumen Digital,Must Have,High
+168,Jamaah Journey,Pilgrim's Companion,Tombol Darurat,Should Have,Medium
+169,Jamaah Journey,Pilgrim's Companion,E-Certificate Generator,Could Have,Low
+170,Jamaah Journey,Field Execution App,Absensi Naik Bus,Must Have,High
+171,Jamaah Journey,Field Execution App,Kontrol Waktu Bus,Should Have,Medium
+172,Jamaah Journey,Field Execution App,Pelacakan Koper Bandara,Should Have,Medium
+173,Jamaah Journey,Field Execution App,Manajemen Alat Komunikasi,Could Have,Low
+174,Jamaah Journey,Field Execution App,Pembagian Zamzam,Should Have,Medium
+175,Jamaah Journey,Field Execution App,Pelaporan Isu Harian,Should Have,Medium
+176,Jamaah Journey,Field Execution App,Edukasi Mitigasi,Could Have,Low
+177,Dashboard,Operational Readiness,Eksekusi Vendor,Must Have,High
+178,Dashboard,Operational Readiness,Ketersediaan Kursi,Must Have,High
+179,Dashboard,Sales & Marketing Engine,Pantauan Anggaran Iklan,Should Have,Medium
+180,Dashboard,Sales & Marketing Engine,Papan Kinerja CS,Should Have,Medium
+181,Dashboard,Real-Time Field View,Radar Bus,Should Have,Medium
+182,Dashboard,Real-Time Field View,Status Raudhah,Should Have,Medium
+183,Dashboard,Real-Time Field View,Pelacakan Koper,Should Have,Medium
+184,Dashboard,Real-Time Field View,Laporan Insiden,Should Have,Medium
+185,Dashboard,Inventory Executive View,Kesehatan Gudang,Should Have,Medium
+186,Dashboard,Inventory Executive View,Pantauan Eksekusi Logistik,Should Have,Medium
+187,Dashboard,Financial Health Dashboard,Arus Kas Instan,Must Have,High
+188,Dashboard,Financial Health Dashboard,Laporan Keuangan Eksekutif,Must Have,High
+189,Dashboard,Financial Health Dashboard,Likuiditas,Should Have,Medium
+190,Fitur Pelengkap & Daily App,Daily Worship,Jadwal Shalat & Adzan,Should Have,Medium
+191,Fitur Pelengkap & Daily App,Daily Worship,Kompas Arah Kiblat,Should Have,Medium
+192,Fitur Pelengkap & Daily App,Daily Worship,Al-Quran Digital,Could Have,Low
+193,Fitur Pelengkap & Daily App,Daily Worship,Dzikir & Kumpulan Doa,Could Have,Low
+194,Fitur Pelengkap & Daily App,Islamic Knowledge,Ensiklopedia Manasik,Should Have,Medium
+195,Fitur Pelengkap & Daily App,Islamic Knowledge,Artikel & Kajian Routine,Could Have,Low
+196,Fitur Pelengkap & Daily App,Islamic Knowledge,Tanya Jawab Agama,Could Have,Low
+197,Fitur Pelengkap & Daily App,Alumni Hub,Forum Grup Angkatan,Could Have,Low
+198,Fitur Pelengkap & Daily App,Alumni Hub,Papan Informasi Reuni,Could Have,Low
+199,Fitur Pelengkap & Daily App,Alumni Hub,Pusat Referral Alumni,Should Have,Medium
+200,Fitur Pelengkap & Daily App,ZISWAF & Savings,Tabungan Niat Kembali,Could Have,Low
+201,Fitur Pelengkap & Daily App,ZISWAF & Savings,Kalkulator Zakat,Could Have,Low
+202,Fitur Pelengkap & Daily App,ZISWAF & Savings,Sedekah & Infaq Pagi,Could Have,Low
