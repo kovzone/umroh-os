@@ -9,6 +9,11 @@ CLAUDE.md
 # docs
 docs/elda_mahaindra_cv.pdf
 
+# private collab docs (AI-assisted backend workflow, not shared with other devs)
+docs/90-agent-workflow/
+docs/91-progress/
+docs/92-testing/
+
 # baseline
 baseline/
 

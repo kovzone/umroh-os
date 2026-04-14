@@ -46,7 +46,7 @@ UmrohOS is a Go microservices backend behind a public REST gateway, with a Tempo
 
 1. **One service per bounded context.** No service owns data from another's context. Cross-context reads happen via gRPC; cross-context writes happen via Temporal workflows orchestrated by `broker-svc`.
 
-2. **Three-layer architecture per service.** API → Service → Store, with interfaces between layers. See `docs/04-conventions/01-three-layer-architecture.md`. This is non-negotiable and enforced by the baseline template.
+2. **Three-layer architecture per service.** API → Service → Store, with interfaces between layers. See `docs/04-backend-conventions/01-three-layer-architecture.md`. This is non-negotiable and enforced by the baseline template.
 
 3. **Code generation everywhere.** sqlc for the data layer, oapi-codegen for REST, protoc for gRPC. We do not hand-write transport boilerplate.
 
