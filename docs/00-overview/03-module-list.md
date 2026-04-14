@@ -53,8 +53,8 @@ Notable signals:
 
 | CSV category | Primary service(s) |
 |---|---|
-| B2C Front-End | (frontend, deferred) consuming `catalog-svc`, `booking-svc`, `payment-svc` |
-| B2B Front-End | (frontend, deferred) consuming `crm-svc`, `catalog-svc`, `booking-svc` |
+| B2C Front-End | Svelte web (app structure TBD — see Q009) consuming `catalog-svc`, `booking-svc`, `payment-svc` |
+| B2B Front-End | Svelte web (app structure TBD — see Q009) consuming `crm-svc`, `catalog-svc`, `booking-svc` |
 | Marketing & Sales | `crm-svc` |
 | Master Product | `catalog-svc` |
 | Operational & Handling → Document Vault / Letter Engine / Smart Grouping / Visa | `jamaah-svc`, `ops-svc`, `visa-svc` |
@@ -63,8 +63,8 @@ Notable signals:
 | Operational & Handling → Cancellation Management | `payment-svc` + `booking-svc` |
 | Finance | `finance-svc` |
 | Admin & Security | `iam-svc` |
-| Jamaah Journey | `jamaah-svc` + field app frontend (deferred) |
-| Dashboard | (frontend, deferred) + observability stack |
+| Jamaah Journey | `jamaah-svc` + Svelte field app (app structure TBD — see Q009) |
+| Dashboard | Svelte web (app structure TBD — see Q009) + observability stack |
 | Fitur Pelengkap & Daily App | `crm-svc` (alumni/community), `jamaah-svc` (profile) |
 
 ## Implementation order (derived from MoSCoW)

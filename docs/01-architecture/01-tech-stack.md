@@ -23,6 +23,10 @@ Locked in the working environment setup session (2026-04-09). Changes to this st
 | Containerization | Docker + docker-compose.dev.yml | baseline |
 | Unit testing | testify/mock + testify/require | baseline |
 | Load testing | k6 | baseline |
+| Frontend framework | Svelte 5 (runes mode) | ADR-0005 |
+| Frontend build tool | Vite | ADR-0005 |
+| Frontend best-practices guide | `.claude/skills/svelte-core-bestpractices/` | ADR-0005 |
+| Frontend conventions | `docs/05-frontend-conventions/` | ADR-0005 |
 
 ## Why this stack
 
@@ -35,10 +39,13 @@ See:
 - `adr/0002-postgres-over-mysql.md` — why Postgres
 - `adr/0003-temporal-for-workflows.md` — why Temporal
 - `adr/0004-monorepo-layout.md` — why one repo for all services
+- `adr/0005-svelte-frontend.md` — why Svelte 5 (over the originally assumed React+Vite)
+
+## Frontend stack
+
+**Svelte 5 (runes mode) + Vite.** Conventions live in `docs/05-frontend-conventions/`; the authoritative runtime skill is `.claude/skills/svelte-core-bestpractices/`. See ADR-0005 for why the earlier React+Vite assumption was replaced.
 
 ## What's deferred
-
-- **Frontend stack.** React+Vite is the planned direction but the frontend standard will be provided separately. No frontend work in this repo until then.
 - **CI/CD pipeline.** No GitHub Actions / CircleCI configured yet. Add when needed.
 - **Production deployment.** Docker Compose is dev-only. Production target (Kubernetes? Cloud Run? Bare VMs?) is undecided and will need an ADR.
 - **Kafka / event streaming.** Considered and rejected for MVP — Temporal handles workflow orchestration and gRPC handles synchronous calls. Revisit if a use case appears that genuinely needs pub/sub fanout.

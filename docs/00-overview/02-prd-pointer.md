@@ -42,14 +42,14 @@ The PRD is structured roughly as follows:
 
 | PRD section | Primary service(s) |
 |---|---|
-| A. B2C Front-End | (frontend, deferred) consuming `catalog-svc`, `booking-svc`, `payment-svc` |
-| B. B2B Front-End | (frontend, deferred) consuming `crm-svc`, `catalog-svc`, `booking-svc` |
+| A. B2C Front-End | Svelte web (app structure TBD — see Q009) consuming `catalog-svc`, `booking-svc`, `payment-svc` |
+| B. B2B Front-End | Svelte web (app structure TBD — see Q009) consuming `crm-svc`, `catalog-svc`, `booking-svc` |
 | C. Marketing & Sales | `crm-svc` |
 | D. Master Product & Inventory | `catalog-svc` |
 | E. Operational & Handling | `ops-svc`, `jamaah-svc`, `visa-svc` |
 | F. Inventory & Logistics | `logistics-svc` |
 | G. Finance & Accounting | `finance-svc` |
 | H. Admin & Security | `iam-svc` |
-| I. Jamaah Journey | `jamaah-svc`, `broker-svc` (workflows), field app frontend (deferred) |
+| I. Jamaah Journey | `jamaah-svc`, `broker-svc` (workflows), Svelte field app (app structure TBD — see Q009) |
 | J. Daily App & Alumni Hub | `crm-svc` (community), `jamaah-svc` (profile) |
-| K. Executive Dashboards | (frontend, deferred) consuming all services + observability stack |
+| K. Executive Dashboards | Svelte web (app structure TBD — see Q009) consuming all services + observability stack |

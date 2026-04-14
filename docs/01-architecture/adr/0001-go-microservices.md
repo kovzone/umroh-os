@@ -23,7 +23,7 @@ Build the backend in **Go**, scaffolding every service from `baseline/go-backend
 
 ## Consequences
 
-- Frontend (React+Vite) talks to a Go gateway via REST. Frontend is deferred until the frontend standard is provided.
+- Frontend (Svelte 5 + Vite — see ADR-0005) talks to the Go gateway via REST.
 - The PRD's Node.js-flavored examples need translating into Go conventions. This is fine — the PRD is product, not tech.
 - Any AI agent unfamiliar with Go must read `baseline/go-backend-template/README.md` and `docs/04-backend-conventions/` before writing code.
 - We accept Go's slower iteration speed vs. dynamic languages in exchange for type safety, performance, and operator alignment.

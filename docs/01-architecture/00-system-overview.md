@@ -6,8 +6,8 @@ UmrohOS is a Go microservices backend behind a public REST gateway, with a Tempo
 
 ```
                          ┌──────────────────────┐
-                         │   Frontend (React+   │   ← deferred
-                         │   Vite, future)      │
+                         │   Frontend            │   ← Svelte 5 (runes
+                         │   (Svelte + Vite)     │     mode) + Vite
                          └──────────┬───────────┘
                                     │ HTTPS
                          ┌──────────▼───────────┐
