@@ -33,8 +33,8 @@ When the PRD doesn't answer a question during spec writing:
 | F1 | [Identity, Access, Audit](01-identity-and-access.md) | 10 Must / 3 Should — all High | **Written** |
 | F2 | [Product Catalog & Master Data](02-catalog-and-master-data.md) | 8 Must / 7 Should / 1 Could | **Draft** — 4 open Qs (Q001–Q004) |
 | F3 | [Pilgrim Profile & Documents](03-pilgrim-and-documents.md) | Must #87, #88 (mahram) | **Draft** — 4 open Qs (Q005–Q008) |
-| F4 | [Booking Creation & Allocation](04-booking-and-allocation.md) | Must — B2C + B2B booking | Stub |
-| F5 | [Payment & Reconciliation](05-payment-and-reconciliation.md) | 4 Must Haves | Stub |
+| F4 | [Booking Creation & Allocation](04-booking-and-allocation.md) | Must — B2C + B2B booking | **Draft** — 6 open Qs (Q004, Q005, Q006, Q010, Q014, Q015, Q016, Q017, Q019) |
+| F5 | [Payment & Reconciliation](05-payment-and-reconciliation.md) | 4 Must Haves | **Draft** — 5 open Qs (Q001, Q004, Q011, Q012, Q013) |
 | F6 | [Visa Pipeline & Raudhah Shield](06-visa-pipeline.md) | Must #97 | Stub |
 | F7 | [Operations: Verification, Grouping, Manifests](07-operations-handling.md) | 6 Must Haves | Stub |
 | F8 | [Warehouse, Procurement, Fulfillment](08-warehouse-and-fulfillment.md) | 6 Must Haves | Stub |
