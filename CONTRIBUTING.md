@@ -67,4 +67,5 @@ Use the PR template in `.github/pull_request_template.md` and ensure all require
 ## Canonical References
 
 - Detailed Git workflow: `docs/04-backend-conventions/08-git-workflow.md`
+- Detailed commit message conventions: `docs/08-commit-conventions.md`
 - Team AI onboarding and doc authority: `AGENTS.md`
