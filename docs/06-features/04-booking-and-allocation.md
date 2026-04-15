@@ -126,7 +126,7 @@ _(Inferred)_ F4 **stores** allocations once `ops-svc` computes them, but does no
 
 ### W6 — Booking-time mahram check (F3 integration)
 
-At submit, before committing the saga, F4 calls `jamaah-svc.ValidateMahram(subject, group, departure)` for any female jamaah on the booking who falls under the mahram age threshold (Q005 pins the threshold and qualifying relations). Result is recorded on the booking as `mahram_check_result` and does NOT block submission today — it produces a **warning flag** that Ops resolves before visa submission. Blocking at booking would force chicken-and-egg flows (jamaah needs to book mahram before they can book themselves). Blocking at **visa submission** (F6) is the right gate.
+At submit, before the in-process saga starts, F4 calls `jamaah-svc.ValidateMahram(subject, group, departure)` for any female jamaah on the booking who falls under the mahram age threshold (Q005 pins the threshold and qualifying relations). Result is recorded on the booking as `mahram_check_result` and does NOT block submission today — it produces a **warning flag** that Ops resolves before visa submission. Blocking at booking would force chicken-and-egg flows (jamaah needs to book mahram before they can book themselves). Blocking at **visa submission** (F6) is the right gate.
 
 ### W7 — Cancellation (Alur Logika 6.5, Module #100)
 
@@ -141,11 +141,11 @@ At submit, before committing the saga, F4 calls `jamaah-svc.ValidateMahram(subje
 
 ### W8 — Submit-time validation checklist
 
-Before F4 creates the booking saga, it validates:
+Before F4 starts the in-process booking saga, it validates:
 
 - [ ] All named jamaah exist in F3 (or are registered on-the-spot via the Guest Data Form path).
 - [ ] Catalog package is `active` and departure is `open`.
-- [ ] Seat availability ≥ requested pax (atomic check in the saga via F2 `ReserveSeats`).
+- [ ] Seat availability ≥ requested pax (atomic check in the saga via F2 `ReserveSeats`; compensating `ReleaseSeats` on any downstream failure).
 - [ ] Minimum docs are uploaded per Q006 (default: KTP + passport per jamaah, OCR pending OK).
 - [ ] If minors are on the booking, guardian linkage is present (Q016).
 - [ ] Mahram check runs (W6) — warning, not blocker.
@@ -198,7 +198,7 @@ Full contracts in `docs/03-services/02-booking-svc/01-api.md`. Key surfaces:
 
 **REST:**
 - `GET|POST|PATCH /v1/bookings` — list, create draft, edit draft
-- `POST /v1/bookings/{id}/submit` — run the saga (atomic: reserve seats + issue VA + emit events)
+- `POST /v1/bookings/{id}/submit` — run the in-process saga (reserve seats → issue VA → emit events; compensations on failure)
 - `POST /v1/bookings/{id}/cancel` — initiate cancellation (amount calc via F5 Q012)
 - `POST /v1/bookings/{id}/partial-cancel` — remove one or more jamaah (Q014)
 - `GET /v1/bookings/{id}/status` — current state + history
@@ -207,7 +207,7 @@ Full contracts in `docs/03-services/02-booking-svc/01-api.md`. Key surfaces:
 **gRPC (service-to-service):**
 - `MarkBookingPaid` — called by F5 on webhook settlement
 - `AttachVisa` — called by F6 on e-visa issued
-- `CancelBooking` — called by broker-svc saga compensations
+- `CancelBooking` — called by payment-svc refund saga compensation path
 - `ListBookingsForDeparture` — used by ops-svc for manifest + grouping
 - `GetBooking`, `BatchGetBooking` — read-only fan-out
 
@@ -216,7 +216,7 @@ Full contracts in `docs/03-services/02-booking-svc/01-api.md`. Key surfaces:
 - **F1** — identity, permissions, audit
 - **F2** — package + seat reservation (`ReserveSeats`, `ReleaseSeats`)
 - **F3** — jamaah profile, mahram validation, minimum-docs gate
-- **F5** — VA issuance, webhook, refund flow (interlocked saga)
+- **F5** — VA issuance, webhook, refund flow (saga coordinators in booking-svc and payment-svc respectively per ADR 0006)
 - **F10** — commission attribution (via `agent_id` on booking)
 
 Downstream consumers (events, listed below):
@@ -229,7 +229,7 @@ Downstream consumers (events, listed below):
 
 ## Backend notes
 
-- **The saga lives in `broker-svc`**, not here. `booking-svc` exposes gRPC methods that the saga activities call; the saga controls order + compensation. See `docs/03-services/10-broker-svc/00-overview.md`.
+- **The booking saga runs in-process inside `booking-svc.Submit()`** (per ADR 0006). Each step has an explicit compensation in the error path: seat-reservation failure → return 409; VA-issuance failure → call `catalog.ReleaseSeats` + delete draft booking → return error. No Temporal in MVP; `broker-svc` is deferred. Durability against mid-saga process crashes is handled by the F5 reconciliation cron (W5) which catches orphan invoices / bookings / seat reservations on the next cycle.
 - **Status machine** is enforced in the service layer with explicit `can_transition_to(from, to)` checks; DB does not enforce (Postgres enums can't express "this transition is allowed").
 - **Fx snapshot** is set by `IssueVirtualAccount` in F5, then copied onto the booking record so the booking self-contains enough to reason about invoice amount without cross-service lookup.
 - **Soft delete is not used on bookings** — cancelled is a terminal state, not a delete. Audit trail depends on booking rows being immutable beyond state transitions.

@@ -25,7 +25,7 @@
 
 `CrmService`:
 - `GetAgentByUserId(...)`
-- `CalculateCommission(booking_id)` — called by broker-svc on booking completion
+- `CalculateCommission(booking_id)` — called by payment-svc when booking hits paid_in_full (in-process; per ADR 0006)
 - `RecordLeadConversion(lead_id, booking_id)`
 
 > All endpoints are stubs.

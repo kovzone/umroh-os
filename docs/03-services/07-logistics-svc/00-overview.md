@@ -30,7 +30,7 @@ PRD section F — Inventory & Logistics.
 
 ## Interactions
 
-- **Inbound:** broker-svc workflows (kit dispatch when booking is paid).
+- **Inbound:** payment-svc calls DispatchKit via gRPC as part of the paid-booking event fan-out (per ADR 0006).
 - **Outbound:** courier APIs (label printing, tracking), booking-svc (read shipping address), finance-svc (PO journal entries).
 
 ## Notable behaviors

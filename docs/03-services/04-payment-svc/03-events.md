@@ -16,4 +16,4 @@
 |---|---|---|
 | `booking.cancelled` | booking-svc | trigger refund flow if applicable |
 
-> Phase 1: payment-svc emits via Temporal saga signals coordinated by broker-svc.
+> Phase 1: payment-svc emits via direct gRPC calls to subscribers and coordinates its own refund saga in-process (per ADR 0006).

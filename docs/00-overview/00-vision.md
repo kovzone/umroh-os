@@ -14,7 +14,7 @@ Pilgrimage agencies today juggle a fragmented stack — accounting in one tool, 
 
 ## The bet
 
-A single source of truth — one platform where every entity (jamaah, package, hotel, flight, payment, visa, document, journal entry) lives once and is referenced everywhere — eliminates re-keying and broken handoffs. Combined with intelligent automation (OCR, smart room/bus allocation, virtual account reconciliation, Temporal-orchestrated visa pipelines), it lets an agency 10x throughput without 10x headcount.
+A single source of truth — one platform where every entity (jamaah, package, hotel, flight, payment, visa, document, journal entry) lives once and is referenced everywhere — eliminates re-keying and broken handoffs. Combined with intelligent automation (OCR, smart room/bus allocation, virtual account reconciliation, and a durable visa pipeline for F6), it lets an agency 10x throughput without 10x headcount.
 
 ## Non-goals
 

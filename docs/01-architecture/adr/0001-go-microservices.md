@@ -19,7 +19,7 @@ Build the backend in **Go**, scaffolding every service from `baseline/go-backend
 2. **Template-already-exists leverage.** The baseline template is feature-complete (codegen, observability, Temporal wired, three-layer arch enforced). Choosing it saves weeks of bootstrap and gives every future AI session a known-good starting point. Choosing Node.js would require building all of that from scratch with no benchmark to copy from.
 3. **Concurrency and footprint.** Go's goroutine model and small per-instance memory footprint suit a microservice mesh of 10+ services running on modest infrastructure.
 4. **Type safety end-to-end.** sqlc + protobuf + OpenAPI codegen give compile-time guarantees from DB to API. Comparable Node.js stacks (Prisma + tRPC) exist but require more bespoke wiring.
-5. **Workflow-first design.** The PRD has many long-running, multi-step processes (visa pipeline, booking saga, refund flow). Temporal is the canonical solution and the template already integrates it.
+5. **Workflow-first design.** The PRD has many multi-step processes (visa pipeline, booking saga, refund flow). Temporal is available in the template for the genuinely long-running cases; see ADR 0006 for the MVP decision to defer Temporal for short sagas and reintroduce it for F6 visa pipeline.
 
 ## Consequences
 

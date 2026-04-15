@@ -1,7 +1,9 @@
 # ADR 0003 — Temporal.io for cross-service workflows
 
-**Status:** Accepted
-**Date:** 2026-04-09
+**Status:** Deferred for MVP — see ADR 0006 (2026-04-15)
+**Originally Accepted:** 2026-04-09
+
+> **Status update (2026-04-15):** Temporal is deferred from MVP per [ADR 0006](0006-defer-temporal-to-f6.md). In-process saga coordination is used for the short-lived booking / payment / refund sagas; a reconciliation cron catches mid-saga crashes. This ADR's body remains as the rationale for **eventual reintroduction** — specifically for F6 visa pipeline, which is the workflow that genuinely needs Temporal's durability and long-running semantics. Do not treat the rest of this document as current MVP direction.
 
 ## Context
 

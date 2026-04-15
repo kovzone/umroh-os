@@ -11,7 +11,7 @@ iam-svc is mostly synchronous (gRPC reads/writes). It does not own a workflow.
 | `iam.session.revoked` | Logout or admin revoke | user_id, session_id | none yet |
 | `iam.role.changed` | Role assignment / revocation | user_id, role_id, action | none yet |
 
-> Event delivery mechanism is TBD (likely Temporal signals from broker-svc, or a future event bus). For Phase 1, iam-svc emits no events — they are notional.
+> Event delivery mechanism is TBD (likely a future event bus when needed; Temporal is deferred per ADR 0006). For Phase 1, iam-svc emits no events — they are notional.
 
 ## Events consumed
 

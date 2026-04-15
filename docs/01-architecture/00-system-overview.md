@@ -1,6 +1,6 @@
 # System Overview
 
-UmrohOS is a Go microservices backend behind a public REST gateway, with a Temporal-orchestrated workflow service for cross-service business processes, and a full observability stack from day one.
+UmrohOS is a Go microservices backend behind a public REST gateway. Cross-service business processes are coordinated **in-process** by the orchestrating service for MVP (short-lived booking/payment/refund sagas); the F6 visa pipeline — the one multi-day durable workflow in the system — will bring Temporal back when it's implemented. See ADR 0006 for the full rationale. A full observability stack is on from day one.
 
 ## High-level diagram
 
@@ -28,8 +28,9 @@ UmrohOS is a Go microservices backend behind a public REST gateway, with a Tempo
    └────────┘    └─────────┘   └─────────┘   └─────────┘   └─────────┘
 
                          ┌──────────────────────┐
-                         │    broker-svc        │   ← Temporal workflows
-                         │    (workflows)       │     (booking saga, visa pipeline)
+                         │    broker-svc        │   ← DEFERRED for MVP
+                         │    (workflows)       │     (reserved for F6 visa pipeline;
+                         │                      │      ADR 0006)
                          └──────────────────────┘
 
    ┌─────────────────────────── PostgreSQL 15 ───────────────────────────┐
@@ -44,7 +45,7 @@ UmrohOS is a Go microservices backend behind a public REST gateway, with a Tempo
 
 ## Key principles
 
-1. **One service per bounded context.** No service owns data from another's context. Cross-context reads happen via gRPC; cross-context writes happen via Temporal workflows orchestrated by `broker-svc`.
+1. **One service per bounded context.** No service owns data from another's context. Cross-context reads happen via gRPC; cross-context writes are **coordinated in-process by the orchestrating service** with explicit per-step compensation + a reconciliation cron catching mid-saga crashes (per ADR 0006). F6 visa pipeline is the one exception — it will use Temporal when implemented.
 
 2. **Three-layer architecture per service.** API → Service → Store, with interfaces between layers. See `docs/04-backend-conventions/01-three-layer-architecture.md`. This is non-negotiable and enforced by the baseline template.
 
@@ -52,7 +53,7 @@ UmrohOS is a Go microservices backend behind a public REST gateway, with a Tempo
 
 4. **Observability is not optional.** Every request gets a trace ID; every log line includes it via `LogWithTrace`. Metrics, traces, and logs are unified in Grafana. Wire it on day one — not as a Phase 2 retrofit.
 
-5. **Temporal for workflows, not for everything.** Synchronous internal calls go via gRPC. Long-running, multi-step, retryable, cross-service business processes (the booking saga, the visa pipeline, refund flows) live in `broker-svc` as Temporal workflows.
+5. **In-process sagas for MVP; Temporal for F6 only.** Short-lived cross-service orchestration (booking saga, refund flow) runs in-process in the orchestrating service (`booking-svc`, `payment-svc`) with explicit per-step compensation. A reconciliation cron catches mid-saga crashes. For the one long-running durable workflow — the visa pipeline (F6, runs for days, polls Saudi MOFA/Sajil, must survive restarts) — Temporal will be reintroduced when that feature is implemented. See ADR 0006.
 
 6. **Single tenant, multi-branch.** No tenant isolation in the data layer. Branch scoping is a column on every table that needs it (`branch_id`), enforced by the service layer.
 
@@ -71,6 +72,6 @@ UmrohOS is a Go microservices backend behind a public REST gateway, with a Tempo
 | Warehouse, procurement, kits, shipping | `logistics-svc` |
 | Journals, AR/AP, tax, FX, job-order costing | `finance-svc` |
 | Marketing campaigns, agents, commissions | `crm-svc` |
-| Cross-service workflows (Temporal) | `broker-svc` |
+| Cross-service workflows (deferred; reserved for F6 visa pipeline) | `broker-svc` — not in MVP, see ADR 0006 |
 
 See `02-service-map.md` for the full table with ports and dependencies.

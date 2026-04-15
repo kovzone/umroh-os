@@ -24,7 +24,7 @@
 - `ListBookingsForDeparture(...)` — used by ops-svc for manifest gen
 - `MarkBookingPaid(...)` — called by payment-svc on settlement
 - `AttachVisa(...)` — called by visa-svc when e-visa issued
-- `CancelBooking(...)` — called by broker-svc compensation activity
+- `CancelBooking(...)` — called by payment-svc refund saga compensation (in-process; ADR 0006)
 - `CreateBookingItem(...)` — used by saga during atomic creation
 
 > All endpoints are stubs.

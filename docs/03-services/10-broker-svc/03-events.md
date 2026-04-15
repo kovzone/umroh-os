@@ -1,5 +1,7 @@
 # broker-svc — Events
 
+> ⚠️ **DEFERRED FOR MVP — reserved for F6.** See ADR 0006.
+
 broker-svc does not emit business events. It orchestrates other services that do. The signals it consumes are workflow signals from Temporal, not domain events.
 
 ## Signals consumed (Temporal signals, not events)

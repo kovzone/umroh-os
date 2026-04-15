@@ -1,5 +1,7 @@
 # broker-svc — API
 
+> ⚠️ **DEFERRED FOR MVP — reserved for F6.** See ADR 0006.
+
 ## gRPC methods (planned)
 
 `BrokerService` — exposes a thin gRPC surface to start workflows from outside Temporal:

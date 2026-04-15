@@ -89,7 +89,7 @@ func (s *Service) CreateUser(ctx context.Context, params CreateUserParams) (Crea
 
 - gRPC propagates trace context automatically via OTel interceptors (configured in the template).
 - HTTP requests entering via Fiber middleware extract the W3C `traceparent` header.
-- Temporal propagates via the OTel Temporal interceptor.
+- (Reserved — Temporal trace propagation via the OTel interceptor returns in F6 when Temporal is reintroduced per ADR 0006.)
 
 ## Verifying the wiring
 

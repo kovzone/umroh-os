@@ -22,7 +22,7 @@
 ## gRPC methods (planned)
 
 `LogisticsService`:
-- `DispatchKit(...)` — called by broker-svc when booking is paid
+- `DispatchKit(...)` — called by payment-svc directly when booking is paid (per ADR 0006)
 - `CheckStock(...)`
 - `ReleaseStock(...)` — compensating action
 

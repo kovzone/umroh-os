@@ -1,5 +1,7 @@
 # broker-svc — Overview
 
+> ⚠️ **DEFERRED FOR MVP — reserved for F6 visa pipeline.** Not scaffolded. The compose stack does not run Temporal in MVP. See [ADR 0006](../../01-architecture/adr/0006-defer-temporal-to-f6.md). MVP short-lived sagas (booking submit, payment refund) are coordinated in-process by the orchestrating service. The content below describes this service's **future** shape, when F6 brings Temporal back.
+
 ## Purpose
 
 Temporal workflow orchestrator. Owns long-running, multi-step, cross-service business processes. The only service that imports the Temporal SDK as a workflow author. Other services remain Temporal-agnostic and expose plain gRPC.

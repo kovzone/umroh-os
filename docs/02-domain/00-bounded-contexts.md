@@ -1,6 +1,6 @@
 # Bounded Contexts
 
-UmrohOS is decomposed into bounded contexts (DDD term: a region of the domain with its own ubiquitous language and data ownership). Each context maps to one service. Cross-context interaction goes via gRPC reads or Temporal-orchestrated workflows.
+UmrohOS is decomposed into bounded contexts (DDD term: a region of the domain with its own ubiquitous language and data ownership). Each context maps to one service. Cross-context interaction goes via gRPC reads or in-process sagas in the orchestrating service (per ADR 0006). The F6 visa pipeline is the one exception — it will use Temporal when implemented.
 
 ## The contexts
 
@@ -42,7 +42,7 @@ UmrohOS is decomposed into bounded contexts (DDD term: a region of the domain wi
 
 **Language:** invoice, virtual account, gateway, settlement, refund, DP, lunas, installment.
 
-**Boundaries:** Payment is the only service that talks to Midtrans/Xendit. It signals booking when payment status changes via Temporal saga. It does not write journal entries — finance-svc consumes payment events for that.
+**Boundaries:** Payment is the only service that talks to Midtrans/Xendit. It signals booking when payment status changes via direct gRPC call (`booking-svc.MarkBookingPaid`) per ADR 0006. It does not write journal entries — finance-svc consumes payment events for that.
 
 ### 6. Visa (`visa-svc`)
 
@@ -66,7 +66,7 @@ UmrohOS is decomposed into bounded contexts (DDD term: a region of the domain wi
 
 **Language:** stock, warehouse, PO, GRN, kit, SKU, shipment, courier.
 
-**Boundaries:** Logistics is triggered by booking payment status (via broker-svc). It does not know about jamaah identity beyond shipping address.
+**Boundaries:** Logistics is triggered by booking payment status (via direct gRPC call from payment-svc per ADR 0006). It does not know about jamaah identity beyond shipping address.
 
 ### 9. Finance & Accounting (`finance-svc`)
 
@@ -82,9 +82,9 @@ UmrohOS is decomposed into bounded contexts (DDD term: a region of the domain wi
 
 **Language:** lead, campaign, agent, super-agent, branch, commission, override, broadcast, alumni, referral.
 
-**Boundaries:** CRM owns the agent network. When a booking is attributed to an agent, crm-svc calculates commission via gRPC + Temporal workflow. It does not own the booking itself.
+**Boundaries:** CRM owns the agent network. When a booking is attributed to an agent, crm-svc calculates commission via gRPC invoked from payment-svc when the booking hits paid_in_full (in-process; per ADR 0006). It does not own the booking itself.
 
-### 11. Workflows (`broker-svc`)
+### 11. Workflows (`broker-svc`) — **DEFERRED for MVP (see ADR 0006)**
 
 **Owns:** Temporal workflow definitions and activities. Stateless from a business-data perspective — Temporal owns workflow state.
 
@@ -100,7 +100,7 @@ UmrohOS is decomposed into bounded contexts (DDD term: a region of the domain wi
 | catalog-svc | booking-svc, ops-svc | upstream/customer-supplier |
 | jamaah-svc | booking-svc, visa-svc, ops-svc | upstream/customer-supplier |
 | booking-svc | payment-svc, logistics-svc, ops-svc, finance-svc | upstream/customer-supplier |
-| payment-svc | finance-svc, broker-svc | upstream (event source) |
+| payment-svc | finance-svc | upstream (event source; direct gRPC per ADR 0006) |
 | visa-svc | booking-svc | partner (signals on visa attached) |
 | crm-svc | booking-svc | partner (lead → booking attribution) |
-| broker-svc | every service | orchestrator (calls activities back into services) |
+| broker-svc *(deferred, F6)* | visa-svc, jamaah-svc, booking-svc | orchestrator for the visa pipeline when F6 is implemented (per ADR 0006) |

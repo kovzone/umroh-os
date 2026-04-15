@@ -35,7 +35,7 @@ umroh-os/
 ├── crm-svc/
 ├── broker-svc/
 ├── proto/                    ← shared .proto files (cross-service contracts)
-├── temporal/                 ← Temporal server config
+├── temporal/                 ← Temporal server config (from baseline; unused in MVP per ADR 0006)
 ├── monitoring/               ← OTel collector, Prometheus, Loki, Fluent-Bit configs
 ├── grafana/                  ← Grafana datasources + dashboards
 ├── tests/                    ← integration & k6 load tests

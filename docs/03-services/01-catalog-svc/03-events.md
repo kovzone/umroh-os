@@ -11,7 +11,7 @@
 | `catalog.seats.released` | Compensation or cancel | package_departure_id, count | (none yet) |
 | `catalog.departure.closed` | Sold out or manual close | package_departure_id | crm-svc |
 
-> Event delivery TBD. For Phase 1, these are notional. The seat reservation/release calls happen synchronously via gRPC from broker-svc activities.
+> Event delivery TBD. For Phase 1, these are notional. The seat reservation/release calls happen synchronously via gRPC from the orchestrating service (booking-svc submit saga; payment-svc refund saga) per ADR 0006.
 
 ## Events consumed
 

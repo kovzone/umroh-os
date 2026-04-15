@@ -20,7 +20,7 @@ All three converge in Grafana. Loki, Tempo, and Prometheus are configured as dat
 - Every API method, every service method, and every store method opens a span.
 - Span attributes record: operation name, key input parameters (no PII), error details on failure.
 - Trace context propagates across gRPC calls automatically via OTel interceptors.
-- Temporal workflows propagate trace context across activities.
+- (Reserved — Temporal workflow trace propagation returns in F6 when Temporal is reintroduced per ADR 0006.)
 
 ## Logging
 

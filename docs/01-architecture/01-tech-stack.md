@@ -13,7 +13,6 @@ Locked in the working environment setup session (2026-04-09). Changes to this st
 | DB driver | pgx/v5 | baseline |
 | Data access codegen | sqlc | baseline |
 | REST API codegen | OpenAPI 3 + oapi-codegen | baseline |
-| Workflow orchestration | Temporal.io | baseline |
 | Trace export | OpenTelemetry → Tempo | baseline |
 | Metrics | Prometheus | baseline |
 | Logs | zerolog (JSON) → Fluent-Bit → Loki | baseline |
@@ -30,25 +29,27 @@ Locked in the working environment setup session (2026-04-09). Changes to this st
 
 ## Why this stack
 
-The baseline `go-backend-template` already implements this entire stack end-to-end with codegen, observability, and Temporal wired up. The team's strongest skills are on the Go / Fiber / gRPC / Postgres side. Choosing the template wholesale is the highest-leverage decision: it removes weeks of bootstrap work and gives every future session a known-good starting point.
+The baseline `go-backend-template` already implements this entire stack end-to-end with codegen and observability wired up. The team's strongest skills are on the Go / Fiber / gRPC / Postgres side. Choosing the template wholesale is the highest-leverage decision: it removes weeks of bootstrap work and gives every future session a known-good starting point.
 
 The PRD suggests Node.js/MySQL. We override that — the Go template was supplied as the explicit coding benchmark, and the team's strongest skills align with it. The PRD is product, not tech.
 
 See:
 - `adr/0001-go-microservices.md` — why Go
 - `adr/0002-postgres-over-mysql.md` — why Postgres
-- `adr/0003-temporal-for-workflows.md` — why Temporal
+- `adr/0003-temporal-for-workflows.md` — **deferred for MVP; see ADR 0006**
 - `adr/0004-monorepo-layout.md` — why one repo for all services
 - `adr/0005-svelte-frontend.md` — why Svelte 5 (over the originally assumed React+Vite)
+- `adr/0006-defer-temporal-to-f6.md` — why Temporal is deferred; MVP uses in-process saga coordination
 
 ## Frontend stack
 
 **Svelte 5 (runes mode) + Vite.** Conventions live in `docs/05-frontend-conventions/`; the authoritative runtime skill is `.claude/skills/svelte-core-bestpractices/`. See ADR-0005 for why the earlier React+Vite assumption was replaced.
 
 ## What's deferred
+- **Temporal.io workflow orchestration.** Deferred for MVP per ADR 0006. In-process saga coordination in the orchestrating service + reconciliation cron is the MVP pattern for F4/F5. Temporal is brought back when F6 visa pipeline is implemented (multi-day durable workflow — the use case that genuinely needs it).
 - **CI/CD pipeline.** No GitHub Actions / CircleCI configured yet. Add when needed.
 - **Production deployment.** Docker Compose is dev-only. Production target (Kubernetes? Cloud Run? Bare VMs?) is undecided and will need an ADR.
-- **Kafka / event streaming.** Considered and rejected for MVP — Temporal handles workflow orchestration and gRPC handles synchronous calls. Revisit if a use case appears that genuinely needs pub/sub fanout.
+- **Kafka / event streaming.** Considered and rejected for MVP — gRPC handles synchronous calls and in-process sagas handle orchestration. Revisit if a use case appears that genuinely needs pub/sub fanout.
 
 ## What you may NOT introduce without an ADR
 

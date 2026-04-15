@@ -19,6 +19,6 @@
 
 `OpsService`:
 - `RunSmartGrouping(...)` — used by booking-svc on submit
-- `BuildManifest(...)` — used by broker-svc / scheduler
+- `BuildManifest(...)` — used by a scheduled job (and by broker-svc at F6 when the visa pipeline needs manifest state; per ADR 0006)
 
 > All endpoints are stubs.

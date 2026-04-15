@@ -1,5 +1,7 @@
 # visa-svc — Overview
 
+> **Note on Temporal / broker-svc references below.** Temporal is currently deferred from MVP (see [ADR 0006](../../01-architecture/adr/0006-defer-temporal-to-f6.md)). This service's implementation (F6 visa pipeline) is what **brings Temporal and broker-svc back into the stack** — the long-running multi-day workflow is the genuine Temporal use case. References below to "Temporal workflow" and "broker-svc activities" describe the F6 target state; they are planned, not current MVP direction.
+
 ## Purpose
 
 Visa application lifecycle, e-visa storage, tasreh records, and Raudhah Shield monitoring. The only service that talks to Saudi visa systems (MOFA / Sajil / Nusuk).

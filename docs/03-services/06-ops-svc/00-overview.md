@@ -28,7 +28,7 @@ PRD section E — Operational & Handling.
 
 ## Interactions
 
-- **Inbound:** UI for ops staff; broker-svc workflows.
+- **Inbound:** UI for ops staff; direct gRPC reads from other services (per ADR 0006). Will also be called by broker-svc for manifest-related F6 workflow activities once Temporal returns.
 - **Outbound:** jamaah-svc (read documents/family graph for grouping), booking-svc (read bookings), catalog-svc (read package details for manifests), visa-svc (read visa status).
 
 ## Notable behaviors

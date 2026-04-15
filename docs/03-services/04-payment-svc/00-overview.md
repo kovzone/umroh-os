@@ -27,7 +27,7 @@ PRD section G (Finance & Accounting — payment portion) and parts of A (B2C che
 
 ## Interactions
 
-- **Inbound:** booking-svc requests an invoice/VA at booking submission; broker-svc activities call into payment-svc.
+- **Inbound:** booking-svc requests an invoice/VA at booking submission; booking-svc calls into payment-svc synchronously as part of the in-process submit saga (per ADR 0006).
 - **Outbound:** Midtrans/Xendit (issue VA, query status, refund), iam-svc (audit), booking-svc (mark paid).
 
 ## Notable behaviors
@@ -35,4 +35,4 @@ PRD section G (Finance & Accounting — payment portion) and parts of A (B2C che
 - **Idempotent webhook handling.** Gateway webhooks may retry; deduplicate via gateway transaction ID.
 - **Reconciliation cron.** Periodic job reconciles VA status against the gateway in case a webhook was missed.
 - **Multi-gateway support.** Adapter pattern — Midtrans and Xendit each have their own adapter under `adapter/`.
-- **Refund flow** is a Temporal saga in broker-svc; payment-svc exposes the synchronous refund call.
+- **Refund flow** is coordinated in-process inside payment-svc (per ADR 0006; no Temporal in MVP); payment-svc exposes the synchronous refund call and drives compensations on each downstream step.

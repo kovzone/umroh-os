@@ -18,6 +18,8 @@ depends_on: [F1, F3]
 
 TBD — long-running Temporal workflow that submits Saudi visa applications, polls status, and attaches issued e-visas to bookings. Raudhah Shield polls the Nusuk app to detect visa misuse.
 
+> **Note:** Temporal is deferred from MVP (see ADR 0006). This feature's implementation is what brings Temporal back into the stack — the visa pipeline is the specific use case that justifies the infrastructure. Introducing the Temporal server into `docker-compose.dev.yml` + scaffolding `broker-svc` is part of F6's work, not a prerequisite.
+
 ## Sources
 
 - PRD Section E — Visa portion; Section I — Raudhah Shield

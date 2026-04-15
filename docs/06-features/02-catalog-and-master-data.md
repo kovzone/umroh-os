@@ -177,7 +177,7 @@ Full contracts in `docs/03-services/01-catalog-svc/01-api.md`. Key surfaces:
 
 **gRPC (service-to-service):**
 - `GetPackage`, `GetPackageDeparture` — read by booking-svc, ops-svc
-- `ReserveSeats`, `ReleaseSeats` — **atomic**, called by broker-svc saga
+- `ReserveSeats`, `ReleaseSeats` — **atomic**, called by booking-svc's in-process submit saga and payment-svc's refund saga (per ADR 0006)
 - `UpdateVendorReadiness(departure_id, kind, state)` — called by visa-svc, logistics-svc
 - `CatalogUpdatedSubscribe` — stream for website / agent / mobile consumers _(Inferred: stream in phase 1; move to broker later if needed)_
 
@@ -193,7 +193,7 @@ Full contracts in `docs/03-services/01-catalog-svc/01-api.md`. Key surfaces:
 - **Price history** is append-only. Add a trigger or CHECK that rejects UPDATE / DELETE.
 - **FX snapshot** happens in F5 (invoice creation), not here. Catalog returns the current display price; catalog never decides invoice amount.
 - **Flyer rendering** runs in a separate worker pool so a slow headless-browser render doesn't block catalog read traffic. _(Inferred.)_
-- **Omni-channel event** is emitted via OTel-traced gRPC stream in phase 1. Kafka / Redis Streams / Temporal signals are future options — ADR deferred.
+- **Omni-channel event** is emitted via OTel-traced gRPC stream in phase 1. Kafka / Redis Streams are future options — ADR deferred. (Temporal is itself deferred per ADR 0006 and not a candidate for this fan-out path.)
 - **Master data live-link** means reads do the join at query time. Hot paths should use Postgres `pg_hint_plan`-ready joins or materialise a denormalised view if profiling shows a problem.
 
 ## Frontend notes

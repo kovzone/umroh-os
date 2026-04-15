@@ -35,7 +35,7 @@ PRD sections A (B2C self-booking), B (B2B agent booking), and parts of E (room/b
 
 ## Notable behaviors
 
-- **Booking saga** (Temporal, owned by broker-svc) orchestrates: catalog reserve → booking create → payment VA issue → notify.
+- **Booking saga** runs in-process inside `booking-svc.Submit()` (per ADR 0006; Temporal is deferred for MVP): catalog reserve → booking create → payment VA issue → emit events. Compensations are explicit in code; the F5 reconciliation cron catches mid-saga crashes.
 - **Mahram validation** at booking time — for women under 45, verify a mahram is on the same booking by calling jamaah-svc.
 - **Status machine:** draft → pending_payment → partially_paid → paid_in_full → completed (or → cancelled at any point).
 - **Smart room allocation** algorithm runs at booking creation if family grouping is requested. Lives in ops-svc; booking-svc just stores the result.

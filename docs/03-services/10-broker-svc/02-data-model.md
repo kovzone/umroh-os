@@ -1,5 +1,7 @@
 # broker-svc — Data Model
 
+> ⚠️ **DEFERRED FOR MVP — reserved for F6.** See ADR 0006.
+
 broker-svc owns no business data and no Postgres tables. All workflow state is owned by Temporal in its own datastore.
 
 ## What Temporal stores

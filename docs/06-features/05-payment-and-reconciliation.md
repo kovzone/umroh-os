@@ -28,7 +28,7 @@ open_questions:
 
 Turns booking commitments into money in the bank. Owns invoices, virtual accounts, gateway webhook ingestion, digital receipts, and refunds. The **only** service that talks to payment gateways (Midtrans, Xendit) and direct bank APIs. Emits events that F4 (booking status), F8 (kit dispatch), F9 (accounting), and F10 (commission confirmation) depend on.
 
-The interlock with F4 is tight: F4 submit triggers F5 VA issuance; F5 webhook triggers F4 status update. The saga that coordinates this lives in `broker-svc`.
+The interlock with F4 is tight: F4's booking-svc coordinates the submit saga (calls into F5 for VA issuance); F5's webhook handler calls booking-svc directly to signal status updates. No Temporal in MVP — see ADR 0006. Refund flow is coordinated in-process inside payment-svc.
 
 Primary personas:
 - **Calon jamaah** — pays via VA / QRIS / card; receives digital receipt; sees billing dashboard on Customer Portal.
@@ -68,7 +68,7 @@ Called from the F4 booking submit saga.
 4. F5 checks idempotency — if `gateway_txn_id` already exists in `payment_events`, no-op 200 so the gateway stops retrying.
 5. Inserts `payment_events` row with `kind = 'payment_received'`, `amount`, `raw_payload`, `received_at`.
 6. Updates the `invoice.paid_amount += amount`; if now ≥ `amount_total`, invoice status → `paid`; else `partially_paid`.
-7. Signals the F4 saga: `broker.SignalPaymentReceived(booking_id, amount, invoice_status)`.
+7. Calls F4 directly via gRPC: `booking-svc.MarkBookingPaid(booking_id, amount, invoice_status)`.
 8. F4 side transitions booking status accordingly (`pending_payment → partially_paid | paid_in_full`).
 9. F5 triggers digital receipt (W3) asynchronously.
 10. Returns 200 OK to the gateway.
@@ -88,7 +88,7 @@ Called from the F4 booking submit saga.
 
 1. CS opens a booking in the internal console, clicks **Generate Payment Link**.
 2. Selects gateway, amount (full / DP per Q011 / custom with e-Approval per W7), and expiry.
-3. F5 creates an invoice + VA same as W1 but without the saga detour — direct REST call since the booking already exists.
+3. F5 creates an invoice + VA same as W1 but without the full submit-saga path — direct REST call since the booking already exists.
 4. Returns a WhatsApp-shareable URL that opens the checkout page.
 5. CS pastes the link into the WA conversation.
 
@@ -122,14 +122,15 @@ Runs hourly. Catches missed webhooks and gateway settlement lag.
 
 Triggered by F4 cancellation (W7 in F4) or by a departure-cancelled bulk operation.
 
-1. F4 calls `broker.StartRefundFlow(booking_id, reason_code)`.
-2. Refund flow workflow in broker-svc:
+1. F4 calls `payment-svc.StartRefund(booking_id, reason_code)` via gRPC.
+2. Refund flow coordinated in-process by payment-svc (per ADR 0006 — no Temporal in MVP):
    - Reads the booking, its invoice(s), and all `payment_events` of kind `payment_received`.
    - Calculates net refund: `sum(received) - penalty(per Q012) - sunk_costs(issued_tickets + filed_visas)`.
    - Creates a `refund` record with status `requested`, shows a preview to the initiator for confirmation (F4 UI shows this — jamaah sees the net before confirming cancel).
    - On confirm: calls gateway's Refund API (for VA/QRIS/card) OR creates a manual-refund task (for cash receipts that need bank transfer out).
    - On gateway ack: status → `processing`; on final settlement: `completed`.
    - On failure: `failed` with retry after admin review.
+   - Compensations on each downstream call: if `booking.CancelBooking` succeeds but `catalog.ReleaseSeats` fails, payment-svc returns an error and the reconciliation cron (W5) catches the orphan seat on its next cycle.
 3. Refund issues a negative `payment_events` row (`kind = 'refund_issued'`) for audit symmetry.
 4. Signals F4 for booking state, F9 for reverse journal, F8 for kit-release-if-applicable.
 
@@ -185,21 +186,21 @@ Full contracts in `docs/03-services/04-payment-svc/01-api.md`.
 **REST:**
 - `GET /v1/invoices` — filter by booking, status, date range
 - `GET /v1/invoices/{id}` — detail + payment event history
-- `POST /v1/invoices` — create (usually called by saga)
+- `POST /v1/invoices` — create (usually called by booking-svc's submit saga)
 - `POST /v1/invoices/{id}/virtual-accounts` — issue a new VA (rotation / re-issue after expiry)
 - `POST /v1/invoices/{id}/manual-payment` — record manual receipt (CS-facing)
 - `POST /v1/invoices/{id}/void` — cancel an unpaid invoice (admin)
 - `POST /v1/webhooks/midtrans` — public, signature-protected
 - `POST /v1/webhooks/xendit` — public, signature-protected
-- `POST /v1/refunds` — initiate refund (usually called by saga)
+- `POST /v1/refunds` — initiate refund (called by F4 cancel flow; payment-svc coordinates the saga in-process)
 - `GET /v1/refunds/{id}` — status + settlement details
 - `POST /v1/discount-approvals` — e-Approval workflow
 - `GET /v1/reconciliation/reports` — finance admin view
 
 **gRPC (service-to-service):**
-- `IssueVirtualAccount`, `Refund`, `VoidInvoice`, `ReconcileInvoice` — called by broker-svc saga activities
+- `IssueVirtualAccount`, `Refund`, `VoidInvoice`, `ReconcileInvoice` — called by the in-process saga coordinators (booking-svc for the submit saga, payment-svc itself for the refund saga; per ADR 0006)
 - `GetInvoice`, `ListInvoicesByBooking` — read-only fan-out
-- No gRPC from F5 pushing to F4 — all F5→F4 communication goes via **broker signals** (`SignalPaymentReceived`, `SignalRefundCompleted`, etc.) so the saga owns the order of operations
+- F5→F4 communication goes via **direct gRPC calls** (`MarkBookingPaid`, `AttachVisa`, `CancelBooking`) per ADR 0006. No Temporal signals in MVP; each call is idempotent and retries are handled by the reconciliation cron
 
 ## Dependencies
 
@@ -208,7 +209,7 @@ Full contracts in `docs/03-services/04-payment-svc/01-api.md`.
 - **External** — Midtrans and Xendit gateways, WhatsApp for receipt delivery, email as fallback, GCS for receipt PDFs, bank APIs for direct VA / settlement verification
 
 Downstream consumers:
-- F4 (status transitions on DP / lunas / expired / cancelled via broker signals)
+- F4 (status transitions on DP / lunas / expired / cancelled via direct gRPC calls)
 - F9 (journal entries — AR, Unearned Revenue, tax)
 - F8 (kit dispatch on lunas event)
 - F10 (commission state transitions Pending → Confirmed on lunas)
