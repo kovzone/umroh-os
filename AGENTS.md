@@ -14,7 +14,7 @@ Guidance for **human developers** and **coding agents** (Cursor, Claude Code, et
 
 - **Two full-stack developers**, each owning functional feature slices end-to-end across both the Go services and the Svelte 5 + Vite frontend. The split is per-workflow, not per-specialization.
 - **Each developer may use a different AI coding agent** (Claude Code, Cursor, Copilot, or none) with a different working-file layout. Do not assume any specific agent's conventions. If your agent has its own instruction file (`CLAUDE.md`, `.cursor/`, etc.) it is **gitignored and private to that developer** — don't expect to find it, and don't commit your own.
-- **`AGENTS.md` (this file) is the one shared, committed onboarding document** for humans and AI agents alike. Everything referenced below lives in `docs/` and is committed. If a rule in your private agent file contradicts this one, this one wins.
+- **`AGENTS.md` + `CONTRIBUTING.md` are the shared, committed onboarding and workflow docs** for humans and AI agents alike. `AGENTS.md` routes source-of-truth product/architecture docs; `CONTRIBUTING.md` defines contribution and PR quality-gate workflow. If a rule in your private agent file contradicts these shared docs, shared docs win.
 - **Private task trackers, session rituals, and agent-specific skills are scoped to each developer's local environment** and not part of the shared repo. The shared backlog is in `docs/06-features/` (feature specs) and `docs/07-open-questions/` (unresolved product decisions).
 
 ---
@@ -44,6 +44,9 @@ Guidance for **human developers** and **coding agents** (Cursor, Claude Code, et
 6. **Unresolved product decisions**  
    - `docs/07-open-questions/` — see `docs/07-open-questions/00-how-to-use.md`.  
    - If a feature spec says **TBD** or points to **Qnnn**, read that question file before inventing behavior. Do not silently override an `open` question with a firm product rule.
+
+7. **Contribution workflow (how to ship changes)**
+   - `CONTRIBUTING.md` — branch/PR workflow, minimum quality gate, and shared-vs-local config rules.
 
 ---
 

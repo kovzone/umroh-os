@@ -6,6 +6,9 @@
 .claude/
 CLAUDE.md
 
+# Cursor (local agent settings and rules)
+.cursor/
+
 # docs
 docs/elda_mahaindra_cv.pdf
 
