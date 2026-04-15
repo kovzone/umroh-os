@@ -63,6 +63,7 @@ Guidance for **human developers** and **coding agents** (Cursor, Claude Code, et
 - **Open questions:** If status is `open` and no `## Answer` is filled, do not assume stakeholder sign-off; use the file’s **Recommendation** only where the template allows inference, and mark inferred behavior as the team’s convention requires (e.g. `_(Inferred)_` in specs).  
 - **Microservices boundaries:** One bounded context per service. Cross-context reads go via gRPC; cross-context **writes are coordinated in-process by the orchestrating service** with explicit per-step compensations, plus a reconciliation cron catching mid-saga crashes (see ADR-0006). Temporal is deferred from MVP and reintroduced only for the F6 visa pipeline — the one multi-day durable workflow. Do not bypass this model without an ADR-level discussion.  
 - **Observability:** Tracing/logging/metrics expectations are part of the baseline architecture — see architecture docs before merging “invisible” side paths.
+- **Commit messages (contract between the devs):** every commit — human or AI, either codebase — follows `docs/08-commit-conventions.md`. Format is `<type>: <short message in lower case>`, optional body, no mandatory scope parens, no trailing period on the subject. Types: `feat | fix | docs | refactor | test | chore | build | perf | style`. AI attribution footers (`Co-Authored-By: ...`) are allowed but not required; do not fail a PR over their presence or absence. See the full doc for examples and rationale.
 
 ---
 
