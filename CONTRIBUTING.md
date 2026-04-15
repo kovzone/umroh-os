@@ -13,6 +13,15 @@ Keep changes merge-ready, traceable, and safe across a mixed-tool workflow (Curs
 - Rebase or merge from `main` when your branch is stale before review.
 - Do not force-push shared branches unless explicitly coordinated.
 
+## Non-negotiable Git Rules
+
+- MUST create a task branch from `main`; do not work directly on `main`.
+- MUST open a PR for all shared changes; no direct push to protected `main`.
+- MUST keep one PR focused on one concern/task.
+- MUST include verification evidence in the PR before requesting review.
+- MUST NOT force-push to `main`.
+- MUST NOT bypass required checks or repository protections.
+
 ## Quality Gate (Minimum Before Merge)
 
 Every PR must include:
@@ -54,3 +63,8 @@ Local only (do not commit):
 ## Pull Request Checklist
 
 Use the PR template in `.github/pull_request_template.md` and ensure all required sections are filled before requesting review.
+
+## Canonical References
+
+- Detailed Git workflow: `docs/04-backend-conventions/08-git-workflow.md`
+- Team AI onboarding and doc authority: `AGENTS.md`
