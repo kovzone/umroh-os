@@ -50,7 +50,13 @@ Guidance for **human developers** and **coding agents** (Cursor, Claude Code, et
 ## Rules agents should follow
 
 - **Prefer the minimal doc set** for the current task: feature spec → linked service docs → linked Q files. Do not load the entire `docs/` tree into context by default.  
-- **PRD vs repo docs:** If a *product* requirement in the PRD conflicts with another markdown spec, treat the PRD as authoritative for product *and* flag the inconsistency for humans to fix. **Tech choices** follow `01-tech-stack.md` and ADRs, not PRD stack hints.  
+- **Authority hierarchy for product decisions** (highest → lowest):
+  1. **Feature spec in `docs/06-features/` with `status: written`** — authoritative for product behavior within its scope. Resolves ambiguities and gaps that the PRD left open.
+  2. **Feature spec with `status: draft`** — the written parts are authoritative; `TBD — see Q-NN` markers and `_(Inferred)_` lines are provisional until the linked open question is answered.
+  3. **Open question with `status: answered`** in `docs/07-open-questions/` — authoritative for the specific decision it captures; the feature spec should reflect the answer.
+  4. **PRD (`docs/UmrohOS - Product Requirements Document.docx.md`)** — authoritative **only for areas no feature spec covers yet**, or where a feature spec explicitly defers to it. Once a feature spec is written, the PRD becomes historical input for that area, not the operating rule.
+  If you spot what looks like a **substantive** contradiction between a written feature spec and the PRD (not just a clarification the spec intentionally made), surface it as a new entry in `docs/07-open-questions/` rather than silently picking a side.
+- **Tech choices** are locked by `01-tech-stack.md` and the ADRs in `docs/01-architecture/adr/`, not by PRD stack hints. A stack change requires a new ADR.  
 - **Open questions:** If status is `open` and no `## Answer` is filled, do not assume stakeholder sign-off; use the file’s **Recommendation** only where the template allows inference, and mark inferred behavior as the team’s convention requires (e.g. `_(Inferred)_` in specs).  
 - **Microservices boundaries:** One bounded context per service. Cross-context reads go via gRPC; cross-context **writes are coordinated in-process by the orchestrating service** with explicit per-step compensations, plus a reconciliation cron catching mid-saga crashes (see ADR-0006). Temporal is deferred from MVP and reintroduced only for the F6 visa pipeline — the one multi-day durable workflow. Do not bypass this model without an ADR-level discussion.  
 - **Observability:** Tracing/logging/metrics expectations are part of the baseline architecture — see architecture docs before merging “invisible” side paths.
