@@ -116,3 +116,9 @@ Sometimes a question can't be answered yet (waiting on external input that isn't
 | [Q017](Q017-paket-tabungan-interaction.md) | Paket Tabungan interaction with booking state | F4, F5, F9 | open |
 | [Q018](Q018-talangan-bridging-finance.md) | Talangan (bridging finance) process and accounting | F5, F9 | open |
 | [Q019](Q019-abandoned-checkout-attribution.md) | Abandoned checkout attribution (commission routing) | F4, F10 | open |
+| [Q020](Q020-manifest-format.md) | Manifest format per airline / regulator | F7, F6 | open |
+| [Q021](Q021-luggage-qr-and-all-system.md) | Luggage Tag QR scheme + ALL System protocol | F7 | open |
+| [Q022](Q022-tour-leader-vs-muthawwif-authority.md) | Tour leader vs muthawwif override authority boundary | F7 | open |
+| [Q023](Q023-zamzam-distribution-policy.md) | Zamzam distribution quota and policy | F7 | open |
+| [Q024](Q024-incident-escalation.md) | Incident / issue report escalation matrix | F7 | open |
+| [Q025](Q025-vulnerable-care-fields.md) | Vulnerable Care manifest fields and sensitivity | F7, F3 | open |
