@@ -11,7 +11,7 @@ UmrohOS has 10+ services. They share conventions, codegen tooling, and observabi
 
 ## Decision
 
-Use a **monorepo** layout, mirroring `baseline/go-backend-template`. All services live as top-level directories in the root of `umroh-os/`. Each service is its own Go module (own `go.mod`).
+Use a **monorepo** layout. All Go microservices live under a single `services/` directory at the repo root, each as its own Go module (own `go.mod`). Shared infrastructure (docker-compose, Makefile, `_init/`, `monitoring/`, `grafana/`, `temporal/`, `tests/`) sits at the repo root. The `baseline/go-backend-template/` directory is kept as a read-only reference template; `services/` mirrors its service-internal layout (`cmd/`, `api/`, `service/`, `store/`, `util/`) per service.
 
 ## Layout
 
@@ -24,18 +24,19 @@ umroh-os/
 │   ├── iam_db/
 │   ├── catalog_db/
 │   └── ... (one per service that owns data)
-├── gateway-svc/
-├── iam-svc/
-├── catalog-svc/
-├── booking-svc/
-├── jamaah-svc/
-├── payment-svc/
-├── visa-svc/
-├── ops-svc/
-├── logistics-svc/
-├── finance-svc/
-├── crm-svc/
-├── broker-svc/               ← deferred in MVP (ADR 0006); reserved for F6
+├── services/                 ← all Go microservices live here
+│   ├── gateway-svc/
+│   ├── iam-svc/
+│   ├── catalog-svc/
+│   ├── booking-svc/
+│   ├── jamaah-svc/
+│   ├── payment-svc/
+│   ├── visa-svc/
+│   ├── ops-svc/
+│   ├── logistics-svc/
+│   ├── finance-svc/
+│   ├── crm-svc/
+│   └── broker-svc/           ← deferred in MVP (ADR 0006); reserved for F6
 ├── temporal/                 ← Temporal server config (from baseline; unused in MVP per ADR 0006)
 ├── monitoring/               ← OTel collector, Prometheus, Loki, Fluent-Bit configs
 ├── grafana/                  ← Grafana datasources + dashboards
