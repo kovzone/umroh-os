@@ -8,14 +8,15 @@ Keep changes merge-ready, traceable, and safe across a mixed-tool workflow (Curs
 
 ## Branch and PR Workflow
 
-- Work from `main` by creating a short-lived branch per task.
+- Start from latest `main`, then create a short-lived task branch before making any commit.
 - Keep PR scope focused on one problem area.
 - Rebase or merge from `main` when your branch is stale before review.
 - Do not force-push shared branches unless explicitly coordinated.
 
 ## Non-negotiable Git Rules
 
-- MUST create a task branch from `main`; do not work directly on `main`.
+- MUST create a task branch from `main` before any commit.
+- MUST NOT commit directly on `main`.
 - MUST open a PR for all shared changes; no direct push to protected `main`.
 - MUST keep one PR focused on one concern/task.
 - MUST include verification evidence in the PR before requesting review.
