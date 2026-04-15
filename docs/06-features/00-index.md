@@ -35,7 +35,7 @@ When the PRD doesn't answer a question during spec writing:
 | F3 | [Pilgrim Profile & Documents](03-pilgrim-and-documents.md) | Must #87, #88 (mahram) | **Draft** — 4 open Qs (Q005–Q008) |
 | F4 | [Booking Creation & Allocation](04-booking-and-allocation.md) | Must — B2C + B2B booking | **Draft** — 6 open Qs (Q004, Q005, Q006, Q010, Q014, Q015, Q016, Q017, Q019) |
 | F5 | [Payment & Reconciliation](05-payment-and-reconciliation.md) | 4 Must Haves | **Draft** — 5 open Qs (Q001, Q004, Q011, Q012, Q013) |
-| F6 | [Visa Pipeline & Raudhah Shield](06-visa-pipeline.md) | Must #97 | Stub |
+| F6 | [Visa Pipeline & Raudhah Shield](06-visa-pipeline.md) | Must #97 | **Draft** — 9 open Qs (Q005, Q007, Q008, Q026–Q031) |
 | F7 | [Operations: Verification, Grouping, Manifests](07-operations-handling.md) | 6 Must Haves | **Draft** — 8 open Qs (Q012, Q015, Q020–Q025) |
 | F8 | [Warehouse, Procurement, Fulfillment](08-warehouse-and-fulfillment.md) | 6 Must Haves | Stub |
 | F9 | [Finance & Accounting (PSAK)](09-finance-and-accounting.md) | **15 Must Haves — highest** | Stub |

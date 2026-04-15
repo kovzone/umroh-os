@@ -122,3 +122,9 @@ Sometimes a question can't be answered yet (waiting on external input that isn't
 | [Q023](Q023-zamzam-distribution-policy.md) | Zamzam distribution quota and policy | F7 | open |
 | [Q024](Q024-incident-escalation.md) | Incident / issue report escalation matrix | F7 | open |
 | [Q025](Q025-vulnerable-care-fields.md) | Vulnerable Care manifest fields and sensitivity | F7, F3 | open |
+| [Q026](Q026-mofa-sajil-api-access.md) | MOFA / Sajil API access — credentials, sandbox, contracts | F6 | open |
+| [Q027](Q027-visa-provider-selection.md) | Visa provider selection per package kind | F6 | open |
+| [Q028](Q028-visa-rejection-handling.md) | Visa rejection handling policy | F6, F5, F4 | open |
+| [Q029](Q029-passport-custody.md) | Physical passport chain-of-custody process | F6 | open |
+| [Q030](Q030-raudhah-shield-cadence-and-action.md) | Raudhah Shield polling cadence + alert action | F6 | open |
+| [Q031](Q031-tasreh-issuance-authority.md) | Tasreh issuance authority | F6 | open |
