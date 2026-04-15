@@ -10,34 +10,14 @@ UmrohOS is built across many short Claude sessions. Git is how we capture the tr
 
 ## Commit messages
 
-Format:
+Commit message format is **repo-wide** — it applies to both codebases and to any contributor. See `docs/08-commit-conventions.md` for the full rules, type catalogue, examples, and rationale. Summary:
 
-```
-<type>(<scope>): <subject>
+- `<type>: <short message in lower case>`
+- Blank line + optional body (normal case) when the *what* isn't obvious from the subject.
+- Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `perf`, `style`.
+- Lower-case subject; no trailing period; ~72 char limit; no mandatory scope parens.
 
-<optional body>
-
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
-```
-
-| Type | Use |
-|---|---|
-| `feat` | New feature |
-| `fix` | Bug fix |
-| `refactor` | Code change without behavior change |
-| `docs` | Docs only |
-| `chore` | Tooling, config, dependencies |
-| `test` | Tests only |
-
-Scope is the service name (`iam-svc`, `catalog-svc`) or `docs`, `infra`, `proto`.
-
-Examples:
-
-```
-feat(iam-svc): add CreateUser endpoint
-docs: scaffold service docs for all 11 services
-chore(infra): wire iam-svc into docker-compose
-```
+AI-assisted sessions may append their own attribution footer (e.g. `Co-Authored-By: <agent> <email>`). Optional; not gating.
 
 ## Pull requests
 
