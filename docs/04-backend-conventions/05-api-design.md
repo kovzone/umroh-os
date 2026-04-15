@@ -83,7 +83,11 @@ Generated file: `api.gen.go`. **Never edit it.** If something is wrong, fix the 
 
 ### Source of truth
 
-`.proto` files under `proto/<svc>.proto` (shared root) or `<svc>/api/grpc_api/proto/`. Edit first; regenerate; then implement.
+Each service **owns** its own proto file at `<svc>/api/grpc_api/pb/<svc>.proto`. There is no shared root-level `proto/` directory — see ADR 0004 "Proto ownership".
+
+When service A needs to call service B, A carries a **local copy** of B's proto under `A/adapter/B_grpc_adapter/pb/B.proto`. A generates client code from that copy and wraps the gRPC client in an adapter that hides proto types from A's service layer.
+
+Edit the owning service's proto first; regenerate; then implement. For contract changes that affect consumers, update every consumer's adapter copy in the same commit — the "N+1 commit" is deliberate, not a workflow problem (see ADR 0004).
 
 ### Conventions
 
@@ -92,7 +96,7 @@ Generated file: `api.gen.go`. **Never edit it.** If something is wrong, fix the 
 - Request/response messages: `<Method>Request`, `<Method>Response`. Even if empty, define them — don't reuse `google.protobuf.Empty`.
 - Field names: `snake_case`.
 - Use `field_mask` for partial updates if needed.
-- Reuse common message types — define them in `proto/common.proto`.
+- **Common message types are scoped to the service that owns them.** If two services genuinely need the same message shape, each defines its own copy. Resist the urge to create a cross-service "commons" package — that's the shared-proto pattern we rejected in ADR 0004.
 
 ### When REST vs gRPC
 
