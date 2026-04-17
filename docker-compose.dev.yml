@@ -182,7 +182,43 @@ services:
   #     - "8233:8080"
 
   # ────────────────────────────────────────────────────────────────────
-  # Application services
+  # Frontend apps
+  # ────────────────────────────────────────────────────────────────────
+
+  core-web:
+    build:
+      context: .
+      dockerfile: apps/core-web/Dockerfile
+      target: dev
+    image: core-web
+    container_name: core-web
+    restart: unless-stopped
+    ports:
+      - "3001:3000" # host:3001 → container :3000 (Grafana already owns 3000)
+    volumes:
+      # Bind-mount source for hot reload. Anonymous volume on node_modules
+      # so the host's (missing) node_modules doesn't shadow the container's install.
+      - ./apps/core-web:/app
+      - /app/node_modules
+    environment:
+      - APP_NAME=core-web
+      # Browser-side fetch target. The bundle JS runs in the user's browser
+      # (not inside the container), so it hits the host-mapped gateway port.
+      - VITE_GATEWAY_URL=http://localhost:4000
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        fluentd-async: "true"
+        tag: core-web
+    depends_on:
+      - fluent-bit
+      - gateway-svc
+    networks:
+      - umrohos-network
+
+  # ────────────────────────────────────────────────────────────────────
+  # Backend services
   # ────────────────────────────────────────────────────────────────────
 
   gateway-svc:

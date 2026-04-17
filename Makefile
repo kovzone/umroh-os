@@ -1,6 +1,10 @@
-# SERVICES lists every scaffolded service under services/.
-# gateway-svc and broker-svc are deferred (gateway: next session; broker: ADR 0006).
+# SERVICES lists every scaffolded Go service under services/.
+# broker-svc is deferred per ADR 0006.
 SERVICES = services/gateway-svc services/iam-svc services/catalog-svc services/booking-svc services/jamaah-svc services/payment-svc services/visa-svc services/ops-svc services/logistics-svc services/finance-svc services/crm-svc
+
+# APPS lists every scaffolded frontend app under apps/.
+# Siblings (storefront-web, agent-web, field-web, ...) land as Q009 feature slices do.
+APPS = apps/core-web
 
 # Local migration URL — single shared database `umrohos_dev` per ADR 0007.
 # Host port 5432 is mapped from the postgres container (see docker-compose.dev.yml).
@@ -43,7 +47,15 @@ genpb: ## Generate protobuf code for all services
 		fi; \
 	done
 
-generate: sqlc oapi genpb ## Run all code generation (sqlc + oapi-codegen + protoc)
+gen-api-web: ## Regenerate typed API clients for all frontend apps from gateway-svc openapi.yaml
+	@for app in $(APPS); do \
+		if [ -f $$app/package.json ] && grep -q '"gen:api"' $$app/package.json; then \
+			echo "gen:api: $$app"; \
+			cd $$app && npm run gen:api && cd - > /dev/null; \
+		fi; \
+	done
+
+generate: sqlc oapi genpb gen-api-web ## Run all code generation (sqlc + oapi-codegen + protoc + web api types)
 
 # ===========================================
 # Database Migrations (golang-migrate, per ADR 0007)
@@ -123,9 +135,9 @@ test-coverage: ## Generate coverage report for a specific service (usage: make t
 # Docker Image Management
 # ===========================================
 
-dev-rm-all: ## Remove all service Docker images (idempotent; no-ops on missing)
-	@for svc in $(SERVICES); do \
-		img=$$(basename $$svc); \
+dev-rm-all: ## Remove all service + app Docker images (idempotent; no-ops on missing)
+	@for target in $(SERVICES) $(APPS); do \
+		img=$$(basename $$target); \
 		if docker image inspect $$img >/dev/null 2>&1; then \
 			echo "Removing $$img"; \
 			docker rmi $$img >/dev/null; \
@@ -141,10 +153,30 @@ dev-rebuild: ## Rebuild and restart a specific service (usage: make dev-rebuild 
 # E2E Testing (Playwright, per ADR 0008)
 # ===========================================
 
-e2e-install: ## Install e2e dependencies (one-time / CI)
+e2e-install: ## Install e2e dependencies + Playwright browsers + each app's npm deps
 	cd tests/e2e && npm install
+	cd tests/e2e && npx playwright install chromium
+	@for app in $(APPS); do \
+		if [ -f $$app/package.json ]; then \
+			echo "npm install: $$app"; \
+			cd $$app && npm install && cd - > /dev/null; \
+		fi; \
+	done
 
-e2e: ## Run the full e2e suite against the running stack
+e2e: ## Run the full e2e suite against the running stack (api + browser projects)
 	cd tests/e2e && npm test
 
-.PHONY: help sqlc oapi genpb generate migrate-up migrate-down migrate-version migrate-force migrate-create dev-up dev-down dev-down-v dev-logs dev-ps dev-bootstrap test test-v test-svc test-coverage dev-rm-all dev-rebuild e2e-install e2e
+# ===========================================
+# Frontend app helpers
+# ===========================================
+
+web-dev: ## Rebuild + up core-web (usage: make web-dev)
+	docker compose -f docker-compose.dev.yml up -d --build core-web
+
+web-test: ## Run Vitest for a specific app (usage: make web-test APP=apps/core-web)
+	cd $(APP) && npm run test
+
+web-check: ## Run svelte-check for a specific app (usage: make web-check APP=apps/core-web)
+	cd $(APP) && npm run check
+
+.PHONY: help sqlc oapi genpb gen-api-web generate migrate-up migrate-down migrate-version migrate-force migrate-create dev-up dev-down dev-down-v dev-logs dev-ps dev-bootstrap test test-v test-svc test-coverage dev-rm-all dev-rebuild e2e-install e2e web-dev web-test web-check
