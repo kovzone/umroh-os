@@ -150,3 +150,15 @@ Sometimes a question can't be answered yet (waiting on external input that isn't
 | [Q051](Q051-period-close-procedure.md) | Period close procedure + re-open authority | F9 | open |
 | [Q052](Q052-talangan-accounting.md) | Talangan accounting — loan receivable (PSAK 71) vs booking receivable | F9 | open |
 | [Q053](Q053-refund-pinalti-accounting.md) | Refund & pinalti accounting entries | F9, F5, F4 | open |
+| [Q054](Q054-agent-tier-taxonomy.md) | Agent tier taxonomy + qualification thresholds + demotion rules | F10 | open |
+| [Q055](Q055-commission-percentage-table.md) | Commission % table (per level × per product) | F10, F9 | open |
+| [Q056](Q056-overriding-formula.md) | Overriding commission formula + hierarchy depth | F10 | open |
+| [Q057](Q057-utm-attribution-model.md) | UTM attribution model — window, first vs last click | F10, F4 | open |
+| [Q058](Q058-alumni-referral-reward.md) | Alumni referral reward economics | F10 | open |
+| [Q059](Q059-ziswaf-scope.md) | ZISWAF scope — donation platform vs pass-through | F10 | open |
+| [Q060](Q060-wa-broadcast-limits.md) | WhatsApp broadcast rate limits + quality-score handling | F10, F7 | open |
+| [Q061](Q061-agent-kyc-strictness.md) | Agent KYC strictness + activation thresholds | F10 | open |
+| [Q062](Q062-replica-site-white-label.md) | Replica-site white-label scope | F10 | open |
+| [Q063](Q063-testimoni-moderation.md) | Testimoni moderation policy | F10, F7 | open |
+| [Q064](Q064-lead-ownership-transfer.md) | Lead ownership transfer between agents / CS | F10 | open |
+| [Q065](Q065-ads-api-integration-depth.md) | Ads API integration depth (Meta / Google) | F10 | open |

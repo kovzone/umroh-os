@@ -39,7 +39,7 @@ When the PRD doesn't answer a question during spec writing:
 | F7 | [Operations: Verification, Grouping, Manifests](07-operations-handling.md) | 6 Must Haves | **Draft** — 8 open Qs (Q012, Q015, Q020–Q025) |
 | F8 | [Warehouse, Procurement, Fulfillment](08-warehouse-and-fulfillment.md) | 6 Must / 12 Should / 2 Could | **Draft** — 10 open Qs (Q032–Q041) |
 | F9 | [Finance & Accounting (PSAK)](09-finance-and-accounting.md) | **15 Must / 7 Should — highest Must count** | **Draft** — 12 open Qs (Q042–Q053) + 6 inherited (Q001, Q012, Q017, Q018, Q036, Q038) |
-| F10 | [Marketing, CRM, Agent Network](10-marketing-crm-agents.md) | 8 Must Haves | Stub |
+| F10 | [Marketing, CRM, Agent Network](10-marketing-crm-agents.md) | 11 Must / 14 Should / 13 Could | **Draft** — 12 open Qs (Q054–Q065) + 2 inherited (Q019, Q045) |
 | F11 | [Dashboards & Reporting](11-dashboards.md) | 4 Must Haves | Stub |
 | F12 | [Alumni Hub & Daily App](12-alumni-and-daily-app.md) | 0 Must Haves | Stub |
 
