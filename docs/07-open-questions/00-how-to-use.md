@@ -162,3 +162,13 @@ Sometimes a question can't be answered yet (waiting on external input that isn't
 | [Q063](Q063-testimoni-moderation.md) | Testimoni moderation policy | F10, F7 | open |
 | [Q064](Q064-lead-ownership-transfer.md) | Lead ownership transfer between agents / CS | F10 | open |
 | [Q065](Q065-ads-api-integration-depth.md) | Ads API integration depth (Meta / Google) | F10 | open |
+| [Q066](Q066-dashboard-aggregation-architecture.md) | Dashboard aggregation architecture — service `/metrics` vs CQRS vs OLAP | F11 | open |
+| [Q067](Q067-refresh-cadence-tiers.md) | Dashboard refresh cadence tiers (streaming / polling / on-demand) | F11 | open |
+| [Q068](Q068-alert-threshold-ownership.md) | Alert threshold ownership + default values | F11 | open |
+| [Q069](Q069-drill-down-depth.md) | Drill-down depth — widget to source transaction | F11 | open |
+| [Q070](Q070-historical-retention-window.md) | Historical data retention window for dashboards | F11 | open |
+| [Q071](Q071-multi-branch-consolidation.md) | Multi-branch consolidation rule for central visibility | F11 | open |
+| [Q072](Q072-dashboard-export-policy.md) | Dashboard export policy — formats and permissions | F11 | open |
+| [Q073](Q073-custom-dashboard-building.md) | Custom dashboard building vs fixed catalog | F11 | open |
+| [Q074](Q074-field-radar-transport.md) | Field radar transport + GPS source for bus tracking | F11, F7 | open |
+| [Q075](Q075-executive-landing-widget-composition.md) | Executive landing widget composition (top 8–12 KPIs) | F11 | open |
