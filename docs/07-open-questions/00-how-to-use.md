@@ -138,3 +138,15 @@ Sometimes a question can't be answered yet (waiting on external input that isn't
 | [Q039](Q039-saudi-side-warehouse-scope.md) | Saudi-side warehouse scope | F8 | open |
 | [Q040](Q040-stock-availability-policy.md) | Stock availability policy — partial shipments + reorder-point math | F8 | open |
 | [Q041](Q041-self-pickup-qr-security.md) | Self-pickup QR security model | F8 | open |
+| [Q042](Q042-psak-scope.md) | PSAK scope — full PSAK vs ETAP + which standards apply | F9 | open |
+| [Q043](Q043-revenue-recognition-mechanics.md) | Revenue recognition mechanics — "terbang" event + refund reversal | F9, F4, F5 | open |
+| [Q044](Q044-tabungan-deferred-revenue.md) | Multi-year Tabungan deferred-revenue accounting | F9, F4, F5 | open |
+| [Q045](Q045-commission-accrual-timing.md) | Commission accrual timing — booking / paid / departure / payout | F9, F10 | open |
+| [Q046](Q046-travel-agency-ppn-rate.md) | Travel-agency PPN rate (PMK-71) + PKP status + e-Faktur | F9 | open |
+| [Q047](Q047-pph-scheme-and-witholding.md) | PPh 21 scheme + PPh 23 witholding for no-NPWP vendors | F9 | open |
+| [Q048](Q048-fx-policy.md) | FX policy — rate source, transaction vs settlement date, revaluation | F9 | open |
+| [Q049](Q049-coa-template-seed.md) | Chart of Accounts template seed | F9 | open |
+| [Q050](Q050-ap-disbursement-approval-ladder.md) | AP disbursement approval threshold ladder | F9 | open |
+| [Q051](Q051-period-close-procedure.md) | Period close procedure + re-open authority | F9 | open |
+| [Q052](Q052-talangan-accounting.md) | Talangan accounting — loan receivable (PSAK 71) vs booking receivable | F9 | open |
+| [Q053](Q053-refund-pinalti-accounting.md) | Refund & pinalti accounting entries | F9, F5, F4 | open |
