@@ -128,3 +128,13 @@ Sometimes a question can't be answered yet (waiting on external input that isn't
 | [Q029](Q029-passport-custody.md) | Physical passport chain-of-custody process | F6 | open |
 | [Q030](Q030-raudhah-shield-cadence-and-action.md) | Raudhah Shield polling cadence + alert action | F6 | open |
 | [Q031](Q031-tasreh-issuance-authority.md) | Tasreh issuance authority | F6 | open |
+| [Q032](Q032-pr-po-approval-ladder.md) | PR / PO approval threshold ladder | F8 | open |
+| [Q033](Q033-courier-integration-policy.md) | Courier integration policy — single vs multi, fallback, routing | F8 | open |
+| [Q034](Q034-kit-composition-ownership.md) | Kit composition ownership — catalog-svc vs logistics-svc | F8, F2 | open |
+| [Q035](Q035-post-ship-loss-returns-protocol.md) | Post-ship loss / damage / returns-from-trip protocol | F8 | open |
+| [Q036](Q036-vendor-master-ownership.md) | Vendor master ownership + onboarding & rating | F8, F9 | open |
+| [Q037](Q037-sku-barcode-vs-luggage-qr.md) | SKU barcode vs F7 luggage-tag QR coexistence on shipped kits | F8, F7 | open |
+| [Q038](Q038-auto-ap-cadence-and-valuation.md) | Auto-AP posting cadence + PSAK inventory valuation | F8, F9 | open |
+| [Q039](Q039-saudi-side-warehouse-scope.md) | Saudi-side warehouse scope | F8 | open |
+| [Q040](Q040-stock-availability-policy.md) | Stock availability policy — partial shipments + reorder-point math | F8 | open |
+| [Q041](Q041-self-pickup-qr-security.md) | Self-pickup QR security model | F8 | open |
