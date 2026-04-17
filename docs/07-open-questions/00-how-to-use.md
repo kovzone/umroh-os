@@ -172,3 +172,9 @@ Sometimes a question can't be answered yet (waiting on external input that isn't
 | [Q073](Q073-custom-dashboard-building.md) | Custom dashboard building vs fixed catalog | F11 | open |
 | [Q074](Q074-field-radar-transport.md) | Field radar transport + GPS source for bus tracking | F11, F7 | open |
 | [Q075](Q075-executive-landing-widget-composition.md) | Executive landing widget composition (top 8–12 KPIs) | F11 | open |
+| [Q076](Q076-daily-app-form-factor.md) | Daily App form factor (native vs PWA vs responsive web) | F12 | open |
+| [Q077](Q077-community-moderation-policy.md) | Community moderation policy + posting authority | F12 | open |
+| [Q078](Q078-fatwa-desk-authority.md) | Fatwa Desk ustadz authority + response SLA + liability | F12 | open |
+| [Q079](Q079-content-sourcing-licensing.md) | Manasik + Quran + daily-content sourcing & licensing | F12 | open |
+| [Q080](Q080-third-party-data-sources.md) | Third-party data source selection (prayer times API, qibla, Quran) | F12 | open |
+| [Q081](Q081-mvp-scope-carve.md) | F12 MVP scope carve — what ships vs what defers to Phase 2 | F12 | open |

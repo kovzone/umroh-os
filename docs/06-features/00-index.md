@@ -41,7 +41,7 @@ When the PRD doesn't answer a question during spec writing:
 | F9 | [Finance & Accounting (PSAK)](09-finance-and-accounting.md) | **15 Must / 7 Should — highest Must count** | **Draft** — 12 open Qs (Q042–Q053) + 6 inherited (Q001, Q012, Q017, Q018, Q036, Q038) |
 | F10 | [Marketing, CRM, Agent Network](10-marketing-crm-agents.md) | 11 Must / 14 Should / 13 Could | **Draft** — 12 open Qs (Q054–Q065) + 2 inherited (Q019, Q045) |
 | F11 | [Dashboards & Reporting](11-dashboards.md) | 4 Must / 9 Should / 0 Could | **Draft** — 10 open Qs (Q066–Q075) + 3 inherited (Q038, Q045, Q048) |
-| F12 | [Alumni Hub & Daily App](12-alumni-and-daily-app.md) | 0 Must Haves | Stub |
+| F12 | [Alumni Hub & Daily App](12-alumni-and-daily-app.md) | 0 Must / 3 Should / 6 Could | **Draft** — 6 open Qs (Q076–Q081) + 3 inherited (Q058, Q059, Q063) |
 
 Stubs contain: title, PRD section pointers, module numbers, and a "TBD" marker per section. A session fills them in on demand when work starts on that feature — writing all specs upfront is wasted motion; the product details evolve.
 
