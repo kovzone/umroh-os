@@ -1,0 +1,145 @@
+openapi: 3.0.3
+info:
+  title: booking-svc API
+  version: 0.1.0
+  description: |
+    System endpoints for booking-svc (Identity, Access, Audit).
+
+    Pilot scaffold — exposes only the three standard scaffold endpoints:
+    /system/live, /system/ready, /system/diagnostics/db-tx.
+
+    Real auth endpoints (login, refresh, logout, /me) and user/role/branch/audit
+    endpoints land in F1.5–F1.11.
+
+servers:
+  - url: /
+    description: Base path (prefixed by gateway as needed)
+
+paths:
+  /system/live:
+    get:
+      tags:
+        - System
+      summary: Liveness probe
+      description: Verifies the process is alive. No external dependencies. Returns 200 with ok true.
+      operationId: liveness
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveResponse"
+
+  /system/ready:
+    get:
+      tags:
+        - System
+      summary: Readiness probe
+      description: Verifies the instance can handle traffic (e.g. DB connectivity). Read-only; no mutation.
+      operationId: readiness
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadyResponse"
+
+  /system/diagnostics/db-tx:
+    get:
+      tags:
+        - System
+      summary: DB transaction diagnostic
+      description: |
+        State-mutating diagnostic to validate the WithTx pattern against the
+        shared `public.diagnostics` table (every service writes here, stamped
+        with its app name). Inserts a row, reads it back inside the same
+        transaction, and returns the inserted ID.
+
+        Pilot-scope endpoint; not for health/readiness probes. Exposed without
+        authentication for the pilot — gate (config flag, header secret, or
+        admin role) before promoting past pilot.
+      operationId: dbTxDiagnostic
+      parameters:
+        - name: message
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "no message"
+          description: Message to store and echo back.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DbTxDiagnosticResponse"
+
+components:
+  schemas:
+    LiveResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - ok
+          properties:
+            ok:
+              type: boolean
+              example: true
+
+    ReadyResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - ok
+          properties:
+            ok:
+              type: boolean
+              example: true
+
+    DbTxDiagnosticResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - diagnostic_id
+            - message
+          properties:
+            diagnostic_id:
+              type: integer
+              format: int64
+              description: ID of the inserted diagnostic row.
+            message:
+              type: string
+              description: Echo of the message received from the client.
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              example: INTERNAL_ERROR
+            message:
+              type: string
+              example: Internal server error

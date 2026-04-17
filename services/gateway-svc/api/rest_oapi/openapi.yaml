@@ -1,0 +1,253 @@
+openapi: 3.0.3
+info:
+  title: gateway-svc API
+  version: 0.1.0
+  description: |
+    Edge REST API for UmrohOS. gateway-svc fronts every backend service and is
+    the only outward-facing HTTP surface clients (web app, mobile app, CLI)
+    should call.
+
+    Scaffold scope: 12 endpoints —
+
+      - 2 own probes: /system/live, /system/ready
+      - 10 per-backend liveness proxies: /v1/<svc>/system/live, one per
+        backend in the umrohos service map. Used by the web app's status page.
+
+    Real per-route proxies (auth, packages, bookings, ...) land alongside
+    each backend's first feature work.
+
+servers:
+  - url: /
+    description: Base path
+
+paths:
+  /system/live:
+    get:
+      tags: [System]
+      summary: Liveness probe
+      description: Verifies the gateway process is alive. No external dependencies.
+      operationId: liveness
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveResponse" }
+
+  /system/ready:
+    get:
+      tags: [System]
+      summary: Readiness probe
+      description: |
+        Verifies the gateway instance can handle traffic. At scaffold time this is a
+        process-local check; later iterations may aggregate per-adapter health.
+      operationId: readiness
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReadyResponse" }
+
+  /v1/iam/system/live:
+    get:
+      tags: [Proxy / iam]
+      summary: Proxy iam-svc liveness
+      operationId: getIamSystemLive
+      responses:
+        "200":
+          description: Upstream OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveResponse" }
+        "502":
+          description: Upstream call failed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/catalog/system/live:
+    get:
+      tags: [Proxy / catalog]
+      summary: Proxy catalog-svc liveness
+      operationId: getCatalogSystemLive
+      responses:
+        "200":
+          description: Upstream OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveResponse" }
+        "502":
+          description: Upstream call failed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/booking/system/live:
+    get:
+      tags: [Proxy / booking]
+      summary: Proxy booking-svc liveness
+      operationId: getBookingSystemLive
+      responses:
+        "200":
+          description: Upstream OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveResponse" }
+        "502":
+          description: Upstream call failed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/jamaah/system/live:
+    get:
+      tags: [Proxy / jamaah]
+      summary: Proxy jamaah-svc liveness
+      operationId: getJamaahSystemLive
+      responses:
+        "200":
+          description: Upstream OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveResponse" }
+        "502":
+          description: Upstream call failed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/payment/system/live:
+    get:
+      tags: [Proxy / payment]
+      summary: Proxy payment-svc liveness
+      operationId: getPaymentSystemLive
+      responses:
+        "200":
+          description: Upstream OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveResponse" }
+        "502":
+          description: Upstream call failed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/visa/system/live:
+    get:
+      tags: [Proxy / visa]
+      summary: Proxy visa-svc liveness
+      operationId: getVisaSystemLive
+      responses:
+        "200":
+          description: Upstream OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveResponse" }
+        "502":
+          description: Upstream call failed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/ops/system/live:
+    get:
+      tags: [Proxy / ops]
+      summary: Proxy ops-svc liveness
+      operationId: getOpsSystemLive
+      responses:
+        "200":
+          description: Upstream OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveResponse" }
+        "502":
+          description: Upstream call failed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/logistics/system/live:
+    get:
+      tags: [Proxy / logistics]
+      summary: Proxy logistics-svc liveness
+      operationId: getLogisticsSystemLive
+      responses:
+        "200":
+          description: Upstream OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveResponse" }
+        "502":
+          description: Upstream call failed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/finance/system/live:
+    get:
+      tags: [Proxy / finance]
+      summary: Proxy finance-svc liveness
+      operationId: getFinanceSystemLive
+      responses:
+        "200":
+          description: Upstream OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveResponse" }
+        "502":
+          description: Upstream call failed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/crm/system/live:
+    get:
+      tags: [Proxy / crm]
+      summary: Proxy crm-svc liveness
+      operationId: getCrmSystemLive
+      responses:
+        "200":
+          description: Upstream OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveResponse" }
+        "502":
+          description: Upstream call failed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+components:
+  schemas:
+    LiveResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [ok]
+          properties:
+            ok: { type: boolean, example: true }
+
+    ReadyResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [ok]
+          properties:
+            ok: { type: boolean, example: true }
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:    { type: string, example: BAD_GATEWAY }
+            message: { type: string, example: upstream service unavailable }

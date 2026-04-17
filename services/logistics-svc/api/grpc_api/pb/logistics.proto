@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package="./pb";
+
+// LogisticsService — internal gRPC surface for Identity, Access, Audit.
+//
+// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
+// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
+//   - ValidateToken
+//   - CheckPermission
+//   - GetUser
+//   - RecordAudit
+service LogisticsService {
+  // Healthz returns ok=true if the service process is alive.
+  // Placeholder for the pilot; real health checks go through gRPC health protocol.
+  rpc Healthz(HealthzRequest) returns (HealthzResponse) {}
+}
+
+message HealthzRequest {}
+
+message HealthzResponse {
+  bool ok = 1;
+}

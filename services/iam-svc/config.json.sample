@@ -1,0 +1,33 @@
+{
+  "app": {
+    "name": "iam-svc"
+  },
+  "api": {
+    "rest": {
+      "host": "0.0.0.0",
+      "port": 4001
+    },
+    "grpc": {
+      "address": "0.0.0.0:50051"
+    },
+    "metrics": {
+      "enabled": true
+    }
+  },
+  "store": {
+    "postgres": {
+      "connection_string": "postgresql://postgres:changeme@postgres:5432/umrohos_dev",
+      "pool": {
+        "max_conns": 25,
+        "min_conns": 5,
+        "retry_max_attempts": 5,
+        "retry_base_delay": "4s",
+        "retry_max_delay": "60s"
+      }
+    }
+  },
+  "otel_tracer": {
+    "name": "iam-svc-tracer",
+    "endpoint": "otel-collector:4317"
+  }
+}

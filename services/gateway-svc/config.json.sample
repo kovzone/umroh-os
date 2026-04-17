@@ -1,0 +1,30 @@
+{
+  "app": {
+    "name": "gateway-svc"
+  },
+  "api": {
+    "rest": {
+      "host": "0.0.0.0",
+      "port": 4000
+    },
+    "metrics": {
+      "enabled": true
+    }
+  },
+  "external": {
+    "iam_svc":       { "name": "iam-svc",       "address": "http://iam-svc:4001" },
+    "catalog_svc":   { "name": "catalog-svc",   "address": "http://catalog-svc:4002" },
+    "booking_svc":   { "name": "booking-svc",   "address": "http://booking-svc:4003" },
+    "jamaah_svc":    { "name": "jamaah-svc",    "address": "http://jamaah-svc:4004" },
+    "payment_svc":   { "name": "payment-svc",   "address": "http://payment-svc:4005" },
+    "visa_svc":      { "name": "visa-svc",      "address": "http://visa-svc:4006" },
+    "ops_svc":       { "name": "ops-svc",       "address": "http://ops-svc:4007" },
+    "logistics_svc": { "name": "logistics-svc", "address": "http://logistics-svc:4008" },
+    "finance_svc":   { "name": "finance-svc",   "address": "http://finance-svc:4009" },
+    "crm_svc":       { "name": "crm-svc",       "address": "http://crm-svc:4010" }
+  },
+  "otel_tracer": {
+    "name": "gateway-svc-tracer",
+    "endpoint": "otel-collector:4317"
+  }
+}

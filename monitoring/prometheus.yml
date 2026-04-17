@@ -1,0 +1,63 @@
+# Prometheus scrape config for local/dev.
+#
+# Each scaffolded service exposes /metrics on its REST port when
+# api.metrics.enabled=true (default in config.json.sample).
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: gateway-svc
+    static_configs:
+      - targets: ["gateway-svc:4000"]
+    metrics_path: /metrics
+
+  - job_name: iam-svc
+    static_configs:
+      - targets: ["iam-svc:4001"]
+    metrics_path: /metrics
+
+  - job_name: catalog-svc
+    static_configs:
+      - targets: ["catalog-svc:4002"]
+    metrics_path: /metrics
+
+  - job_name: booking-svc
+    static_configs:
+      - targets: ["booking-svc:4003"]
+    metrics_path: /metrics
+
+  - job_name: jamaah-svc
+    static_configs:
+      - targets: ["jamaah-svc:4004"]
+    metrics_path: /metrics
+
+  - job_name: payment-svc
+    static_configs:
+      - targets: ["payment-svc:4005"]
+    metrics_path: /metrics
+
+  - job_name: visa-svc
+    static_configs:
+      - targets: ["visa-svc:4006"]
+    metrics_path: /metrics
+
+  - job_name: ops-svc
+    static_configs:
+      - targets: ["ops-svc:4007"]
+    metrics_path: /metrics
+
+  - job_name: logistics-svc
+    static_configs:
+      - targets: ["logistics-svc:4008"]
+    metrics_path: /metrics
+
+  - job_name: finance-svc
+    static_configs:
+      - targets: ["finance-svc:4009"]
+    metrics_path: /metrics
+
+  - job_name: crm-svc
+    static_configs:
+      - targets: ["crm-svc:4010"]
+    metrics_path: /metrics

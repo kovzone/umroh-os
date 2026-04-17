@@ -11,7 +11,7 @@ UmrohOS has 10+ services. They share conventions, codegen tooling, and observabi
 
 ## Decision
 
-Use a **monorepo** layout. All Go microservices live under a single `services/` directory at the repo root, each as its own Go module (own `go.mod`). Shared infrastructure (docker-compose, Makefile, `_init/`, `monitoring/`, `grafana/`, `temporal/`, `tests/`) sits at the repo root. The `baseline/go-backend-template/` directory is kept as a read-only reference template; `services/` mirrors its service-internal layout (`cmd/`, `api/`, `service/`, `store/`, `util/`) per service.
+Use a **monorepo** layout. All Go microservices live under a single `services/` directory at the repo root, each as its own Go module (own `go.mod`). Shared infrastructure (docker-compose, Makefile, `migration/`, `monitoring/`, `grafana/`, `tests/`) sits at the repo root. The `baseline/go-backend-template/` directory is kept as a read-only reference template; `services/` mirrors its service-internal layout (`cmd/`, `api/`, `service/`, `store/`, `util/`) per service.
 
 ## Layout
 
@@ -20,10 +20,10 @@ umroh-os/
 ├── CLAUDE.md
 ├── docker-compose.dev.yml
 ├── Makefile
-├── _init/
-│   ├── iam_db/
-│   ├── catalog_db/
-│   └── ... (one per service that owns data)
+├── migration/                ← golang-migrate SQL files, single DB with per-service schemas (ADR 0007)
+│   ├── 000001_init.up.sql
+│   ├── 000001_init.down.sql
+│   └── ...
 ├── services/                 ← all Go microservices live here
 │   ├── gateway-svc/
 │   ├── iam-svc/
@@ -37,10 +37,11 @@ umroh-os/
 │   ├── finance-svc/
 │   ├── crm-svc/
 │   └── broker-svc/           ← deferred in MVP (ADR 0006); reserved for F6
-├── temporal/                 ← Temporal server config (from baseline; unused in MVP per ADR 0006)
 ├── monitoring/               ← OTel collector, Prometheus, Loki, Fluent-Bit configs
 ├── grafana/                  ← Grafana datasources + dashboards
-├── tests/                    ← integration & k6 load tests
+├── tests/
+│   ├── e2e/                  ← Playwright API e2e tests (ADR 0008)
+│   └── k6/                   ← k6 load/stress tests
 ├── docs/
 ├── .claude/
 │   └── skills/

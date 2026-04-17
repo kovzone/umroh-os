@@ -25,7 +25,7 @@ Temporal connection details live in `broker-svc/config.json` under a `temporal` 
 }
 ```
 
-The Temporal server itself runs as part of `docker-compose.dev.yml` (already configured in the baseline template under `temporal/`).
+The Temporal server config (`temporal/` directory and docker-compose blocks) is deferred from MVP per ADR 0006. It will be reintroduced when broker-svc and the F6 visa pipeline land.
 
 ## Search attributes (planned)
 

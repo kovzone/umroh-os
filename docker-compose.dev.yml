@@ -1,0 +1,528 @@
+services:
+  # ────────────────────────────────────────────────────────────────────
+  # Infrastructure services
+  # ────────────────────────────────────────────────────────────────────
+
+  jaeger:
+    image: jaegertracing/all-in-one
+    container_name: jaeger
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "14250:14250" # OTLP gRPC
+      - "9411:9411" # Zipkin
+    networks:
+      - umrohos-network
+
+  otel-collector:
+    image: otel/opentelemetry-collector
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./monitoring/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317" # gRPC OTLP
+      - "4318:4318" # HTTP OTLP
+      - "55679:55679" # zPages (optional)
+    depends_on:
+      - jaeger
+      - tempo
+    networks:
+      - umrohos-network
+
+  postgres:
+    container_name: postgres
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_DB=umrohos_dev
+    volumes:
+      - postgres-data:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - umrohos-network
+
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - iam-svc
+    networks:
+      - umrohos-network
+
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/etc/grafana/dashboards
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    networks:
+      - umrohos-network
+
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./monitoring/loki-config.yaml:/etc/loki/loki-config.yaml
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - umrohos-network
+
+  fluent-bit:
+    image: fluent/fluent-bit:3.2
+    container_name: fluent-bit
+    volumes:
+      - ./monitoring/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./monitoring/fluent-bit-parsers.conf:/fluent-bit/etc/parsers.conf:ro
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    depends_on:
+      loki:
+        condition: service_healthy
+    networks:
+      - umrohos-network
+
+  tempo:
+    image: grafana/tempo:2.3.0
+    container_name: tempo
+    command: -config.file=/etc/tempo/tempo-config.yaml
+    volumes:
+      - ./monitoring/tempo-config.yaml:/etc/tempo/tempo-config.yaml
+      - tempo-data:/var/tempo
+    ports:
+      - "3200:3200"
+    networks:
+      - umrohos-network
+
+  # ────────────────────────────────────────────────────────────────────
+  # F6 — see ADR 0006
+  # Temporal is deferred from MVP. Uncomment these blocks when the F6
+  # visa pipeline lands and broker-svc is scaffolded.
+  # ────────────────────────────────────────────────────────────────────
+  # temporal:
+  #   container_name: temporal
+  #   depends_on:
+  #     - postgres
+  #   environment:
+  #     - DB=postgresql
+  #     - DB_PORT=5432
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PWD=changeme
+  #     - POSTGRES_SEEDS=postgres
+  #   image: temporalio/auto-setup:1.22.3
+  #   networks:
+  #     - umrohos-network
+  #   ports:
+  #     - "7233:7233"
+  #   volumes:
+  #     - ./temporal/dynamicconfig:/etc/temporal/config/dynamicconfig
+  #
+  # temporal-admin-tools:
+  #   container_name: temporal-admin-tools
+  #   depends_on:
+  #     - temporal
+  #   environment:
+  #     - TEMPORAL_ADDRESS=temporal:7233
+  #     - TEMPORAL_CLI_ADDRESS=temporal:7233
+  #   image: temporalio/admin-tools:1.22.3
+  #   networks:
+  #     - umrohos-network
+  #   stdin_open: true
+  #   tty: true
+  #
+  # temporal-ui:
+  #   container_name: temporal-ui
+  #   depends_on:
+  #     - temporal
+  #   environment:
+  #     - TEMPORAL_ADDRESS=temporal:7233
+  #     - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+  #   image: temporalio/ui:2.21.3
+  #   networks:
+  #     - umrohos-network
+  #   ports:
+  #     - "8233:8080"
+
+  # ────────────────────────────────────────────────────────────────────
+  # Frontend apps
+  # ────────────────────────────────────────────────────────────────────
+
+  core-web:
+    build:
+      context: .
+      dockerfile: apps/core-web/Dockerfile
+      target: dev
+    image: core-web
+    container_name: core-web
+    restart: unless-stopped
+    ports:
+      - "3001:3000" # host:3001 → container :3000 (Grafana already owns 3000)
+    volumes:
+      # Bind-mount source for hot reload. Anonymous volume on node_modules
+      # so the host's (missing) node_modules doesn't shadow the container's install.
+      - ./apps/core-web:/app
+      - /app/node_modules
+    environment:
+      - APP_NAME=core-web
+      # Browser-side fetch target. The bundle JS runs in the user's browser
+      # (not inside the container), so it hits the host-mapped gateway port.
+      - VITE_GATEWAY_URL=http://localhost:4000
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        fluentd-async: "true"
+        tag: core-web
+    depends_on:
+      - fluent-bit
+      - gateway-svc
+    networks:
+      - umrohos-network
+
+  # ────────────────────────────────────────────────────────────────────
+  # Backend services
+  # ────────────────────────────────────────────────────────────────────
+
+  gateway-svc:
+    build:
+      context: .
+      dockerfile: services/gateway-svc/Dockerfile
+    image: gateway-svc
+    container_name: gateway-svc
+    restart: unless-stopped
+    ports:
+      - "4000:4000" # REST (edge)
+    volumes:
+      - ./services/gateway-svc/config.json:/app/config.json
+    environment:
+      - APP_NAME=gateway-svc
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        fluentd-async: "true"
+        tag: gateway-svc
+    depends_on:
+      - fluent-bit
+      - iam-svc
+      - catalog-svc
+      - booking-svc
+      - jamaah-svc
+      - payment-svc
+      - visa-svc
+      - ops-svc
+      - logistics-svc
+      - finance-svc
+      - crm-svc
+    networks:
+      - umrohos-network
+
+  iam-svc:
+    build:
+      context: .
+      dockerfile: services/iam-svc/Dockerfile
+    image: iam-svc
+    container_name: iam-svc
+    restart: unless-stopped
+    ports:
+      - "4001:4001" # REST
+      - "50051:50051" # gRPC
+    volumes:
+      - ./services/iam-svc/config.json:/app/config.json
+    environment:
+      - APP_NAME=iam-svc
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        fluentd-async: "true"
+        tag: iam-svc
+    depends_on:
+      - postgres
+      - fluent-bit
+    networks:
+      - umrohos-network
+
+  catalog-svc:
+    build:
+      context: .
+      dockerfile: services/catalog-svc/Dockerfile
+    image: catalog-svc
+    container_name: catalog-svc
+    restart: unless-stopped
+    ports:
+      - "4002:4002"
+      - "50052:50052"
+    volumes:
+      - ./services/catalog-svc/config.json:/app/config.json
+    environment:
+      - APP_NAME=catalog-svc
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        fluentd-async: "true"
+        tag: catalog-svc
+    depends_on:
+      - postgres
+      - fluent-bit
+    networks:
+      - umrohos-network
+
+  booking-svc:
+    build:
+      context: .
+      dockerfile: services/booking-svc/Dockerfile
+    image: booking-svc
+    container_name: booking-svc
+    restart: unless-stopped
+    ports:
+      - "4003:4003"
+      - "50053:50053"
+    volumes:
+      - ./services/booking-svc/config.json:/app/config.json
+    environment:
+      - APP_NAME=booking-svc
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        fluentd-async: "true"
+        tag: booking-svc
+    depends_on:
+      - postgres
+      - fluent-bit
+    networks:
+      - umrohos-network
+
+  jamaah-svc:
+    build:
+      context: .
+      dockerfile: services/jamaah-svc/Dockerfile
+    image: jamaah-svc
+    container_name: jamaah-svc
+    restart: unless-stopped
+    ports:
+      - "4004:4004"
+      - "50054:50054"
+    volumes:
+      - ./services/jamaah-svc/config.json:/app/config.json
+    environment:
+      - APP_NAME=jamaah-svc
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        fluentd-async: "true"
+        tag: jamaah-svc
+    depends_on:
+      - postgres
+      - fluent-bit
+    networks:
+      - umrohos-network
+
+  payment-svc:
+    build:
+      context: .
+      dockerfile: services/payment-svc/Dockerfile
+    image: payment-svc
+    container_name: payment-svc
+    restart: unless-stopped
+    ports:
+      - "4005:4005"
+      - "50055:50055"
+    volumes:
+      - ./services/payment-svc/config.json:/app/config.json
+    environment:
+      - APP_NAME=payment-svc
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        fluentd-async: "true"
+        tag: payment-svc
+    depends_on:
+      - postgres
+      - fluent-bit
+    networks:
+      - umrohos-network
+
+  visa-svc:
+    build:
+      context: .
+      dockerfile: services/visa-svc/Dockerfile
+    image: visa-svc
+    container_name: visa-svc
+    restart: unless-stopped
+    ports:
+      - "4006:4006"
+      - "50056:50056"
+    volumes:
+      - ./services/visa-svc/config.json:/app/config.json
+    environment:
+      - APP_NAME=visa-svc
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        fluentd-async: "true"
+        tag: visa-svc
+    depends_on:
+      - postgres
+      - fluent-bit
+    networks:
+      - umrohos-network
+
+  ops-svc:
+    build:
+      context: .
+      dockerfile: services/ops-svc/Dockerfile
+    image: ops-svc
+    container_name: ops-svc
+    restart: unless-stopped
+    ports:
+      - "4007:4007"
+      - "50057:50057"
+    volumes:
+      - ./services/ops-svc/config.json:/app/config.json
+    environment:
+      - APP_NAME=ops-svc
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        fluentd-async: "true"
+        tag: ops-svc
+    depends_on:
+      - postgres
+      - fluent-bit
+    networks:
+      - umrohos-network
+
+  logistics-svc:
+    build:
+      context: .
+      dockerfile: services/logistics-svc/Dockerfile
+    image: logistics-svc
+    container_name: logistics-svc
+    restart: unless-stopped
+    ports:
+      - "4008:4008"
+      - "50058:50058"
+    volumes:
+      - ./services/logistics-svc/config.json:/app/config.json
+    environment:
+      - APP_NAME=logistics-svc
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        fluentd-async: "true"
+        tag: logistics-svc
+    depends_on:
+      - postgres
+      - fluent-bit
+    networks:
+      - umrohos-network
+
+  finance-svc:
+    build:
+      context: .
+      dockerfile: services/finance-svc/Dockerfile
+    image: finance-svc
+    container_name: finance-svc
+    restart: unless-stopped
+    ports:
+      - "4009:4009"
+      - "50059:50059"
+    volumes:
+      - ./services/finance-svc/config.json:/app/config.json
+    environment:
+      - APP_NAME=finance-svc
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        fluentd-async: "true"
+        tag: finance-svc
+    depends_on:
+      - postgres
+      - fluent-bit
+    networks:
+      - umrohos-network
+
+  crm-svc:
+    build:
+      context: .
+      dockerfile: services/crm-svc/Dockerfile
+    image: crm-svc
+    container_name: crm-svc
+    restart: unless-stopped
+    ports:
+      - "4010:4010"
+      - "50060:50060"
+    volumes:
+      - ./services/crm-svc/config.json:/app/config.json
+    environment:
+      - APP_NAME=crm-svc
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        fluentd-async: "true"
+        tag: crm-svc
+    depends_on:
+      - postgres
+      - fluent-bit
+    networks:
+      - umrohos-network
+
+networks:
+  umrohos-network:
+    driver: bridge
+    name: umrohos-network
+
+volumes:
+  postgres-data:
+  prometheus-data:
+  grafana-data:
+  loki-data:
+  tempo-data:
