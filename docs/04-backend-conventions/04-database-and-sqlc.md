@@ -4,25 +4,47 @@ PostgreSQL 15 is the only database. **sqlc** is the only path to it. Hand-rolled
 
 ## Schema management
 
-Schema lives in two parallel locations (per the baseline template's convention):
-
-1. **`_init/<svc>_db/`** — alphabetically-ordered DDL files mounted into the dev Postgres container at startup. This is the canonical source for fresh dev environments.
-2. **`<svc>/store/postgres_store/schema/`** — same DDL, used by sqlc to validate query types. Must stay in sync with `_init/<svc>_db/`.
-
-> A future ADR will introduce a real migration tool (golang-migrate or atlas) when production deployment is in scope. For now, ordered DDL is the convention.
-
-### File ordering
-
-DDL files are loaded in alphabetical order by Postgres. Use prefixes:
+Schema is managed via **golang-migrate** with a flat `migration/` directory at the repo root (see ADR 0007). All services share a single database (`umrohos_dev`) with per-service Postgres schema namespaces (`iam`, `catalog`, `booking`, etc.):
 
 ```
-_init/iam_db/
-├── 00_extensions.sql        ← CREATE EXTENSION ...
-├── 10_types.sql             ← CREATE TYPE ... (enums, domains)
-├── 20_tables.sql            ← CREATE TABLE ...
-├── 30_indexes.sql           ← CREATE INDEX ...
-├── 40_functions.sql         ← CREATE FUNCTION ...
-└── 90_seed.sql              ← INSERT ... (dev seed data only)
+migration/
+├── 000001_init.up.sql
+├── 000001_init.down.sql
+├── 000002_scaffold_services.up.sql         # shared public.diagnostics table
+├── 000002_scaffold_services.down.sql
+├── 000003_add_iam_users_and_roles.up.sql   # F1.2 — per-service tables in iam schema
+├── 000003_add_iam_users_and_roles.down.sql
+└── ...
+```
+
+Filenames describe **the task the developer is performing in that commit**, not the DDL diff. `000002_scaffold_services` captures "the scaffolding step" as a whole; `000003_add_iam_users_and_roles` captures F1.2. Avoid mechanical names like `000002_create_users_table` — they hide the commit's intent.
+
+Every service's `sqlc.yaml` points to the same migration directory:
+
+```yaml
+schema: "../../../../migration"
+```
+
+sqlc reads all `.up.sql` files to understand the full database schema. **One location, one source of truth** — no per-service `schema/` directories, no duplication.
+
+### Creating a new migration
+
+```bash
+make migrate-create NAME=add_iam_users_and_roles
+# Creates: migration/000003_add_iam_users_and_roles.up.sql
+#          migration/000003_add_iam_users_and_roles.down.sql
+```
+
+The name (`add_iam_users_and_roles`) describes the task. Write DDL in the `.up.sql` file using schema-qualified names (`CREATE SCHEMA IF NOT EXISTS iam; CREATE TABLE iam.users ...`); write the matching teardown in `.down.sql`. Then run `make migrate-up` to apply and `make sqlc` to regenerate query code.
+
+### Migration workflow
+
+```bash
+make dev-bootstrap        # Start postgres + run all migrations
+make migrate-up           # Apply all pending migrations
+make migrate-down STEPS=1 # Roll back one migration
+make migrate-version      # Show current version
+make migrate-force VERSION=1  # Fix dirty state
 ```
 
 ### Table conventions
@@ -111,7 +133,7 @@ Default isolation: `READ COMMITTED`. Use `WithTxOptions` for stricter levels.
 
 - **No raw `db.Exec` / `db.Query` in service code.** Always via sqlc.
 - **No SQL strings in Go files outside `queries/`.**
-- **No cross-database queries.** Each service owns its database.
+- **No cross-schema queries.** Each service owns its Postgres schema namespace. Do not join across schema boundaries.
 - **No SELECT \***, except in query annotations where sqlc needs the column list. Prefer named columns for stability.
 - **Always parameterize.** Never string-concatenate values into SQL. (sqlc enforces this anyway.)
-- **Schema must be in sync** between `_init/<svc>_db/` and `<svc>/store/postgres_store/schema/`. Drift causes sqlc codegen to silently disagree with the running DB.
+- **Migrations are the schema source of truth.** sqlc reads from `migration/`. Do not create per-service `schema/` directories.

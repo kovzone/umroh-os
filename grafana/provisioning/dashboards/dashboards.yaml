@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: "UmrohOS Services"
+    orgId: 1
+    folder: "UmrohOS Services"
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/dashboards
+      allowUiUpdates: true
