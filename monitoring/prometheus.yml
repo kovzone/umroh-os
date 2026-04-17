@@ -7,6 +7,11 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
+  - job_name: gateway-svc
+    static_configs:
+      - targets: ["gateway-svc:4000"]
+    metrics_path: /metrics
+
   - job_name: iam-svc
     static_configs:
       - targets: ["iam-svc:4001"]

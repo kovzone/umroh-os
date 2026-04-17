@@ -1,6 +1,6 @@
 # SERVICES lists every scaffolded service under services/.
 # gateway-svc and broker-svc are deferred (gateway: next session; broker: ADR 0006).
-SERVICES = services/iam-svc services/catalog-svc services/booking-svc services/jamaah-svc services/payment-svc services/visa-svc services/ops-svc services/logistics-svc services/finance-svc services/crm-svc
+SERVICES = services/gateway-svc services/iam-svc services/catalog-svc services/booking-svc services/jamaah-svc services/payment-svc services/visa-svc services/ops-svc services/logistics-svc services/finance-svc services/crm-svc
 
 # Local migration URL — single shared database `umrohos_dev` per ADR 0007.
 # Host port 5432 is mapped from the postgres container (see docker-compose.dev.yml).
@@ -137,4 +137,14 @@ dev-rm-all: ## Remove all service Docker images (idempotent; no-ops on missing)
 dev-rebuild: ## Rebuild and restart a specific service (usage: make dev-rebuild SVC=iam-svc)
 	docker compose -f docker-compose.dev.yml up -d --build $(SVC)
 
-.PHONY: help sqlc oapi genpb generate migrate-up migrate-down migrate-version migrate-force migrate-create dev-up dev-down dev-down-v dev-logs dev-ps dev-bootstrap test test-v test-svc test-coverage dev-rm-all dev-rebuild
+# ===========================================
+# E2E Testing (Playwright, per ADR 0008)
+# ===========================================
+
+e2e-install: ## Install e2e dependencies (one-time / CI)
+	cd tests/e2e && npm install
+
+e2e: ## Run the full e2e suite against the running stack
+	cd tests/e2e && npm test
+
+.PHONY: help sqlc oapi genpb generate migrate-up migrate-down migrate-version migrate-force migrate-create dev-up dev-down dev-down-v dev-logs dev-ps dev-bootstrap test test-v test-svc test-coverage dev-rm-all dev-rebuild e2e-install e2e

@@ -185,6 +185,40 @@ services:
   # Application services
   # ────────────────────────────────────────────────────────────────────
 
+  gateway-svc:
+    build:
+      context: .
+      dockerfile: services/gateway-svc/Dockerfile
+    image: gateway-svc
+    container_name: gateway-svc
+    restart: unless-stopped
+    ports:
+      - "4000:4000" # REST (edge)
+    volumes:
+      - ./services/gateway-svc/config.json:/app/config.json
+    environment:
+      - APP_NAME=gateway-svc
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        fluentd-async: "true"
+        tag: gateway-svc
+    depends_on:
+      - fluent-bit
+      - iam-svc
+      - catalog-svc
+      - booking-svc
+      - jamaah-svc
+      - payment-svc
+      - visa-svc
+      - ops-svc
+      - logistics-svc
+      - finance-svc
+      - crm-svc
+    networks:
+      - umrohos-network
+
   iam-svc:
     build:
       context: .
