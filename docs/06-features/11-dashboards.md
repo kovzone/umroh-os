@@ -220,7 +220,7 @@ All `/metrics` endpoints respect branch-scope via JWT claim.
 - **F8** (logistics) — inventory health, PO monitor per F8 W15; binds to Q038 valuation.
 - **F9** (finance) — financial reports W15, cash flow W16, aging W17; F11 presents, F9 computes.
 - **F10** (CRM) — Super-View references, CS performance, ROAS, leaderboard.
-- **External** — Grafana (if Q066 Option C), PDF renderer (same worker pool as F2 flyer / F5 receipt / F7 manifest).
+- **External** — Grafana on Postgres read-replica for analyst / executive ad-hoc queries (parallel to product UI; **Q066** Option A, not Option C), PDF renderer (same worker pool as F2 flyer / F5 receipt / F7 manifest).
 
 ## Backend notes
 
