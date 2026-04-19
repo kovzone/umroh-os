@@ -208,3 +208,11 @@ To protect **integration quality** without date promises:
 - Do not take `CH` items before all `MH-MVP` on the core path (Phases 1–3) is stable
 - Full visa pipeline (deep F6), advanced field ops, and full alumni/daily features stay **after** core + basic depth are stable (see Phase 6)
 - New scope requires a trade-off: drop something from the current phase or lower priority (`SH`/`CH`)
+
+## External stakeholder sign-offs vs engineering assumptions
+
+Some areas depend on **people outside engineering** (examples tracked as open questions: **Q005** mahram wording cited in contracts/T&Cs, **Q008** PDP privacy policy + breach runbook, **Q012** refund matrix in printed T&Cs, **Q026** MOFA/Sajil credentials and manual Phase 1 operations, **Q030** Nusuk/Raudhah manual-window communications).
+
+**During development and internal UAT:** the team may use **non-binding engineering assumptions** — mocked or draft configs, placeholder policy URLs, matrices and copy labelled **`DRAFT`**, and written manual runbooks. Business rules “outside the system” may be treated as **provisional** for build and test order, as long as nothing customer-facing presents them as final.
+
+**Customer-facing go-live** (production legal/religious copy, printed S&Cs, public marketing claims): requires **explicit human approvals** (owner + date), typically tracked outside this repository. Shipping code does not replace those approvals; treat them as a **separate go-live gate** from engineering checklist completion.
