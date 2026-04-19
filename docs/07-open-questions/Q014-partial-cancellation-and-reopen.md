@@ -4,7 +4,7 @@ title: Partial cancellation (one jamaah out of many) + reopening a cancelled boo
 asked_by: session 2026-04-15 F4/F5 draft
 asked_date: 2026-04-15
 blocks: F4, F5
-status: open
+status: answered
 ---
 
 # Q014 — Partial cancellation and reopening
@@ -60,4 +60,7 @@ Reversibility: shrink policy is implementation, not easily reversible after laun
 
 ## Answer
 
-TBD — awaiting stakeholder input. Likely decider: agency owner + CS lead (who sees the partial-cancel requests today).
+**Decided:** **Option B** — **shrink booking** on partial cancel (per-jamaah `booking_item` cancelled + pro-rata refund per Q012); **reopen within 48h** only if **capacity**, **price unchanged**, and **no refund payout completed**; else **new booking**. **Smart Grouping after shrink:** **do not auto-rerun** — **flag to ops** (avoids surprise reshuffles).
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

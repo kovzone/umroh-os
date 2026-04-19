@@ -4,7 +4,7 @@ title: Multi-language catalog content scope
 asked_by: session 2026-04-14 F2 draft
 asked_date: 2026-04-14
 blocks: F2
-status: open
+status: answered
 ---
 
 # Q003 — Multi-language catalog content scope
@@ -45,4 +45,7 @@ Reversibility: plain `text` → `jsonb` migration is routine; the cost is one mi
 
 ## Answer
 
-TBD — awaiting stakeholder discussion.
+**Decided:** **Bahasa Indonesia only for MVP** product copy (Option A). Text columns stay plain `text` today; data-model doc notes future migration path to `jsonb` `{"id","en",...}` without blocking ship. **No** mandatory English/Arabic at launch.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

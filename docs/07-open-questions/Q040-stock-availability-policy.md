@@ -4,7 +4,7 @@ title: Stock availability policy — partial shipments + reorder-point math
 asked_by: session 2026-04-17 F8 draft
 asked_date: 2026-04-17
 blocks: F8
-status: open
+status: answered
 ---
 
 # Q040 — Stock availability policy
@@ -71,4 +71,7 @@ Reversibility: flipping reorder from static to auto is additive (new column on s
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: warehouse supervisor (operational realism), ops lead (jamaah-experience threshold), procurement officer.
+**Decided:** **Option C partial-GRN + Option X static reorder** — **partial receipts OK**; **kit assembly & booking dispatch all-or-none**; **reorder_level per SKU** supervisor-maintained; **low-stock creates draft PR** (never auto-submit). **Forecast-driven reorder:** Phase 2 (`reorder_mode:auto`).
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

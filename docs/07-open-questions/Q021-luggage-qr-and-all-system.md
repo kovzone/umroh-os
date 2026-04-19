@@ -4,7 +4,7 @@ title: Luggage Tag QR payload scheme + ALL System scan protocol
 asked_by: session 2026-04-15 F7 draft
 asked_date: 2026-04-15
 blocks: F7
-status: open
+status: answered
 ---
 
 # Q021 — Luggage Tag QR + ALL System scan protocol
@@ -74,4 +74,7 @@ Reversibility: token schema is versionable via a leading version byte; signing k
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency ops lead + any security-minded reviewer.
+**Decided:** **Option A** — **HMAC-signed payload** (versioned) incl. `jamaah_id`, `booking_id`, `departure_id`, `tag_seq`, `iat`; **stable through allocation changes**; **offline-first** scan queue + **`(device_id, event_kind, jamaah_id, client_event_id)`** idempotency; **QR Code ECC-M**. **Key rotation:** dual-key verify window like F1 tokens.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

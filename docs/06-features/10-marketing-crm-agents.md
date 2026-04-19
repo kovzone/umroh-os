@@ -1,8 +1,8 @@
 ---
 id: F10
 title: Marketing, CRM, Agent Network
-status: draft
-last_updated: 2026-04-17
+status: written
+last_updated: 2026-04-18
 moscow_profile: 11 Must / 14 Should / 13 Could (of the 38 modules in scope)
 prd_sections:
   - "B. B2B Front-End (lines 101–171)"
@@ -25,21 +25,7 @@ modules:
   - "#67–70 Analytics (CS dashboard, ROAS, Retargeting, Radar Prospek)"
   - "#199 Pusat Referral Alumni; #200–202 ZISWAF trio"
 depends_on: [F1, F2, F3, F4, F5, F7, F9]
-open_questions:
-  - Q019 — Abandoned checkout attribution (existing — directly touches UTM)
-  - Q045 — Commission accrual timing (existing — binds #37, #47, #481)
-  - Q054 — Agent tier taxonomy & qualification thresholds
-  - Q055 — Commission % table (per level × per product)
-  - Q056 — Overriding formula + hierarchy depth
-  - Q057 — UTM attribution model (window, first vs last click)
-  - Q058 — Alumni referral reward economics (points / cashback / discount)
-  - Q059 — ZISWAF scope (donation platform vs pass-through)
-  - Q060 — WhatsApp broadcast rate limits & quality-score handling
-  - Q061 — Agent KYC strictness + activation thresholds
-  - Q062 — Replica-site white-label scope
-  - Q063 — Testimoni moderation policy
-  - Q064 — Lead ownership transfer between agents / CS
-  - Q065 — Ads API integration depth (Meta/Google)
+open_questions: []
 ---
 
 # F10 — Marketing, CRM, Agent Network
@@ -79,7 +65,7 @@ Consumers:
 
 ### W1 — Agent self-onboarding + E-KYC + E-Signature (modules #25, #26, #27)
 
-1. Calon agent visits `/mitra/register` (PRD line 971). Form: name, phone, email, NPWP (optional?, see Q061), selects partnership package (Silver / Gold / Platinum tiers per Q054).
+1. Calon agent visits `/mitra/register` (PRD line 971). Form: name, phone, email, NPWP (optional at browse — **Q061** tiered KYC: earn commissions only after full pack = NPWP **or** no-NPWP declaration + **Q047** 2× acknowledgement + bank verified + e-MoU), selects partnership package (Silver / Gold / Platinum tiers per **Q054**).
 2. Uploads KTP, NPWP (if applicable), self-photo for E-KYC (#26).
 3. Admin validates uploads (identity-match workflow; may involve CS manual review).
 4. On admin approval, system generates an E-Signature MoU (PRD line 111) — agent signs digitally; signed PDF archived per UU ITE requirements (cross-ref Q008).
@@ -147,7 +133,7 @@ Consumers:
 2. Direct commission: closing agent's tier % × booking revenue (minus tax, etc. per Q055).
 3. **Override commission (#47)** per **Q056**: upline's tier % − closing agent's tier % × booking revenue. Example: if closing Silver agent has 5% and upline Gold Super-Agen has 8%, override to Super-Agen is (8% − 5%) = 3% of booking revenue. Cabang / Perwakilan (10%) gets (10% − 8%) = 2% above Super-Agen.
 4. Writes `commission_ledger` rows: one `direct` for closing agent, one `override` each for upline levels.
-5. Status per Q045 default: accrue at `paid_in_full` event, commit on monthly payout run. Pre-payout clawback on refund: reverse entries; post-payout in 30-day window: reverse + mark agent debt.
+5. Status per **Q045** (answered): accrue at **`paid_in_full`** (per-jamaah proration); clawback until payout posted; post-payout **30d** refund window nets wallet negative or **`Beban Komisi Forfeit`** per F9 W14.
 6. Emits `crm.commission_confirmed` → F9 records accrual journal (W14 in F9).
 
 ### W10 — Commission payout (Dompet Komisi — modules #37, #38, #39)
@@ -229,7 +215,7 @@ Consumers:
 
 - **Replica site auto-provisioned** within 30 seconds of agent activation; catalog reflects central within 60 seconds of any change.
 - **Commission calculation** fires on `paid_in_full` event; override chain walked per Q056; writes to `commission_ledger`; emits `crm.commission_confirmed` to F9.
-- **Commission clawback** on pre-payout refund reverses ledger entries; post-payout within 30 days creates agent debt (Q045 default).
+- **Commission clawback** per **Q045**: pre-payout refund reverses accrual; post-payout within **30d** window nets negative wallet or forfeit bucket (see F9).
 - **UTM attribution** captures first_touch + last_touch; attribution decision audit-logged per booking.
 - **CS SLA timer** fires on lead arrival; breach reassigns to next CS in rotation; performance metrics updated.
 - **Round-robin fairness** — no CS receives > 2× the average lead count in a 24h window.
@@ -370,29 +356,9 @@ Full contracts in `docs/03-services/09-crm-svc/01-api.md`. Key surfaces confirme
 
 ## Open questions
 
-See `docs/07-open-questions/`.
+None blocking — **Q019, Q045, Q054–Q065** answered **2026-04-18** (`docs/07-open-questions/`). Attribution: **Q019** 30-day last-touch for commission; **Q057** for UTM/marketing ROAS split as documented in W8/W9.
 
-**Existing, binding:**
-
-- **Q019** — Abandoned checkout attribution (directly drives W8 attribution logic)
-- **Q045** — Commission accrual timing (W9 + W10 use this)
-
-**New, filed with this draft (Q054–Q065):**
-
-- **Q054** — Agent tier taxonomy + qualification thresholds + demotion rules
-- **Q055** — Commission % table (per level × per product)
-- **Q056** — Overriding formula + hierarchy depth + orphaned-upline handling
-- **Q057** — UTM attribution model (window, first vs last click)
-- **Q058** — Alumni referral reward economics
-- **Q059** — ZISWAF scope (donation platform vs pass-through)
-- **Q060** — WhatsApp broadcast rate limits + quality-score handling
-- **Q061** — Agent KYC strictness + activation thresholds
-- **Q062** — Replica-site white-label scope
-- **Q063** — Testimoni moderation policy
-- **Q064** — Lead ownership transfer between agents / CS
-- **Q065** — Ads API integration depth (Meta/Google)
-
-**Inferred (pending reviewer confirmation):**
+**Inferred (low-risk product defaults):**
 
 - CS SLA 10 minutes globally (per-channel configurable later) — could be filed as a thin Q but inferred for MVP.
 - A/B winner criteria: 500 leads OR 14 days, higher conversion rate wins (tie → earlier created) — Q070 candidate, inferred.

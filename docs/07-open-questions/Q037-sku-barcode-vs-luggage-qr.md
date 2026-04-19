@@ -4,7 +4,7 @@ title: SKU barcode vs F7 luggage-tag QR coexistence on shipped kits
 asked_by: session 2026-04-17 F8 draft
 asked_date: 2026-04-17
 blocks: F8, F7
-status: open
+status: answered
 ---
 
 # Q037 — SKU barcode vs F7 luggage-tag QR coexistence
@@ -53,4 +53,7 @@ Reversibility: switching to Option B later is a process change, not a data-model
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: airport-handling team lead, warehouse supervisor, ops lead.
+**Decided:** **Option A** — **SKU sticker persists** for warehouse lifecycle; **F7 luggage QR printed at airport handling** (not bundled in F8 home shipment) to preserve **reprint-after-change** and avoid pre-shipping wrong QR.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

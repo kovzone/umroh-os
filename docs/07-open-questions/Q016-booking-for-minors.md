@@ -4,7 +4,7 @@ title: Booking on behalf of a minor (no KTP) — required docs, guardian linkage
 asked_by: session 2026-04-15 F4/F5 draft
 asked_date: 2026-04-15
 blocks: F4, F3
-status: open
+status: answered
 ---
 
 # Q016 — Booking for minors
@@ -52,4 +52,7 @@ Reversibility: data-model additions (`guardian_jamaah_id`, `payer_user_id`, `dat
 
 ## Answer
 
-TBD — awaiting stakeholder input. Needs: agency owner (commercial policy) + ops lead (visa-desk workflow) + maybe religious advisor (minor mahram question intersects with Q005).
+**Decided:** **KK required**, **Akta Kelahiran optional** (upload encouraged if name/KK edge cases); **guardian must be another `booking_item` on same booking**; **`payer_user_id` distinct** from jamaah rows (receipts to payer). **Minor = < 18** for guardianship; **passport 6-month rule same as adults**. **Mahram:** align **Q005** — females **12+** use policy engine; **<12** exempt from separate mahram requirement when travelling with declared guardian on same booking.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

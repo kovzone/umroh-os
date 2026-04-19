@@ -4,7 +4,7 @@ title: Refund & pinalti accounting entries
 asked_by: session 2026-04-17 F9 draft
 asked_date: 2026-04-17
 blocks: F9, F5, F4
-status: open
+status: answered
 ---
 
 # Q053 — Refund & pinalti accounting entries
@@ -83,4 +83,7 @@ Reversibility: reclassifying pinalti from `Pendapatan Lain-Lain` to a distinct a
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: finance director, external auditor, agency owner (KPI preference on pinalti visibility).
+**Decided:** **Option A** — **pinalti → `Pendapatan Lain-Lain`**, **post-departure goodwill → reverse `Pendapatan Umroh`** then cash refund, **partial cancel journals per jamaah share**, **two-step refund** optional MVP simplification: **single cash-out with liability zeroing** acceptable if auditor agrees.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

@@ -4,7 +4,7 @@ title: Manifest format per airline / immigration regulator
 asked_by: session 2026-04-15 F7 draft
 asked_date: 2026-04-15
 blocks: F7, F6
-status: open
+status: answered
 ---
 
 # Q020 — Manifest format per airline / regulator
@@ -56,4 +56,7 @@ Reversibility: adding a `profile` column to the `manifests` table later is addit
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency ops lead (Kemenag/PPIU licensing requirements), legal advisor (compliance), CS lead (airline feedback from current workflows).
+**Decided:** **Option C** — one **canonical regulator-first** PDF + Excel template (Imigrasi + Kemenag/PPIU column superset + agency header fields); **regenerate on demand until H-24 lock** then versioned freeze. **Per-airline variants:** add **reactively** when a carrier rejects the generic layout.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

@@ -4,7 +4,7 @@ title: UU PDP compliance — consent, retention, DSR, DPO
 asked_by: session 2026-04-14 F3 draft
 asked_date: 2026-04-14
 blocks: F3, F1
-status: open
+status: answered
 ---
 
 # Q008 — UU PDP compliance (consent, retention, data-subject rights, DPO notification)
@@ -68,4 +68,7 @@ Reversibility: all five decisions are code/config changes, not data migrations. 
 
 ## Answer
 
-TBD — awaiting stakeholder input. This needs **legal review**, not just internal sign-off. Likely deciders: agency legal advisor + agency owner + CS lead (consent-flow UX). Engineering can implement any of the options; the decision is policy, not architecture.
+**Decided:** Adopt **Recommendation defaults** (contract performance for core processing; separate **marketing consent**; granular toggles off-by-default for marketing; **2-year** document retention post-departure with **7-year** financials; **14-day** DSR access/rectify / **30-day** erasure subject to legal retention; Super Admin `dpo_contact_email` as DPO contact for breach routing). **Privacy policy text** and **breach runbook** must still be **drafted/reviewed by qualified legal counsel** — engineering stance is not a substitute.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

@@ -4,7 +4,7 @@ title: Daily App form factor — native vs PWA vs responsive web
 asked_by: session 2026-04-17 F12 draft
 asked_date: 2026-04-17
 blocks: F12
-status: open
+status: answered
 ---
 
 # Q076 — Daily App form factor
@@ -61,4 +61,7 @@ Reversibility: adding Capacitor native wrapper later is additive (same codebase)
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: CTO / frontend lead (PWA viability vs native), agency owner (app-store presence preference), design lead (UX expectation for "Daily App" phrasing).
+**Decided:** **Option A** — **Svelte PWA** shared codebase with jamaah portal; **service worker offline** for prayer/qibla/manasik; **Web Push** opt-in; **Capacitor Phase 2** if store distribution needed.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

@@ -24,3 +24,5 @@
 - `ReconcileInvoice(...)` — used by reconciliation cron
 
 > Webhook endpoints validate gateway signatures via the appropriate adapter.
+
+**Invoice contract:** create/GET responses use `amount_total`, `paid_amount`, `rounding_adjustment_idr`, `currency`, `fx_snapshot` as in `02-data-model.md` (aligned with F5 / **Q001**).

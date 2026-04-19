@@ -1,8 +1,8 @@
 ---
 id: F6
 title: Visa Pipeline & Raudhah Shield
-status: draft
-last_updated: 2026-04-15
+status: written
+last_updated: 2026-04-18
 moscow_profile: 1 Must Have / 3 Should Have / 1 Could Have — plus module #105 Should Have (cross-cuts to F7)
 prd_sections:
   - "E. Operational & Handling — Pelacakan Paspor & Visa (lines 327–337)"
@@ -16,16 +16,7 @@ modules:
   - "#99 Integrasi API Eksternal Lanjutan (GDS + Saudi Visa Provider) — Could Have / Low"
   - "#105 Raudhah Shield & Tasreh Digital — Should Have / Medium (cross-refs F7)"
 depends_on: [F1, F3, F4]
-open_questions:
-  - Q005 — mahram qualifying relations (existing; gates visa submission per Alur 6.7)
-  - Q007 — KTP ↔ passport name mismatch (existing; name sent to MOFA/Sajil)
-  - Q008 — UU PDP retention (existing; e-visa + passport scan retention)
-  - Q026 — MOFA / Sajil API access — credentials, sandbox, contracts
-  - Q027 — Provider selection per package kind
-  - Q028 — Visa rejection handling policy (retry / escalate / refund)
-  - Q029 — Physical passport chain-of-custody process (module #96)
-  - Q030 — Raudhah Shield polling cadence + alert action
-  - Q031 — Tasreh issuance authority (who creates the document)
+open_questions: []
 ---
 
 # F6 — Visa Pipeline & Raudhah Shield
@@ -231,24 +222,11 @@ Full contracts in `docs/03-services/05-visa-svc/01-api.md`. Key surfaces:
 
 ## Open questions
 
-See `docs/07-open-questions/`:
+None blocking — **Q005, Q007, Q008, Q026–Q031** answered **2026-04-18** (`docs/07-open-questions/`). Polling cadences and provider SLAs in workflows above follow those answers.
 
-**Existing, referenced:**
-- **Q005** — mahram qualifying relations (hard block at visa submit per W10)
-- **Q007** — KTP ↔ passport name mismatch (name sent to provider)
-- **Q008** — UU PDP retention (e-visa + passport scan storage)
-
-**New, filed with this draft:**
-- **Q026** — MOFA / Sajil API access (credentials, sandbox, contracts, rate limits)
-- **Q027** — Provider selection per package kind (Umroh vs Hajj vs Badal)
-- **Q028** — Visa rejection handling policy (retry rules, refund trigger, customer communication)
-- **Q029** — Physical passport chain-of-custody process (module #96 states, SLAs, signer requirements)
-- **Q030** — Raudhah Shield polling cadence + alert action (who's notified, what's blocked)
-- **Q031** — Tasreh issuance authority (Nusuk download vs agency-generated vs provider-supplied)
-
-**Inferred (pending reviewer confirmation):**
+**Engineering defaults (unchanged unless Q files say otherwise):**
 - E-visa → booking attach: direct gRPC call (`booking-svc.AttachVisaToBooking`) per ADR 0006
 - WhatsApp notification matrix for status changes: fire on ISSUED + REJECTED (extends PRD L1585 doc-reject pattern)
-- Polling cadence: 4h business hours / 12h off-hours with exponential backoff on errors (until Q030 confirms)
+- Polling cadence: 4h business hours / 12h off-hours with exponential backoff on errors (**Q030** answered)
 - 6-month rule: no ops override; absolute per PRD L1611
 - Bulk-submit transaction boundary: DB transactional via `WithTx`; provider API calls happen in Temporal activities outside the DB transaction

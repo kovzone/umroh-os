@@ -4,7 +4,7 @@ title: Saudi-side warehouse scope
 asked_by: session 2026-04-17 F8 draft
 asked_date: 2026-04-17
 blocks: F8
-status: open
+status: answered
 ---
 
 # Q039 — Saudi-side warehouse scope
@@ -56,4 +56,7 @@ Reversibility: expanding to Option C later is additive — new warehouse_type va
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: ops lead (Saudi operations experience), warehouse supervisor, finance director (direct-expense vs asset treatment).
+**Decided:** **Option B** — `warehouse_type: saudi_active` tracks **returning durables + spare kit stock**; **consumables (zamzam, SIM, vouchers)** = **direct expense**; **zamzam scan metrics** without stock decrement in MVP.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

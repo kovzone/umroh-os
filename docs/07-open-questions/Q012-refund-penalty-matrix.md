@@ -4,7 +4,7 @@ title: Refund penalty policy matrix — per package type, per cancellation timin
 asked_by: session 2026-04-15 F4/F5 draft
 asked_date: 2026-04-15
 blocks: F5, F4
-status: open
+status: answered
 ---
 
 # Q012 — Refund penalty policy matrix
@@ -66,4 +66,7 @@ Reversibility: matrix is a config table, editable by Super Admin; changes apply 
 
 ## Answer
 
-TBD — awaiting stakeholder input. Likely decider: agency owner + legal advisor (because jamaah contract enforceability depends on it).
+**Decided:** **Option A** — **configurable tier matrix per `package_kind`** with **snapshot at cancellation time** baked into the booking/cancel record. **Ship defaults** as in Recommendation example (`umroh_reguler` vs `haji_furoda` bands). **Force majeure / agency-cancelled departure:** **penalty waived**; **non-refundable vendor/government sunk costs** still netted from refund (pass-through). **Negative net refund:** **floor at 0** to customer (agency absorbs residual loss; no debt collection from jamaah in MVP). **Legal:** printed contract / Syarat & Ketentuan must **mirror** the matrix — **lawyer review** before customer-facing publish.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

@@ -4,7 +4,7 @@ title: Lead ownership transfer between agents / CS
 asked_by: session 2026-04-17 F10 draft
 asked_date: 2026-04-17
 blocks: F10
-status: open
+status: answered
 ---
 
 # Q064 — Lead ownership transfer
@@ -57,4 +57,7 @@ Reversibility: transfer rules are config. Tightening/loosening who-can-transfer 
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: CRM lead, CS supervisor, agency owner (ownership-vs-efficiency balance).
+**Decided:** **Option C** transfer types as Recommendation **but** **commission + attribution snapshot frozen at booking creation** per **Q019/Q057** — CRM transfer changes **work queue only**, not retroactive splits, unless **Super Admin posts a documented `commission_recipient_override`** (rare, audited). **>3 transfers / 7d** supervisor alert.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

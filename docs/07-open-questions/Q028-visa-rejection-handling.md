@@ -4,7 +4,7 @@ title: Visa rejection handling policy (retry, escalate, refund, customer comms)
 asked_by: session 2026-04-15 F6 draft
 asked_date: 2026-04-15
 blocks: F6, F5, F4
-status: open
+status: answered
 ---
 
 # Q028 — Visa rejection handling policy
@@ -85,4 +85,7 @@ Reversibility: auto-acknowledgement template is config; escalating to auto-resub
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner + CS lead (customer comm preferences) + ops lead (24h SLA realism) + legal (appeal-path legitimacy).
+**Decided:** **Option B** — **immediate WA+email acknowledgement** (no legal commitment), **ops task** with suggested action, **no auto-resubmit** in MVP, **24h ops SLA** for substantive reply; **refund path** calls booking cancel + **Q012** sunk-cost rules; **provider fees** pass-through per Q012.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

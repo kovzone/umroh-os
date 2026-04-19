@@ -36,8 +36,9 @@
 | id | uuid pk | |
 | package_departure_id | uuid fk | |
 | room_type | room_type enum | double / triple / quad |
-| price | numeric(15,2) | |
-| currency | text | IDR / USD |
+| list_amount | numeric(18,4) | commercial list figure in `list_currency` (extra precision for USD/SAR inputs) |
+| list_currency | char(3) | ISO 4217, e.g. `IDR` or `USD` — **display / quote** basis (F2 / **Q001**) |
+| settlement_currency | char(3) | MVP: always `IDR` (CHECK); contractual invoice/VA amounts are always IDR at booking lock |
 
 ### `hotels`
 | col | type | notes |
@@ -78,12 +79,12 @@
 | days | jsonb |
 
 ### `addons`
-| col | type |
-|---|---|
-| id | uuid pk |
-| name | text |
-| price | numeric(15,2) |
-| currency | text |
+| col | type | notes |
+|---|---|---|
+| id | uuid pk | |
+| name | text | |
+| list_amount | numeric(18,4) | same semantics as `package_pricing.list_amount` |
+| list_currency | char(3) | ISO 4217; default `IDR` if not multi-currency |
 
 ### `package_addons`
 | col | type |
@@ -106,3 +107,4 @@ CREATE TYPE room_type AS ENUM ('double', 'triple', 'quad');
 - Seat reservation is atomic via `UPDATE package_departures SET reserved_seats = reserved_seats + $1 WHERE id = $2 AND reserved_seats + $1 <= total_seats`.
 - Photos and videos are stored in GCS; the DB only holds URLs.
 - Bulk import goes through a staging table to allow validation before commit.
+- **List vs settlement (F2, Q001):** catalog stores **list** amounts + currency for B2C/B2B display. **No** customer invoice totals here — `payment-svc` / `booking-svc` lock **IDR** payable at VA issuance using `fx_snapshot` (see payment-svc data model). Rounding to nearest **Rp 1,000** (half-up) applies once on that payable IDR total, not per catalog row.

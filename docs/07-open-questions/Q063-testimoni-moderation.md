@@ -4,7 +4,7 @@ title: Testimoni moderation policy
 asked_by: session 2026-04-17 F10 draft
 asked_date: 2026-04-17
 blocks: F10, F7
-status: open
+status: answered
 ---
 
 # Q063 — Testimoni moderation policy
@@ -66,4 +66,7 @@ Reversibility: moderation model and SLA are config. Switching between pre/post a
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: marketing admin, CS lead, agency owner (reputation-management posture), legal (UU ITE liability).
+**Decided:** **Option C** — **internal visibility immediate**, **public requires approval**; **≤3★ triggers CS ticket** before publish decision; **24h mod SLA**; **media same rules**; **removed content retained 12mo**; staff posts with `STAFF` badge.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

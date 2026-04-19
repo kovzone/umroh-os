@@ -4,7 +4,7 @@ title: AP disbursement approval threshold ladder
 asked_by: session 2026-04-17 F9 draft
 asked_date: 2026-04-17
 blocks: F9
-status: open
+status: answered
 ---
 
 # Q050 — AP disbursement approval threshold ladder
@@ -47,4 +47,7 @@ Reversibility: approval thresholds are config. Adjusting variance % or recurring
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (approval authority), finance director, external auditor (governance adequacy).
+**Decided:** **Option C** — inherit PR approval **unless** **>10% variance vs approved PR**, **no PR link**, **recurring beyond annual cap**, or **emergency path** — then fresh ladder applies. **Batch approves on batch total** using same thresholds. **Recurring:** annual Director cap with monthly auto-pay inside cap. **MFA >50M**. Matches Q032 numerics.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

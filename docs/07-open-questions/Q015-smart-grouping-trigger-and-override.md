@@ -4,7 +4,7 @@ title: Smart Grouping trigger timing and override authority
 asked_by: session 2026-04-15 F4/F5 draft
 asked_date: 2026-04-15
 blocks: F4, F7
-status: open
+status: answered
 ---
 
 # Q015 — Smart Grouping trigger timing + override authority
@@ -70,4 +70,7 @@ Reversibility: trigger timing is a process decision, not data-shape — can shif
 
 ## Answer
 
-TBD — awaiting stakeholder input. Likely decider: ops lead + agency owner (field workflow experience).
+**Decided:** **Option A** — **on-demand** grouping run by ops when pax list stable (heuristic **≥ H-14** + most jamaah **paid_in_full** + docs verified); **no nightly auto-rerun** in MVP. **Overrides:** **ops admin** anytime; **tour leader** in-field; **muthawwif** routes room-critical edits **through tour leader account** for audit (same net effect as Recommendation table). **Re-run:** allowed only via explicit **“Re-run with diff review”** commit. **Jamaah self-service roommate requests:** **deferred**.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

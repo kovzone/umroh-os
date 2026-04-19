@@ -4,7 +4,7 @@ title: Paket Tabungan (savings-toward-pilgrimage) — interaction with booking s
 asked_by: session 2026-04-15 F4/F5 draft
 asked_date: 2026-04-15
 blocks: F4, F5, F9
-status: open
+status: answered
 ---
 
 # Q017 — Paket Tabungan interaction with booking state
@@ -58,4 +58,7 @@ Reversibility: data-model choice is entrenching. Moving from Option A to Option 
 
 ## Answer
 
-TBD — awaiting stakeholder input. Likely decider: agency owner + finance lead (accounting treatment sign-off).
+**Decided:** **Option A** — Tabungan = **`savings_plan` pre-booking** (no seat); converts to normal booking with balance applied at customer-picked departure. **Withdrawal:** allowed with **5% fee (configurable 0–10%)**, **T+14 business days** payout SLA. **Accounting:** customer liability until conversion (see **Q044**). **Fee tweak** remains Super Admin config.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

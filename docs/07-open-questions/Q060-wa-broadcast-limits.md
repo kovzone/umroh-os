@@ -4,7 +4,7 @@ title: WhatsApp broadcast rate limits + quality-score handling
 asked_by: session 2026-04-17 F10 draft
 asked_date: 2026-04-17
 blocks: F10, F7
-status: open
+status: answered
 ---
 
 # Q060 — WhatsApp broadcast rate limits + quality-score handling
@@ -58,4 +58,7 @@ Reversibility: throughput cap % (80%), retry count (3), opt-out keywords — all
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: marketing admin, CRM lead, Meta Business Manager admin (if separate), agency owner (cost posture).
+**Decided:** **Option C** — **hard enforce Meta tier cap at 80% soft limit** + queue spill; **central opt-out** keywords; **3 retries exponential backoff** then `wa_unreachable`; **template registry** with marketing admin owner; **marketing expense** booking from Meta billing pull; **marketing vs utility template classes** separated.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

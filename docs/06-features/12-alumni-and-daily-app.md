@@ -1,8 +1,8 @@
 ---
 id: F12
 title: Alumni Hub & Daily App
-status: draft
-last_updated: 2026-04-17
+status: written
+last_updated: 2026-04-18
 moscow_profile: 0 Must / 3 Should / 6 Could (9 modules in F12 scope; 4 ZISWAF/referral modules owned by F10)
 prd_sections:
   - "J. Daily App & Alumni Hub (lines 623–661)"
@@ -17,16 +17,7 @@ modules:
   - "#199 Pusat Referral Alumni — **owned by F10**; F12 hosts UI entry-point only"
   - "#200–#202 ZISWAF trio — **owned by F10** per Q059 pass-through"
 depends_on: [F1, F3, F4, F10]
-open_questions:
-  - Q058 — Alumni referral reward economics (existing; binds F12's referral-entry page)
-  - Q059 — ZISWAF scope (existing; binds F12's /jamaah/ziswaf entry)
-  - Q063 — Testimoni moderation policy (existing; applies to community testimoni content too)
-  - Q076 — Daily App form factor (native vs PWA vs responsive web)
-  - Q077 — Community moderation policy + posting authority
-  - Q078 — Fatwa Desk ustadz authority + response SLA + liability posture
-  - Q079 — Manasik + Quran + daily-content sourcing & licensing
-  - Q080 — Third-party data source selection (prayer times API, qibla, Quran corpus)
-  - Q081 — MVP scope carve (what ships vs what defers to Phase 2)
+open_questions: []
 ---
 
 # F12 — Alumni Hub & Daily App
@@ -268,24 +259,9 @@ No events emitted specifically for F12 in MVP; F11 reads metrics directly via gR
 
 ## Open questions
 
-See `docs/07-open-questions/`.
+None blocking — **Q058, Q059, Q063, Q076–Q081** answered **2026-04-18** (`docs/07-open-questions/`). Defaults below match those answers; **Q079** licensing still needs **legal** confirmation before shipping Quran/murottal.
 
-**Existing (inherited from F10 / F7):**
-
-- **Q058** — Alumni referral reward economics (binds F12's referral entry-page)
-- **Q059** — ZISWAF scope (binds F12's /jamaah/ziswaf entry)
-- **Q063** — Testimoni moderation policy (applies to community testimoni content too)
-
-**New, filed with this draft (Q076–Q081):**
-
-- **Q076** — Daily App form factor (native vs PWA vs responsive web)
-- **Q077** — Community moderation policy + posting authority
-- **Q078** — Fatwa Desk ustadz authority + response SLA + liability posture
-- **Q079** — Manasik + Quran + daily-content sourcing & licensing
-- **Q080** — Third-party data source selection (prayer times API, qibla, Quran corpus)
-- **Q081** — MVP scope carve (what ships vs what defers to Phase 2)
-
-**Inferred (pending reviewer confirmation):**
+**Residual defaults (engineering / content ops):**
 
 - Default prayer-times calculation method: Kemenag Indonesia (domestic); Umm Al-Qura (Saudi-side auto-switch based on location).
 - Default Quran corpus: Tanzil + Indonesian Kemenag translation (requires license confirmation per Q079).

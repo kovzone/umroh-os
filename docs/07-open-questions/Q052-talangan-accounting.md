@@ -4,7 +4,7 @@ title: Talangan accounting — loan receivable (PSAK 71) vs booking receivable
 asked_by: session 2026-04-17 F9 draft
 asked_date: 2026-04-17
 blocks: F9
-status: open
+status: answered
 ---
 
 # Q052 — Talangan accounting
@@ -53,4 +53,7 @@ Reversibility: upgrading to Option A later requires re-classifying existing Tala
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (Talangan strategy — accommodation vs profit product), finance director, external accountant, syariah advisor (if applicable).
+**Decided:** Align with **Q018 Option A (MVP partner Talangan)** — **no agency loan receivable**; **referral fee income only**. If **in-house Talangan** is later enabled: **classify as PSAK 71 financial asset** with **ECL + effective interest** (Option A path). Until then, **do not** book **Piutang Pembiayaan** for Talangan.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

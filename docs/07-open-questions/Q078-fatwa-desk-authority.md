@@ -4,7 +4,7 @@ title: Fatwa Desk ustadz authority + response SLA + liability posture
 asked_by: session 2026-04-17 F12 draft
 asked_date: 2026-04-17
 blocks: F12
-status: open
+status: answered
 ---
 
 # Q078 — Fatwa Desk ustadz authority + SLA + liability
@@ -58,4 +58,7 @@ Reversibility: moving from Option A to Option B (private only) is a config chang
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (strategic decision on religious content ownership), religious advisor (panel selection criteria), legal advisor (liability framing / disclaimer).
+**Decided:** **Option A** — **3–5 contracted ustadz**, **72h SLA**, **“bukan fatwa resmi” disclaimer**, **public archive default** with edit log **7d**, **category routing**, **anonymous allowed**, **off-scope reject** with explanation. *(If Q081 defers F12 modules, ship Fatwa only when module enabled.)*
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

@@ -4,7 +4,7 @@ title: Multi-year Tabungan deferred-revenue accounting
 asked_by: session 2026-04-17 F9 draft
 asked_date: 2026-04-17
 blocks: F9, F4, F5
-status: open
+status: answered
 ---
 
 # Q044 — Multi-year Tabungan deferred-revenue accounting
@@ -51,4 +51,7 @@ Reversibility: splitting the single Hutang Tabungan account into current/non-cur
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (historical Tabungan dormancy rate), finance director, external auditor, legal (escheat / unclaimed-property regulations).
+**Decided:** **Option C** — **Dr Bank / Cr Hutang Tabungan**; **monthly current vs non-current split** using `target_departure_season`; **conversion journal** to **Hutang Jamaah**; **no profit-share MVP**; **dormancy:** >24mo inactive → `stale` + CS workflow + **90d** then **finance director case file** (refund/rollover/forfeit **policy text still needs legal**).
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

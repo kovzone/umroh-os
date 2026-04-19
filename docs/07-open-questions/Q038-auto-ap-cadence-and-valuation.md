@@ -4,7 +4,7 @@ title: Auto-AP posting cadence + PSAK inventory valuation
 asked_by: session 2026-04-17 F8 draft
 asked_date: 2026-04-17
 blocks: F8, F9
-status: open
+status: answered
 ---
 
 # Q038 — Auto-AP posting cadence + inventory valuation method
@@ -68,4 +68,7 @@ Reversibility: Part A's sync → async is additive (add outbox, keep sync as fal
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: finance director (PSAK compliance + audit posture), CTO (availability vs consistency tradeoff), external accountant if retained.
+**Decided:** **A1 synchronous AP** with finance in GRN saga **when finance healthy**; **if finance repeatedly unavailable**, **temporary ops flag** may switch service to **outbox async** (documented break-glass, reconciled nightly). **Inventory:** **weighted-average agency-wide** (FIFO deferred until a SKU class truly needs lots). **Nightly inventory vs GL drift check**.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

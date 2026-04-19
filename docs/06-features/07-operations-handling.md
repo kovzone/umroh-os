@@ -1,8 +1,8 @@
 ---
 id: F7
 title: Operations — Verification, Smart Grouping, Manifests, Airport Handling, Field Execution
-status: draft
-last_updated: 2026-04-15
+status: written
+last_updated: 2026-04-18
 moscow_profile: 6 Must Have / 5 Should Have / 2 Could Have (+ module #88 Must Have, cross-cutting from F3)
 prd_sections:
   - "E. Operational & Handling (lines 295–365)"
@@ -18,15 +18,7 @@ modules:
   - "#101 ALL System, #102 Penghitung Koper, #103 Broadcast Keberangkatan & Kedatangan"
   - "#104 Smart Bus Boarding, #105 Raudhah Shield & Tasreh Digital, #106 Manajemen Perangkat Audio, #107 Distribusi Zamzam, #108 Check-In Kamar Cepat"
 depends_on: [F1, F3, F4]
-open_questions:
-  - Q015 — Smart Grouping trigger timing + override authority (existing)
-  - Q012 — Refund penalty policy matrix (existing, referenced by module #100)
-  - Q020 — Manifest format per airline / regulator
-  - Q021 — Luggage Tag QR payload scheme + ALL system protocol
-  - Q022 — Tour leader vs muthawwif override authority boundary (refines Q015)
-  - Q023 — Zamzam distribution quota policy
-  - Q024 — Incident / issue report escalation matrix
-  - Q025 — Vulnerable Care manifest fields (module #94)
+open_questions: []
 ---
 
 # F7 — Operations: Verification, Smart Grouping, Manifests, Airport Handling, Field Execution
@@ -71,7 +63,7 @@ Cross-cutting edge rules from F3:
 
 ### W2 — Smart room allocation (module #92)
 
-Trigger timing: **Q015** (open). Default inference per Q015's recommendation is "on-demand by ops admin when pax list is stable, typically ≥ H-14" — not at booking submit.
+Trigger timing per **Q015** (answered): **on-demand** run by ops when pax list stable (heuristic **≥ H-14** + most jamaah **paid_in_full** + docs verified); **no nightly auto-rerun** MVP. **Re-run** only via explicit **“Re-run with diff review”** commit.
 
 1. Ops admin opens a `package_departure` and clicks **Run Grouping**.
 2. Algorithm inputs:
@@ -149,7 +141,7 @@ ALL = Airport Logistics List. Agency-internal, not a third-party vendor.
 3. Roster view shows scanned / not-yet-scanned; identifies missing jamaah before the bus departs.
 4. When all pax on the bus's allocation are scanned, tour leader taps **Start Trip**.
 5. Bus Time Manager monitors: if the bus remains stationary > 20 minutes after Start Trip, alerts pusat ops (PRD L563).
-6. _(Inferred)_ Manual override for failed scans: tour leader can mark a jamaah as boarded with a required reason ("scanner failed"; "jamaah missing ID card"); logged to audit. **Q022** pins whether muthawwif has the same override authority.
+6. Manual override for failed scans: tour leader can mark a jamaah as boarded with a required reason ("scanner failed"; "jamaah missing ID card"); logged to audit. **Q022+Q015**: muthawwif routes room-critical overrides **through tour leader** for audit; async digest + **Q024** on abuse.
 
 ### W11 — Tasreh scan / Raudhah Shield (module #105, cross-refs F6)
 
@@ -185,7 +177,7 @@ _(Inferred — this is Could Have / Low priority per module list.)_
 
 ### W15 — Refund / Pinalti administration (module #100, cross-refs F4/F5)
 
-1. On F4 cancellation (W7 in F4), F5 refund flow (W8 in F5) pulls the penalty matrix from **Q012** (pending answer).
+1. On F4 cancellation (W7 in F4), F5 refund flow (W8 in F5) pulls the penalty matrix from **Q012** (answered — configurable per `package_kind`, snapshot at cancel; force majeure / agency-cancel waives penalty per matrix rules).
 2. F7's contribution: **ops-side paperwork**. When a refund is initiated, ops-svc generates a refund agreement PDF listing the components (ticket cost burned, visa cost burned, hotel cost burned, pinalti) and emits it to jamaah via WhatsApp + email for acknowledgement.
 3. Finance (F9) handles the money; ops handles the document trail.
 
@@ -306,21 +298,9 @@ Full contracts live in `docs/03-services/06-ops-svc/01-api.md` — spec already 
 
 ## Open questions
 
-See `docs/07-open-questions/`:
+None blocking — **Q012, Q015, Q020–Q025** answered **2026-04-18** (`docs/07-open-questions/`). Spec defaults (manifest PDF+XLSX, signed QR token, 5L zamzam, etc.) remain unless ops config overrides.
 
-**Existing, referenced:**
-- **Q012** — refund penalty policy matrix (module #100 uses this)
-- **Q015** — Smart Grouping trigger timing + ops/tour-leader override
-
-**New, filed with this draft:**
-- **Q020** — Manifest format per airline / immigration regulator
-- **Q021** — Luggage Tag QR payload scheme + ALL System scan protocol
-- **Q022** — Tour leader vs muthawwif override authority boundary (refines Q015 for in-field actions)
-- **Q023** — Zamzam distribution quota policy
-- **Q024** — Incident / issue report escalation matrix
-- **Q025** — Vulnerable Care manifest fields (module #94)
-
-**Inferred (pending reviewer confirmation):**
+**Inferred engineering defaults (low product risk):**
 - ALL System offline fallback: local queue + sync on reconnect, idempotent
 - Luggage count mismatch: soft warning, not block; incident workflow after 48h
 - Check-In Kamar Cepat (module #108): manual muthawwif entry for MVP (module is Could Have)

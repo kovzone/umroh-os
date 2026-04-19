@@ -4,7 +4,7 @@ title: PPh 21 scheme + PPh 23 witholding for no-NPWP vendors
 asked_by: session 2026-04-17 F9 draft
 asked_date: 2026-04-17
 blocks: F9
-status: open
+status: answered
 ---
 
 # Q047 — PPh 21 scheme + PPh 23 witholding for no-NPWP vendors
@@ -50,4 +50,7 @@ Reversibility: upgrading to full TER monthly + e-Bukti Potong later is additive.
 
 ## Answer
 
-TBD — awaiting stakeholder input. **Needs external tax advisor confirmation** on TER applicability and rate interpretation. Deciders: external tax advisor (primary), HR / payroll lead (PPh 21 split), finance director.
+**Decided:** **Option C** — **PPh 23** in-app (**2% / 4% no-NPWP**) + **PPh 4(2) rent 10%** where applicable; **employee payroll PPh 21** stays **external payroll** export; **individual agent commission PPh 21** as **single-payment** path in-app **until payroll integration exists**; **Bukti Potong PDF MVP** (not full e-Bukti Potong XML). **TER tables:** add when payroll module ships. **Rates:** require **tax advisor confirmation** annually.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

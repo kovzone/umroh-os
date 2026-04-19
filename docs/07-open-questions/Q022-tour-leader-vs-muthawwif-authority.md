@@ -4,7 +4,7 @@ title: Tour leader vs muthawwif override authority boundary
 asked_by: session 2026-04-15 F7 draft
 asked_date: 2026-04-15
 blocks: F7
-status: open
+status: answered
 ---
 
 # Q022 — Tour leader vs muthawwif override authority
@@ -84,4 +84,7 @@ Reversibility: role-scoped action lists are config per role (in F1's permission 
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency ops lead + a representative tour leader and muthawwif (sample input from field).
+**Decided:** **Option A** table + **async audit** (no real-time ops gate). Matches Recommendation matrix; **manual overrides** require **reason + optional photo**; **daily ops digest** + **Q024** escalation on abuse patterns.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

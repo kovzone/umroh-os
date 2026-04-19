@@ -4,7 +4,7 @@ title: Operating currency, FX handling modes, and HPP formula
 asked_by: session 2026-04-14 F2 draft
 asked_date: 2026-04-14
 blocks: F2, F5, F9
-status: open
+status: answered
 ---
 
 # Q001 — Operating currency, FX handling modes, and HPP formula
@@ -50,4 +50,11 @@ Reversibility: adding Option C later is schema-compatible (the `currency` column
 
 ## Answer
 
-TBD — awaiting stakeholder discussion.
+**Decided:** Hybrid display — a package may show its **list price in USD** for customer-facing catalog/quote clarity, but **settlement is always IDR**. At **booking lock**, the **locked USD→IDR rate** (and other locked foreign rates as applicable) converts that displayed USD price into the **contractual IDR invoice / VA amount**. The platform **default FX mode is Lock Rate**; **API + Markup** remains available only as an **optional global configuration**, not the default. Per-package override of FX mode is **out of MVP** — packages follow the tenant/global mode until a future rule explicitly adds overrides.
+
+**HPP:** `HPP = Σ(cost_component_idr) + Σ(cost_component_sar × locked_sar_rate) + Σ(cost_component_usd × locked_usd_rate)` at HPP-lock time, with foreign components stored in native amounts plus the locked rates then in effect. **Sell price** remains an **explicitly admin-set field**, not auto-derived from HPP + fixed markup.
+
+**Rounding:** The **customer-facing payable IDR total** is rounded **once** to the nearest **Rp 1,000** (half-up). Internal cost lines keep full precision for margin control. Any rounding difference posts to a dedicated **sales rounding** (or equivalent) GL line — not merged silently into unrelated accounts.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Stakeholder sign-off (confirmed in product session)

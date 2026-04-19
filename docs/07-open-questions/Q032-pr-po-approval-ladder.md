@@ -4,7 +4,7 @@ title: PR / PO approval threshold ladder
 asked_by: session 2026-04-17 F8 draft
 asked_date: 2026-04-17
 blocks: F8
-status: open
+status: answered
 ---
 
 # Q032 — PR / PO approval threshold ladder
@@ -48,4 +48,7 @@ Reversibility: the ladder is config, not code — adjusting thresholds later is 
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner, finance director, internal governance advisor.
+**Decided:** **Option B** ladder — **≤10M Manager**, **10–50M Director**, **>50M Director+CEO**; **capex ≥10M → Director minimum**; **emergency Manager path** with **Director post-hoc within 48h**; **48h approver SLA** then auto-escalate; **multi-line PR routes by highest line threshold**; **>50M requires MFA** on approval action; **named deputy** per role in config.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

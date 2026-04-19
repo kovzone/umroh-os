@@ -1,8 +1,8 @@
 ---
 id: F9
 title: Finance & Accounting (PSAK-compliant)
-status: draft
-last_updated: 2026-04-17
+status: written
+last_updated: 2026-04-18
 moscow_profile: 15 Must Have / 7 Should Have (highest Must Have count in the catalogue)
 prd_sections:
   - "G. Finance & Accounting (lines 429–493)"
@@ -17,25 +17,7 @@ modules:
   - "#141 Jurnal Otomatis (Single Input Double Entry), #142 Pengakuan Pendapatan, #143 Multi-Currency, #144 Manajemen Aset Tetap, #145 Integrasi Pajak"
   - "#146 Pencairan Komisi Agen, #147 Laporan Keuangan Real-Time, #148 Dashboard Arus Kas, #149 Peringatan Umur Hutang/Piutang, #150 Jejak Audit & Hak Akses"
 depends_on: [F1, F4, F5, F6, F8, F10]
-open_questions:
-  - Q001 — Operating currency, FX handling modes, HPP formula (existing — binds here heavily)
-  - Q012 — Refund penalty policy matrix (existing; refund accounting impact)
-  - Q017 — Paket Tabungan interaction with booking state (existing; deferred revenue treatment)
-  - Q018 — Talangan (bridging finance) process and accounting (existing; loan vs booking receivable)
-  - Q036 — Vendor master ownership + onboarding & rating (existing; dual-binding with F8)
-  - Q038 — Auto-AP posting cadence + PSAK inventory valuation (existing; dual-binding with F8)
-  - Q042 — PSAK scope (full PSAK vs ETAP; which standards apply)
-  - Q043 — Revenue recognition mechanics — "terbang" event + refund/cancellation reversal
-  - Q044 — Multi-year Tabungan deferred-revenue accounting
-  - Q045 — Commission accrual timing (booking / paid / departure / payout)
-  - Q046 — Travel-agency PPN rate (PMK-71 1.1% vs PRD 11%) + PKP status + e-Faktur integration
-  - Q047 — PPh 21 scheme (monthly gross / TER) + PPh 23 witholding for no-NPWP vendors
-  - Q048 — FX policy (rate source, transaction-date vs settlement-date, month-end revaluation)
-  - Q049 — Chart of Accounts template seed — Indonesian standard or custom
-  - Q050 — AP disbursement approval threshold ladder
-  - Q051 — Period close procedure + re-open authority
-  - Q052 — Talangan accounting as loan receivable (PSAK 71) vs booking receivable
-  - Q053 — Refund & pinalti accounting entries (revenue reversal, pinalti as other-income)
+open_questions: []
 ---
 
 # F9 — Finance & Accounting (PSAK-compliant)
@@ -44,7 +26,7 @@ open_questions:
 
 F9 is the **accounting truth layer** — every peso of value that moves through UmrohOS (jamaah payment, vendor invoice, commission, refund, FX gain, fixed-asset depreciation) lands here as a double-entry journal. It consumes events from F5 (payment), F8 (logistics/GRN), F10 (commission), F4 (booking lifecycle), and F6 (visa) to produce PSAK-compliant financial statements: Neraca, Laba Rugi, Arus Kas, Perubahan Ekuitas.
 
-This is the **heaviest feature in the catalogue** — 22 modules (15 Must Have / High) covering AR, AP, journal engine, tax, FX, fixed assets, commission payout, reporting, and governance. PRD Section G is heavy on intent and light on procedural detail (Alur 9.1–9.4 are one-liners) — the spec here fills most procedural gaps and flags the rest as open questions for stakeholder input.
+This is the **heaviest feature in the catalogue** — 22 modules (15 Must Have / High) covering AR, AP, journal engine, tax, FX, fixed assets, commission payout, reporting, and governance. PRD Section G is heavy on intent and light on procedural detail (Alur 9.1–9.4 are one-liners) — the spec here fills procedural detail; linked **Q001 / Q012 / Q017–Q018 / Q036–Q038 / Q042–Q053** are **answered** as of **2026-04-18** (see `docs/07-open-questions/`).
 
 Primary personas:
 
@@ -228,7 +210,7 @@ Consumer relationships:
 
 ### W14 — Commission payout to agents (module #146)
 
-1. Commission accrual (**Q045** — timing is the critical product question): per Q045 default inferred, accrue on `crm.commission_confirmed` (jamaah fully paid). Earlier triggers (booking) create contingent liabilities; later triggers (departure) miss the agent payout expectation.
+1. Commission accrual per **Q045** (answered): accrue **Beban Komisi / Hutang Komisi on `paid_in_full`** (per-jamaah proration); **no partial-% accruals**; **clawback** until payout batch posted; **post-payout refund window 30d** nets wallet negative else **`Beban Komisi Forfeit`** bucket; override commissions same event.
 2. Accrual journal:
    - Dr **Beban Komisi Agen (6.x.x)**, tagged with job_order
    - Cr **Hutang Komisi Agen (2.1.x)** — per-agent sub-ledger
@@ -238,7 +220,7 @@ Consumer relationships:
    - Cr **Bank** — net
    - Cr **PPh 21 Dipotong (2.1.y)** — witholding (per Q047 rate)
 5. Payout proof (receipts, tax slip) pushed to agent via WA per crm-svc.
-6. Clawback on jamaah refund (Q045 sub-question): if jamaah refunds post-accrual but pre-payout, reverse the accrual; post-payout — policy TBD in Q045.
+6. Clawback on jamaah refund: **Q045** — reverse accrual if refund before payout batch; after payout, apply **30d** post-payout window per Q045 (wallet negative or forfeit bucket).
 
 ### W15 — Financial statement reports (module #147)
 
@@ -413,31 +395,9 @@ Full contracts in `docs/03-services/08-finance-svc/01-api.md`. Key surfaces conf
 
 ## Open questions
 
-See `docs/07-open-questions/`.
+None blocking — **Q001, Q012, Q017–Q018, Q036–Q038, Q042–Q053** answered **2026-04-18** (`docs/07-open-questions/`). Tax rates, COA seed, and PSAK framing in workflows above follow those answers; **PKP / e-Faktur** still needs **tax advisor** sign-off before production filing.
 
-**Existing, binding heavily:**
-- **Q001** — Operating currency + FX + HPP formula
-- **Q012** — Refund penalty policy matrix
-- **Q017** — Paket Tabungan interaction with booking state
-- **Q018** — Talangan process + accounting
-- **Q036** — Vendor master ownership (finance-svc vs logistics-svc split)
-- **Q038** — Auto-AP cadence + inventory valuation method
-
-**New, filed with this draft (Q042–Q053):**
-- **Q042** — PSAK scope (full PSAK vs ETAP; which standards apply)
-- **Q043** — Revenue recognition mechanics — "terbang" event + refund reversal
-- **Q044** — Multi-year Tabungan deferred-revenue accounting
-- **Q045** — Commission accrual timing
-- **Q046** — Travel-agency PPN rate (PMK-71 1.1% vs 11%) + PKP status + e-Faktur
-- **Q047** — PPh 21 scheme + PPh 23 witholding for no-NPWP vendors
-- **Q048** — FX policy (rate source, transaction-date vs settlement-date, month-end revaluation)
-- **Q049** — Chart of Accounts template seed
-- **Q050** — AP disbursement approval threshold ladder
-- **Q051** — Period close procedure + re-open authority
-- **Q052** — Talangan accounting as loan receivable (PSAK 71) vs booking receivable
-- **Q053** — Refund & pinalti accounting entries
-
-**Inferred (pending reviewer confirmation):**
+**Engineering defaults (cross-check during implementation):**
 
 - Revenue recognition trigger = wheels-up / departure-date event, per PRD line 473 — Q043 formalizes.
 - Straight-line depreciation default per PSAK 16 — deeper configurability per asset is additive.

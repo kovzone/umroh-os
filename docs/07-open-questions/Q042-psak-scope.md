@@ -4,7 +4,7 @@ title: PSAK scope — full PSAK vs ETAP + which standards apply
 asked_by: session 2026-04-17 F9 draft
 asked_date: 2026-04-17
 blocks: F9
-status: open
+status: answered
 ---
 
 # Q042 — PSAK scope
@@ -56,4 +56,7 @@ Reversibility: starting with full PSAK and scaling down to ETAP is easy (drop di
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (audit history), external auditor (if retained), finance director, accountant.
+**Decided (engineering default):** Treat **`accounting_profile` = `etap`** as the **baseline implementation scope** for private SME tenants **unless** the tenant is **statutorily / bank-audited as full PSAK** — then **`full_psak` profile** flips deeper disclosures (PSAK 46 deferred until profile on). **Always implement revenue + FX + inventory + provisions to audit-grade mechanics regardless of profile label:** **PSAK 1, 2, 10, 14, 16, 57, 72** (+ **71** when Talangan in-house exists). **Rationale:** avoids over-building every PSAK disclosure for tiny agencies while not compromising revenue/FX correctness. **External auditor may require `full_psak`** — that is a **config + reporting pack** change, not a surprise rewrite if journals were honest.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

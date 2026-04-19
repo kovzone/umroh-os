@@ -4,7 +4,7 @@ title: ZISWAF scope — donation platform vs pass-through
 asked_by: session 2026-04-17 F10 draft
 asked_date: 2026-04-17
 blocks: F10
-status: open
+status: answered
 ---
 
 # Q059 — ZISWAF scope
@@ -58,4 +58,7 @@ Reversibility: upgrading from pass-through to custody later requires LAZ licensi
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (ZISWAF strategy — feature vs partnership vs defer), ustadz / religious advisor, legal (if custody is considered).
+**Decided:** **Option B pass-through** — **no in-app custody**; **single LAZ partner** configurable; **receipts = partner**; **Tabungan Niat** = agency Tabungan rails (**Q017**); **daily subuh deeplink**; **ustadz one-time copy review** before enable. **Feature flag** can turn module off (**Option C**) per tenant.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

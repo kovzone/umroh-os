@@ -4,7 +4,7 @@ title: Post-ship loss / damage / returns-from-trip protocol
 asked_by: session 2026-04-17 F8 draft
 asked_date: 2026-04-17
 blocks: F8
-status: open
+status: answered
 ---
 
 # Q035 — Post-ship loss, damage, and returns-from-trip protocol
@@ -52,4 +52,7 @@ Reversibility: the claim schema is additive. Adding courier API integration late
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: warehouse supervisor, logistics manager, finance (insurance claim history), ops lead (field return experience).
+**Decided:** **Option B** — `loss_claims` workflow **manual filing** to courier/vendor; **14d lost**, **7d damage** SLAs; **replacement dispatch** on supervisor approval; **returns-from-trip** via TL manifest → warehouse sort; **accounting** via `stock_adjustment` + claim outcome fields (F9).
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

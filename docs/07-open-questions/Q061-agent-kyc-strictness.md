@@ -4,7 +4,7 @@ title: Agent KYC strictness + activation thresholds
 asked_by: session 2026-04-17 F10 draft
 asked_date: 2026-04-17
 blocks: F10
-status: open
+status: answered
 ---
 
 # Q061 — Agent KYC strictness + activation thresholds
@@ -54,4 +54,7 @@ Reversibility: raising/lowering KYC strictness is config per agent-tier. Adding 
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (growth-vs-quality balance), CRM lead, finance director (tax compliance posture), legal (UU PDP considerations per Q008).
+**Decided:** **Option C tiered** — **browse/share on light KYC**; **earn commissions only after full pack** (NPWP or **no-NPWP declaration** + **Q047 2×** acknowledgement) + **bank verified** + **e-MoU**; **manual selfie vs KTP** MVP; **liveness Phase 2**; **duplicate KTP auto-reject**, phone/bank duplicates **flag**; **age ≥17**.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

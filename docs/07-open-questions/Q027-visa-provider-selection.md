@@ -4,7 +4,7 @@ title: Visa provider selection per package kind
 asked_by: session 2026-04-15 F6 draft
 asked_date: 2026-04-15
 blocks: F6
-status: open
+status: answered
 ---
 
 # Q027 — Provider selection per package kind
@@ -64,4 +64,7 @@ Reversibility: config-driven defaults are trivially editable; override path is a
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner + ops lead (current provider relationships + MoUs).
+**Decided:** **Option C** — **defaults:** `umroh_reguler`/`umroh_plus`→**Sajil**, `hajj_furoda`/`hajj_khusus`→**MOFA**, **`badal`→Sajil default** with **ops override** to MOFA when case requires; **per-batch override + reason + audit**; **split-provider within one booking** allowed in data model but **UI warns**. **Phase 1 manual:** still capture `provider_id` on each batch for audit.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

@@ -4,7 +4,7 @@ title: Cancellation → seat return ownership (catalog auto vs F5 refund-gated)
 asked_by: session 2026-04-14 F2 draft
 asked_date: 2026-04-14
 blocks: F2, F4, F5
-status: open
+status: answered
 ---
 
 # Q004 — Cancellation → seat return ownership
@@ -52,4 +52,7 @@ Reversibility: switching from Option A to Option B later means the saga waits fo
 
 ## Answer
 
-TBD — awaiting stakeholder discussion.
+**Decided:** **Option C (conditional)** — **seats release immediately** when booking is cancelled **if** the booking has **never received customer funds** (draft / no successful payment / only internal holds). If **any customer money** has been posted (DP, installment, or lunas), **seat release is deferred** until the **refund saga reaches a terminal success state** (or explicit ops policy marks forfeiture — rare, audited). **Rationale:** avoids selling the same seat twice while money is still in dispute; keeps throughput for no-money abandonments. **Refund failure:** seat stays in a **held / disputed** state (not sellable) until ops resolves (manual reconcile). **Reversal within grace:** catalog attempts re-reserve; failure = honest “seat no longer available” (align with Q014 grace rules).
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

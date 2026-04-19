@@ -4,7 +4,7 @@ title: Historical data retention window for dashboards
 asked_by: session 2026-04-17 F11 draft
 asked_date: 2026-04-17
 blocks: F11
-status: open
+status: answered
 ---
 
 # Q070 — Historical retention window
@@ -48,4 +48,7 @@ Reversibility: retention window is config (`dashboard.history_window = 3y`); can
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: finance director (regulatory requirement), CTO (performance posture), agency owner (trend analysis needs).
+**Decided:** **Option A** — **dashboard queries cap 3y**; **financial reports use full 10y retention** (legal floor); **no delete MVP**; message + link when drill exceeds dashboard window.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

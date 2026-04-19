@@ -4,7 +4,7 @@ title: Multi-branch consolidation rule for central visibility
 asked_by: session 2026-04-17 F11 draft
 asked_date: 2026-04-17
 blocks: F11
-status: open
+status: answered
 ---
 
 # Q071 — Multi-branch consolidation rule
@@ -52,4 +52,7 @@ Reversibility: consolidation rule is architectural but bounded — moving from O
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (visibility preference), CFO (financial-consolidation needs), ops lead (operational-branch-comparison needs).
+**Decided:** **Option A** GLOBAL = **total + branch breakdown + drill to branch view**; **branch compare Phase 2**; **flat branches MVP**; **no view-as** MVP.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

@@ -4,7 +4,7 @@ title: Commission accrual timing — booking / paid / departure / payout
 asked_by: session 2026-04-17 F9 draft
 asked_date: 2026-04-17
 blocks: F9, F10
-status: open
+status: answered
 ---
 
 # Q045 — Commission accrual timing
@@ -55,4 +55,7 @@ Reversibility: moving to Option C (departure-based) later is a non-trivial resta
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (agent-satisfaction vs accounting-rigor balance), CRM lead, finance director, external auditor.
+**Decided:** **Option B** — accrue **Beban Komisi / Hutang Komisi on `paid_in_full` (per jamaah proration)**; **no partial % accruals**; **clawback** until payout batch posted; **post-payout refund window 30d** nets wallet negative else `Beban Komisi Forfeit` bucket; **override commissions same event**.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

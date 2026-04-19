@@ -1,8 +1,8 @@
 ---
 id: F3
 title: Pilgrim Profile & Documents
-status: draft
-last_updated: 2026-04-14
+status: written
+last_updated: 2026-04-18
 moscow_profile: 2 Must Have / 2 Should Have (mahram algorithm is the domain headline)
 prd_sections:
   - "E. Operational & Handling — Document Vault (L1517–1619)"
@@ -14,11 +14,7 @@ modules:
   - "#88 (OCR Paspor & Mahram Logic) — Must / High"
   - "#89 (Progress Tracker & Expiry Alert) — Should / Medium"
 depends_on: [F1]
-open_questions:
-  - Q005 — mahram qualifying relation set + age threshold (religious/legal)
-  - Q006 — minimum documents required to submit a booking
-  - Q007 — KTP ↔ passport name mismatch handling
-  - Q008 — UU PDP compliance (consent, retention, DSR)
+open_questions: []
 ---
 
 # F3 — Pilgrim Profile & Documents
@@ -102,11 +98,11 @@ Primary personas:
      reason_message: string
    }
    ```
-4. **Logic — TBD on the details, see Q005.** Sketch of the default behaviour we'd implement pending the religious/legal answer:
+4. **Logic — per Q005 (answered):** policy-configurable engine with conservative classical defaults: `age_threshold_years: 45`, `require_same_departure: true`, full qualifying-relation set as in Q005 yaml, `allow_staff_override: true` with mandatory reason. **Female minors:** **<12** — no separate mahram check when travelling with guardian on same booking; **12+** — same policy as adults. Behaviour sketch:
    - If subject is male OR age ≥ threshold → `is_valid: true, needs_mahram: false, reason_code: NOT_REQUIRED`.
    - Otherwise walk `mahram_relations` to find a path to any male member of `group_jamaah_ids` whose `relation` is in the **qualifying set**. If found and the candidate is in the same `departure_id`, return `is_valid: true, found_mahram: {...}`.
    - Else return `is_valid: false` with the specific reason.
-5. The current PRD rule (L1617) is only the binary check: "female, age < 45, `mahram_id` must not be null". Our implementation models the richer graph intentionally; see Q005 for the qualifying relation set + age threshold + same-departure rule that we need stakeholder sign-off on.
+5. The current PRD rule (L1617) is only the binary check: "female, age < 45, `mahram_id` must not be null". Our implementation models the richer graph intentionally; **religious/legal reviewer should ratify** Q005 defaults before customer contracts reference them.
 
 ### W7 — Passport expiry alerting (module #89)
 
@@ -146,14 +142,14 @@ Primary personas:
 
 - **MRZ regex fails entirely.** Status moves to `needs_review` with empty `ocr_results.extracted`; staff enters fields manually in W3.
 - **MRZ extracts but passport_number collides with an existing verified passport on a different jamaah.** Flag for ops review; do NOT auto-merge. Indonesian name-reuse across family members makes this a real risk.
-- **KTP name does NOT match passport name.** Very common in Indonesia (shortened names, Arabic transliteration differences). Current default: store both, flag the mismatch on the jamaah profile, require staff acknowledgement before `verified`. Final policy depends on **Q007**.
+- **KTP name does NOT match passport name.** Very common in Indonesia (shortened names, Arabic transliteration differences). Per **Q007**: staff may approve with **mandatory reason codes** + audit; **passport name** is canonical for MOFA/Sajil. Detection: tokenised normalisation + Levenshtein — **≤2** edits on longest token → soft match; **≥3** or token-count mismatch → hard flag.
 - **Jamaah uploads passport belonging to someone else.** Detected either by the collision rule above or by a mismatch between OCR name and the jamaah's registered name. Staff rejects with reason `wrong_passport`.
 - **Mahram verification succeeds at booking but fails later** (e.g. the mahram cancels). The booking-svc status-change path (F4 cancellation) signals `jamaah-svc` to re-check; if now invalid, escalate to ops — do NOT auto-cancel the female's booking. _(Inferred — PRD silent on this reversal path.)_
 - **Passport expires between verification and departure.** The daily cron (W7) catches it; booking is flagged red on the dashboard.
 - **Two jamaah share the same KK but are flagged as husband-wife plus parent-child cycle** (reconstituted families exist). The graph permits this; mahram validation uses the first qualifying path found. No cycle detection beyond standard CTE depth limit.
 - **File upload fails mid-stream.** Partial file in GCS is cleaned up by the handler on error. Document row is not inserted unless the multipart completes successfully.
 - **OCR provider outage.** Document sits in `processing` with a retry counter; after 3 retries, moves to `needs_review` with a flag that OCR was skipped, so staff can enter fields manually.
-- **Jamaah attempts to book before any document is uploaded.** Policy depends on **Q006** (minimum docs required). Default (pending Q006): allow draft booking with KTP only; block submit-to-saga without passport OCR verified.
+- **Jamaah attempts to book before required docs exist.** Per **Q006**: **KTP + passport scan per jamaah** before `draft` → `pending_payment`; OCR may still be `processing`. B2C: **hard block** on submit. Mahram proof docs: **not** required at booking submit (visa stage / Q005 timeline).
 
 ## Data & state implications
 
@@ -201,7 +197,7 @@ Full contracts land in `docs/03-services/03-jamaah-svc/01-api.md`. Key surfaces:
 - **OCR worker** runs in a separate goroutine pool with its own rate limiter against GCP Vision. Avoid synchronous OCR on the upload request path — the PRD's flow allows immediate return once the file is in GCS; OCR is async.
 - **Signed URL generation** always uses a fresh V4 URL per read request; never cache. External-party URLs go through a dedicated method that logs purpose + TTL to audit.
 - **Document-state machine** is enforced at the service layer, not the DB — Postgres can't express "rejected rows are immutable but still exist" without triggers; the service layer is simpler and faster.
-- **Name-mismatch detection** between KTP and passport is a simple Levenshtein-distance check with a configurable threshold; policy on what to do with mismatches is Q007.
+- **Name-mismatch detection** between KTP and passport follows **Q007** (tokenised normalisation + Levenshtein bands); thresholds tunable after production data.
 - **No GCP Vision for KTP in MVP** — manual field entry by staff. KTP OCR is a later iteration once we see how often it would save time; PRD does not mandate.
 - **Audit writes are async** from the user-facing request path. The rejection or verification response returns before the audit write completes; use a buffered channel with a shutdown flush.
 
@@ -214,8 +210,4 @@ Full contracts land in `docs/03-services/03-jamaah-svc/01-api.md`. Key surfaces:
 
 ## Open questions
 
-See `docs/07-open-questions/`:
-- **Q005** — mahram qualifying relation set, age threshold, same-departure rule
-- **Q006** — minimum documents required to submit a booking
-- **Q007** — KTP ↔ passport name mismatch handling policy
-- **Q008** — UU PDP compliance (consent capture, retention, DSR, DPO)
+None blocking — **Q005–Q008** answered **2026-04-18**. **Q008** still requires **legal counsel** on privacy-policy text and breach runbook (engineering defaults only).

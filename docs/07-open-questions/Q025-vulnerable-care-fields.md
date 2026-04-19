@@ -4,7 +4,7 @@ title: Vulnerable Care manifest fields — categories, source of flag, sensitivi
 asked_by: session 2026-04-15 F7 draft
 asked_date: 2026-04-15
 blocks: F7, F3
-status: open
+status: answered
 ---
 
 # Q025 — Vulnerable Care fields
@@ -103,4 +103,7 @@ Reversibility: enum extensions and visibility rule tightening are code-level cha
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner + ops lead + legal (UU PDP compliance for health-adjacent data) + CS lead (real-case coverage).
+**Decided:** **Option A** — enum **`lansia | wheelchair | pregnant | dietary`** (+ extensible jsonb), **self-declare + CS-on-behalf with consent flag**, **tiered visibility** per Recommendation, **explicit consent checkbox** at capture, **retention aligned Q008**, **DSR** can strip flags/certs with audit.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

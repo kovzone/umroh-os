@@ -4,7 +4,7 @@ title: Commission % table (per level × per product)
 asked_by: session 2026-04-17 F10 draft
 asked_date: 2026-04-17
 blocks: F10, F9
-status: open
+status: answered
 ---
 
 # Q055 — Commission % table (per level × per product)
@@ -62,4 +62,7 @@ Reversibility: commission table is config in a single row of `commission_policy`
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (commission-budget strategy), finance director (margin analysis), top agents (feedback from current rates if retained).
+**Decided:** **Option C** matrix (9 cells) as **starting defaults** in Recommendation table; **commissionable base = net of taxes + listed non-commissionable pass-throughs**; **Tabungan: no commission until booking conversion**; **floor Rp50k per closing**; **Cabang override rate** separate config (not in tier table). **Snapshot rates** at accrual event (**Q045**).
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

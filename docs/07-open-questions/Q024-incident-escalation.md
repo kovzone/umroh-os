@@ -4,7 +4,7 @@ title: Incident / issue report escalation matrix
 asked_by: session 2026-04-15 F7 draft
 asked_date: 2026-04-15
 blocks: F7
-status: open
+status: answered
 ---
 
 # Q024 — Incident escalation matrix
@@ -90,4 +90,7 @@ Reversibility: all escalation routing lives in a config table; changes apply to 
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (org-chart + accountability model) + CS lead (current escalation practice) + legal (for security incident handling and Saudi authority coordination).
+**Decided:** **Option A** — `incident_escalation_config` with **Recommendation default matrix** + **channel policy** (emergency = WA+push+SMS; high = WA+push; standard = push+digest). **Emergency closure:** **tour leader + ops lead** dual-ack. **All rows editable** by Super Admin at onboarding.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

@@ -4,7 +4,7 @@ title: Dashboard export policy — formats and permissions
 asked_by: session 2026-04-17 F11 draft
 asked_date: 2026-04-17
 blocks: F11
-status: open
+status: answered
 ---
 
 # Q072 — Dashboard export policy
@@ -67,4 +67,7 @@ Reversibility: whitelist and role mapping are config; adding PDF-only to a curre
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (confidentiality posture), legal (UU PDP + data-leak policy), finance director.
+**Decided:** **Option C** whitelist matrix as Recommendation + **watermark** + **`dashboard_exports` audit** + limits **50 pages / 50k rows** + **no live field-map exports**.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

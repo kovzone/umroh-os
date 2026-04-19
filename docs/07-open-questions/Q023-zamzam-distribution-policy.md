@@ -4,7 +4,7 @@ title: Zamzam distribution quota and policy per jamaah
 asked_by: session 2026-04-15 F7 draft
 asked_date: 2026-04-15
 blocks: F7
-status: open
+status: answered
 ---
 
 # Q023 — Zamzam distribution quota
@@ -60,4 +60,7 @@ Reversibility: quota value is a config variable; enabling per-package override i
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (commercial policy on zamzam allocation) + ops lead (field workflow realism).
+**Decided:** **Option A** — **5L / jamaah / trip**, **one completion event** then **override-only** re-issue; **in-booking transfer** with dual audit rows; **muthawwif override** with reason; **no per-departure bulk cap enforcement** in MVP (procurement problem, not app blocker).
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

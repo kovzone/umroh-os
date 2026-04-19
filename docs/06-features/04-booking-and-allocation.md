@@ -1,8 +1,8 @@
 ---
 id: F4
 title: Booking Creation & Room/Bus Allocation
-status: draft
-last_updated: 2026-04-15
+status: written
+last_updated: 2026-04-18
 moscow_profile: Must Have core (B2C self-booking, B2B agent-booking, CS closing, smart grouping)
 prd_sections:
   - "A. B2C — Self-Service Booking (lines 69–99)"
@@ -14,16 +14,7 @@ prd_sections:
 modules:
   - "#16 Self-Booking Engine, #17 Guest Data Form, #18 Payment Gateway B2C, #92 Smart Room Allocation, #93 Transport Allocation, #95 ID Card & Luggage Tag, #100 Refund & Pinalti"
 depends_on: [F1, F2, F3]
-open_questions:
-  - Q004 — cancellation → seat return ownership (existing)
-  - Q005 — mahram validation at booking (existing)
-  - Q006 — minimum docs required to submit (existing)
-  - Q010 — VA TTL and draft booking expiry
-  - Q014 — partial cancellation + reopening cancelled bookings
-  - Q015 — Smart Grouping trigger timing + override authority
-  - Q016 — booking on behalf of a minor (no KTP)
-  - Q017 — Paket Tabungan interaction with booking state
-  - Q019 — abandoned checkout attribution
+open_questions: []
 ---
 
 # F4 — Booking Creation & Room/Bus Allocation
@@ -84,7 +75,7 @@ draft
   │ (submit + VA issued)
   ▼
 pending_payment ──┐
-  │               │ (VA expires without payment, see Q010)
+  │               │ (VA expires without payment — **Q010**: VA TTL **24h**, global config)
   │               ▼
   │             expired ───┐
   │                        │
@@ -133,11 +124,11 @@ At submit, before the in-process saga starts, F4 calls `jamaah-svc.ValidateMahra
 1. Cancellation initiated by jamaah, CS, or agent.
 2. F4 validates cancellation is allowed (booking status is pre-departure; departure hasn't happened).
 3. F4 creates a `cancellation_request` record, reason code, requested-by.
-4. Q004 decides when seats return — default (recommended in Q004) is **immediate** return to catalog pool upon status → `cancelled`.
-5. F5 `StartRefundFlow` kicks off; refund amount calculated per Q012 (penalty matrix).
+4. **Seat return timing** per **Q004** (answered): **conditional** — if the booking **never received customer funds**, `ReleaseSeats` runs **immediately** when status → `cancelled`. If **any** money was posted, seats stay held until **refund saga succeeds** (or ops forfeiture). Coordinate with F5 refund state machine.
+5. F5 `StartRefundFlow` kicks off; refund amount calculated per **Q012** (configurable tier matrix, snapshot at cancel).
 6. Booking status → `cancelled`. Downstream services receive `booking.cancelled` event and compensate (logistics stops kit prep; finance books refund journal; ops removes from manifest; crm reverses commission).
-7. **Partial cancellation** (one jamaah out of many) — Q014 decides the policy. Default recommended: proportional shrink of the existing booking with per-jamaah refund calc, rather than cancel+rebook.
-8. **Reopening a cancelled booking** — Q014. Default: forbidden; customer makes a fresh booking.
+7. **Partial cancellation** per **Q014**: **shrink booking** (per-jamaah `booking_item` cancelled + pro-rata refund per Q012); **Smart Grouping** does **not** auto-rerun — **flag to ops**.
+8. **Reopening** per **Q014**: within **48h**, only if **capacity**, **price unchanged**, and **no refund payout completed**; else **new booking**.
 
 ### W8 — Submit-time validation checklist
 
@@ -146,8 +137,8 @@ Before F4 starts the in-process booking saga, it validates:
 - [ ] All named jamaah exist in F3 (or are registered on-the-spot via the Guest Data Form path).
 - [ ] Catalog package is `active` and departure is `open`.
 - [ ] Seat availability ≥ requested pax (atomic check in the saga via F2 `ReserveSeats`; compensating `ReleaseSeats` on any downstream failure).
-- [ ] Minimum docs are uploaded per Q006 (default: KTP + passport per jamaah, OCR pending OK).
-- [ ] If minors are on the booking, guardian linkage is present (Q016).
+- [ ] Minimum docs per **Q006**: **KTP + passport scan per jamaah** before `draft` → `pending_payment` (OCR may still be `processing`); B2C hard block if missing.
+- [ ] If minors are on the booking, **Q016**: KK required, guardian is another `booking_item` on same booking, payer distinct where applicable.
 - [ ] Mahram check runs (W6) — warning, not blocker.
 - [ ] Package pricing + add-ons total computed; total amount locked on the booking record.
 
@@ -164,7 +155,7 @@ If any HARD check fails (seats, active status, package validity), the submit is 
 - Cancellation triggers `booking.cancelled`, which reaches catalog (seat return per Q004), F5 refund flow, F8 logistics, F9 finance, F10 crm, and F6 visa (all idempotent consumers).
 - Partial cancellation (Q014) is a single transaction that reduces pax count, writes per-jamaah refund lines, and updates room/bus allocations if allocations already ran.
 - Smart Grouping output is stored against the booking but the booking remains the authoritative source of WHO is on the trip; allocations are mutable, booking members are not (except via cancellation).
-- Reopening a cancelled booking is rejected (Q014 default); customer must start a new booking.
+- Reopening a cancelled booking follows **Q014** (48h window + capacity + price + no payout); otherwise customer starts a new booking.
 - VA expiry on an unpaid booking transitions to `expired` (terminal), releases seats, and does NOT trigger the refund flow (no money was taken).
 
 ## Edge cases & error paths
@@ -173,12 +164,12 @@ If any HARD check fails (seats, active status, package validity), the submit is 
 - **VA issuance fails after seat reserved.** Saga compensation: F5 returns error → F4 `ReleaseSeats(n)` to catalog → booking marked `failed` (not `cancelled`, not `expired` — this is a system fault, distinct state for ops triage). _(Inferred — `failed` is not in PRD enum; add it.)_
 - **Webhook arrives for a booking already in `paid_in_full`.** Idempotent no-op — F5 deduplicates on `gateway_txn_id`. F4 simply returns current state.
 - **VA expires, then customer tries to pay later.** Payment is rejected by gateway (VA expired). If we want to allow grace, commercial choice; default: customer creates a new booking.
-- **Abandoned checkout re-engaged by CS** (Q019). If CS rescues a B2C-abandoned cart, attribution policy is Q019. Default: the last-touched channel wins (CS takes over).
+- **Abandoned checkout re-engaged by CS** (**Q019**): **30-day last-touch** for commission-bearing attribution; CS remains salaried (no CS commission); UTM wins marketing ROAS only.
 - **Departure is cancelled mid-flight** (airline cancels, force majeure). All bookings on that departure need a bulk cancellation path. _(Inferred)_ Ops triggers a bulk operation; booking-svc cancels each and F5 refunds each with a special reason code `departure_cancelled` that bypasses the penalty matrix (Q012).
 - **Mahram warning resolved mid-booking** (a male family member books into the same departure after a warning fired). F4 doesn't auto-re-check every booking when a new booking lands; instead, the mahram warning is re-evaluated at F6 visa submission (the right gate). _(Inferred.)_
 - **Passport 6-month rule violation detected at booking submit** (F3 passport expiry too close to departure). HARD blocker — booking submission fails with reject reason `passport_expires_before_departure`, pointing the jamaah to renew before booking.
 - **Multi-currency invoicing** (Q001) — locked at VA issuance time with FX snapshot on the booking record. Subsequent FX changes don't reprice paid bookings.
-- **Paket Tabungan interaction** (Q017). Does an active savings plan hold a seat? _(Inferred default: no — savings is pre-booking, converts to a real booking when the target is hit.)_ Q017 pins this.
+- **Paket Tabungan** (**Q017**): `savings_plan` is **pre-booking** (no seat); converts to a normal booking with balance applied when customer picks a departure; withdrawal fee + SLA per Q017.
 
 ## Data & state implications
 
@@ -244,17 +235,4 @@ Downstream consumers (events, listed below):
 
 ## Open questions
 
-See `docs/07-open-questions/`:
-
-**Existing (shared with other features):**
-- **Q004** — cancellation → seat return ownership
-- **Q005** — mahram qualifying relations, age threshold
-- **Q006** — minimum docs required to submit a booking
-
-**New, filed with this draft:**
-- **Q010** — VA TTL and draft booking expiry (how long customer has to pay before seat returns)
-- **Q014** — partial cancellation + reopening cancelled bookings
-- **Q015** — Smart Grouping trigger timing + override authority
-- **Q016** — booking on behalf of a minor (no KTP)
-- **Q017** — Paket Tabungan interaction with booking state
-- **Q019** — abandoned checkout attribution (who gets commission)
+None blocking — **Q004–Q006, Q010, Q014–Q017, Q019** answered **2026-04-18** (`docs/07-open-questions/`). **Q015** (Smart Grouping trigger + overrides) is specified in **F7**; F4 stores allocation references from ops-svc only.

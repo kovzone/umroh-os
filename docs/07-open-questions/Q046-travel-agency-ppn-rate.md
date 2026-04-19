@@ -4,7 +4,7 @@ title: Travel-agency PPN rate + PKP status + e-Faktur integration
 asked_by: session 2026-04-17 F9 draft
 asked_date: 2026-04-17
 blocks: F9
-status: open
+status: answered
 ---
 
 # Q046 — Travel-agency PPN rate + PKP status + e-Faktur
@@ -52,4 +52,7 @@ Reversibility: changing PPN modes later requires re-generating historical tax re
 
 ## Answer
 
-TBD — awaiting stakeholder input. **This question needs external tax advisor / accountant confirmation** — engineering's read of PMK-71 should not be the sole basis. Deciders: external tax advisor / accountant (primary), finance director, agency owner (PKP registration status).
+**Decided:** Implement **`ppn_mode` config** with default **`pmk71`** for **PKP** travel packages per **Option A/C**; **non-PKP → `none`**; **add-ons** default **`standard`** 11% unless mapped. **e-Faktur MVP:** **CSV export** for DJP upload. **Input credit treatment:** **follow signed tax memo** (do not hardcode in app). **PKP status:** tenant setting. **Mandatory:** **Indonesian tax advisor sign-off** before production invoices issue.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

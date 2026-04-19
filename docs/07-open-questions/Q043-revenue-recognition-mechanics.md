@@ -4,7 +4,7 @@ title: Revenue recognition mechanics — "terbang" event + refund reversal
 asked_by: session 2026-04-17 F9 draft
 asked_date: 2026-04-17
 blocks: F9, F4, F5
-status: open
+status: answered
 ---
 
 # Q043 — Revenue recognition mechanics
@@ -56,4 +56,7 @@ Reversibility: switching to Option B (simpler departure-date) later is easy (cha
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: finance director, external auditor, agency owner (post-trip-refund frequency experience).
+**Decided:** **Option A** primary — **per-jamaah** recognition on first qualifying **F7 handling event** (`all_system_checkin` or `bus_boarding`); **fallback Option B** auto-fire **T+24h after scheduled departure** if no scan; **reconciliation job** reverses mistaken recognition. **Partial trip:** no automatic partial reversal post-boarding; **goodwill refunds** via **Q053**. **Pre-travel cancel:** no recognition. **Death in-trip:** recognition stands; refunds/insurance separate.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

@@ -4,7 +4,7 @@ title: Executive landing widget composition (top 8–12 KPIs)
 asked_by: session 2026-04-17 F11 draft
 asked_date: 2026-04-17
 blocks: F11
-status: open
+status: answered
 ---
 
 # Q075 — Executive landing widget composition
@@ -66,4 +66,7 @@ Reversibility: widget list + ordering + sizes are fully config; no code change t
 
 ## Answer
 
-TBD — awaiting stakeholder input. **Stakeholder curation explicitly needed** — the default widget list above is a starting point, not a final answer. Deciders: agency owner (primary consumer of the home), CFO / CMO / COO (sub-landing composition), UX / design lead (mobile-first composition).
+**Decided:** **Option A** — **owner-configurable ordered widget list** (defaults = Recommendation table **v1**), **role sub-landings** `/finance /marketing /operations /saudi`, **MTD default range**, **branch+date filters** on home, **hero+tile layout**, **cold-start copy** as spec’d. **Ordering editable in config JSON** without redeploy.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

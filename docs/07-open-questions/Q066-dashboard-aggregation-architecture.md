@@ -4,7 +4,7 @@ title: Dashboard aggregation architecture — service `/metrics` vs CQRS vs OLAP
 asked_by: session 2026-04-17 F11 draft
 asked_date: 2026-04-17
 blocks: F11
-status: open
+status: answered
 ---
 
 # Q066 — Dashboard aggregation architecture
@@ -52,4 +52,7 @@ Reversibility: adding a CQRS projection later is additive — service `/metrics`
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: CTO / backend lead (architecture posture), Ops / observability lead (Grafana usage model), agency owner (dashboard UX expectation).
+**Decided:** **Option A** — **service `/v1/metrics/*` + thin `dashboard-svc` composer** + **Redis 5m default** + **per-service matviews when >500ms** + **Grafana on read-replica for analysts** alongside Svelte exec UI.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

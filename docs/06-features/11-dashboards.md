@@ -1,8 +1,8 @@
 ---
 id: F11
 title: Dashboards & Reporting
-status: draft
-last_updated: 2026-04-17
+status: written
+last_updated: 2026-04-18
 moscow_profile: 4 Must / 9 Should / 0 Could (13 modules in scope)
 prd_sections:
   - "K (Section J in PRD numbering — Executive Dashboards, lines 575–621)"
@@ -19,17 +19,7 @@ modules:
   - "#187 Arus Kas Instan, #188 Laporan Keuangan Eksekutif (Financial Health — both Must Have)"
   - "#189 Likuiditas (Financial Health)"
 depends_on: [F1, F2, F4, F5, F6, F7, F8, F9, F10]
-open_questions:
-  - Q066 — Aggregation architecture (service `/metrics` endpoints vs read-replica + OLAP vs projection)
-  - Q067 — Refresh cadence tiers (streaming vs 1-min vs 5-min vs hourly vs on-demand)
-  - Q068 — Alert threshold ownership (fixed defaults vs per-tenant config vs per-role)
-  - Q069 — Drill-down depth (every widget → source transaction?)
-  - Q070 — Historical retention window for dashboards
-  - Q071 — Multi-branch consolidation rule (aggregated only vs aggregated + branch breakdown)
-  - Q072 — Dashboard export policy (which dashboards export to PDF/XLSX/PNG)
-  - Q073 — Custom dashboard building vs fixed catalog
-  - Q074 — Field radar transport (websocket streaming vs polling + GPS source)
-  - Q075 — Executive-dashboard landing widget composition
+open_questions: []
 ---
 
 # F11 — Dashboards & Reporting
@@ -76,7 +66,7 @@ Consumer relationships (one-way; F11 consumes):
 
 1. Owner or Direksi opens the dashboard root on phone or desktop.
 2. Top-of-screen summary: today's cash balance, today's AR/AP delta, paid-but-unshipped count, verification-queue depth, open-incident count.
-3. Widget grid: 8–12 KPIs per **Q075** composition (stakeholder-curated). Candidate widgets: revenue MTD, bookings MTD, conversion rate, ROAS, aging AR buckets, Raudhah success rate, bus-radar status map.
+3. Widget grid: 8–12 KPIs per **Q075** (answered): **owner-configurable ordered list** with Recommendation-table **v1** defaults, role sub-landings `/finance /marketing /operations /saudi`, MTD range, branch+date filters — ordering in **config JSON** without redeploy. Candidate widgets: revenue MTD, bookings MTD, conversion rate, ROAS, aging AR buckets, Raudhah success rate, bus-radar status map.
 4. Each widget drillable to detail (**Q069**): widget → breakdown chart → transaction list.
 5. Data-scope enforced: `scope=global` shows all; `scope=branch` filters every widget to `branch_id`.
 6. Mobile-responsive per PRD line 27 ("hanya melalui satu layar smartphone").
@@ -124,7 +114,7 @@ Consumer relationships (one-way; F11 consumes):
 
 1. Branch manager's login scope = `BRANCH`; the same dashboard routes (`/erp/dashboard/*`) render filtered to `branch_id`.
 2. Per PRD line 1357: every metric SQL / gRPC query applies `WHERE branch_id = $1`.
-3. Central user with `GLOBAL` scope sees union of all branches — **consolidation rule per Q071**: default inferred is aggregated totals + branch breakdown with drill (not flat union).
+3. Central user with `GLOBAL` scope per **Q071** (answered): **total + branch breakdown + drill**; **branch compare** and **view-as** are **Phase 2**; **flat per-branch** list is MVP.
 4. Kasir Cabang scope sees a further-stripped dashboard per PRD line 1399 (only branch transactions + invoices).
 
 ### W8 — Alerts & notifications
@@ -189,19 +179,13 @@ Proposed F11-owned lightweight tables (minimal, for operational state not-alread
 - `dashboard_preferences` — per-user saved filters + widget layout (MVP: shared layout per role; user customization in Phase 2).
 - **No fact tables in F11** — aggregations executed live against owning services.
 
-Aggregation architecture choice (**Q066**) affects data shape:
-
-- **Option A — service-owned `/metrics` endpoints** (default inferred): each service exposes its own aggregation layer; F11 composes via gRPC / REST calls. Simplest for MVP; respects bounded contexts.
-- **Option B — CQRS projection** into a dedicated `dashboard-svc` read store that consumes events from all services. Higher throughput; complex infra.
-- **Option C — OLAP / Grafana on Postgres read replica** — use Grafana + Postgres read-replica + Metabase for ad-hoc; product-focused dashboards (W1–W7) still rendered in Svelte.
-
-Default Q066 recommendation is **Option A with hybrid Option C for ad-hoc**: service-owned `/metrics` endpoints for product dashboards; Grafana for observability + ad-hoc analyst queries.
+Aggregation architecture per **Q066** (answered): **service `GET /v1/metrics/*` + thin `dashboard-svc` composer** + **Redis 5m default cache** + **per-service matviews when >500ms** + **Grafana on read-replica** for analyst slices alongside Svelte exec UI.
 
 ## API surface (high-level)
 
 F11 itself has a minimal API surface — mostly a thin aggregator + presentation layer. Most work happens upstream.
 
-**REST (F11 thin layer — probably lives in a `gateway-svc` or `dashboard-svc` TBD per Q066):**
+**REST** (F11 thin layer — implemented in `dashboard-svc`, per **Q066**):
 
 - `GET /v1/dashboard/home` — executive landing; returns KPI-grid structured data.
 - `GET /v1/dashboard/operations` — Operational Readiness widgets.
@@ -262,36 +246,8 @@ All `/metrics` endpoints respect branch-scope via JWT claim.
 
 ## Open questions
 
-See `docs/07-open-questions/`.
+None blocking — **Q038, Q045, Q048** (upstream) and **Q066–Q075** answered **2026-04-18** (`docs/07-open-questions/`). Cadence, drill depth, export policy, and transport defaults in the body match those answers unless config overrides.
 
-**Existing (all upstream — F11 inherits resolutions):**
+**Implementation notes (not open decisions):**
 
-- **Q038** — inventory valuation (affects W5 asset value).
-- **Q045** — commission accrual timing (affects W3 commission KPIs).
-- **Q048** — FX policy (affects multi-currency aggregations).
-
-**New, filed with this draft (Q066–Q075):**
-
-- **Q066** — Aggregation architecture (service-owned `/metrics` vs CQRS vs OLAP hybrid)
-- **Q067** — Refresh cadence tiers (streaming / 1-min / 5-min / hourly / on-demand)
-- **Q068** — Alert threshold ownership + default values
-- **Q069** — Drill-down depth requirement per widget
-- **Q070** — Historical data retention window for dashboards
-- **Q071** — Multi-branch consolidation rule (central visibility)
-- **Q072** — Dashboard export policy (which exports, to what format)
-- **Q073** — Custom dashboard building vs fixed catalog
-- **Q074** — Field radar transport (websocket vs polling + GPS source for bus)
-- **Q075** — Executive landing widget composition (top 8–12 KPIs)
-
-**Inferred (pending reviewer confirmation):**
-
-- Q066 default: service-owned `/metrics` endpoints (Option A) + Grafana on read replica for ad-hoc (hybrid Option C).
-- Q067 default tiers: streaming for incidents + bus radar + cash flow; 30s for seat inventory; 5min for sales funnel; hourly for inventory value; on-demand for Neraca/LR.
-- Q068 default: fixed defaults at install; Super Admin configurable per-tenant.
-- Q069 default: 3-level drill (widget → breakdown → transaction list → source entity).
-- Q070 default: 3 years of historical dashboard data; beyond that requires ad-hoc query.
-- Q071 default: GLOBAL scope sees aggregated + branch breakdown with drill; no flat union UI in MVP.
-- Q072 default: Financial Health exports PDF + Excel; Operational / Sales / Inventory PDF only; Real-Time Field View no export.
-- Q073 default: fixed catalog in MVP; user customization Phase 2.
-- Q074 default: websocket for bus radar + incidents; polling 1–5min for Raudhah + luggage; bus GPS source = F7 tour-leader app (Q074 revisits source options).
-- Q075 default: KPI list pending stakeholder curation; placeholder 8-widget layout in spec.
+- Keep Grafana for analyst ad-hoc; product dashboards stay in Svelte + `dashboard-svc` per **Q066**.

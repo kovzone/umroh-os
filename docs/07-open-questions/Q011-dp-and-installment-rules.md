@@ -4,7 +4,7 @@ title: Minimum DP percentage, maximum installment count, installment cadence
 asked_by: session 2026-04-15 F4/F5 draft
 asked_date: 2026-04-15
 blocks: F5
-status: open
+status: answered
 ---
 
 # Q011 — DP and installment rules
@@ -49,4 +49,7 @@ Reversibility: min DP and installment count are config values; reminder schedule
 
 ## Answer
 
-TBD — awaiting stakeholder input. Likely decider: agency owner + finance lead (AR management preferences).
+**Decided:** **Option A** — **min DP 20%**, **unlimited partial payments** until pelunasan deadline, **no forced equal-monthly schedule**; WA reminders at **H-60, H-30, H-14, H-7**; **H-7** escalation is **CS task** (not auto-cancel in MVP).
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

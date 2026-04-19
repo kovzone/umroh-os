@@ -4,7 +4,7 @@ title: Physical passport chain-of-custody process (module #96)
 asked_by: session 2026-04-15 F6 draft
 asked_date: 2026-04-15
 blocks: F6
-status: open
+status: answered
 ---
 
 # Q029 — Physical passport chain-of-custody
@@ -87,4 +87,7 @@ Reversibility: tightening to Option A requires a UI tweak + making optional fiel
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency ops lead (current workflow) + head of ops (SLA realism) + legal advisor (liability on lost passports).
+**Decided:** **Option B** extended enum + **required signer fields** on all transitions + **photo mandatory** provider/embassy legs + **SLA alerts** per table + **lost → high incident** auto-route. **Courier:** tracking number optional text; **no webhook MVP**.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

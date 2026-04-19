@@ -4,7 +4,7 @@ title: Overriding commission formula + hierarchy depth + orphaned-upline handlin
 asked_by: session 2026-04-17 F10 draft
 asked_date: 2026-04-17
 blocks: F10
-status: open
+status: answered
 ---
 
 # Q056 — Overriding commission formula
@@ -62,4 +62,7 @@ Reversibility: override rules are config. Changing hierarchy depth cap (3 → un
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (commission-budget implication), CRM lead (agent-program experience), finance director (payout cost impact).
+**Decided:** **Option A** — **per-level difference on active chain**, **max depth = 3 earning levels** (closer + 2 uplines), **skip inactive**, **campaign uplift applies to entire chain math**, **Cabang top-of-tree**, **upline changes apply prospectively only** (historical payouts frozen). **Cabang base rate** lives in `commission_policy.cabang_direct_rate`.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

@@ -1,8 +1,8 @@
 ---
 id: F5
 title: Payment & Reconciliation
-status: draft
-last_updated: 2026-04-15
+status: written
+last_updated: 2026-04-18
 moscow_profile: 4+ Must Haves (VA issuance, bank integration, digital receipts, AR subledger)
 prd_sections:
   - "A. Self-Service Booking — Payment Gateway B2C (line 79)"
@@ -14,12 +14,7 @@ prd_sections:
 modules:
   - "#18 Payment Gateway B2C, #64 Pembuat Link Pembayaran, #129 Penagihan Otomatis, #130 Integrasi Bank, #131 Buku Pembantu Piutang, #132 Kwitansi Digital, #133 Pembayaran Manual, #100 Refund & Pinalti"
 depends_on: [F1, F4]
-open_questions:
-  - Q001 — operating currency, FX handling (existing — FX-lock at invoice issuance)
-  - Q004 — cancellation → seat return timing (existing — interlocks with refund flow)
-  - Q011 — minimum DP %, max installment count, cadence
-  - Q012 — refund penalty policy matrix (per package type, per timing bucket)
-  - Q013 — dual-gateway (Midtrans / Xendit) selection and fallback rule
+open_questions: []
 ---
 
 # F5 — Payment & Reconciliation
@@ -53,11 +48,11 @@ Primary personas:
 
 Called from the F4 booking submit saga.
 
-1. Saga activity `IssueVirtualAccount` is invoked with `{ booking_id, amount, currency, gateway_pref }`.
+1. Saga activity `IssueVirtualAccount` is invoked with `{ booking_id, amount_total, currency, gateway_pref }`.
 2. F5 creates an `invoice` in state `unpaid` with `booking_id`, `amount_total`, `currency`, `fx_snapshot` (Q001 FX lock).
-3. F5 selects gateway per Q013 (default: Midtrans primary, Xendit fallback on Midtrans failure).
-4. Calls the gateway's Create VA API with idempotency key = `invoice.id`, receives `gateway_va_id`, `account_number`, `bank_code`, `expires_at` (from Q010 default TTL).
-5. Persists `virtual_accounts` row; returns `{ account_number, bank_code, amount, expires_at }` to the saga.
+3. F5 selects gateway per **Q013**: **Midtrans primary**, **Xendit hot-standby**; failover on **5xx or timeout > 10s**; **no failover on 4xx**.
+4. Calls the gateway's Create VA API with idempotency key = `invoice.id`, receives `gateway_va_id`, `account_number`, `bank_code`, `expires_at` (**Q010**: VA TTL **24h** default; draft booking idle **30m**; pelunasan **H-30** — all global Super Admin config).
+5. Persists `virtual_accounts` row; returns `{ account_number, bank_code, amount_total, expires_at }` to the saga.
 6. Saga passes the VA details back to the caller (B2C checkout page / CS WhatsApp message / B2B agent portal).
 
 ### W2 — Pay via virtual account (Alur Logika 5.3)
@@ -87,7 +82,7 @@ Called from the F4 booking submit saga.
 ### W4 — CS-generated payment link (Module #64, line 223)
 
 1. CS opens a booking in the internal console, clicks **Generate Payment Link**.
-2. Selects gateway, amount (full / DP per Q011 / custom with e-Approval per W7), and expiry.
+2. Selects gateway, amount (full / **DP min 20%** per **Q011** / custom with e-Approval per W7), and expiry.
 3. F5 creates an invoice + VA same as W1 but without the full submit-saga path — direct REST call since the booking already exists.
 4. Returns a WhatsApp-shareable URL that opens the checkout page.
 5. CS pastes the link into the WA conversation.
@@ -136,7 +131,7 @@ Triggered by F4 cancellation (W7 in F4) or by a departure-cancelled bulk operati
 
 ### W9 — FX handling (per Q001)
 
-1. At VA issuance time (W1), F5 snapshots the current FX rates for every foreign-currency cost component and stores them on the invoice.
+1. At VA issuance time (W1), F5 snapshots locked FX (USD/SAR/IDR as applicable) and stores them on the invoice. Catalog may have shown **USD list**; **payable amount is IDR** at lock; round customer **payable total once** to nearest **Rp 1,000** (half-up) per Q001.
 2. Once the invoice is in state `partially_paid` or `paid`, the snapshot is **immutable** — subsequent FX rate changes in global config do not reprice this invoice (PRD line 1313 hard rule).
 3. For a booking that's still `draft` or `pending_payment` with an unpaid VA, the admin can choose to void the old invoice and issue a new one at fresh rates if a customer complaint warrants it. _(Inferred — voluntary; not PRD-mandated.)_
 
@@ -160,7 +155,7 @@ Triggered by F4 cancellation (W7 in F4) or by a departure-cancelled bulk operati
 - **Gateway returns success on Create VA but F5 DB insert fails** (network blip). F5 has the gateway's `gateway_va_id` but no DB row — orphan. Saga compensation: on next invocation, F5's idempotency key matches, gateway returns the existing VA, F5 retries the DB insert. Net: eventually consistent, no double-VA.
 - **Partial webhook (first tranche of a multi-installment lands, second is lost).** Reconciliation cron (W5) catches it, backfills the missing event, updates invoice `paid_amount`.
 - **Payment lands on an already-cancelled booking** (race between cancellation and payment settlement). Invoice is `void` but payment still came in. Log anomaly, auto-trigger refund flow for the received amount (negative penalty — full return because cancel preceded payment). Finance reviews the exceptional-case dashboard.
-- **Multi-currency invoice + FX rate change mid-flight** (Q001). FX snapshot on invoice locks the rate; invoice paid_amount is always tracked in the invoice's original currency. Finance conversion to base currency for reports uses the snapshot rate, not current.
+- **Multi-currency invoice + FX rate change mid-flight** (Q001). FX snapshot on invoice locks the rate; **MVP** invoice `currency` is **IDR only** — `paid_amount` / `amount_total` are IDR. Finance reporting still uses `fx_snapshot` for SAR/USD cost lines where relevant. If multi-currency invoices are added later, `paid_amount` stays in `invoices.currency`.
 - **Refund fails on gateway side** (e.g. VA expired, card deactivated). Falls back to manual refund task routed to finance admin. Booking stays in `cancelled` state; refund record status → `failed` → admin manually transfers via bank + marks completed.
 - **Partial cancellation refund (Q014)** — individual jamaah cancels from a multi-pilgrim booking. Refund = (per-jamaah share of received − per-jamaah penalty − per-jamaah sunk). Booking `total_amount` and `paid_amount` reduce accordingly. F4 handles the booking-shape change; F5 handles the money.
 - **Manual-payment approval rejected after booking was already flipped** (shouldn't happen — booking only flips AFTER approval — but defense in depth). Approval is strictly gating; no booking transition without it.
@@ -170,6 +165,8 @@ Triggered by F4 cancellation (W7 in F4) or by a departure-cancelled bulk operati
 
 Owned by `payment-svc`. Full schema in `docs/03-services/04-payment-svc/02-data-model.md`. Key additions from this spec:
 
+- `invoices.amount_total` numeric — contractual **IDR** after one-shot **Rp 1,000** half-up rounding (**Q001**).
+- `invoices.rounding_adjustment_idr` numeric — signed delta vs pre-round sum; feeds finance **sales rounding** GL.
 - `invoices.fx_snapshot` jsonb — FX rates at issuance; immutable once any payment lands.
 - `invoices.status` enum — `unpaid | partially_paid | paid | void | refunded`.
 - `invoices.paid_amount` numeric — running tally, updated atomically on each event.
@@ -222,7 +219,7 @@ Downstream consumers:
 - **Webhook handler is the critical path** — keep it tight: verify signature, dedupe, insert, signal, return 200. Anything heavier (receipt generation, external notifications) goes to a worker queue, not the webhook path itself.
 - **Reconciliation cron** uses the same gateway adapter as the webhook — no duplicate logic. It just pulls status, feeds the same event-processing pipeline that the webhook uses.
 - **FX snapshot** is computed from F9 `GetExchangeRate` at issuance time; finance owns the FX source of truth, F5 just snapshots the answer.
-- **Dual-gateway selection** (Q013). Default implementation: primary/secondary config; try primary, fallback to secondary on transient error (5xx, timeout). On persistent error (4xx), return the error to the caller — don't mask a real failure.
+- **Dual-gateway selection** (**Q013**): Midtrans primary, Xendit hot-standby; failover on **5xx or timeout > 10s**; **no failover on 4xx**.
 - **PDF receipt rendering** runs in a separate goroutine pool with its own rate limiter, shared with F2 flyer rendering. Slow render doesn't block webhooks.
 
 ## Frontend notes
@@ -235,13 +232,4 @@ Downstream consumers:
 
 ## Open questions
 
-See `docs/07-open-questions/`:
-
-**Existing (shared with other features):**
-- **Q001** — operating currency, FX lock at invoice issuance
-- **Q004** — cancellation → seat return timing (interlocks with refund flow)
-
-**New, filed with this draft:**
-- **Q011** — minimum DP %, max installment count, cadence
-- **Q012** — refund penalty policy matrix (per package type, per timing bucket)
-- **Q013** — dual-gateway (Midtrans / Xendit) selection and fallback rule
+None blocking — **Q001, Q004, Q011–Q013** answered **2026-04-18** (`docs/07-open-questions/`). **Q011** summary: min DP **20%**, unlimited partials until pelunasan deadline, reminders **H-60/30/14/7**, H-7 escalation = **CS task** (no auto-cancel MVP).

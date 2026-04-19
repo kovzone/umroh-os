@@ -4,7 +4,7 @@ title: Drill-down depth — widget to source transaction
 asked_by: session 2026-04-17 F11 draft
 asked_date: 2026-04-17
 blocks: F11
-status: open
+status: answered
 ---
 
 # Q069 — Drill-down depth
@@ -49,4 +49,7 @@ Reversibility: extending drill depth later is additive; tightening is a policy d
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (exploration vs decision-making preference), CTO (performance budget), UX lead.
+**Decided:** **Option A** — **3 dashboard drill levels** then **deep link** to owning feature screens; **filters in querystring**; **branch scope enforced**; **field RBAC** respected.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

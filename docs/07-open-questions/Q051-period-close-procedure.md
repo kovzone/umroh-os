@@ -4,7 +4,7 @@ title: Period close procedure + re-open authority
 asked_by: session 2026-04-17 F9 draft
 asked_date: 2026-04-17
 blocks: F9
-status: open
+status: answered
 ---
 
 # Q051 — Period close procedure + re-open authority
@@ -52,4 +52,7 @@ Reversibility: close cadence (monthly vs quarterly) is a config. Soft vs hard ru
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: finance director, external auditor, CFO/agency-owner (governance appetite).
+**Decided:** **Option A** — **monthly soft close T+10**, checklist (FX, depreciation, bank recon, AR/AP review); **reopen requires finance director + CFO** reason; **annual hard close T+60** with **closing entries** to retained earnings; **entity-wide only** MVP.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

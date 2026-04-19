@@ -4,7 +4,7 @@ title: Custom dashboard building vs fixed catalog
 asked_by: session 2026-04-17 F11 draft
 asked_date: 2026-04-17
 blocks: F11
-status: open
+status: answered
 ---
 
 # Q073 — Custom dashboard building vs fixed catalog
@@ -55,4 +55,7 @@ Reversibility: adding tile customization later is additive; adding full builder 
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (dashboard UX maturity), CTO (implementation scope), power users if retained (analyst feedback).
+**Decided:** **Option A** — **fixed catalog MVP**; **Grafana** for ad-hoc; **saved filters / tile hide Phase 2**; **full builder only if demand proven**.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

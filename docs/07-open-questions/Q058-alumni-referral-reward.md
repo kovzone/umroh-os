@@ -4,7 +4,7 @@ title: Alumni referral reward economics
 asked_by: session 2026-04-17 F10 draft
 asked_date: 2026-04-17
 blocks: F10
-status: open
+status: answered
 ---
 
 # Q058 — Alumni referral reward economics
@@ -59,4 +59,7 @@ Reversibility: reward amount, cap, expiry, and trigger are all config in `alumni
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (marketing-budget + repeat-booking strategy), CRM lead, finance director (marketing-expense posture).
+**Decided:** **Option A** — **Rp500k credit** on alumni’s **next booking**, **trigger = referred `paid_in_full`**, **cap 3/year/alumni**, **24mo credit expiry**, **completed-trip alumni eligible**, **marketing expense** accrual, **anti-self-deal** by KTP/phone match, **stacks with agent commission**.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

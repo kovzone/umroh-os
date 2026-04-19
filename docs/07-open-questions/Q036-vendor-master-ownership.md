@@ -4,7 +4,7 @@ title: Vendor master ownership + onboarding & rating
 asked_by: session 2026-04-17 F8 draft
 asked_date: 2026-04-17
 blocks: F8, F9
-status: open
+status: answered
 ---
 
 # Q036 — Vendor master ownership + onboarding & rating
@@ -48,4 +48,7 @@ Reversibility: collapsing the two tables into one later is a migration; extendin
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: finance director (tax/bank compliance), logistics manager (vendor rating criteria), agency owner (approval authority).
+**Decided:** **Option B split** — **shared `vendor_id`**: **finance-svc** = tax/bank/AP core; **logistics-svc** = ops contact + delivery performance + blocklist mirror; **onboarding atomic write** to both; **finance director approves** new vendor; ratings stay logistics.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

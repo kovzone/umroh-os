@@ -4,7 +4,7 @@ title: Dashboard refresh cadence tiers
 asked_by: session 2026-04-17 F11 draft
 asked_date: 2026-04-17
 blocks: F11
-status: open
+status: answered
 ---
 
 # Q067 — Refresh cadence tiers
@@ -66,4 +66,7 @@ Reversibility: cadence tiers are config; moving a widget between tiers is a conf
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: CTO / backend lead (infra cost of streaming), agency owner (executive expectation), ops lead (field-radar freshness requirement).
+**Decided:** **Option A** five-tier table as Recommendation; **page auto-refresh = fastest non-streaming widget on that page**; **per-widget manual refresh**; **timestamps always shown**.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

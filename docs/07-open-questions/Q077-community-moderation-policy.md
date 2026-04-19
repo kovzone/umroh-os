@@ -4,7 +4,7 @@ title: Community moderation policy + posting authority
 asked_by: session 2026-04-17 F12 draft
 asked_date: 2026-04-17
 blocks: F12
-status: open
+status: answered
 ---
 
 # Q077 — Community moderation policy
@@ -76,4 +76,7 @@ Reversibility: moderation mode (pre / post / hybrid) is config per surface. Tigh
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (UU ITE posture + community strategy), CS supervisor (moderation bandwidth), legal advisor.
+**Decided:** **Option C** — cohort-gated forum, **post-publish moderation** + **3-flag auto-hide**, **repeat offender pre-mod**, **reuni admin-only posts**, `COMMUNITY_MOD` role, **12mo removed retention**, **emergency all-pre mode** toggle.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

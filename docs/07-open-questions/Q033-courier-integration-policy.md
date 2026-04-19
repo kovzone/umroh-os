@@ -4,7 +4,7 @@ title: Courier integration policy — single vs multi, fallback, routing
 asked_by: session 2026-04-17 F8 draft
 asked_date: 2026-04-17
 blocks: F8
-status: open
+status: answered
 ---
 
 # Q033 — Courier integration policy
@@ -49,4 +49,7 @@ Reversibility: courier selection is config. Adding a new courier is a new adapte
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner, logistics manager, finance (cost-per-shipment analysis from current workflows).
+**Decided:** **Option C** — **zone → primary/secondary/tertiary routing table**; **fallback on 5xx or >30s timeout**; **queue with admin alert if all fail**; **>10kg → cargo profile**; **B2B dispatch defaults to agent branch address**; **no jamaah courier pick** in MVP. **Defaults:** JNE primary Java/metro, J&T secondary, SiCepat tertiary remote (editable).
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

@@ -4,7 +4,7 @@ title: Chart of Accounts template seed
 asked_by: session 2026-04-17 F9 draft
 asked_date: 2026-04-17
 blocks: F9
-status: open
+status: answered
 ---
 
 # Q049 — Chart of Accounts template seed
@@ -91,4 +91,7 @@ Reversibility: switching to a different template later requires reclassifying hi
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: finance director, external accountant, agency owner (existing COA if any).
+**Decided:** **Option A** bundled **travel COA** (~60–80 accounts) with **~20 `is_system_seeded` codes** immutable by label rename only; **4-digit hierarchy**; **branch cash/bank children** added at setup; **new accounts** = finance director by default. **Mapping:** auto-journal rules bind to **stable codes**, not display names.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

@@ -4,7 +4,7 @@ title: Raudhah Shield polling cadence and alert action
 asked_by: session 2026-04-15 F6 draft
 asked_date: 2026-04-15
 blocks: F6
-status: open
+status: answered
 ---
 
 # Q030 — Raudhah Shield cadence + alert action
@@ -95,4 +95,7 @@ Reversibility: cadence is config; alert routing is config; adding auto-block lat
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner + ops lead + legal advisor (Saudi regulatory intersect on Nusuk use + UU PDP on jamaah location data).
+**Decided:** **Option C** behaviour **when Nusuk API available**; **until then: manual ops checklist mode** (feature flag **off**, no automated polling liability). **Notify ops+TL+muthawwif**; **no auto-block tasreh**; **no auto customer WA**; dismiss with reason + audit. **Detection:** start with **visa-used-without-local-scan** + **passport mismatch** flags; refine against real API payloads.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

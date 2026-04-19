@@ -4,7 +4,7 @@ title: Manasik + Quran + daily-content sourcing & licensing
 asked_by: session 2026-04-17 F12 draft
 asked_date: 2026-04-17
 blocks: F12
-status: open
+status: answered
 ---
 
 # Q079 — Content sourcing & licensing
@@ -55,4 +55,7 @@ Reversibility: switching Quran source later is content-replace (no schema change
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: religious advisor (content authenticity + edition approval), agency owner (licensing budget), legal (license compliance review).
+**Decided:** **Option A** — **Tanzil + Kemenag translation + licensed audio** path; **agency-authored manasik** with advisor sign-off **or** licensed Kemenag pack per tenant choice; **attribution footer + `/licenses` page**; **renewal calendar owned by ops**.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

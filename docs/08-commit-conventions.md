@@ -12,17 +12,19 @@ Repo-wide — applies to both the Go services codebase and the Svelte 5 + Vite c
 
 ## Types
 
-| Type | When to use |
-|------|-------------|
-| `feat` | New feature or capability |
-| `fix` | Bug fix |
-| `docs` | Documentation only |
+
+| Type       | When to use                                             |
+| ---------- | ------------------------------------------------------- |
+| `feat`     | New feature or capability                               |
+| `fix`      | Bug fix                                                 |
+| `docs`     | Documentation only                                      |
 | `refactor` | Code change that neither fixes a bug nor adds a feature |
-| `test` | Adding or updating tests |
-| `chore` | Maintenance tasks (deps, configs, CI) |
-| `build` | Build system, Docker, Makefile changes |
-| `perf` | Performance improvement |
-| `style` | Formatting, whitespace, no code change |
+| `test`     | Adding or updating tests                                |
+| `chore`    | Maintenance tasks (deps, configs, CI)                   |
+| `build`    | Build system, Docker, Makefile changes                  |
+| `perf`     | Performance improvement                                 |
+| `style`    | Formatting, whitespace, no code change                  |
+
 
 ## Rules
 
@@ -37,6 +39,7 @@ Repo-wide — applies to both the Go services codebase and the Svelte 5 + Vite c
 ## Examples
 
 Simple:
+
 ```
 feat: add bulk-submit endpoint to visa-svc
 ```
@@ -50,6 +53,7 @@ docs: draft f6 visa pipeline spec + file q026–q031
 ```
 
 With body:
+
 ```
 feat: wire apperrors sentinels to http status codes in iam-svc
 
@@ -94,3 +98,4 @@ Each developer's AI coding agent may have its own **attribution footer** convent
 
 - `docs/04-backend-conventions/08-git-workflow.md` — backend git workflow (branching, PRs, reviewer expectations). Defers to this file for commit message format.
 - Frontend git workflow lives in `docs/05-frontend-conventions/` and follows the same commit format.
+

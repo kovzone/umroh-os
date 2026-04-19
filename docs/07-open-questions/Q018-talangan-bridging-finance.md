@@ -4,7 +4,7 @@ title: Talangan (bridging finance) — process, data model, and accounting treat
 asked_by: session 2026-04-15 F4/F5 draft
 asked_date: 2026-04-15
 blocks: F5, F9
-status: open
+status: answered
 ---
 
 # Q018 — Talangan (bridging finance) process
@@ -57,4 +57,7 @@ Reversibility: adding in-house financing later is additive (new payment source +
 
 ## Answer
 
-TBD — awaiting stakeholder input. Likely decider: agency owner + finance lead + Sharia compliance advisor (if in-house financing is considered).
+**Decided:** **Option A (MVP)** — **partner-funded Talangan** only: booking shows `payment_source = talangan_partner` + external loan ref; **no agency AR/loan** on books; **referral fee** (1–3% config) = service revenue. **In-house lending** (Option B) **out of MVP** — requires OJK/Sharia programme design; if later added, **Q052** governs classification.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

@@ -4,7 +4,7 @@ title: Replica-site white-label scope
 asked_by: session 2026-04-17 F10 draft
 asked_date: 2026-04-17
 blocks: F10
-status: open
+status: answered
 ---
 
 # Q062 — Replica-site white-label scope
@@ -62,4 +62,7 @@ Reversibility: expanding customization later is purely additive — new config c
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (brand-integrity vs agent-ownership balance), CRM lead (agent feedback), marketing admin.
+**Decided:** **Option B MVP** — name/photo/tagline + **≤3 featured approved testimoni**; **no custom domain / palette / logo** until Phase 2 (**Option C**) and **Option D** later; **first-save moderation** on tagline (**Q063**).
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

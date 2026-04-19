@@ -4,7 +4,7 @@ title: MOFA / Sajil API access — credentials, sandbox, contracts, rate limits
 asked_by: session 2026-04-15 F6 draft
 asked_date: 2026-04-15
 blocks: F6
-status: open
+status: answered
 ---
 
 # Q026 — MOFA / Sajil API access
@@ -73,4 +73,7 @@ Reversibility: the adapter-interface design means switching providers is additiv
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (MoU / MoA with providers) + operational head (current manual workflow details) + potentially legal (intermediary agreements).
+**Decided:** **Phase 1 = Option D manual** (`ManualAdapter` default, automation **feature-flag off**) + **`VisaProviderAdapter` interface** documented for Phase 2. **When credentials exist:** plug **native** or **wrapper** adapter without schema churn. **Sandbox:** required before enabling automation in prod — if none, automation stays off.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

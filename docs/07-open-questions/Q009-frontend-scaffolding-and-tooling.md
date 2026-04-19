@@ -4,7 +4,7 @@ title: Frontend scaffolding, testing framework, file naming, and API client stra
 asked_by: session 2026-04-15 Svelte conventions extract
 asked_date: 2026-04-15
 blocks: all frontend feature work
-status: open
+status: answered
 ---
 
 # Q009 — Frontend scaffolding, testing, naming, and API client
@@ -76,4 +76,7 @@ Reversibility: the recommendations are mostly changeable later. The biggest comm
 
 ## Answer
 
-TBD — awaiting stakeholder discussion.
+**Decided:** **Monorepo** with **multiple SvelteKit apps** (`apps/b2c`, `apps/b2b`, `apps/admin`, `apps/field`) + shared `packages/ui` and **`packages/api-client`**; each app is **SvelteKit**. **Testing:** **Vitest** (unit/component) + **Playwright** for money/compliance-critical flows only (checkout, payment confirm, visa upload) — no coverage chasing. **Naming:** `PascalCase.svelte` components, `kebab-case.ts` modules, `camelCase` exports; enforce via lint when added. **OpenAPI client:** **`openapi-typescript` + `openapi-fetch`** generated from gateway `openapi.yaml` into `packages/api-client`. **Docs layout (override vs Recommendation):** **do not** mass-rename `docs/03-services/` in MVP — document app topology in **`docs/05-frontend-conventions/`** (and short pointer in architecture doc); add `docs/03-services/<app>/` only when an app warrants its own service-style folder.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

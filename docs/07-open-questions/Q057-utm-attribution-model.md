@@ -4,7 +4,7 @@ title: UTM attribution model — window, first vs last click, tiebreakers
 asked_by: session 2026-04-17 F10 draft
 asked_date: 2026-04-17
 blocks: F10, F4, F10
-status: open
+status: answered
 ---
 
 # Q057 — UTM attribution model
@@ -61,4 +61,7 @@ Reversibility: window length and model are config. Switching from 30 to 90 days 
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: CRM lead, marketing admin, agency owner (fairness-vs-simplicity balance).
+**Decided:** **Option C** — **30-day window**; **marketing analytics = first-touch UTM**; **commission routing = last-touch agent/ref** (consistent **Q019**); **direct visit inside window does not erase agent**; **model changes prospective only** (snapshot at booking).
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

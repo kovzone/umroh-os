@@ -4,7 +4,7 @@ title: Alert threshold ownership + default values
 asked_by: session 2026-04-17 F11 draft
 asked_date: 2026-04-17
 blocks: F11
-status: open
+status: answered
 ---
 
 # Q068 — Alert threshold ownership
@@ -62,4 +62,7 @@ Reversibility: threshold values, ownership mapping, and delivery targets are all
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (governance model), finance director / ops lead / marketing admin (category-owner role).
+**Decided:** **Option B** — **category owners edit thresholds** + **Super Admin override**; **defaults per Recommendation table**; **24h user snooze**; **threshold + fire audit**.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

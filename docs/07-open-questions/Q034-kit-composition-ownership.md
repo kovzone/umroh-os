@@ -4,7 +4,7 @@ title: Kit composition ownership — catalog-svc vs logistics-svc
 asked_by: session 2026-04-17 F8 draft
 asked_date: 2026-04-17
 blocks: F8, F2
-status: open
+status: answered
 ---
 
 # Q034 — Kit composition ownership
@@ -53,4 +53,7 @@ Reversibility: moving the table between services later is expensive but feasible
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (product tiers), warehouse supervisor (SKU hygiene), finance (HPP implications).
+**Decided:** **Option A** — **`kit_definition` in catalog-svc**, **`kit_instance` in logistics-svc**; **SKU existence validated** at definition write; **event/cache read** at assembly acceptable; **substitutions on `kit_instance`** with supervisor flag; **new kit_definition row per catalog year/tier change**.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

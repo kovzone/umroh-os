@@ -4,7 +4,7 @@ title: Ads API integration depth (Meta / Google)
 asked_by: session 2026-04-17 F10 draft
 asked_date: 2026-04-17
 blocks: F10
-status: open
+status: answered
 ---
 
 # Q065 — Ads API integration depth
@@ -59,4 +59,7 @@ Reversibility: integration depth expansion is strictly additive (pull → pull+p
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: marketing admin (ad-ops workflow), agency owner (integration investment), engineering (scope constraint).
+**Decided:** **Option D** — **daily spend pull** (OAuth by marketing admin) + **CSV fallback**; **custom audiences push = Phase 2**; **per-campaign MVP**, ad-set granularity later; **single account per platform MVP**.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

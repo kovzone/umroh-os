@@ -4,7 +4,7 @@ title: Agent tier taxonomy + qualification thresholds + demotion rules
 asked_by: session 2026-04-17 F10 draft
 asked_date: 2026-04-17
 blocks: F10
-status: open
+status: answered
 ---
 
 # Q054 — Agent tier taxonomy + qualification thresholds + demotion rules
@@ -51,4 +51,7 @@ Reversibility: tier count is schema (enum extension) + config. Adding a tier is 
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (agent-program strategy), CRM lead, existing top-agent feedback if retained.
+**Decided:** **Option A** — **Silver / Gold / Platinum** + **`CABANG` role** (not a sales tier). **Promotion:** Silver→Gold **5 closings / 6mo + Academy L1**; Gold→Platinum **20 closings / 12mo + Academy L2 + ≥3 active downlines**. **Demotion grace 6mo zero closes** (paused if downline active). **All thresholds config**.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

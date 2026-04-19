@@ -31,17 +31,19 @@ When the PRD doesn't answer a question during spec writing:
 | # | Feature | MoSCoW profile | Status |
 |---|---|---|---|
 | F1 | [Identity, Access, Audit](01-identity-and-access.md) | 10 Must / 3 Should — all High | **Written** |
-| F2 | [Product Catalog & Master Data](02-catalog-and-master-data.md) | 8 Must / 7 Should / 1 Could | **Draft** — 4 open Qs (Q001–Q004) |
-| F3 | [Pilgrim Profile & Documents](03-pilgrim-and-documents.md) | Must #87, #88 (mahram) | **Draft** — 4 open Qs (Q005–Q008) |
-| F4 | [Booking Creation & Allocation](04-booking-and-allocation.md) | Must — B2C + B2B booking | **Draft** — 6 open Qs (Q004, Q005, Q006, Q010, Q014, Q015, Q016, Q017, Q019) |
-| F5 | [Payment & Reconciliation](05-payment-and-reconciliation.md) | 4 Must Haves | **Draft** — 5 open Qs (Q001, Q004, Q011, Q012, Q013) |
-| F6 | [Visa Pipeline & Raudhah Shield](06-visa-pipeline.md) | Must #97 | **Draft** — 9 open Qs (Q005, Q007, Q008, Q026–Q031) |
-| F7 | [Operations: Verification, Grouping, Manifests](07-operations-handling.md) | 6 Must Haves | **Draft** — 8 open Qs (Q012, Q015, Q020–Q025) |
-| F8 | [Warehouse, Procurement, Fulfillment](08-warehouse-and-fulfillment.md) | 6 Must / 12 Should / 2 Could | **Draft** — 10 open Qs (Q032–Q041) |
-| F9 | [Finance & Accounting (PSAK)](09-finance-and-accounting.md) | **15 Must / 7 Should — highest Must count** | **Draft** — 12 open Qs (Q042–Q053) + 6 inherited (Q001, Q012, Q017, Q018, Q036, Q038) |
-| F10 | [Marketing, CRM, Agent Network](10-marketing-crm-agents.md) | 11 Must / 14 Should / 13 Could | **Draft** — 12 open Qs (Q054–Q065) + 2 inherited (Q019, Q045) |
-| F11 | [Dashboards & Reporting](11-dashboards.md) | 4 Must / 9 Should / 0 Could | **Draft** — 10 open Qs (Q066–Q075) + 3 inherited (Q038, Q045, Q048) |
-| F12 | [Alumni Hub & Daily App](12-alumni-and-daily-app.md) | 0 Must / 3 Should / 6 Could | **Draft** — 6 open Qs (Q076–Q081) + 3 inherited (Q058, Q059, Q063) |
+| F2 | [Product Catalog & Master Data](02-catalog-and-master-data.md) | 8 Must / 7 Should / 1 Could | **Written** — Q001–Q004 answered 2026-04-18 |
+| F3 | [Pilgrim Profile & Documents](03-pilgrim-and-documents.md) | Must #87, #88 (mahram) | **Written** — Q005–Q008 answered 2026-04-18 |
+| F4 | [Booking Creation & Allocation](04-booking-and-allocation.md) | Must — B2C + B2B booking | **Written** — linked Q answered 2026-04-18 (see spec) |
+| F5 | [Payment & Reconciliation](05-payment-and-reconciliation.md) | 4 Must Haves | **Written** — Q001, Q004, Q011–Q013 answered 2026-04-18 |
+| F6 | [Visa Pipeline & Raudhah Shield](06-visa-pipeline.md) | Must #97 | **Written** — linked Q answered 2026-04-18 (see spec) |
+| F7 | [Operations: Verification, Grouping, Manifests](07-operations-handling.md) | 6 Must Haves | **Written** — linked Q answered 2026-04-18 (see spec) |
+| F8 | [Warehouse, Procurement, Fulfillment](08-warehouse-and-fulfillment.md) | 6 Must / 12 Should / 2 Could | **Written** — linked Q answered 2026-04-18 (see spec) |
+| F9 | [Finance & Accounting (PSAK)](09-finance-and-accounting.md) | **15 Must / 7 Should — highest Must count** | **Written** — linked Q answered 2026-04-18 (see spec) |
+| F10 | [Marketing, CRM, Agent Network](10-marketing-crm-agents.md) | 11 Must / 14 Should / 13 Could | **Written** — linked Q answered 2026-04-18 (see spec) |
+| F11 | [Dashboards & Reporting](11-dashboards.md) | 4 Must / 9 Should / 0 Could | **Written** — Q066–Q075 + inherited Q answered 2026-04-18 |
+| F12 | [Alumni Hub & Daily App](12-alumni-and-daily-app.md) | 0 Must / 3 Should / 6 Could | **Written** — Q058, Q059, Q063, Q076–Q081 answered 2026-04-18 |
+
+**Catalogue alignment (2026-04-18):** Questions **Q001–Q081** in `docs/07-open-questions/` are **answered**; specs **F2–F12** above were propagated to match (frontmatter `last_updated: 2026-04-18`, `open_questions: []`). New product decisions should add **Q082+** (or explicitly reopen a Q with stakeholder rationale).
 
 Stubs contain: title, PRD section pointers, module numbers, and a "TBD" marker per section. A session fills them in on demand when work starts on that feature — writing all specs upfront is wasted motion; the product details evolve.
 

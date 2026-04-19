@@ -4,7 +4,7 @@
 
 | Event | When | Payload | Consumed by |
 |---|---|---|---|
-| `payment.invoice_created` | Invoice created | invoice_id, booking_id, amount | finance-svc |
+| `payment.invoice_created` | Invoice created | invoice_id, booking_id, amount_total, currency, fx_snapshot | finance-svc |
 | `payment.va_issued` | VA created at gateway | va_id, invoice_id, account_number | none directly (returned via saga to caller) |
 | `payment.received` | Webhook reports payment | invoice_id, amount, gateway_txn_id | booking-svc (mark paid), finance-svc (journal) |
 | `payment.settled` | Settlement reported | invoice_id, settlement_id | finance-svc |

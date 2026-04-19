@@ -4,7 +4,7 @@ title: Tasreh issuance authority — who creates the document?
 asked_by: session 2026-04-15 F6 draft
 asked_date: 2026-04-15
 blocks: F6
-status: open
+status: answered
 ---
 
 # Q031 — Tasreh issuance authority
@@ -78,4 +78,7 @@ Reversibility: adding auto-fetch via adapter is additive; removing jamaah self-u
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency ops lead (current workflow) + muthawwif representative (field reality of tasreh presentation) + tech lead if Nusuk API access is being negotiated.
+**Decided:** **Option D** — **ops-primary upload**, **jamaah self-upload optional**, **multi-row `tasreh_records` per jamaah**, **expiry enforced at scan**, **jamaah mismatch = warn + Q022 override path**, **conflict = latest wins + history kept**, **Phase 2 Nusuk auto-fetch** adapter.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

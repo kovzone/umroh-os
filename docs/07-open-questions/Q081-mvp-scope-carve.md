@@ -4,7 +4,7 @@ title: F12 MVP scope carve — what ships vs what defers to Phase 2
 asked_by: session 2026-04-17 F12 draft
 asked_date: 2026-04-17
 blocks: F12
-status: open
+status: answered
 ---
 
 # Q081 — F12 MVP scope carve
@@ -73,4 +73,7 @@ Reversibility: Phase 2 modules are additive — shipping them later doesn't affe
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: agency owner (MVP scope appetite), CTO (MVP dev-capacity), marketing lead (launch-day engagement expectation).
+**Decided:** **Option B lean MVP carve** — **ship #190 prayer**, **#191 qibla**, **#194 manasik read-only**, **alumni shell + #199 referral entry**; **defer #192–#198** until post-MVP triggers in Recommendation (live MVP + **≥3 cohorts completed** + moderation/licensing questions settled). **Full F12 zero-ship (Option C)** rejected unless tenant explicitly disables F12.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

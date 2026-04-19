@@ -4,7 +4,7 @@ title: Abandoned checkout attribution — if CS rescues a B2C-abandoned cart, wh
 asked_by: session 2026-04-15 F4/F5 draft
 asked_date: 2026-04-15
 blocks: F4, F10
-status: open
+status: answered
 ---
 
 # Q019 — Abandoned checkout attribution
@@ -62,4 +62,7 @@ Reversibility: attribution rules are a service-layer policy; changing the window
 
 ## Answer
 
-TBD — awaiting stakeholder input. Likely decider: agency owner + CS lead + representative agent (sample input from the agent network).
+**Decided:** **Option A** — **30-day last-touch** for **commission-bearing attribution**; CS remains salaried (no CS commission). **Campaigns:** UTM wins **marketing ROAS** attribution (no commission). **Direct/no ref:** agency pool. **Agent under-performance:** address operationally via **Q054 levelling**, not by shortening the 30d window (keeps rule explainable).
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

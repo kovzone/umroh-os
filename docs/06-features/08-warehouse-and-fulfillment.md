@@ -1,8 +1,8 @@
 ---
 id: F8
 title: Warehouse, Procurement, Fulfillment
-status: draft
-last_updated: 2026-04-17
+status: written
+last_updated: 2026-04-18
 moscow_profile: 6 Must Have / 12 Should Have / 2 Could Have
 prd_sections:
   - "F. Inventory & Logistics (lines 367–428)"
@@ -16,17 +16,7 @@ modules:
   - "#121 Sinkronisasi Ukuran (size sync), #122 Pemicu Pengiriman (Lunas-Trigger), #123 Integrasi Ekspedisi, #124 Pengambilan Mandiri (self-pickup), #125 Retur & Penukaran"
   - "#126 Inventory Health dashboard, #127 Fulfillment & PO Monitor dashboard, #128 Laporan Kerusakan (damage & loss)"
 depends_on: [F1, F2, F4, F5, F9]
-open_questions:
-  - Q032 — PR/PO approval threshold ladder
-  - Q033 — Courier integration policy (single vs multi, fallback, routing)
-  - Q034 — Kit composition ownership (catalog-svc vs logistics-svc)
-  - Q035 — Post-ship loss/damage & returns-from-trip protocol
-  - Q036 — Vendor master ownership + onboarding & rating
-  - Q037 — SKU barcode vs F7 luggage-tag QR coexistence on shipped kits
-  - Q038 — Auto-AP posting cadence + inventory valuation method (PSAK)
-  - Q039 — Saudi-side warehouse scope
-  - Q040 — Stock availability policy (partial shipments + reorder-point math)
-  - Q041 — Self-pickup QR security model
+open_questions: []
 ---
 
 # F8 — Warehouse, Procurement, Fulfillment
@@ -77,7 +67,7 @@ Consumers:
 1. Approver (typically Manager, escalating to Director above a threshold — **Q032**) opens the approval inbox on dashboard or mobile.
 2. Sees PR summary, line items, vendor, total IDR, budget remaining after approval.
 3. Actions: **Approve**, **Reject** (with reason), **Request Changes** (returns to DRAFT with comments).
-4. _(Inferred — see Q032 recommendation)_ Default threshold ladder: ≤ 10M IDR: Manager only; 10M–50M: Director; > 50M: Director + CEO sign-off.
+4. Per **Q032** (answered): **≤10M Manager**, **10–50M Director**, **>50M Director+CEO**; capex ≥10M → Director minimum; emergency Manager path with Director post-hoc **48h**; **>50M** approval requires **MFA**; multi-line PR routes by highest line threshold.
 5. On approval, PR is promoted to PO: status `SUBMITTED → APPROVED`, PO code assigned (`PO-YYYYMMDD-NNNN` format), triggers W3 auto-dispatch.
 6. Audit log: approver, timestamp, prior/new status, reason.
 
@@ -193,7 +183,7 @@ Consumers:
 
 1. **Inventory Health (#126)**: total asset value (IDR) across all warehouses, critical-stock visualization, aging inventory. Values computed per inventory valuation method (**Q038** — FIFO vs weighted average).
 2. **Fulfillment & PO Monitor (#127)**: paid-but-unshipped queue (SLA: ship within 7 days of paid-in-full), outstanding PO count, overdue PRs, GRN backlog.
-3. Served by `logistics-svc` read endpoints; consumed by the F11 dashboards feature (Svelte + Grafana mix TBD).
+3. Served by `logistics-svc` read endpoints; consumed by F11 per **Q066**: thin **`dashboard-svc`** + service `/v1/metrics/*`; Svelte exec UI + **Grafana on read-replica** for analyst dashboards where configured.
 
 ## Acceptance criteria
 
@@ -321,22 +311,11 @@ Full contracts in `docs/03-services/07-logistics-svc/01-api.md` — spec already
 
 ## Open questions
 
-See `docs/07-open-questions/`. Ten new questions filed with this draft (Q032–Q041):
+None blocking — **Q032–Q041** answered **2026-04-18** (`docs/07-open-questions/`). Operational defaults in the body reflect those answers unless superseded by Super Admin config.
 
-- **Q032** — PR / PO approval threshold ladder (amounts, roles, fallback, SLA)
-- **Q033** — Courier integration policy (single vs multi, fallback chain, routing)
-- **Q034** — Kit composition ownership (catalog-svc vs logistics-svc)
-- **Q035** — Post-ship loss/damage & returns-from-trip protocol
-- **Q036** — Vendor master ownership + onboarding & rating
-- **Q037** — SKU barcode vs F7 luggage-tag QR coexistence on shipped kits
-- **Q038** — Auto-AP posting cadence + inventory valuation method (PSAK)
-- **Q039** — Saudi-side warehouse scope
-- **Q040** — Stock availability policy (partial shipments + reorder-point math)
-- **Q041** — Self-pickup QR security model
+**Residual engineering defaults (verify during build):**
 
-**Inferred (pending reviewer confirmation):**
-
-- PR approval threshold defaults (≤10M Manager, 10–50M Director, >50M Director+CEO) — Q032 may override.
+- PR approval thresholds align with **Q032** (see W3 step 4).
 - Kit definitions live in `catalog-svc`, kit instances in `logistics-svc` — Q034 may collapse to single owner.
 - Partial PO receipt accepted by default; remaining lines stay open — Q040.
 - Reorder point is static per-SKU, editable by supervisor; demand-forecast is Phase 2 — Q040.

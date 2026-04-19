@@ -4,7 +4,7 @@ title: KTP ↔ passport name mismatch handling policy
 asked_by: session 2026-04-14 F3 draft
 asked_date: 2026-04-14
 blocks: F3, F6
-status: open
+status: answered
 ---
 
 # Q007 — KTP ↔ passport name mismatch handling policy
@@ -64,4 +64,7 @@ Reversibility: policy can move toward Option A (stricter) or Option C (looser) w
 
 ## Answer
 
-TBD — awaiting stakeholder input. Likely decider: ops lead + CS lead, possibly with input from a Dukcapil / visa-desk operator.
+**Decided:** **Option B** — staff may approve mismatch with **mandatory structured reason codes** + audit; **passport name** is the canonical name sent to MOFA/Sajil payloads. **Detection:** tokenised normalisation + Levenshtein: **≤2** edits on longest token → *soft match* (suggest review); **≥3** or token-count mismatch → *hard flag* requiring acknowledgement. Thresholds remain **tunable from first month of production data**.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

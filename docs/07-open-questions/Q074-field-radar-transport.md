@@ -4,7 +4,7 @@ title: Field radar transport + GPS source for bus tracking
 asked_by: session 2026-04-17 F11 draft
 asked_date: 2026-04-17
 blocks: F11, F7
-status: open
+status: answered
 ---
 
 # Q074 — Field radar transport + GPS source
@@ -52,4 +52,7 @@ Reversibility: transport choice websocket vs SSE vs polling can be swapped at co
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: ops lead (bus-tracking experience), CTO (websocket infra cost), agency owner (budget for hardware trackers), privacy advisor (tracking policy).
+**Decided:** **Option A** — **websocket** bus+incidents, **5m poll** Raudhah+koper, **TL phone GPS** 30s moving / 5m stationary, **6mo trail detail then aggregate**, **offline last-known badge**, **bus-level privacy only**, **incidents WA+stream**.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

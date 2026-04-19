@@ -16,7 +16,7 @@ PRD section D — Master Product & Inventory.
 
 - `packages` — sellable Umrah/Hajj/Badal packages
 - `package_departures` — specific departure dates with seat inventory
-- `package_pricing` — per-room-type pricing (double / triple / quad)
+- `package_pricing` — per-room-type **list** price + `list_currency` + `settlement_currency` (MVP IDR settlement; **Q001**)
 - `hotels` — master hotel records (with photos, 360 tours, distance to mosque)
 - `airlines` — master airline records
 - `muthawwif` — master tour-leader records

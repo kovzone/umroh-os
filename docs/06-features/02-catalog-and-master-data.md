@@ -1,8 +1,8 @@
 ---
 id: F2
 title: Product Catalog & Master Data
-status: draft
-last_updated: 2026-04-14
+status: written
+last_updated: 2026-04-18
 moscow_profile: 8 Must Have / 7 Should Have / 1 Could Have
 prd_sections:
   - "D. Master Product & Inventory (lines 241–293)"
@@ -11,11 +11,7 @@ prd_sections:
 modules:
   - "#71–86"
 depends_on: [F1]
-open_questions:
-  - Q001 — operating currency & FX / markup handling
-  - Q002 — price-change approval thresholds and audit
-  - Q003 — multi-language catalog content scope
-  - Q004 — cancellation → seat return semantics (split responsibility with F5 refund flow)
+open_questions: []
 ---
 
 # F2 — Product Catalog & Master Data
@@ -60,7 +56,7 @@ Primary personas:
 
 ### W3 — Open a departure with a seat cap
 
-1. Within an active travel-kind package, admin creates a `package_departure` with departure date, return date, total seats, and per-room-type price (Double / Triple / Quad) in IDR.
+1. Within an active travel-kind package, admin creates a `package_departure` with departure date, return date, total seats, and per-room-type **list** price (Double / Triple / Quad) in **IDR or USD** per commercial choice (**Q001**: settlement remains IDR at booking lock).
 2. _(Inferred)_ Seat cap is admin-set per departure, validated against the linked transport capacity (bus seats + flight seats). A warning surfaces if the cap exceeds known capacity, but it does **not** block — vendors sometimes negotiate extra allotments mid-season.
 3. Status starts `open`. Transitions: `open → closed → departed → completed` (or `cancelled` from any pre-departure state).
 
@@ -77,7 +73,7 @@ Primary personas:
 
 1. Admin filters the package list (by kind, date range, airline, hotel, etc.).
 2. Selects N packages and chooses an action: percent price delta, absolute delta, or status flip (`active ↔ archived`).
-3. _(Inferred — pending Q002)_ For changes above a reviewer-configurable threshold (e.g. >10 packages or >5% price delta), a second admin must approve before commit.
+3. Per **Q002** (answered): single-package edits self-approve. **Mass update** requires second-admin approval when it affects **≥ 3 packages** **or** aggregate absolute price change **> Rp 5,000,000** **or** any line’s **relative change ≥ 5%** vs prior publish price — whichever triggers first (Super Admin–configurable defaults).
 4. System writes a **price-history row** per affected package before applying the change (module #77 does not call this out but the PRD's emphasis on audit trail in Section H makes this mandatory — see Q002).
 5. FX rule (Alur Logika 1.1): the new price applies only to **unbooked departures and fresh invoices** — it must not retroactively change invoices already issued, nor bookings that are already DP-paid. See "Edge cases" below.
 
@@ -143,8 +139,8 @@ Primary personas:
 - **FX rate change mid-cycle (Alur Logika 1.1 rule).** New rate applies to: future packages, not-yet-invoiced new bookings, and unrealised P/L reports. It must **not** touch issued invoices or DP-paid bookings. Enforced by snapshotting the effective FX rate on each invoice at creation time (F5 data model).
 - **Master data edited while sold packages reference it.** _(Inferred)_ Live-link means edits are visible immediately in the management dashboard, but **do not** alter any already-issued customer-facing artefact (printed ticket, PDF itinerary already delivered). The public itinerary micro-web re-renders on the next request with the new values — this is a deliberate feature, not a bug (e.g. hotel name change, room upgrade).
 - **Cascading delete attempts.** A hotel or muthawwif record cannot be hard-deleted while any `active` package references it — soft-delete (`deleted_at`) blocks new selections but existing links remain intact.
-- **Bulk update approval threshold breach.** _(Inferred — pending Q002)_ When an admin attempts a mass change above the configured threshold, the action is queued as `pending_approval` and a second admin must approve via a dashboard notification.
-- **Cancellation → seat return.** **TBD — see Q004.** Does a cancelled booking auto-return seats to the available pool, or is the return gated by the finance refund flow (F5)? The two services behave very differently depending on this.
+- **Bulk update approval threshold breach.** When thresholds in **Q002** trip, the action is queued as `pending_approval` until a second admin approves in-console.
+- **Cancellation → seat return.** Per **Q004**: **conditional** — `ReleaseSeats` runs **immediately** if the booking has **never received customer funds**; if **any** customer money was posted (DP, installment, lunas), seats stay held until the **refund saga succeeds** (or ops marks forfeiture, audited). Refund failure → seat stays **disputed / not sellable** until ops resolves. Reopen-within-grace attempts `ReserveSeats`; aligns with **Q014** (48h) when applicable.
 - **Retail products in catalog vs warehouse inventory.** _(Inferred)_ Retail SKUs (#75) are a thin pointer record in catalog that links to a `logistics-svc.stock_item` by SKU code. Catalog holds the sellable description (price, photos); logistics holds the physical inventory and fulfilment. This keeps the polymorphic catalog simple and defers stock management to F8.
 - **Badal product — for whom the pilgrimage is performed.** _(Inferred)_ The "beneficiary" (deceased person the Badal is performed on behalf of) is a **booking-level attribute** (F4), not a catalog field. Catalog just marks `package_kind = 'badal'`. The booking form asks for the beneficiary name + relation at booking time.
 
@@ -154,7 +150,7 @@ Owned by `catalog-svc`. Full schema in `docs/03-services/01-catalog-svc/02-data-
 
 - `packages.kind` enum extended to `umrah_reguler | umrah_plus | hajj_furoda | hajj_khusus | badal | financial | retail`. Travel kinds (first five) require itinerary + departures; `financial` and `retail` follow a lighter shape.
 - `package_departures.reserved_seats` is the hot-path counter; add a check constraint `reserved_seats <= total_seats`.
-- New `package_pricing` composite: `(package_departure_id, room_type, price, currency)`. `currency` defaults to `IDR` pending Q001.
+- New `package_pricing` composite: `(package_departure_id, room_type, list_amount, list_currency, settlement_currency)`. Per **Q001**: catalog may show **USD list** for clarity; **invoice / VA is always IDR** at booking lock using locked FX; payable IDR rounded **once** to nearest **Rp 1,000** (half-up) with rounding GL per F9. `settlement_currency` is always `IDR` in MVP.
 - New `package_price_history` table — immutable log of price changes with actor, timestamp, old value, new value, reason.
 - New `vendor_readiness` sub-records per departure for `ticket`, `hotel`, `visa` flags, updated via gRPC from owning services.
 - Status enums from `02-ubiquitous-language.md`: `package_status`, `departure_status`, `room_type`. New: `vendor_readiness_state` (`not_started | in_progress | ready | blocked`).
@@ -206,8 +202,4 @@ Full contracts in `docs/03-services/01-catalog-svc/01-api.md`. Key surfaces:
 
 ## Open questions
 
-See `docs/07-open-questions/`:
-- **Q001** — operating currency, FX modes, and HPP formula
-- **Q002** — price-change approval thresholds and audit rules
-- **Q003** — multi-language catalog content scope (Bahasa only vs Bahasa + English + Arabic)
-- **Q004** — cancellation → seat return ownership (catalog auto vs F5 refund-gated)
+None blocking — **Q001–Q004** answered **2026-04-18** (`docs/07-open-questions/`). Spec text above reflects those decisions; **Q003** = Bahasa-only MVP copy; **Q002** thresholds may be tuned in Super Admin config.

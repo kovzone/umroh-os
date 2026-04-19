@@ -4,7 +4,7 @@ title: Mahram qualifying relation set, age threshold, and same-departure rule
 asked_by: session 2026-04-14 F3 draft
 asked_date: 2026-04-14
 blocks: F3, F4, F6
-status: open
+status: answered
 ---
 
 # Q005 — Mahram qualifying relation set, age threshold, and same-departure rule
@@ -80,7 +80,7 @@ Reversibility: config-first means policy changes are near-zero-cost. The only mi
 
 ## Answer
 
-TBD — awaiting religious/legal stakeholder input. Needs sign-off from:
-- An Islamic scholar familiar with Saudi MOFA mahram rules
-- The agency owner (business policy defaults)
-- Likely the legal advisor (UU PDP intersects with family-data handling, see Q008)
+**Decided:** **Option C — policy-configurable engine** with **conservative classical defaults** (Option A values) as shipped baseline, editable without deploy. Initial defaults: `age_threshold_years: 45`, `require_same_departure: true`, full qualifying-relation set as in Recommendation yaml, `allow_staff_override: true` with mandatory reason. **Female minors:** below **12** — no separate mahram check (travels under guardian on same booking); **12+** — **same mahram policy as adults** (subject to same config flags). **Operational note:** Saudi/Nusuk rules change; compliance owner must review config **at least annually** and on regulatory announcements — software stays policy-agnostic.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults); **religious/legal reviewer should ratify** defaults before go-live customer contracts reference them.

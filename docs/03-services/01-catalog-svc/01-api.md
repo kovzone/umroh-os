@@ -36,3 +36,5 @@
 - `GetMuthawwif(...)`
 
 > All endpoints are stubs. Will be defined when catalog-svc is scaffolded.
+
+**Payload alignment:** departure + pricing responses expose `list_amount`, `list_currency`, and `settlement_currency` per `02-data-model.md` (F2 / **Q001**). Consumers compute **IDR** payable only at booking/invoice lock in `payment-svc`.

@@ -4,7 +4,7 @@ title: Self-pickup QR security model
 asked_by: session 2026-04-17 F8 draft
 asked_date: 2026-04-17
 blocks: F8
-status: open
+status: answered
 ---
 
 # Q041 — Self-pickup QR security model
@@ -51,4 +51,7 @@ Reversibility: switching to HMAC-based tokens later is a migration — only matt
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: ops lead (pickup counter operational experience), security advisor (if retained), CS lead (delegation policy).
+**Decided:** **Option A** — **hashed opaque token** row, **30d expiry**, **single-use**, **revocable**, **counter must match KTP photo**; **online required**; **delegation Phase 2** (MVP pickup by named jamaah only).
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

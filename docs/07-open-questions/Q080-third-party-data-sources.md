@@ -4,7 +4,7 @@ title: Third-party data source selection (prayer times API, qibla, Quran corpus)
 asked_by: session 2026-04-17 F12 draft
 asked_date: 2026-04-17
 blocks: F12
-status: open
+status: answered
 ---
 
 # Q080 — Third-party data source selection
@@ -54,4 +54,7 @@ Reversibility: switching calculation method is config; switching to API-primary 
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: religious advisor (prayer-times method selection — Kemenag vs MWL vs other), CTO (offline-first posture), agency owner (user expectation on accuracy).
+**Decided:** **Option A** — **`adhan-js` client-side**, **Kemenag method domestic**, **auto Umm al-Qura within 500km of Makkah**, **great-circle qibla**, **7d prayer cache**, **Aladhan fallback**, **disclaimer tooltip**.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

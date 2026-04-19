@@ -4,7 +4,7 @@ title: Dual-gateway (Midtrans / Xendit) selection and fallback rule
 asked_by: session 2026-04-15 F4/F5 draft
 asked_date: 2026-04-15
 blocks: F5
-status: open
+status: answered
 ---
 
 # Q013 — Dual-gateway selection and fallback
@@ -52,4 +52,7 @@ Reversibility: changing primary from Midtrans to Xendit is a config flip. Disabl
 
 ## Answer
 
-TBD — awaiting stakeholder input. Likely decider: agency owner + finance lead (gateway fee comparison) + CS lead (current gateway experience).
+**Decided:** **Option B** — **Midtrans primary**, **Xendit hot-standby**; failover on **5xx or timeout > 10s**; **no failover on 4xx** (treat as config/validation failure). **Customer-transparent** single pay UX. **Settlement:** finance reconciles per provider statements against `payment_events` (existing F5 pattern).
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

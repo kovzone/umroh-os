@@ -4,7 +4,7 @@ title: FX policy — rate source, transaction-date vs settlement-date, month-end
 asked_by: session 2026-04-17 F9 draft
 asked_date: 2026-04-17
 blocks: F9
-status: open
+status: answered
 ---
 
 # Q048 — FX policy
@@ -53,4 +53,7 @@ Reversibility: changing rate source (e.g. BI → KMK) is a config change + histo
 
 ## Answer
 
-TBD — awaiting stakeholder input. Deciders: finance director (operational rate source preference), external auditor (PSAK 10 interpretation), agency owner (rate-lock-per-season policy).
+**Decided:** **Option C** — **season lock for pricing/HPP only (non-GL)**; **BI middle daily ~09:00 WIB** for **transaction GL rates** with **previous day fallback**; **transaction-date** initial measurement; **payment-date** differences → **FX P&L**; **month-end PSAK 10 reval** on open FC monetary items; **separate `FX Gain` and `FX Loss` accounts**; **multi-leg** = separate entries per leg. **Customer invoice snapshots** follow **Q001** lock at booking.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

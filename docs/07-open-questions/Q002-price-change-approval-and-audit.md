@@ -4,7 +4,7 @@ title: Price-change approval thresholds and audit policy
 asked_by: session 2026-04-14 F2 draft
 asked_date: 2026-04-14
 blocks: F2
-status: open
+status: answered
 ---
 
 # Q002 — Price-change approval thresholds and audit policy
@@ -45,4 +45,7 @@ Reversibility: thresholds are config values, trivially tunable. Moving from Opti
 
 ## Answer
 
-TBD — awaiting stakeholder discussion.
+**Decided:** Threshold-based approval (Option A) with **per-package `price_history` row** for every affected package (not a batch-only record). **Single-package edits:** self-approve (no second signature). **Mass update** = affects **≥ 3 packages** (not 10 — catches real bulk mistakes earlier) **OR** aggregate absolute price change **> Rp 5,000,000** **OR** any line’s **relative change ≥ 5%** vs prior publish price — **whichever triggers first** requires second-admin approval in `pending_approval`. Thresholds remain **Super Admin–configurable** (defaults above are starting points).
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

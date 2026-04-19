@@ -4,7 +4,7 @@ title: Minimum documents required to submit a booking
 asked_by: session 2026-04-14 F3 draft
 asked_date: 2026-04-14
 blocks: F3, F4
-status: open
+status: answered
 ---
 
 # Q006 — Minimum documents required to submit a booking
@@ -50,4 +50,7 @@ Reversibility: the minimum-doc rule is enforced by booking-svc at submit time. T
 
 ## Answer
 
-TBD — awaiting stakeholder input. Likely decider: agency owner (commercial policy) + CS lead (friction tradeoff).
+**Decided:** **Level 3** — **KTP + passport scan per jamaah** before `draft` → `pending_payment`; OCR may still be `processing`. **B2C:** hard **block** on submit. **Multi-jamaah:** rule enforced **per jamaah**. **Mahram proof:** **not** required at booking submit (follows Q005 timeline / visa stage). **Minor without KTP:** follow **Q016** (KK substitute).
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)

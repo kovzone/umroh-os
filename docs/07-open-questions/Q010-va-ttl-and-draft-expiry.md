@@ -4,7 +4,7 @@ title: VA TTL and draft booking expiry — how long does a customer have to pay 
 asked_by: session 2026-04-15 F4/F5 draft
 asked_date: 2026-04-15
 blocks: F4, F5
-status: open
+status: answered
 ---
 
 # Q010 — VA TTL and draft booking expiry
@@ -53,4 +53,7 @@ Reversibility: changing any of the three values is a config flip, no schema chan
 
 ## Answer
 
-TBD — awaiting stakeholder input. Likely decider: agency owner (commercial TTL preferences) + CS lead (friction observation from current manual flows).
+**Decided:** **Option A** — **VA TTL 24h**, **draft TTL 30m**, **pelunasan H-30**; all **global Super Admin config** for MVP (no per-package override until needed). **Rationale:** matches common Indonesian e-commerce expectations; per-package override remains an additive column later.
+
+**Date decided:** 2026-04-18  
+**Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)
