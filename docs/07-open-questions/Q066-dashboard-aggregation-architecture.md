@@ -56,3 +56,7 @@ Reversibility: adding a CQRS projection later is additive — service `/metrics`
 
 **Date decided:** 2026-04-18  
 **Decided by:** Documentation session 2026-04-18 (AI-assisted product defaults)
+
+## Alignment with slice / backlog docs (locked 2026-04-19)
+
+[`05-slice-engineering-checklist-and-task-codes.md`](../00-overview/05-slice-engineering-checklist-and-task-codes.md) Phase 6 and [`06-feature-to-backlog-mapping.md`](../00-overview/06-feature-to-backlog-mapping.md) (`BL-DASH-*`, task codes such as **`S3-L-05`**, **`S4-L-03`**, **`S5-L-02`**) describe **where dashboard widgets ship in the product** (primarily **`apps/core-web`** / PWA). They do **not** replace this answer: **aggregation, caching, materialized views, and Grafana posture** remain as decided above. Widgets consume **`/v1/metrics/*`** (and/or the thin composer) as the data plane; presentation stays in the front-end backlog rows.

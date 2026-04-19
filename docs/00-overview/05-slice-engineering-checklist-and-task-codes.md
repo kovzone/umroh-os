@@ -76,7 +76,7 @@ A slice `Sx` (for `x ≥ 1`) is **READY TO BUILD** only if:
 
 # S0 — Engineering bootstrap (before S1)
 
-**Goal:** one language for contracts, merges, and quality gates.
+**Goal:** one language for contracts, merges, and quality gates — **and** a minimal **platform baseline** (observability, CI discipline, health endpoints, migrations, e2e entry point) so S1+ work does not accumulate hidden debt.
 
 ## Checklist — Joint **[GATE]**
 
@@ -85,6 +85,12 @@ A slice `Sx` (for `x ≥ 1`) is **READY TO BUILD** only if:
 | S0-J-01 | J | Create folder & contract templates `docs/contracts/README.md` + `slice-Sx.md` template | Folder + template merged |
 | S0-J-02 | J | Agree **branch strategy** (e.g. `main` + short-lived `feat/*`) + “who merges” rules | One paragraph in contract README or internal wiki |
 | S0-J-03 | J | Define **Definition of Ready (DoR)** & **Definition of Done (DoD)** per PR | Short table in contract README |
+| S0-J-04 | J | **Scaffold sweep** — repo layout, service modules, and `apps/core-web` match [`docs/01-architecture/adr/0004-monorepo-layout.md`](../../01-architecture/adr/0004-monorepo-layout.md); drift fixed or documented | Short note in contract README *or* ADR-0004 addendum listing exceptions |
+| S0-J-05 | J | **OpenTelemetry** — tracing (or trace propagation) + log field conventions documented; each Go service exports OTel to the shared collector path used in dev (`docker-compose` / env doc updated) | Doc snippet + one cross-service request shows correlated trace IDs in logs |
+| S0-J-06 | J | **CI path filters** — workflow(s) skip expensive jobs when only `docs/` or unrelated paths change; full matrix still runs for service and `apps/core-web` changes | PR or `CONTRIBUTING.md` pointer to workflow behavior |
+| S0-J-07 | J | **Migration pipeline** — `make` targets + CI step for `migrate-up` / version check aligned with [`docs/01-architecture/adr/0007-migration-based-schema.md`](../../01-architecture/adr/0007-migration-based-schema.md) | New contributor can apply migrations from README path |
+| S0-J-08 | J | **Standard health** — every Go service exposes **`GET /livez`** (process up) and **`GET /readyz`** (critical dependencies ready); document optional **`GET /diagnostics/db-tx`** (or equivalent) for DB transaction probe where needed. Services: `gateway-svc`, `iam-svc`, `catalog-svc`, `booking-svc`, `payment-svc`, `finance-svc`, `logistics-svc`, `ops-svc`, `visa-svc`, `crm-svc`, `jamaah-svc` | All listed binaries respond 200 on `/livez` and `/readyz` in dev compose; contract README or `docs/03-services/*` links pattern |
+| S0-J-09 | J | **E2E skeleton** — minimal Playwright flow per [`docs/01-architecture/adr/0008-e2e-testing-with-playwright.md`](../../01-architecture/adr/0008-e2e-testing-with-playwright.md); document prerequisite (`make dev-bootstrap` or `make dev-up`) and intended CI smoke job | At least one spec merged + doc on how to run locally and in CI |
 | S0-L-01 | L | List **roles + UI routes** touched in S1 (public vs internal) | Role vs URL table |
 | S0-E-01 | E | List **services** touched S1–S2 + file ownership (PR owner) | Service vs owner table |
 

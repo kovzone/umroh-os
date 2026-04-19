@@ -13,6 +13,8 @@ Core principles:
 2. `Phase` + `Exec seq` + `Slice` + `Task Code` describe **integration order** and **work packages** (not calendar deadlines).
 3. One feature detail may split into several backlog rows to keep PR size small.
 
+**Dashboard rows (`BL-DASH-*`, F11 widgets under Phase 6 slice codes such as `S3-L-05`, `S4-L-03`, `S5-L-02`):** these rows are **UI placement and product scope** (which screen owns which widget). **Data aggregation, cache TTLs, read-replica usage, and optional `dashboard-svc`** follow the engineering decision in **`docs/07-open-questions/Q066-dashboard-aggregation-architecture.md`** — not a second architecture.
+
 Coverage notes:
 
 - Phases **0–5** list backlog **already mapped** to primary slice/task codes.
@@ -66,6 +68,12 @@ Smaller numbers run first. Multiple rows may share the same number when safe to 
 | 0 | S0-J-03 | DoR/DoD per PR | MH-MVP | 007 | S0 | S0-J-03 | BL-ENG-003 | J | todo | BL-ENG-001 | Short DoR/DoD published |
 | 0 | S0-L-01 | Public vs internal UI route matrix (S1) | MH-MVP | 008 | S0 | S0-L-01 | BL-FE-PLN-001 | L | todo | BL-ENG-001 | Initial role vs URL table |
 | 0 | S0-E-01 | Service ownership S1–S2 (PR owner) | MH-MVP | 009 | S0 | S0-E-01 | BL-ENG-004 | E | todo | BL-ENG-001 | Service vs owner table |
+| 0 | S0-J-04 | Repo scaffold sweep vs ADR-0004 | MH-MVP | 010 | S0 | S0-J-04 | BL-ENG-005 | J | todo | BL-ENG-001 | Drift fixed or exceptions documented |
+| 0 | S0-J-05 | OpenTelemetry baseline (all Go services) | MH-MVP | 011 | S0 | S0-J-05 | BL-ENG-006 | J | todo | BL-ENG-001 | Traces/logs correlated; collector path documented |
+| 0 | S0-J-06 | CI path filters for workflows | MH-MVP | 012 | S0 | S0-J-06 | BL-ENG-007 | J | todo | BL-ENG-001 | Expensive jobs skip unrelated paths |
+| 0 | S0-J-07 | Migration pipeline + docs (ADR-0007) | MH-MVP | 013 | S0 | S0-J-07 | BL-ENG-008 | J | todo | BL-ENG-001 | `make`/CI migrate path documented |
+| 0 | S0-J-08 | `/livez` + `/readyz` (+ optional db-tx diagnostic) on every Go service | MH-MVP | 014 | S0 | S0-J-08 | BL-ENG-009 | J | todo | BL-ENG-001 | All 11 services healthy endpoints in dev |
+| 0 | S0-J-09 | E2E skeleton (Playwright, ADR-0008) | MH-MVP | 015 | S0 | S0-J-09 | BL-ENG-010 | J | todo | BL-ENG-001 | Minimal spec + run/CI notes merged |
 
 ---
 

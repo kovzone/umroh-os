@@ -99,13 +99,17 @@ Flow: reliability, audit, permissions, UAT, priority bugfixes.
 
 ### Phase 0 — Engineering bootstrap (S0)
 
-**Goal:** contracts, merge conventions, DoR/DoD definitions, `docs/contracts/*` templates.
+**Goal:** contracts, merge conventions, DoR/DoD definitions, `docs/contracts/*` templates, **plus** a shared technical baseline so later slices do not retrofit observability, CI, health checks, or migrations ad hoc.
 
-**Joint gate:** complete `S0-*` checklist in `05-slice-engineering-checklist-and-task-codes.md`.
+That baseline includes: **repo scaffold sweep** (layout matches ADR-0004), **OpenTelemetry** export wired for services (minimal trace + log correlation conventions), **CI path filters** so unrelated changes do not run the full matrix, **migration pipeline** agreed and documented (see ADR-0007), **`/livez` and `/readyz` on every Go service** (gateway-svc, iam-svc, catalog-svc, booking-svc, payment-svc, finance-svc, logistics-svc, ops-svc, visa-svc, crm-svc, jamaah-svc), optional **`/diagnostics/db-tx`** (or equivalent) pattern documented where DB readiness must be distinguished from process liveness, and an **e2e skeleton** (Playwright per ADR-0008: minimal spec + how CI will run smoke).
+
+**Joint gate:** complete `S0-*` checklist in `05-slice-engineering-checklist-and-task-codes.md` (authoritative row list).
 
 ### Phase 1 — Discover + draft booking (S1)
 
 **Goal:** B2C can browse catalog → detail → form → **draft booking**; internal auth minimum for routes staff need.
+
+**F1 gate (sequencing):** B2C catalog and draft booking follow **`S1-J-*`** as soon as those contracts are frozen. Any **internal / staff / authenticated** surface, and any automated or manual test that depends on a real session, is **not** treated as done for S1 until **F1 minimum** is in place: internal login + refresh, permission middleware on protected routes, basic session suspend/revoke, and audit on state-changing calls (**`BL-IAM-001`–`BL-IAM-004`**, implemented under **`S1-E-04`**). Waivers must be explicit and dated in the slice contract or checklist.
 
 **Joint gate:** complete engineering freeze `S1-J-*` before large implementation.
 
