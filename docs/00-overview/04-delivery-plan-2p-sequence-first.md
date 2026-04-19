@@ -1,206 +1,206 @@
-# Delivery Plan 2 Person (Sequence-First)
+# Delivery Plan — Two Developers (Sequence-First)
 
 ## Context
 
-Dokumen ini memecah pekerjaan **2 orang** dengan prinsip **sequence-first**:
+This document breaks down work for **two people** using a **sequence-first** principle:
 
-- **Tanpa patokan kalender** sebagai komitmen delivery (durasi fleksibel).
-- **Urutan fase** di bawah ini adalah komitmen engineering: apa dulu, apa belakangan, gate mana yang harus lolos sebelum lanjut.
+- **No calendar commitment** as a delivery promise (duration is flexible).
+- The **phase order** below is the engineering commitment: what comes first, what comes later, and which gates must pass before moving on.
 
-Penamaan file ini **tidak** menyiratkan durasi minggu tetap (bukan “8w”). Tautan lama ke `04-delivery-plan-2p-8w.md` diganti ke nama file ini.
+This filename does **not** imply a fixed week count (not “8w”). Old links to `04-delivery-plan-2p-8w.md` should point to this filename instead.
 
-## Dokumen overview terkait (04 / 05 / 06)
+## Related overview docs (04 / 05 / 06)
 
-| File | Fungsi |
-|------|--------|
-| **Ini (04)** | **Urutan fase & slice** — konteks 2 orang, prioritas MH-* / SH / CH, ownership, *tanpa* komitmen kalender. |
-| [`05-slice-engineering-checklist-and-task-codes.md`](./05-slice-engineering-checklist-and-task-codes.md) | **Gate + kode tugas** — checklist joint/L/E sebelum coding, format `Sx-J-01`, **§ Fase 6 — Depth backlog** (`S1-E-05`, …). |
-| [`06-feature-to-backlog-mapping.md`](./06-feature-to-backlog-mapping.md) | **Backlog operasional** — baris `BL-*`, `Exec seq`, kolom Slice/Task Code yang mengarah ke **05**; isi produk tetap mengacu `docs/06-features/*`. |
+| File | Role |
+|------|------|
+| **This file (04)** | **Phase & slice order** — two-person context, MH-* / SH / CH priority, ownership, **no** calendar commitment. |
+| [`05-slice-engineering-checklist-and-task-codes.md`](./05-slice-engineering-checklist-and-task-codes.md) | **Gates + task codes** — joint/L/E checklist before coding, `Sx-J-01` format, **Phase 6 — Depth backlog** (`S1-E-05`, …). |
+| [`06-feature-to-backlog-mapping.md`](./06-feature-to-backlog-mapping.md) | **Operational backlog** — `BL-*` rows, `Exec seq`, Slice/Task Code columns pointing to **05**; product behavior remains in `docs/06-features/*`. |
 
-Ringkas: **04** = peta *apa dulu*; **05** = SOP & nomor tugas per slice; **06** = daftar tiket integrasi.
+In short: **04** = map of *what first*; **05** = SOP & task numbers per slice; **06** = integration ticket list.
 
-## Label Prioritas (Wajib Pakai)
+## Priority Labels (Required)
 
-Semua backlog dan detail fitur di repo ini memakai label:
+All backlog and feature-detail items in this repo use:
 
-- **MH-MVP**: wajib selesai untuk fase fungsional paling awal (biasanya inti alur bisnis)
-- **MH-V1**: wajib selesai untuk kelengkapan v1 (setelah inti stabil)
-- **SH**: penting, dikerjakan setelah seluruh `MH-MVP` + `MH-V1` aman
-- **CH**: opsional, dikerjakan jika kapasitas tersedia
+- **MH-MVP**: must finish for the earliest functional phase (usually core business flow)
+- **MH-V1**: must finish for v1 completeness (after the core is stable)
+- **SH**: important; scheduled after all `MH-MVP` + `MH-V1` are safe
+- **CH**: optional; only if capacity allows
 
-Aturan urutan eksekusi: **MH-MVP -> MH-V1 -> SH -> CH**.
+Execution order: **MH-MVP → MH-V1 → SH → CH**.
 
-## Cara Kerja Shared
+## How “Shared” Works
 
-"Shared" bukan berarti coding bersamaan di task yang sama.
+“Shared” does **not** mean two people code the same task at once.
 
-Setiap task wajib punya:
+Every task must have:
 
-- **A (Accountable):** penentu final
-- **R (Responsible):** eksekutor utama
-- **C (Consulted):** reviewer wajib
+- **A (Accountable):** final decider
+- **R (Responsible):** primary executor
+- **C (Consulted):** mandatory reviewer
 
-Aturan:
+Rules:
 
-1. Satu task hanya 1 orang **R**
-2. Reviewer tidak mengubah scope tanpa sinkron 15 menit harian
-3. Jika kontrak API berubah, update dulu dokumen service API sebelum lanjut coding
+1. Only one person is **R** per task
+2. Reviewers do not change scope without a 15-minute daily sync
+3. If an API contract changes, update the service API doc before continuing implementation
 
-## Ownership Utama
+## Primary Ownership
 
 ### Lutfi (Marketing owner)
 
-- F10 Marketing/CRM/Agent (utama)
+- F10 Marketing/CRM/Agent (primary)
 - F4 Booking flow side (channel, attribution, UX flow)
 - B2C/B2B funnel UI
-- F11 dashboard sales/marketing (fase 2)
+- F11 sales/marketing dashboards (phase 2)
 
 ### Elda (Finance/Inventory owner)
 
 - F5 Payment core (invoice/VA/webhook/reconcile)
-- F9 Finance core (journal, AR/AP, report dasar)
+- F9 Finance core (journal, AR/AP, basic reports)
 - F8 Logistics/Fulfillment core
-- F11 dashboard finance/inventory (fase 2)
+- F11 finance/inventory dashboards (phase 2)
 
 ### Shared Foundation (Lutfi + Elda)
 
 - F1 auth/role/audit minimum
 - F2 package/departure/seat minimum
-- Kontrak event lintas service (booking/payment/finance/logistics/crm)
+- Cross-service event contracts (booking/payment/finance/logistics/crm)
 
-## Vertical Slices (Urutan End-to-End)
+## Vertical Slices (End-to-End Order)
 
-Urutan terbaik adalah slice yang cepat menghasilkan nilai bisnis dan menurunkan risiko integrasi.
+Prefer slices that deliver business value quickly and reduce integration risk.
 
-### Slice 1 - Discover & Book Draft
+### Slice 1 — Discover & Book Draft
 
-Alur: login -> lihat paket -> pilih departure -> buat draft booking.
+Flow: login → browse packages → pick departure → create draft booking.
 
-### Slice 2 - Get Paid
+### Slice 2 — Get Paid
 
-Alur: draft booking -> issue VA -> webhook masuk -> status paid/partial.
+Flow: draft booking → issue VA → webhook received → paid/partial status.
 
-### Slice 3 - Fulfillment + Accounting Minimum
+### Slice 3 — Fulfillment + Accounting Minimum
 
-Alur: paid -> trigger fulfillment -> posting jurnal dasar -> status terlihat.
+Flow: paid → trigger fulfillment → basic journal posting → visible status.
 
-### Slice 4 - Growth Loop
+### Slice 4 — Growth Loop
 
-Alur: attribution -> lead tracking -> komisi basic -> dashboard sales awal.
+Flow: attribution → lead tracking → basic commission → initial sales dashboard.
 
-### Slice 5 - Hardening & Go-Live Readiness
+### Slice 5 — Hardening & Go-Live Readiness
 
-Alur: reliability, audit, permission, UAT, bugfix prioritas.
+Flow: reliability, audit, permissions, UAT, priority bugfixes.
 
-**Checklist dependency engineering per slice + kode pekerjaan (Lutfi/Elda/Joint):** [`05-slice-engineering-checklist-and-task-codes.md`](./05-slice-engineering-checklist-and-task-codes.md).
-**Mapping detail fitur -> backlog -> task code:** [`06-feature-to-backlog-mapping.md`](./06-feature-to-backlog-mapping.md).
+**Per-slice engineering dependency checklist + task codes (Lutfi/Elda/Joint):** [`05-slice-engineering-checklist-and-task-codes.md`](./05-slice-engineering-checklist-and-task-codes.md).  
+**Feature → backlog → task code mapping:** [`06-feature-to-backlog-mapping.md`](./06-feature-to-backlog-mapping.md).
 
-## Urutan Eksekusi (Sequence-First)
+## Execution Order (Sequence-First)
 
-### Fase 0 — Engineering bootstrap (S0)
+### Phase 0 — Engineering bootstrap (S0)
 
-**Tujuan:** kontrak, konvensi merge, definisi DoR/DoD, template `docs/contracts/*`.
+**Goal:** contracts, merge conventions, DoR/DoD definitions, `docs/contracts/*` templates.
 
-**Joint gate:** selesaikan checklist `S0-*` di `05-slice-engineering-checklist-and-task-codes.md`.
+**Joint gate:** complete `S0-*` checklist in `05-slice-engineering-checklist-and-task-codes.md`.
 
-### Fase 1 — Discover + draft booking (S1)
+### Phase 1 — Discover + draft booking (S1)
 
-**Tujuan:** B2C bisa browse katalog → detail → form → **draft booking**; internal auth minimum untuk route yang dipakai staff bila diperlukan.
+**Goal:** B2C can browse catalog → detail → form → **draft booking**; internal auth minimum for routes staff need.
 
-**Joint gate:** selesaikan engineering freeze `S1-J-*` sebelum implementasi besar dimulai.
+**Joint gate:** complete engineering freeze `S1-J-*` before large implementation.
 
-### Fase 2 — Get paid (S2)
+### Phase 2 — Get paid (S2)
 
-**Tujuan:** draft → invoice/VA → webhook → status pembayaran sinkron ke booking.
+**Goal:** draft → invoice/VA → webhook → payment status synced to booking.
 
-**Joint gate:** selesaikan engineering freeze `S2-J-*` + uji end-to-end `S2-J-05`.
+**Joint gate:** complete engineering freeze `S2-J-*` + end-to-end test `S2-J-05`.
 
-### Fase 3 — Fulfillment + finance minimum pasca bayar (S3)
+### Phase 3 — Fulfillment + minimum post-pay finance (S3)
 
-**Tujuan:** `paid_in_full` memicu tugas fulfillment/logistik minimal + posting keuangan minimum yang bisa diaudit.
+**Goal:** `paid_in_full` triggers minimal fulfillment/logistics work + minimum auditable finance posting.
 
-**Joint gate:** selesaikan engineering freeze `S3-J-*`.
+**Joint gate:** complete engineering freeze `S3-J-*`.
 
-### Fase 4 — Growth loop dasar (S4)
+### Phase 4 — Basic growth loop (S4)
 
-**Tujuan:** lead + attribution dasar + event minimal ke CRM read-model.
+**Goal:** lead + basic attribution + minimal events to CRM read model.
 
-**Joint gate:** selesaikan engineering freeze `S4-J-*`.
+**Joint gate:** complete engineering freeze `S4-J-*`.
 
-### Fase 5 — Hardening & readiness (S5)
+### Phase 5 — Hardening & readiness (S5)
 
-**Tujuan:** UAT, reliability, permission regression, dokumentasi operasional minimum.
+**Goal:** UAT, reliability, permission regression, minimum operational documentation.
 
-**Joint gate:** selesaikan engineering freeze `S5-J-*`.
+**Joint gate:** complete engineering freeze `S5-J-*`.
 
-### Fase 6 — Depth expansion (setelah core stabil)
+### Phase 6 — Depth expansion (after core is stable)
 
-Bagian ini **sengaja tidak dipatok waktu**. Daftar berikut adalah **prioritas domain produk** (bukan salinan urutan baris di mapping). Urutan konkret antar-`BL-*` dan subsection **6.G–6.O** memakai kolom **`Exec seq`** di [`06-feature-to-backlog-mapping.md`](./06-feature-to-backlog-mapping.md).
+This section is **deliberately not time-boxed**. The list below is **product domain priority** (not a copy of row order in the mapping). Concrete order between `BL-*` rows and subsections **6.G–6.O** follows the **`Exec seq`** column in [`06-feature-to-backlog-mapping.md`](./06-feature-to-backlog-mapping.md).
 
-Urutan domain yang disarankan:
+Suggested domain order:
 
-1. **F10** dalam (onboarding agent, commission view, reporting dasar, SLA lead)
-2. **F9** dalam (AP layak operasional, aging AR/AP, period close checklist minimum)
-3. **F8** dalam (warehouse/QC/reorder critical flow, dispatch tracking minimum)
-4. **F7** dalam (manifest/grouping yang paling kritis untuk operasi)
-5. **F6** starter (visa tracker/read model dasar) setelah data dokumen + booking stabil
-6. **F11** dashboard sesuai kebutuhan operasional (setelah metric backend tersedia)
+1. **F10** depth (agent onboarding, commission view, basic reporting, lead SLA)
+2. **F9** depth (operational AP, AR/AP aging, minimum period-close checklist)
+3. **F8** depth (warehouse/QC/reorder critical flow, minimum dispatch tracking)
+4. **F7** depth (manifest/grouping most critical for operations)
+5. **F6** starter (visa tracker/basic read model) after documents + booking data are stable
+6. **F11** dashboards as operations need them (after metric backends exist)
 
-#### Joint Final Gate (untuk “v1 layak operasi”)
+#### Joint final gate (“v1 operational enough”)
 
-- Alur inti Fase 1–3 tetap stabil setelah fitur depth masuk
-- Dokumentasi operasional minimum tersedia
-- Bug triage tersisa hanya P2/P3 yang sudah diprioritaskan
+- Core flow Phases 1–3 stays stable after depth features land
+- Minimum operational documentation exists
+- Remaining bug triage is only prioritized P2/P3
 
-## RACI Ringkas untuk Shared Foundation
+## RACI — Shared Foundation (Short)
 
-### F1 minimal (login + role dasar)
+### F1 minimum (login + basic roles)
 
 - **A:** Lutfi
 - **R:** Elda
 - **C:** Lutfi
 
-### F2 minimal (paket + departure + seat basic)
+### F2 minimum (package + departure + basic seats)
 
 - **A:** Lutfi
 - **R:** Lutfi
 - **C:** Elda
 
-### F4 minimal (create draft booking)
+### F4 minimum (create draft booking)
 
 - **A:** Lutfi
 - **R:** Lutfi
 - **C:** Elda
 
-## Definisi Done per Task
+## Definition of Done (Per Task)
 
-Satu task dianggap selesai jika memenuhi semua:
+A task is done when all are true:
 
-1. Endpoint/UI jalan sesuai acceptance
-2. Event/status antar service sinkron
-3. Audit log tercatat untuk aksi state-changing
-4. Permission role tidak bocor
-5. Minimal 1 test skenario happy path + 1 edge case lolos
+1. Endpoint/UI meets acceptance
+2. Events/status are consistent across services
+3. Audit log records state-changing actions
+4. Role permissions do not leak
+5. At least one happy-path test + one edge case pass
 
-## Ritual sinkron (disarankan)
+## Sync Rituals (Recommended)
 
-### Sinkron singkat harian
+### Short daily sync
 
-- Kemarin selesai apa
-- Hari ini kerjakan apa
-- Blocker apa
-- Kontrak API/event apa yang berubah
+- What finished yesterday
+- What is in progress today
+- Blockers
+- Which API/event contracts changed
 
-### Sinkron non-harian
+### Less frequent sync
 
-- Demo fase/slice yang sedang dikerjakan
-- Triage bug (P0/P1/P2)
-- Freeze scope fase berikutnya (scope guardrail per fase, bukan per kalender)
+- Demo of phase/slice in progress
+- Bug triage (P0/P1/P2)
+- Freeze scope for the next phase (per-phase guardrails, not per calendar)
 
 ## Scope Guardrails
 
-Untuk menjaga **kualitas integrasi** tanpa patokan tanggal:
+To protect **integration quality** without date promises:
 
-- Jangan ambil fitur `CH` sebelum seluruh `MH-MVP` pada alur inti (Fase 1–3) stabil
-- Visa pipeline lengkap (F6 mendalam), advanced ops lapangan, dan fitur alumni/daily lengkap tetap **setelah** core + depth dasar stabil (lihat Fase 6)
-- Jika ada scope baru, wajib trade-off: keluarkan item lain dari fase berjalan atau turunkan prioritas (`SH/CH`)
+- Do not take `CH` items before all `MH-MVP` on the core path (Phases 1–3) is stable
+- Full visa pipeline (deep F6), advanced field ops, and full alumni/daily features stay **after** core + basic depth are stable (see Phase 6)
+- New scope requires a trade-off: drop something from the current phase or lower priority (`SH`/`CH`)

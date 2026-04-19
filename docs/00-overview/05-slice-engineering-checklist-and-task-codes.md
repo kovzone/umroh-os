@@ -1,118 +1,118 @@
-# Slice Engineering — Checklist & Kode Pekerjaan (Lutfi + Elda)
+# Slice Engineering — Checklist & Task Codes (Lutfi + Elda)
 
-Dokumen ini melengkapi [`04-delivery-plan-2p-sequence-first.md`](./04-delivery-plan-2p-sequence-first.md) (urutan fase & slice). Daftar baris backlog `BL-*` + `Exec seq` ada di [`06-feature-to-backlog-mapping.md`](./06-feature-to-backlog-mapping.md).
+This document complements [`04-delivery-plan-2p-sequence-first.md`](./04-delivery-plan-2p-sequence-first.md) (phase & slice order). Backlog rows `BL-*` + `Exec seq` live in [`06-feature-to-backlog-mapping.md`](./06-feature-to-backlog-mapping.md).
 
-**Tujuan:** menuntaskan **dependency engineering** *sebelum* coding slice dimulai, supaya paralel kerja minim bentrok dan minim rework.
+**Goal:** finish **engineering dependencies** *before* slice coding starts, so parallel work has fewer collisions and less rework.
 
 ---
 
-## Format kode pekerjaan (untuk perintah ke AI / ke rekan)
+## Task code format (for AI / peer instructions)
 
 ```
 S{slice}-{owner}-{seq}
 ```
 
-| Segmen | Arti | Nilai |
-|--------|------|--------|
-| `S{slice}` | Slice vertikal | `S0` … `S5` (lihat bawah) |
-| `{owner}` | Pemilik eksekusi | `L` = Lutfi, `E` = Elda, `J` = Joint (keduanya wajib hadir / merge bersama) |
-| `{seq}` | Urut 2 digit | `01`, `02`, … |
+| Segment | Meaning | Values |
+|---------|---------|--------|
+| `S{slice}` | Vertical slice | `S0` … `S5` (see below) |
+| `{owner}` | Execution owner | `L` = Lutfi, `E` = Elda, `J` = Joint (both must align / merge together) |
+| `{seq}` | Two-digit sequence | `01`, `02`, … |
 
-**Contoh perintah ke AI:**
+**Example prompt to an AI:**
 
-> Kerjakan **S1-L-04** dan **S1-E-03**. Patuhi kontrak di `docs/contracts/slice-S1.md` (jika sudah ada). Jangan ubah kontrak tanpa ACC.
+> Implement **S1-L-04** and **S1-E-03**. Follow the contract in `docs/contracts/slice-S1.md` (when it exists). Do not change the contract without explicit approval.
 
-**Saran tambahan (opsional tapi bagus):**
+**Optional but useful:**
 
-- Satu file kontrak per slice: `docs/contracts/slice-Sx.md` (Markdown + contoh JSON) — *folder `docs/contracts/` boleh dibuat saat S0-J-01 selesai.*
-- Issue tracker (GitHub/Linear): judul issue = kode tugas, supaya 1:1 dengan checklist ini.
-
----
-
-## Aturan prioritas vs slice (yang benar)
-
-Gunakan label berikut untuk semua **feature/backlog item**:
-
-- `MH-MVP`: wajib selesai untuk MVP tercepat
-- `MH-V1`: wajib selesai untuk rilis v1 (setelah MVP)
-- `SH`: penting, dikerjakan setelah semua `MH-MVP` + `MH-V1` aman
-- `CH`: opsional, dikerjakan jika kapasitas tersedia
-
-Prinsip:
-
-- **Priority itu milik feature/backlog item**, bukan milik slice.
-- **Slice itu urutan delivery** (wadah eksekusi end-to-end).
-- **Task code** adalah paket kerja teknis yang mengeksekusi beberapa backlog item.
-
-Konsekuensi:
-
-- Satu task code boleh berisi backlog item dengan label prioritas berbeda, tapi disarankan dipisah (`-a`, `-b`) agar eksekusi fokus.
-- Penandaan `MH-MVP/MH-V1/SH/CH` dilakukan di dokumen mapping backlog (feature-level), bukan dipatok default per slice.
+- One contract file per slice: `docs/contracts/slice-Sx.md` (Markdown + JSON examples) — *the `docs/contracts/` folder may be created when S0-J-01 completes.*
+- Issue tracker (GitHub/Linear): issue title = task code, 1:1 with this checklist.
 
 ---
 
-## Definisi slice
+## Priority vs slice (correct mental model)
 
-| Kode | Nama slice | User journey (ringkas) |
-|------|--------------|-------------------------|
-| **S0** | Engineering bootstrap | Konvensi repo, CI, format kontrak, ownership merge |
-| **S1** | Discover + draft booking | B2C: katalog → detail → booking form → **draft** (tanpa login jamaah); staff/internal pakai auth sesuai F1 |
-| **S2** | Get paid | Draft → invoice/VA → webhook → `pending_payment` / partial / lunas |
-| **S3** | Fulfill + keuangan minimum | Lunas → tugas fulfillment → posting jurnal / keuangan dasar |
-| **S4** | Growth loop | Lead + attribution + hook komisi/CRM read |
+Use these labels on every **feature/backlog item**:
+
+- `MH-MVP`: required for fastest MVP
+- `MH-V1`: required for v1 release (after MVP)
+- `SH`: important; after all `MH-MVP` + `MH-V1` are safe
+- `CH`: optional; only if capacity allows
+
+Principles:
+
+- **Priority belongs to the feature/backlog item**, not the slice.
+- **Slice is delivery order** (end-to-end container).
+- **Task code** is a technical work package that may cover several backlog items.
+
+Consequences:
+
+- One task code may include backlog items with different priority labels; prefer splitting (`-a`, `-b`) for focus.
+- `MH-MVP` / `MH-V1` / `SH` / `CH` tagging happens in the backlog mapping doc (feature level), not a default per slice.
+
+---
+
+## Slice definitions
+
+| Code | Slice name | User journey (short) |
+|------|------------|----------------------|
+| **S0** | Engineering bootstrap | Repo conventions, CI, contract format, merge ownership |
+| **S1** | Discover + draft booking | B2C: catalog → detail → booking form → **draft** (no pilgrim login); staff/internal uses auth per F1 |
+| **S2** | Get paid | Draft → invoice/VA → webhook → `pending_payment` / partial / paid |
+| **S3** | Fulfill + minimum finance | Paid → fulfillment tasks → basic journal / finance |
+| **S4** | Growth loop | Lead + attribution + commission/CRM hook |
 | **S5** | Hardening | UAT, perf, security checklist, freeze |
 
 ---
 
-## Aturan “slice boleh mulai coding”
+## “Slice may start coding” rules
 
-Sebuah slice `Sx` (untuk `x ≥ 1`) status **READY TO BUILD** hanya jika:
+A slice `Sx` (for `x ≥ 1`) is **READY TO BUILD** only if:
 
-1. Semua baris di tabel **Engineering freeze** untuk slice itu = **centang** (tidak ada gate yang masih terbuka).
-2. Artefak kontrak untuk slice itu sudah ada (minimal Markdown) dan **sudah di-review** oleh owner non-eksekutor (Lutfi review Elda, sebaliknya).
-3. Tidak ada item **[GATE]** terbuka di slice sebelumnya (kecuali secara eksplisit di-*waive* dengan catatan tanggal).
+1. Every row in that slice’s **Engineering freeze** table is **checked** (no open gates).
+2. Contract artifacts for the slice exist (Markdown minimum) and are **reviewed** by the non-executor owner (Lutfi reviews Elda and vice versa).
+3. No open **[GATE]** items from earlier slices (unless explicitly **waived** with a dated note).
 
 ---
 
-# S0 — Engineering bootstrap (sebelum S1)
+# S0 — Engineering bootstrap (before S1)
 
-**Tujuan:** satu bahasa untuk kontrak, merge, dan kualitas gate.
+**Goal:** one language for contracts, merges, and quality gates.
 
 ## Checklist — Joint **[GATE]**
 
-| Kode | Owner | Pekerjaan | Output / bukti selesai |
-|------|-------|-----------|-------------------------|
-| S0-J-01 | J | Buat folder & template kontrak `docs/contracts/README.md` + `slice-Sx.md` template | Folder + template ter-merge |
-| S0-J-02 | J | Sepakat **branch strategy** (mis. `main` + short-lived `feat/*`) + aturan “siapa merge” | 1 paragraf di README kontrak atau di wiki internal |
-| S0-J-03 | J | Definisi **Definition of Ready (DoR)** & **Definition of Done (DoD)** per PR | Tabel singkat di README kontrak |
-| S0-L-01 | L | Daftar **role + route UI** yang akan disentuh S1 (publik vs internal) | Tabel role vs URL |
-| S0-E-01 | E | Daftar **service** yang disentuh S1–S2 + ownership file (siapa PR owner) | Tabel service vs owner |
+| Code | Owner | Work | Output / proof of done |
+|------|-------|------|-------------------------|
+| S0-J-01 | J | Create folder & contract templates `docs/contracts/README.md` + `slice-Sx.md` template | Folder + template merged |
+| S0-J-02 | J | Agree **branch strategy** (e.g. `main` + short-lived `feat/*`) + “who merges” rules | One paragraph in contract README or internal wiki |
+| S0-J-03 | J | Define **Definition of Ready (DoR)** & **Definition of Done (DoD)** per PR | Short table in contract README |
+| S0-L-01 | L | List **roles + UI routes** touched in S1 (public vs internal) | Role vs URL table |
+| S0-E-01 | E | List **services** touched S1–S2 + file ownership (PR owner) | Service vs owner table |
 
 ---
 
 # S1 — Discover + draft booking
 
-## Engineering freeze (WAJIB sebelum coding fitur S1) **[GATE]**
+## Engineering freeze (REQUIRED before S1 feature coding) **[GATE]**
 
-| Kode | Owner | Pekerjaan | Output / bukti selesai |
-|------|-------|-----------|-------------------------|
-| S1-J-01 | J | **Kontrak API publik** katalog: list paket, detail paket, detail departure + sisa seat (read) | `docs/contracts/slice-S1.md` § Catalog |
-| S1-J-02 | J | **Kontrak API** `POST /v1/bookings` (draft): field wajib, error shape, idempotency key (jika ada) | `docs/contracts/slice-S1.md` § Booking |
-| S1-J-03 | J | **Kontrak** `ReserveSeats` / `ReleaseSeats` (gRPC atau REST internal): parameter, failure codes, kompensasi | `docs/contracts/slice-S1.md` § Inventory |
-| S1-J-04 | J | **State** booking yang dipakai S1: minimal `draft` (dokumen lengkap **belum** wajib di S1 jika MVP kamu memang baru KTP+passport di gate berikutnya — tetap tulis eksplisit) | 1 paragraf keputusan + referensi Q006 |
-| S1-E-01 | E | Review **konkurensi seat** + transaksi DB (statement atomic) pada kontrak S1-J-03 | Comment “approved” di dokumen kontrak atau PR review |
-| S1-L-01 | L | Wireframe / daftar screen S1 (URL + komponen utama) | Link figma *atau* bullet di kontrak |
+| Code | Owner | Work | Output / proof of done |
+|------|-------|------|-------------------------|
+| S1-J-01 | J | **Public catalog API** contract: list packages, package detail, departure detail + remaining seats (read) | `docs/contracts/slice-S1.md` § Catalog |
+| S1-J-02 | J | **API** `POST /v1/bookings` (draft): required fields, error shape, idempotency key (if any) | `docs/contracts/slice-S1.md` § Booking |
+| S1-J-03 | J | **Contract** `ReserveSeats` / `ReleaseSeats` (gRPC or internal REST): parameters, failure codes, compensation | `docs/contracts/slice-S1.md` § Inventory |
+| S1-J-04 | J | **Booking states** used in S1: at least `draft` (full documents **not** required in S1 if MVP only needs KTP+passport at a later gate — write explicitly) | One decision paragraph + Q006 reference |
+| S1-E-01 | E | Review **seat concurrency** + DB transactions (atomic statements) for S1-J-03 | “Approved” comment on contract doc or PR review |
+| S1-L-01 | L | Wireframe / screen list for S1 (URL + main components) | Figma link *or* bullets in contract |
 
-## Checklist implementasi (setelah freeze)
+## Implementation checklist (after freeze)
 
-| Kode | Owner | Pekerjaan | Depends on |
-|------|-------|-----------|------------|
-| S1-L-02 | L | UI katalog + detail + alur ke form booking | S1-J-01 |
-| S1-L-03 | L | Integrasi client → API katalog | S1-J-01 |
-| S1-L-04 | L | Integrasi client → create draft booking | S1-J-02 |
-| S1-E-02 | E | `catalog-svc` read endpoints sesuai kontrak | S1-J-01 |
-| S1-E-03 | E | `booking-svc` draft + orkestrasi reserve seat sesuai kontrak | S1-J-02, S1-J-03 |
-| S1-E-04 | E | Middleware auth **internal** untuk route admin/CS yang dipakai tes (jika S1 butuh) | S0-L-01 |
+| Code | Owner | Work | Depends on |
+|------|-------|------|------------|
+| S1-L-02 | L | Catalog UI + detail + path to booking form | S1-J-01 |
+| S1-L-03 | L | Client integration → catalog API | S1-J-01 |
+| S1-L-04 | L | Client integration → create draft booking | S1-J-02 |
+| S1-E-02 | E | `catalog-svc` read endpoints per contract | S1-J-01 |
+| S1-E-03 | E | `booking-svc` draft + reserve-seat orchestration per contract | S1-J-02, S1-J-03 |
+| S1-E-04 | E | **Internal** auth middleware for admin/CS routes used in tests (if S1 needs it) | S0-L-01 |
 
 ---
 
@@ -120,46 +120,46 @@ Sebuah slice `Sx` (untuk `x ≥ 1`) status **READY TO BUILD** hanya jika:
 
 ## Engineering freeze **[GATE]**
 
-| Kode | Owner | Pekerjaan | Output / bukti selesai |
-|------|-------|-----------|-------------------------|
-| S2-J-01 | J | Kontrak `POST` invoice + `POST` VA issue: `amount_total`, `currency`, `fx_snapshot`, TTL | `docs/contracts/slice-S2.md` |
-| S2-J-02 | J | Kontrak webhook: header signature, body minimal, dedupe key, response codes | `slice-S2.md` § Webhook |
-| S2-J-03 | J | Kontrak callback ke booking: status transition + idempotensi | `slice-S2.md` § Booking integration |
-| S2-J-04 | J | **Stub** `payment-svc` (response tetap sesuai kontrak) atau toggle `MOCK_GATEWAY` | Stub merge / env flag dokumentasi |
-| S2-E-01 | E | Tabel DB invoice/events sesuai `docs/03-services/04-payment-svc/02-data-model.md` | Migrasi direview |
-| S2-L-01 | L | UI checkout: menampilkan VA/QR + status polling strategy | Deskripsi di kontrak atau komentar UI |
+| Code | Owner | Work | Output / proof of done |
+|------|-------|------|-------------------------|
+| S2-J-01 | J | Contract `POST` invoice + `POST` VA issue: `amount_total`, `currency`, `fx_snapshot`, TTL | `docs/contracts/slice-S2.md` |
+| S2-J-02 | J | Webhook contract: signature header, minimal body, dedupe key, response codes | `slice-S2.md` § Webhook |
+| S2-J-03 | J | Callback to booking: status transition + idempotency | `slice-S2.md` § Booking integration |
+| S2-J-04 | J | **Stub** `payment-svc` (responses still match contract) or `MOCK_GATEWAY` toggle | Stub merged / env flag documented |
+| S2-E-01 | E | DB tables for invoice/events per `docs/03-services/04-payment-svc/02-data-model.md` | Migration reviewed |
+| S2-L-01 | L | Checkout UI: show VA/QR + polling strategy | Description in contract or UI comment |
 
-## Checklist implementasi
+## Implementation checklist
 
-| Kode | Owner | Pekerjaan | Depends on |
-|------|-------|-----------|------------|
+| Code | Owner | Work | Depends on |
+|------|-------|------|------------|
 | S2-E-02 | E | Implement `payment-svc` invoice + VA + webhook | S2-J-01–J-04 |
-| S2-E-03 | E | Reconcile cron minimal | S2-J-02 |
-| S2-L-02 | L | Halaman checkout + error UX | S2-J-01 |
-| S2-L-03 | L | Wiring booking flow → panggil payment | S2-J-03 |
-| S2-L-04 | L | Checkout B2C mendalam (VA/QR + error UX lanjutan; `BL-B2C-018`) | S2-L-02 |
-| S2-J-05 | J | Uji end-to-end: stub lalu gateway nyata | S2-E-02, S2-L-03 |
+| S2-E-03 | E | Minimal reconcile cron | S2-J-02 |
+| S2-L-02 | L | Checkout page + error UX | S2-J-01 |
+| S2-L-03 | L | Wire booking flow → payment calls | S2-J-03 |
+| S2-L-04 | L | Deep B2C checkout (VA/QR + advanced error UX; `BL-B2C-018`) | S2-L-02 |
+| S2-J-05 | J | End-to-end test: stub then real gateway | S2-E-02, S2-L-03 |
 
 ---
 
-# S3 — Fulfillment + keuangan minimum
+# S3 — Fulfillment + minimum finance
 
 ## Engineering freeze **[GATE]**
 
-| Kode | Owner | Pekerjaan | Output |
-|------|-------|-----------|--------|
-| S3-J-01 | J | Event `payment.received` / `booking.paid_in_full` → payload untuk logistics + finance | `slice-S3.md` |
-| S3-J-02 | J | Kontrak tugas fulfillment minimal (status, assignee) | `slice-S3.md` |
-| S3-J-03 | J | Kontrak jurnal minimal (akun placeholder + amount rules) | `slice-S3.md` |
-| S3-E-01 | E | Review beban posting vs refund | Komentar di kontrak |
+| Code | Owner | Work | Output |
+|------|-------|------|--------|
+| S3-J-01 | J | Event `payment.received` / `booking.paid_in_full` → payload for logistics + finance | `slice-S3.md` |
+| S3-J-02 | J | Minimal fulfillment task contract (status, assignee) | `slice-S3.md` |
+| S3-J-03 | J | Minimal journal contract (placeholder accounts + amount rules) | `slice-S3.md` |
+| S3-E-01 | E | Review posting load vs refund | Comment on contract |
 
-## Checklist implementasi
+## Implementation checklist
 
-| Kode | Owner | Pekerjaan | Depends on |
-|------|-------|-----------|------------|
+| Code | Owner | Work | Depends on |
+|------|-------|------|------------|
 | S3-E-02 | E | `logistics-svc` trigger + status | S3-J-02 |
-| S3-E-03 | E | `finance-svc` posting dasar | S3-J-03 |
-| S3-L-02 | L | UI status “perlengkapan” di portal (read-only OK) | S3-J-02 |
+| S3-E-03 | E | `finance-svc` basic posting | S3-J-03 |
+| S3-L-02 | L | Portal “kitting” status UI (read-only OK) | S3-J-02 |
 
 ---
 
@@ -167,17 +167,17 @@ Sebuah slice `Sx` (untuk `x ≥ 1`) status **READY TO BUILD** hanya jika:
 
 ## Engineering freeze **[GATE]**
 
-| Kode | Owner | Pekerjaan | Output |
-|------|-------|-----------|--------|
-| S4-J-01 | J | Skema lead + snapshot UTM + atribusi (Q019/Q057) | `slice-S4.md` |
-| S4-J-02 | J | Event dari booking → CRM (nama event + payload) | `slice-S4.md` |
+| Code | Owner | Work | Output |
+|------|-------|------|--------|
+| S4-J-01 | J | Lead schema + UTM snapshot + attribution (Q019/Q057) | `slice-S4.md` |
+| S4-J-02 | J | Events from booking → CRM (event names + payload) | `slice-S4.md` |
 
-## Checklist implementasi
+## Implementation checklist
 
-| Kode | Owner | Pekerjaan | Depends on |
-|------|-------|-----------|------------|
+| Code | Owner | Work | Depends on |
+|------|-------|------|------------|
 | S4-L-01 | L | Lead list + capture form | S4-J-01 |
-| S4-E-02 | E | Endpoint penyimpanan lead + konsumsi event | S4-J-02 |
+| S4-E-02 | E | Lead storage endpoints + event consumption | S4-J-02 |
 
 ---
 
@@ -185,77 +185,77 @@ Sebuah slice `Sx` (untuk `x ≥ 1`) status **READY TO BUILD** hanya jika:
 
 ## Engineering freeze **[GATE]**
 
-| Kode | Owner | Pekerjaan | Output |
-|------|-------|-----------|--------|
-| S5-J-01 | J | Daftar skenario UAT wajib (dari gate MVP) | Checklist di `slice-S5.md` |
-| S5-J-02 | J | Matriks severity bug + SLA fix | Tabel |
+| Code | Owner | Work | Output |
+|------|-------|------|--------|
+| S5-J-01 | J | Mandatory UAT scenarios (from MVP gates) | Checklist in `slice-S5.md` |
+| S5-J-02 | J | Bug severity matrix + fix SLA | Table |
 
-## Checklist implementasi
+## Implementation checklist
 
-| Kode | Owner | Pekerjaan | Depends on |
-|------|-------|-----------|------------|
-| S5-L-01 | L | UAT journey B2C/agen | S5-J-01 |
+| Code | Owner | Work | Depends on |
+|------|-------|------|------------|
+| S5-L-01 | L | UAT journeys B2C/agent | S5-J-01 |
 | S5-E-01 | E | UAT payment/finance/logistics | S5-J-01 |
 
 ---
 
-# Fase 6 — Depth backlog (setelah core S1–S5 stabil)
+# Phase 6 — Depth backlog (after core S1–S5 is stable)
 
-Paket teknis berikut memetakan **`BL-*` Fase 6** di `docs/00-overview/06-feature-to-backlog-mapping.md` ke **Slice + Task Code**. Satu kode boleh menampung banyak baris backlog; pecah menjadi subtugas (`S4-E-03a`, dll.) jika ukuran PR membengkak.
+The following packages map **`BL-*` Phase 6** rows in `docs/00-overview/06-feature-to-backlog-mapping.md` to **Slice + Task Code**. One code may cover many backlog rows; split sub-tasks (`S4-E-03a`, etc.) if PR size grows.
 
-## Checklist implementasi — depth per domain
+## Implementation checklist — depth by domain
 
-| Kode | Owner | Pekerjaan | Depends on | Domain backlog (ringkas; detail di mapping Fase 6) |
-|------|-------|-----------|------------|------------------------------------------------------|
-| **S1-E-05** | E | **Katalog & master data dalam** — hotel/pembimbing/transport, varian/addon, import & bulk edit, **seat lintas saluran** | S1-E-02, S1-J-01 | `BL-CAT-005`–`011`, `BL-BOOK-007` (`BL-CAT-012`–`013` → **S4-E-04**) |
-| **S1-E-06** | E | **IAM & admin platform** — RBAC granular, staf, keamanan sesi/MFA, log terpusat, API keys, template komunikasi, global config, prosedur backup | S1-E-04, S1-J-01 | `BL-IAM-005`–`017` |
-| **S1-L-05** | L | **Situs B2C dalam** — homepage sampai self-booking, guest form, riwayat, info logistik, KB, chat, dll. (**bukan** VA checkout & upload dokumen) | S1-L-02, S1-J-01 | `BL-B2C-001`–`017`, `019`, `021`–`024` |
-| **S2-L-04** | L | **Checkout B2C dalam** — UX gateway + wiring ke invoice/VA | S2-L-02, S2-J-01 | `BL-B2C-018` |
-| **S3-E-04** | E | **Operasi lapangan dalam** — dokumen kolektif, manifest, rooming/transport, visa UI data, ALL, bus, raudhah, zamzam, refund admin, checklist vendor, … | S3-E-02, S3-J-02 | `BL-OPS-010`, `011`, `020`, `BL-OPS-021`–`042` |
-| **S3-E-05** | E | **Gudang & procurement dalam** — PR/PO/GRN/QC, stok multi-gudang, assembly, kirim/retur | S3-E-02, S3-J-02 | `BL-LOG-010`–`029` |
-| **S3-E-06** | E | **Visa pipeline dalam** — readiness, bulk submit, poll provider + history | S3-J-02, `BL-VISA-001` | `BL-VISA-001`–`003` |
-| **S3-E-07** | E | **Finance modul dalam** — penagihan, bank, subledger, AP ladder, pajak, rev-rec lanjutan, komisi, laporan & audit | S3-E-03, S3-J-03 | `BL-FIN-010`, `011`, `BL-FIN-020`–`041` |
-| **S3-L-03** | L | **Self-upload dokumen B2C** + status baca | S3-J-02, `BL-DOC-001` | `BL-B2C-020` |
-| **S3-L-04** | L | **Jamaah journey** — in-trip / post-booking (jadwal, dompet dokumen, bus, zamzam, …) | S3-L-02, S3-J-02 | `BL-JMJ-001`–`013` |
-| **S3-L-05** | L | **Widget dashboard operasional** — bus live, raudhah, koper, insiden, kesehatan gudang, pantauan logistik | S3-L-02, S3-J-02 | `BL-DASH-008`–`013` |
-| **S4-E-03** | E | **CRM & growth API/back-office dalam** — kampanye, otomasi, routing lead, wallet/pencairan, ads/UTM backend, diskon approval, alumni/ZISWAF data | S4-E-02, S4-J-01 | `BL-CRM-012`, `BL-CRM-040`–`066` (+ baris Owner **E** di **6.H**) |
-| **S4-E-04** | E | **Sinkron katalog → saluran agen** — snapshot versi, diff, push idempotent | S4-J-02, S1-E-05 | `BL-CAT-012`, `013` |
-| **S4-L-02** | L | **Portal agen & aset pemasaran** — onboarding, replica, konten, flyer/itinerary, academy UI, super-view, … | S4-L-01, S4-J-01 | `BL-CRM-010`, `011`, `BL-CRM-013`–`039` (+ baris Owner **L** di **6.H**) |
-| **S4-L-03** | L | **Widget dashboard iklan & CS** — spend vs closings, kinerja CS | S4-L-01, S4-J-01 | `BL-DASH-006`, `007` |
-| **S5-L-02** | L | **Widget dashboard eksekutif** — vendor readiness, seat, kas/P&L ringkas, likuiditas, inventory/PO exec, kerusakan | S5-L-01, S5-J-01 | `BL-DASH-001`–`005`, `014`–`017` |
-| **S5-L-03** | L | **Daily app & pelengkap** — sholat, kiblat, konten manasik/komunitas | S5-J-01 | `BL-PLG-001`–`009` |
-
----
-
-## Template mapping backlog (feature-level)
-
-Gunakan template ini untuk memetakan detail fitur ke task code:
-
-| Feature ID | Ringkasan fitur | Priority | Slice | Task Code | Backlog ID | Owner | Acceptance ringkas |
-|------------|------------------|----------|-------|-----------|------------|-------|--------------------|
-| F4-BOOK-001 | Create draft booking | MH-MVP | S1 | S1-E-03 | BL-BOOK-001 | E | Draft tersimpan + seat reserve atomik |
-| F5-PAY-001 | Issue VA | MH-MVP | S2 | S2-E-02 | BL-PAY-001 | E | VA issued + TTL tersimpan |
-| F10-CRM-001 | Lead capture basic | SH | S4 | S4-L-01 | BL-CRM-001 | L | Lead tersimpan dengan UTM |
-
-Aturan isi:
-
-1. `Priority` wajib diisi dari level feature/backlog.
-2. `Slice` dan `Task Code` menunjukkan kapan dan oleh siapa dikerjakan.
-3. Satu `Feature ID` boleh pecah ke beberapa `Backlog ID` jika terlalu besar untuk 1 PR.
+| Code | Owner | Work | Depends on | Backlog domain (short; see Phase 6 in mapping) |
+|------|-------|------|------------|------------------------------------------------|
+| **S1-E-05** | E | **Catalog & master data depth** — hotel/guide/transport masters, variants/addons, import & bulk edit, **cross-channel seats** | S1-E-02, S1-J-01 | `BL-CAT-005`–`011`, `BL-BOOK-007` (`BL-CAT-012`–`013` → **S4-E-04**) |
+| **S1-E-06** | E | **IAM & admin platform** — granular RBAC, staff, session/MFA security, centralized logs, API keys, comm templates, global config, backup procedure | S1-E-04, S1-J-01 | `BL-IAM-005`–`017` |
+| **S1-L-05** | L | **B2C site depth** — homepage through self-booking, guest form, history, logistics info, KB, chat, etc. (**not** VA checkout & document upload) | S1-L-02, S1-J-01 | `BL-B2C-001`–`017`, `019`, `021`–`024` |
+| **S2-L-04** | L | **Deep B2C checkout** — gateway UX + wiring to invoice/VA | S2-L-02, S2-J-01 | `BL-B2C-018` |
+| **S3-E-04** | E | **Field ops depth** — collective docs, manifest, rooming/transport, visa UI data, ALL, bus, Raudhah, Zamzam, admin refund, vendor checklist, … | S3-E-02, S3-J-02 | `BL-OPS-010`, `011`, `020`, `BL-OPS-021`–`042` |
+| **S3-E-05** | E | **Warehouse & procurement depth** — PR/PO/GRN/QC, multi-warehouse stock, assembly, ship/return | S3-E-02, S3-J-02 | `BL-LOG-010`–`029` |
+| **S3-E-06** | E | **Visa pipeline depth** — readiness, bulk submit, poll provider + history | S3-J-02, `BL-VISA-001` | `BL-VISA-001`–`003` |
+| **S3-E-07** | E | **Finance module depth** — billing, bank, subledger, AP ladder, tax, advanced rev-rec, commission, reports & audit | S3-E-03, S3-J-03 | `BL-FIN-010`, `011`, `BL-FIN-020`–`041` |
+| **S3-L-03** | L | **B2C self-upload documents** + read status | S3-J-02, `BL-DOC-001` | `BL-B2C-020` |
+| **S3-L-04** | L | **Pilgrim journey** — in-trip / post-booking (schedule, document wallet, bus, Zamzam, …) | S3-L-02, S3-J-02 | `BL-JMJ-001`–`013` |
+| **S3-L-05** | L | **Operational dashboard widgets** — live bus, Raudhah, luggage, incidents, warehouse health, logistics monitoring | S3-L-02, S3-J-02 | `BL-DASH-008`–`013` |
+| **S4-E-03** | E | **CRM & growth API/back office depth** — campaigns, automation, lead routing, wallet/payout, ads/UTM backend, discount approval, alumni/ZISWAF data | S4-E-02, S4-J-01 | `BL-CRM-012`, `BL-CRM-040`–`066` (+ rows Owner **E** in **6.H**) |
+| **S4-E-04** | E | **Catalog sync → agent channels** — version snapshot, diff, idempotent push | S4-J-02, S1-E-05 | `BL-CAT-012`, `013` |
+| **S4-L-02** | L | **Agent portal & marketing assets** — onboarding, replica, content, flyer/itinerary, academy UI, super-view, … | S4-L-01, S4-J-01 | `BL-CRM-010`, `011`, `BL-CRM-013`–`039` (+ rows Owner **L** in **6.H**) |
+| **S4-L-03** | L | **Ads & CS dashboard widgets** — spend vs closings, CS performance | S4-L-01, S4-J-01 | `BL-DASH-006`, `007` |
+| **S5-L-02** | L | **Executive dashboard widgets** — vendor readiness, seats, cash/P&L snapshot, liquidity, inventory/PO exec, damage | S5-L-01, S5-J-01 | `BL-DASH-001`–`005`, `014`–`017` |
+| **S5-L-03** | L | **Daily app & companions** — prayer, qibla, manasik/community content | S5-J-01 | `BL-PLG-001`–`009` |
 
 ---
 
-## Masukan singkat (biar sistem kode tugasnya hidup)
+## Backlog mapping template (feature level)
 
-1. **Jangan mulai slice tanpa merge kontrak** — itu satu PR kecil yang bisa direview dalam <1 jam.
-2. Saat minta AI mengerjakan kode, lampirkan: **kode tugas + isi kontrak slice + service owner** — supaya AI tidak mengubah boundary sembarangan.
-3. Kalau kontrak berubah: **bump versi** (`slice-S2-v2.md` atau seksi *Changelog* di file yang sama) supaya histori jelas.
+Use this template to map feature detail to task codes:
+
+| Feature ID | Feature summary | Priority | Slice | Task Code | Backlog ID | Owner | Acceptance (short) |
+|------------|-----------------|----------|-------|-----------|------------|-------|--------------------|
+| F4-BOOK-001 | Create draft booking | MH-MVP | S1 | S1-E-03 | BL-BOOK-001 | E | Draft saved + atomic seat reserve |
+| F5-PAY-001 | Issue VA | MH-MVP | S2 | S2-E-02 | BL-PAY-001 | E | VA issued + TTL stored |
+| F10-CRM-001 | Lead capture basic | SH | S4 | S4-L-01 | BL-CRM-001 | L | Lead stored with UTM |
+
+Fill rules:
+
+1. `Priority` must come from feature/backlog level.
+2. `Slice` and `Task Code` show when and by whom work runs.
+3. One `Feature ID` may split into several `Backlog ID` rows if too large for one PR.
 
 ---
 
-## Referensi
+## Short tips (keep the task-code system alive)
 
-- Urutan fase & slice (sequence-first): [`04-delivery-plan-2p-sequence-first.md`](./04-delivery-plan-2p-sequence-first.md)
-- Mapping `BL-*` + `Exec seq` (termasuk Fase 6 → kode tugas depth): [`06-feature-to-backlog-mapping.md`](./06-feature-to-backlog-mapping.md)
-- Model data pembayaran: `docs/03-services/04-payment-svc/02-data-model.md`
-- Alur booking (produk): `docs/06-features/04-booking-and-allocation.md`
+1. **Do not start a slice without merged contracts** — that is one small PR reviewable in under an hour.
+2. When asking AI to code, attach: **task code + slice contract contents + service owner** — so boundaries are not changed casually.
+3. When a contract changes: **bump version** (`slice-S2-v2.md` or a *Changelog* section in the same file) so history stays clear.
+
+---
+
+## References
+
+- Phase & slice order (sequence-first): [`04-delivery-plan-2p-sequence-first.md`](./04-delivery-plan-2p-sequence-first.md)
+- `BL-*` mapping + `Exec seq` (including Phase 6 → depth task codes): [`06-feature-to-backlog-mapping.md`](./06-feature-to-backlog-mapping.md)
+- Payment data model: `docs/03-services/04-payment-svc/02-data-model.md`
+- Booking flow (product): `docs/06-features/04-booking-and-allocation.md`

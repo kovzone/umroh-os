@@ -21,6 +21,9 @@ Guidance for **human developers** and **coding agents** (Cursor, Claude Code, et
 
 ## Sources of truth (read in this order for a task)
 
+0. **Documentation language**  
+   - `docs/00-overview/00-documentation-language.md` — committed prose under `docs/` is **English** (narrow exceptions for quoted source material).
+
 1. **Product behavior (what to build)**  
    - Feature-level: `docs/06-features/` — start from `docs/06-features/00-index.md`, then open the feature file for your area (F1–F12).  
    - Canonical PRD (long, Indonesian): `docs/UmrohOS - Product Requirements Document.docx.md` — use section search; do not assume you have seen all of it. Pointer: `docs/00-overview/02-prd-pointer.md`.  

@@ -39,6 +39,8 @@ Every PR must include:
 4. Docs/spec impact:
   - If behavior changes, update relevant docs/specs in the same PR.
   - If no behavior change, explicitly state `No doc impact`.
+  - New or updated committed prose under `docs/` MUST be **English** — see `docs/00-overview/00-documentation-language.md`.
+  - Do not commit a doc-only batch until **all** `docs/` files in that commit are fully English for the scope you are migrating (avoid mixed-language commits).
 
 ## Shared vs Local Configuration
 
