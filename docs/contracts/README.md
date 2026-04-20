@@ -96,7 +96,7 @@ Every PR in this repo passes through these two gates. `CONTRIBUTING.md § Canoni
 | Phase | Check |
 |---|---|
 | **DoR** | Task card exists in a progress tracker with an explicit DoD checklist |
-| **DoR** | For `Sx-E-*` / `Sx-L-*` cards: matching `Sx-J-*` contract section is merged in `slice-Sx.md` (not `TBD`) |
+| **DoR** | For `Sx-E-*` / `Sx-L-*` cards: matching `Sx-J-*` contract section is merged in `slice-Sx.md` (not `TBD`) **and** any **Engineering freeze** companions listed for that slice in `docs/00-overview/05-slice-engineering-checklist-and-task-codes.md` (e.g. `S1-E-01`, `S1-L-01`) are satisfied |
 | **DoR** | Branch name follows `feat/<slice>-<owner>-<seq>-<slug>` per `§ Branch strategy + merge ownership` |
 | **DoR** | For Joint (`Sx-J-*`) cards: the other dev has been notified before coding starts |
 | **DoD** | Code builds; tests pass; `go vet` clean (for code PRs) |
