@@ -74,12 +74,29 @@ Operational rules for the 2-developer repo. Contracted once here so both devs (a
 
 **No force-push on shared branches.** `dev`, `main`, and any `feat/*` branch that has been pushed to the remote are append-only. If history needs a fix (typo in a commit message, unwanted merge), open a follow-up commit rather than rewriting. Force-push is reserved for unpushed local branches.
 
+## Definition of Ready / Definition of Done (per PR)
+
+Every PR in this repo passes through these two gates. `CONTRIBUTING.md § Canonical References` cross-links here — this table is the authoritative version.
+
+| Phase | Check |
+|---|---|
+| **DoR** | Task card exists in a progress tracker with an explicit DoD checklist |
+| **DoR** | For `Sx-E-*` / `Sx-L-*` cards: matching `Sx-J-*` contract section is merged in `slice-Sx.md` (not `TBD`) |
+| **DoR** | Branch name follows `feat/<slice>-<owner>-<seq>-<slug>` per `§ Branch strategy + merge ownership` |
+| **DoR** | For Joint (`Sx-J-*`) cards: the other dev has been notified before coding starts |
+| **DoD** | Code builds; tests pass; `go vet` clean (for code PRs) |
+| **DoD** | `docs/92-testing/testing-guide.md` replaced with a verification block specific to this task (per each dev's private per-task convention) |
+| **DoD** | `/security-review` run and findings addressed when any file outside `docs/` changes |
+| **DoD** | Reviewer signs off by merging the PR (non-executor dev clicks merge per `§ Branch strategy + merge ownership`) |
+
+DoR items are checked before coding starts; DoD items are checked before the reviewer clicks merge. A PR that fails a DoR item is sent back for prep; a PR that fails a DoD item waits for the gap to close.
+
 ## Appendix slots (filled by later S0 cards)
 
 This folder's README is intentionally a scaffold, expanded as the S0 chain completes:
 
 - **Branch strategy + merge ownership** — ✅ landed in `§ Branch strategy + merge ownership` above via `S0-J-02` (2026-04-20).
-- **DoR / DoD per PR** → to be appended by `S0-J-03` (short scannable table of Definition-of-Ready and Definition-of-Done columns).
+- **DoR / DoD per PR** — ✅ landed in `§ Definition of Ready / Definition of Done (per PR)` above via `S0-J-03` (2026-04-20).
 - **Service ownership matrix (S1–S2)** → to be appended by `S0-E-01` (table mapping each backend service touched in S1–S2 to a PR-owner and a code-reviewer).
 
 ## Related references

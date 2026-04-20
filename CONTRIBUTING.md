@@ -8,19 +8,19 @@ Keep changes merge-ready, traceable, and safe across a mixed-tool workflow (Curs
 
 ## Branch and PR Workflow
 
-- Start from latest `main`, then create a short-lived task branch before making any commit.
+- Start from latest `dev` (the integration branch; `main` moves only on release cuts), then create a short-lived task branch before making any commit.
 - Keep PR scope focused on one problem area.
-- Rebase or merge from `main` when your branch is stale before review.
+- Rebase or merge from `dev` when your branch is stale before review.
 - Do not force-push shared branches unless explicitly coordinated.
 
 ## Non-negotiable Git Rules
 
-- MUST create a task branch from `main` before any commit.
-- MUST NOT commit directly on `main`.
-- MUST open a PR for all shared changes; no direct push to protected `main`.
+- MUST create a task branch from `dev` before any commit.
+- MUST NOT commit directly on `dev` or `main`.
+- MUST open a PR targeting `dev` for all shared changes; no direct push to protected trunks (`dev`, `main`).
 - MUST keep one PR focused on one concern/task.
 - MUST include verification evidence in the PR before requesting review.
-- MUST NOT force-push to `main`.
+- MUST NOT force-push to `dev` or `main`, or to any `feat/*` branch once pushed.
 - MUST NOT bypass required checks or repository protections.
 
 ## Quality Gate (Minimum Before Merge)
@@ -71,4 +71,6 @@ Use the PR template in `.github/pull_request_template.md` and ensure all require
 
 - Detailed Git workflow: `docs/04-backend-conventions/08-git-workflow.md`
 - Detailed commit message conventions: `docs/08-commit-conventions.md`
+- Per-PR Definition of Ready / Definition of Done: `docs/contracts/README.md § Definition of Ready / Definition of Done (per PR)`
+- Branch strategy + merge ownership: `docs/contracts/README.md § Branch strategy + merge ownership`
 - Team AI onboarding and doc authority: `AGENTS.md`
