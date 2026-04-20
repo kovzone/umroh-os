@@ -109,6 +109,8 @@ A slice `Sx` (for `x ≥ 1`) is **READY TO BUILD** only if:
 | S1-E-01 | E | Review **seat concurrency** + DB transactions (atomic statements) for S1-J-03 | “Approved” comment on contract doc or PR review |
 | S1-L-01 | L | Wireframe / screen list for S1 (URL + main components) | Figma link *or* bullets in contract |
 
+_Backlog alignment:_ rows in `docs/00-overview/06-feature-to-backlog-mapping.md` that target Slice **S1** use the gate token `S1-J-01..S1-J-04; S1-E-01; S1-L-01` — the **full** freeze set in the table above (Joint contracts + `S1-E-01` review + `S1-L-01` wireframe), not `S1-J-*` alone.
+
 ## Implementation checklist (after freeze)
 
 | Code | Owner | Work | Depends on |
@@ -135,6 +137,8 @@ A slice `Sx` (for `x ≥ 1`) is **READY TO BUILD** only if:
 | S2-E-01 | E | DB tables for invoice/events per `docs/03-services/04-payment-svc/02-data-model.md` | Migration reviewed |
 | S2-L-01 | L | Checkout UI: show VA/QR + polling strategy | Description in contract or UI comment |
 
+_Backlog alignment:_ Slice **S2** rows in `docs/00-overview/06-feature-to-backlog-mapping.md` use `S2-J-01..S2-J-04; S2-E-01; S2-L-01` as the gate token — the full freeze set above.
+
 ## Implementation checklist
 
 | Code | Owner | Work | Depends on |
@@ -159,6 +163,8 @@ A slice `Sx` (for `x ≥ 1`) is **READY TO BUILD** only if:
 | S3-J-03 | J | Minimal journal contract (placeholder accounts + amount rules) | `slice-S3.md` |
 | S3-E-01 | E | Review posting load vs refund | Comment on contract |
 
+_Backlog alignment:_ Slice **S3** rows in `docs/00-overview/06-feature-to-backlog-mapping.md` use `S3-J-01..S3-J-03; S3-E-01` as the gate token — the full freeze set above.
+
 ## Implementation checklist
 
 | Code | Owner | Work | Depends on |
@@ -178,6 +184,8 @@ A slice `Sx` (for `x ≥ 1`) is **READY TO BUILD** only if:
 | S4-J-01 | J | Lead schema + UTM snapshot + attribution (Q019/Q057) | `slice-S4.md` |
 | S4-J-02 | J | Events from booking → CRM (event names + payload) | `slice-S4.md` |
 
+_Backlog alignment:_ Slice **S4** rows use `S4-J-01..S4-J-02` — the **Engineering freeze** table above lists Joint cards only (no separate `S4-L-01` wireframe or `S4-E-01` review row here).
+
 ## Implementation checklist
 
 | Code | Owner | Work | Depends on |
@@ -195,6 +203,8 @@ A slice `Sx` (for `x ≥ 1`) is **READY TO BUILD** only if:
 |------|-------|------|--------|
 | S5-J-01 | J | Mandatory UAT scenarios (from MVP gates) | Checklist in `slice-S5.md` |
 | S5-J-02 | J | Bug severity matrix + fix SLA | Table |
+
+_Backlog alignment:_ Slice **S5** rows use `S5-J-01..S5-J-02` — the **Engineering freeze** table above lists Joint cards only (no separate `S5-L-01` wireframe or `S5-E-01` review row here).
 
 ## Implementation checklist
 
