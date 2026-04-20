@@ -8,6 +8,7 @@ reviewer: Elda (solo-exec S0 per § Current operating mode)
 task_codes:
   - S1-J-01
   - S1-J-02
+  - S1-J-03
 ---
 
 # Slice S1 — Integration Contract
@@ -437,7 +438,139 @@ Notably absent: **no `409 seats_unavailable`** at this endpoint. Seat reservatio
 
 ---
 
+## § Inventory
+
+_(Landed via `S1-J-03`, 2026-04-21.)_
+
+Internal gRPC contract for atomic seat reservation on a `package_departure`. These are the **first internal-service methods** in this slice — all REST endpoints above are public; these two are the concurrency-critical inter-service calls that keep capacity honest under parallel submits.
+
+### Service + methods
+
+| Service | Method | Purpose |
+|---|---|---|
+| `catalog.v1.CatalogService` | `ReserveSeats` | Atomic decrement of available seats on a departure; idempotent per `reservation_id`. |
+| `catalog.v1.CatalogService` | `ReleaseSeats` | Atomic increment, reversing a prior `ReserveSeats`; idempotent per `reservation_id`. |
+
+Both methods target `catalog-svc`'s gRPC port (50052 in dev). Callers today: `booking-svc` (submit saga) and, after refund-flow lands, `payment-svc`. Callers MUST NOT attempt to call these over REST — there is no REST equivalent for the inventory path, on purpose: the atomic SQL guard + dedup lookup live in a single gRPC handler transaction.
+
+### Idempotency (per reviewer option a)
+
+Both methods take a caller-supplied `reservation_id` (ULID) that catalog-svc stores in a dedup table alongside the `departure_id` + `seats` it applied. The dedup row has a TTL (default 24 h, bounded to [1, 168]). Semantics:
+
+- Same `reservation_id` + same `(departure_id, seats)` within TTL → the call is a **replay**: no decrement/increment happens; response carries `replayed: true` and the original `reserved_at` / `remaining_seats`.
+- Same `reservation_id` + different `departure_id` or `seats` within TTL → `ALREADY_EXISTS` (`reservation_id_conflict`) — signals a programmer bug in the caller.
+- Same `reservation_id` after TTL expiry → treated as a fresh request (TTL row has been GC'd).
+
+The booking saga uses the booking's own ULID (`bkg_...`) as the `reservation_id`. That gives "one booking, one reservation, one ID" by construction, and the TTL always exceeds the saga's wall-clock budget by an order of magnitude.
+
+### `catalog.v1.CatalogService/ReserveSeats`
+
+**Request** (`ReserveSeatsRequest`):
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `reservation_id` | `string` | yes | ULID. Caller-supplied. Per `§ Booking`'s convention, booking-svc passes the booking's own ULID (`bkg_...`). Payment-svc later will pass a refund-specific ULID. |
+| `departure_id` | `string` | yes | ULID of the `package_departures` row (matches `GET /v1/package-departures/{id}` in `§ Catalog`). |
+| `seats` | `int32` | yes | Number of seats to reserve. Must be ≥ 1. For the booking saga, equals `len(booking.jamaah[])`. |
+| `idempotency_ttl_hours` | `int32` | no | Defaults to **24**. Clamps to `[1, 168]`. Optional override for long-running flows. |
+
+**Response** (`ReserveSeatsResponse`):
+
+| Field | Type | Notes |
+|---|---|---|
+| `reservation` | `Reservation` | `{ reservation_id, departure_id, seats, reserved_at, expires_at }`. `expires_at` = `reserved_at + idempotency_ttl_hours`; it's the dedup-row TTL, NOT a VA timeout. |
+| `remaining_seats` | `int32` | Post-decrement count. Matches what `GET /v1/package-departures/{id}` would return next, modulo parallel reservers. |
+| `replayed` | `bool` | `true` if this call matched a prior `(reservation_id, departure_id, seats)`; no new decrement occurred. |
+
+**Failure codes (gRPC `status.Code`):**
+
+| Code | `error.code` | When |
+|---|---|---|
+| `FAILED_PRECONDITION` | `insufficient_capacity` | Atomic SQL returned zero rows — `reserved_seats + seats > total_seats` at commit time. Expected outcome; caller should surface to user as "seat just taken". |
+| `NOT_FOUND` | `departure_not_found` | Unknown `departure_id`, or departure status is `departed` / `completed` / `cancelled` (inventory is frozen). |
+| `INVALID_ARGUMENT` | `invalid_request` | Missing required fields, `seats ≤ 0`, malformed ULID, or `idempotency_ttl_hours` out of range. |
+| `ALREADY_EXISTS` | `reservation_id_conflict` | Same `reservation_id` previously seen with a **different** `departure_id` or **different** `seats`. Response message carries the original values for the caller to diagnose. |
+| `INTERNAL` | `internal_error` | Catch-all; includes database transaction failures. |
+
+### `catalog.v1.CatalogService/ReleaseSeats`
+
+**Request** (`ReleaseSeatsRequest`):
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `reservation_id` | `string` | yes | Must reference a prior `ReserveSeats` (live or already released). |
+| `seats` | `int32` | no | Optional partial-release override. If omitted, releases the full `seats` the reservation originally held. If specified and less than the original, a partial release is recorded (remainder stays reserved). Partial release > original → `INVALID_ARGUMENT`. |
+| `reason` | `string` | no | Free-form audit note (≤ 256 chars): `"saga_failure"`, `"refund_settled"`, `"departure_cancelled"`, etc. Written to `iam.audit_logs` via F1 `RecordAudit`. |
+
+**Response** (`ReleaseSeatsResponse`):
+
+| Field | Type | Notes |
+|---|---|---|
+| `released` | `Released` | `{ reservation_id, departure_id, seats_released, released_at }`. |
+| `remaining_seats` | `int32` | Post-increment count. |
+| `replayed` | `bool` | `true` if the reservation was already fully released; no new increment occurred. |
+
+**Failure codes:**
+
+| Code | `error.code` | When |
+|---|---|---|
+| `NOT_FOUND` | `reservation_not_found` | `reservation_id` never existed or TTL-expired from the dedup table. |
+| `INVALID_ARGUMENT` | `invalid_request` | `seats` ≤ 0, exceeds the reservation's original `seats`, or malformed ULID. |
+| `FAILED_PRECONDITION` | `reservation_not_active` | Reservation exists in dedup but in a terminal released state where the specific `seats` partial override would overshoot. |
+| `INTERNAL` | `internal_error` | Catch-all. |
+
+### Atomic pattern (reference, not implementation)
+
+`ReserveSeats` executes a single SQL statement inside the handler transaction, followed by the dedup-row write:
+
+```sql
+UPDATE package_departures
+SET reserved_seats = reserved_seats + $seats
+WHERE id = $departure_id
+  AND reserved_seats + $seats <= total_seats
+RETURNING reserved_seats, total_seats;
+```
+
+- Zero rows returned → `FAILED_PRECONDITION insufficient_capacity`.
+- Rows returned → commit the dedup row (`reservation_id`, `departure_id`, `seats`, `expires_at`) in the same transaction.
+
+This is the **repo-wide pattern for atomic capacity decrements** and is referenced by F2 `Acceptance criteria` ("concurrent `ReserveSeats(n)` cannot oversell"). The actual DDL + sqlc query for the `package_departures` row + dedup table lives in `S1-E-02` (catalog-svc scaffolding); this contract deliberately does **not** prescribe table names or index choices beyond the capacity guard.
+
+### Compensation story
+
+Two callers invoke this pair today; their compensation patterns are documented here so implementers don't hand-roll inconsistent retry logic.
+
+**booking-svc submit saga** (`S1-E-03`, per ADR 0006 in-process saga model):
+
+1. `ReserveSeats(reservation_id=bkg_..., departure_id, seats=len(jamaah))` — must succeed before any downstream step.
+2. Downstream steps (VA issuance via `payment-svc`, etc.).
+3. On any downstream step failure: `ReleaseSeats(reservation_id=bkg_..., reason="saga_failure")`. Idempotent — if the saga crashes mid-compensation and retries, the second call is a `replayed: true` no-op.
+4. If the saga itself retries from scratch (e.g. transient network error), step 1 is a `replayed: true` no-op because the booking ULID is stable.
+
+**payment-svc refund flow** (contracted in a later slice; summarized here for Q004 alignment): calls `ReleaseSeats` per **Q004** timing rules — which are **conditional**, not always-immediate:
+
+- **Never-funded cancellation** (booking had no customer money posted — e.g. draft abandoned, VA expired, customer cancelled before paying): `ReleaseSeats` fires **immediately** when the booking transitions to `cancelled`. This is the saga's job, not payment's.
+- **Funded cancellation** (any DP, installment, or lunas on the booking): `ReleaseSeats` fires **only after the refund saga reaches a terminal-success state**. If the refund fails (bank rejection), the seats stay in the dedup table's reserved state — a "held / disputed" slot that is NOT sellable until ops resolves manually. Re-attempting `ReleaseSeats` with the same `reservation_id` after ops clears the dispute is safe (replay or fresh release, depending on TTL).
+- **Reversal within grace window** (customer changes mind; per Q014, 48 h): caller attempts `ReserveSeats` with a **new** `reservation_id` against the same departure. If capacity is gone, the reversal honestly fails and the UI surfaces "seat no longer available".
+
+Implementers **must not** release seats purely on the booking status reaching `cancelled` — the caller decides timing based on Q004's conditional rule. This contract enforces the mechanism (gRPC methods + idempotency); the policy lives in the saga code.
+
+### Conventions honored
+
+- **Q004 (seat return timing).** Cited above; compensation prose is the authoritative read of Q004's conditional rule for S1 saga code.
+- **ADR 0006 (in-process saga).** Contract assumes callers implement in-process compensation, not Temporal. Temporal returns for F6; no changes to this contract are needed when that lands.
+- **`reservation_id` is caller-supplied.** booking-svc passes `bkg_...` ULIDs; payment-svc will pass its own ULIDs later. No server-generated reservation IDs — the caller owns the key so retries don't need round-trips.
+
+### Honored by implementation
+
+- `S1-E-02` — catalog-svc `ReserveSeats` / `ReleaseSeats` handlers. Must implement the atomic SQL + dedup pattern exactly as described and return the failure codes listed.
+- `S1-E-03` — booking-svc submit saga. Must call `ReserveSeats` first + compensate via `ReleaseSeats` on any downstream failure.
+- Later: payment-svc refund flow, once its card lands.
+
+---
+
 ## § Changelog
 
+- **2026-04-21** — Added `§ Inventory` via `S1-J-03` — contracts `catalog.v1.CatalogService/ReserveSeats` + `ReleaseSeats` (gRPC): caller-supplied `reservation_id` for idempotency (option a), atomic-SQL pattern reference, five failure codes (`FAILED_PRECONDITION` / `NOT_FOUND` / `INVALID_ARGUMENT` / `ALREADY_EXISTS` / `INTERNAL`), and compensation prose covering the booking saga (ADR 0006) + the payment refund flow's Q004 conditional timing.
 - **2026-04-21** — Added `§ Booking` via `S1-J-02` — contracts the `POST /v1/bookings` draft endpoint (three channels, idempotency, auth table, error codes, JSON examples, Q006 documented as submit-time not draft-time).
 - **2026-04-20** — Initial version merged via `S1-J-01` (PR #7, commit `6c3fda8`). Adds `§ Catalog` with three public read endpoints. All other sections remain unfilled until their respective `S1-J-*` cards land.
