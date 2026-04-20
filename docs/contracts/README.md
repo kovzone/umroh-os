@@ -55,17 +55,32 @@ Either way, the change must be reviewed by the non-executor owner (Lutfi reviews
 - Contract PRs are small by design — one slice, one PR, under an hour of review.
 - Both devs read every contract PR, even when only one executes.
 - Contract code follows `docs/08-commit-conventions.md` for commit format (`docs:` type).
-- Branch naming: `feat/<slice>-<owner>-<seq>-<slug>` (e.g. `feat/s1-j-01-catalog-contract`) — see branch-strategy appendix below (lands via `S0-J-02`).
+- Branch naming follows `§ Branch strategy + merge ownership` below.
+
+## Branch strategy + merge ownership
+
+Operational rules for the 2-developer repo. Contracted once here so both devs (and both agents) apply the same workflow.
+
+**Branch naming.** `feat/<slice>-<owner>-<seq>-<slug>` — all lowercase, hyphen-separated. `<slice>` is the slice code (`s0`, `s1`, …), `<owner>` is `j` / `e` / `l` matching the task code, `<seq>` is the two-digit sequence, `<slug>` is 2–5 words naming the card. One card = one branch = one PR.
+
+- Examples: `feat/s0-j-02-branch-strategy`, `feat/s1-e-03-booking-draft`, `feat/s1-j-01-catalog-contract`.
+- For non-slice ad-hoc work (e.g. a process-discipline card in `docs/91-progress/progress.md`), use `feat/<slug>` without the slice/owner/seq prefix.
+
+**Short-lived branches.** A feat branch lives on the remote only as long as it takes to land its PR — target under a day for docs-only cards, under a week for code cards. Once the PR merges, delete the remote branch. The local copy can stay harmlessly until the dev prunes it with `git branch -d`.
+
+**Merge ownership (non-executor reviews).** Elda merges Lutfi's PRs; Lutfi merges Elda's PRs. Joint (`Sx-J-*`) PRs are merged by whichever dev did not execute the card. The reviewer's merge click is the explicit sign-off — no separate approval mechanism needed.
+
+**Protected trunks.** All PRs target `dev`, the integration branch. `main` moves only on release cuts via a dedicated `release` PR from `dev`. Neither `dev` nor `main` accepts direct pushes.
+
+**No force-push on shared branches.** `dev`, `main`, and any `feat/*` branch that has been pushed to the remote are append-only. If history needs a fix (typo in a commit message, unwanted merge), open a follow-up commit rather than rewriting. Force-push is reserved for unpushed local branches.
 
 ## Appendix slots (filled by later S0 cards)
 
-This folder's README deliberately omits three items that other S0 cards will land here once they merge:
+This folder's README is intentionally a scaffold, expanded as the S0 chain completes:
 
-- **Branch strategy + merge ownership** → appended by `S0-J-02` (short paragraph covering branch naming rule confirmation, short-lived-branch policy, who-merges-whose-PR, protected-main + no-force-push).
-- **DoR / DoD per PR** → appended by `S0-J-03` (short scannable table of Definition-of-Ready and Definition-of-Done columns).
-- **Service ownership matrix (S1–S2)** → appended by `S0-E-01` (table mapping each backend service touched in S1–S2 to a PR-owner and a code-reviewer).
-
-Do not add those sections here yet — they belong to those cards. This README is intentionally a scaffold, expanded as the S0 chain completes.
+- **Branch strategy + merge ownership** — ✅ landed in `§ Branch strategy + merge ownership` above via `S0-J-02` (2026-04-20).
+- **DoR / DoD per PR** → to be appended by `S0-J-03` (short scannable table of Definition-of-Ready and Definition-of-Done columns).
+- **Service ownership matrix (S1–S2)** → to be appended by `S0-E-01` (table mapping each backend service touched in S1–S2 to a PR-owner and a code-reviewer).
 
 ## Related references
 
