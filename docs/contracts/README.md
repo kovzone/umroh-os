@@ -61,6 +61,19 @@ Either way, the change must be reviewed by the non-executor owner (Lutfi reviews
 
 Operational rules for the 2-developer repo. Contracted once here so both devs (and both agents) apply the same workflow.
 
+### Current operating mode (S0, 2026-04-20)
+
+For the duration of slice **S0** only, Lutfi delegated all Joint (`S0-J-*`) tasks and all S0 PR reviews to Elda. The five S0 PRs that shipped under this delegation — PR #2 (S0-J-01), #3 (S0-J-02), #4 (S0-J-03), #5 (S0-E-01), and this PR — were executed and merged by Elda.
+
+Solo-exec workflow during S0:
+
+- **Branches and PRs** continue as documented below — one card, one branch, one PR against `dev`.
+- **Review:** Elda runs an AI-assisted code review pass (read the full diff, sanity-check against the card's DoD + the DoR/DoD table below) before clicking merge.
+- **No notify-before-Joint-pickup step** — there is no other dev to notify during the delegation.
+- **Scope is strictly S0.** Unless Lutfi and Elda explicitly agree to extend it, **S1+ reverts to the 2-developer rules documented in the rest of this section** (non-executor reviews, Joint pick-up-and-notify, both devs click merge on each other's PRs).
+
+The rules that follow describe the durable 2-dev default — they are not rewritten, and they apply from S1 onward by default.
+
 **Branch naming.** `feat/<slice>-<owner>-<seq>-<slug>` — all lowercase, hyphen-separated. `<slice>` is the slice code (`s0`, `s1`, …), `<owner>` is `j` / `e` / `l` matching the task code, `<seq>` is the two-digit sequence, `<slug>` is 2–5 words naming the card. One card = one branch = one PR.
 
 - Examples: `feat/s0-j-02-branch-strategy`, `feat/s1-e-03-booking-draft`, `feat/s1-j-01-catalog-contract`.
@@ -77,6 +90,8 @@ Operational rules for the 2-developer repo. Contracted once here so both devs (a
 ## Definition of Ready / Definition of Done (per PR)
 
 Every PR in this repo passes through these two gates. `CONTRIBUTING.md § Canonical References` cross-links here — this table is the authoritative version.
+
+> **Note for S0 (2026-04-20):** during the solo-exec operating mode described in `§ Branch strategy + merge ownership § Current operating mode`, the DoR row "the other dev has been notified" is N/A (there is no other dev to notify), and the DoD row "reviewer signs off by merging" means Elda self-merges after an AI-assisted review pass. Both rows revert to their 2-dev wording from S1 onward by default.
 
 | Phase | Check |
 |---|---|
