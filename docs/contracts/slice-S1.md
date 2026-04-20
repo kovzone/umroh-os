@@ -42,17 +42,19 @@ S1 is the first user-facing slice. The B2C flow: a calon jamaah opens the catalo
 
 ## § Catalog
 
-_(Landed via `S1-J-01`, 2026-04-20.)_
+*(Landed via `S1-J-01`, 2026-04-20.)*
 
 Public read-only endpoints for B2C catalog browsing. All endpoints are unauthenticated — the catalog is a public surface. Auth'd admin/staff catalog endpoints land in a later slice, not here.
 
 ### Endpoints
 
-| Method | Path | Auth | Purpose |
-|---|---|---|---|
-| `GET` | `/v1/packages` | public | List active packages, filterable. |
-| `GET` | `/v1/packages/{id}` | public | Package detail incl. itinerary + departure summary list + master-data refs. |
-| `GET` | `/v1/package-departures/{id}` | public | Departure detail incl. `remaining_seats`, pricing per room type, vendor-readiness summary. |
+
+| Method | Path                          | Auth   | Purpose                                                                                    |
+| ------ | ----------------------------- | ------ | ------------------------------------------------------------------------------------------ |
+| `GET`  | `/v1/packages`                | public | List active packages, filterable.                                                          |
+| `GET`  | `/v1/packages/{id}`           | public | Package detail incl. itinerary + departure summary list + master-data refs.                |
+| `GET`  | `/v1/package-departures/{id}` | public | Departure detail incl. `remaining_seats`, pricing per room type, vendor-readiness summary. |
+
 
 Paths are stable and match `docs/03-services/01-catalog-svc/01-api.md` row-for-row for the public-read subset. Route prefix `/v1/` is mounted under `catalog-svc`'s REST adapter (port 4002 in dev, proxied by `gateway-svc` at 4000 for public traffic).
 
@@ -66,15 +68,17 @@ Paths are stable and match `docs/03-services/01-catalog-svc/01-api.md` row-for-r
 
 **Query params:**
 
-| Param | Type | Required | Notes |
-|---|---|---|---|
-| `kind` | string enum | no | One of `umrah_reguler`, `umrah_plus`, `hajj_furoda`, `hajj_khusus`, `badal`, `financial`, `retail`. Omit to list all kinds. |
-| `departure_from` | string (ISO-8601 date) | no | Lower bound on departure date (earliest departure ≥ this date). |
-| `departure_to` | string (ISO-8601 date) | no | Upper bound on departure date. |
-| `airline_code` | string | no | IATA airline code filter. |
-| `hotel_id` | string (ULID) | no | Filter to packages referencing this hotel. |
-| `cursor` | string (opaque) | no | Pagination cursor from previous response's `page.next_cursor`. |
-| `limit` | integer | no | Page size, 1–100, default 20. |
+
+| Param            | Type                   | Required | Notes                                                                                                                       |
+| ---------------- | ---------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `kind`           | string enum            | no       | One of `umrah_reguler`, `umrah_plus`, `hajj_furoda`, `hajj_khusus`, `badal`, `financial`, `retail`. Omit to list all kinds. |
+| `departure_from` | string (ISO-8601 date) | no       | Lower bound on departure date (earliest departure ≥ this date).                                                             |
+| `departure_to`   | string (ISO-8601 date) | no       | Upper bound on departure date.                                                                                              |
+| `airline_code`   | string                 | no       | IATA airline code filter.                                                                                                   |
+| `hotel_id`       | string (ULID)          | no       | Filter to packages referencing this hotel.                                                                                  |
+| `cursor`         | string (opaque)        | no       | Pagination cursor from previous response's `page.next_cursor`.                                                              |
+| `limit`          | integer                | no       | Page size, 1–100, default 20.                                                                                               |
+
 
 `status` is **not** a query param — the public list returns only `packages.status = 'active'` packages; `draft` / `archived` are filtered server-side.
 
@@ -111,11 +115,13 @@ Paths are stable and match `docs/03-services/01-catalog-svc/01-api.md` row-for-r
 
 **Errors:**
 
-| Status | Body `error.code` | When |
-|---|---|---|
-| `400` | `invalid_query_param` | Any query param fails validation (bad date, unknown `kind`, `limit` out of range). |
-| `400` | `invalid_cursor` | `cursor` is malformed or from an incompatible list. |
-| `500` | `internal_error` | Unexpected server error. |
+
+| Status | Body `error.code`     | When                                                                               |
+| ------ | --------------------- | ---------------------------------------------------------------------------------- |
+| `400`  | `invalid_query_param` | Any query param fails validation (bad date, unknown `kind`, `limit` out of range). |
+| `400`  | `invalid_cursor`      | `cursor` is malformed or from an incompatible list.                                |
+| `500`  | `internal_error`      | Unexpected server error.                                                           |
+
 
 ### `GET /v1/packages/{id}`
 
@@ -171,10 +177,12 @@ Paths are stable and match `docs/03-services/01-catalog-svc/01-api.md` row-for-r
 
 **Errors:**
 
-| Status | Body `error.code` | When |
-|---|---|---|
-| `404` | `package_not_found` | No package matches `{id}`, or the package is not `status = 'active'` (the public endpoint does not leak existence of draft/archived packages). |
-| `500` | `internal_error` | Unexpected server error. |
+
+| Status | Body `error.code`   | When                                                                                                                                           |
+| ------ | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `404`  | `package_not_found` | No package matches `{id}`, or the package is not `status = 'active'` (the public endpoint does not leak existence of draft/archived packages). |
+| `500`  | `internal_error`    | Unexpected server error.                                                                                                                       |
+
 
 ### `GET /v1/package-departures/{id}`
 
@@ -212,10 +220,12 @@ Paths are stable and match `docs/03-services/01-catalog-svc/01-api.md` row-for-r
 
 **Errors:**
 
-| Status | Body `error.code` | When |
-|---|---|---|
-| `404` | `departure_not_found` | No departure matches `{id}`, or status is `departed` / `completed` / `cancelled`. |
-| `500` | `internal_error` | Unexpected server error. |
+
+| Status | Body `error.code`     | When                                                                              |
+| ------ | --------------------- | --------------------------------------------------------------------------------- |
+| `404`  | `departure_not_found` | No departure matches `{id}`, or status is `departed` / `completed` / `cancelled`. |
+| `500`  | `internal_error`      | Unexpected server error.                                                          |
+
 
 ### Error envelope (shared)
 
@@ -246,25 +256,29 @@ All entity IDs are **ULID** strings with a type prefix: `pkg_`, `dep_`, `itn_`, 
 
 ## § Booking
 
-_(Landed via `S1-J-02`, 2026-04-21.)_
+*(Landed via `S1-J-02`, 2026-04-21.)*
 
 Creates a **draft** booking via `POST /v1/bookings`. Scope for S1 is deliberately narrow: one endpoint, one transition (`∅ → draft`). Transitioning a draft onward (`draft → pending_payment`) happens via `POST /v1/bookings/{id}/submit`, which contracts in a later slice and runs the in-process booking saga per ADR 0006 + Q006's KTP+passport gate.
 
 ### Endpoint
 
-| Method | Path | Auth | Purpose |
-|---|---|---|---|
+
+| Method | Path           | Auth                                       | Purpose                                                                                                                                                                  |
+| ------ | -------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `POST` | `/v1/bookings` | **public OR staff** — see Auth rules below | Create a `draft` booking for B2C self / B2B agent / CS-closing flows. Persists only; does not issue VA, does not reserve seats (that's `POST /v1/bookings/{id}/submit`). |
+
 
 ### Auth rules
 
 The endpoint accepts three closing channels per F4 W1–W3. The `channel` field in the request body is the source of truth for which authentication mode applies:
 
-| `channel` | Required auth | How `agent_id` / `staff_user_id` are populated |
-|---|---|---|
-| `b2c_self` | **public** — no token required | Neither field set. |
-| `b2b_agent` | **public** — no token required | `agent_id` comes from the request body (stamped by the agent's replicated landing page, sourced from the `ref=<agent_code>` referral link). `gateway-svc` may additionally validate the referral token before forwarding. |
-| `cs` | **staff** — F1 PASETO / JWT required; `iam-svc.CheckPermission(booking.create_on_behalf)` | `staff_user_id` is filled from the token's claims server-side, not from the request body. |
+
+| `channel`   | Required auth                                                                             | How `agent_id` / `staff_user_id` are populated                                                                                                                                                                            |
+| ----------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `b2c_self`  | **public** — no token required                                                            | Neither field set.                                                                                                                                                                                                        |
+| `b2b_agent` | **public** — no token required                                                            | `agent_id` comes from the request body (stamped by the agent's replicated landing page, sourced from the `ref=<agent_code>` referral link). `gateway-svc` may additionally validate the referral token before forwarding. |
+| `cs`        | **staff** — F1 PASETO / JWT required; `iam-svc.CheckPermission(booking.create_on_behalf)` | `staff_user_id` is filled from the token's claims server-side, not from the request body.                                                                                                                                 |
+
 
 Requests with `channel = "cs"` but no valid F1 token return `401 unauthorized`. Requests with `channel = "b2c_self"` and a token are still accepted (token ignored). Requests with `channel = "b2b_agent"` must include `agent_id`; absence returns `422 validation_failed`.
 
@@ -314,18 +328,20 @@ Callers SHOULD send an `Idempotency-Key` HTTP header (string, ≤ 128 chars). Sc
 
 **Required fields** (422 if missing):
 
-| Field | Type | Notes |
-|---|---|---|
-| `channel` | enum | `b2c_self` \| `b2b_agent` \| `cs` |
-| `package_id` | string (ULID) | Must reference an `active` package; 404 if not found or `draft`/`archived` |
-| `departure_id` | string (ULID) | Must belong to the named package and have `status = open`; 404 if not found or not open |
-| `room_type` | enum | `double` \| `triple` \| `quad`; must exist in the departure's `pricing` array |
-| `lead.full_name` | string | Non-empty, ≤ 120 chars |
-| `lead.whatsapp` | string | E.164 format |
-| `lead.domicile` | string | Non-empty |
-| `jamaah[]` | array | At least one entry; exactly one must have `is_lead = true` and match `lead` fields |
-| `jamaah[].full_name` | string | Non-empty, ≤ 120 chars per entry |
-| `jamaah[].domicile` | string | Non-empty per entry |
+
+| Field                | Type          | Notes                                                                                   |
+| -------------------- | ------------- | --------------------------------------------------------------------------------------- |
+| `channel`            | enum          | `b2c_self`                                                                              |
+| `package_id`         | string (ULID) | Must reference an `active` package; 404 if not found or `draft`/`archived`              |
+| `departure_id`       | string (ULID) | Must belong to the named package and have `status = open`; 404 if not found or not open |
+| `room_type`          | enum          | `double`                                                                                |
+| `lead.full_name`     | string        | Non-empty, ≤ 120 chars                                                                  |
+| `lead.whatsapp`      | string        | E.164 format                                                                            |
+| `lead.domicile`      | string        | Non-empty                                                                               |
+| `jamaah[]`           | array         | At least one entry; exactly one must have `is_lead = true` and match `lead` fields      |
+| `jamaah[].full_name` | string        | Non-empty, ≤ 120 chars per entry                                                        |
+| `jamaah[].domicile`  | string        | Non-empty per entry                                                                     |
+
 
 **Conditionally required:**
 
@@ -403,7 +419,7 @@ Consumers of this contract must **not** require document uploads before calling 
 
 - `booking.status` is always `"draft"` on this endpoint — no other state is reachable here.
 - `booking.pricing` shows the **list amount** at draft time per Q001; a payable IDR amount only gets locked at `POST /v1/bookings/{id}/submit` (via `payment-svc` VA issuance with FX snapshot).
-- `booking.expires_at` is a **non-binding** hint that a draft held for ≥ 30 min without being submitted may be GC'd. The hard expiry (VA TTL) only starts after submit. _(Inferred — keeps the draft table from growing unbounded.)_
+- `booking.expires_at` is a **non-binding** hint that a draft held for ≥ 30 min without being submitted may be GC'd. The hard expiry (VA TTL) only starts after submit. *(Inferred — keeps the draft table from growing unbounded.)*
 - `booking.add_ons` carries the full add-on record (not just IDs) for client convenience, matching the catalog shape in `§ Catalog`.
 
 Response header `Idempotency-Replayed: true` is set only when the request matched a prior (key, body) pair.
@@ -412,16 +428,18 @@ Response header `Idempotency-Replayed: true` is set only when the request matche
 
 All errors use the shared error envelope defined in `§ Catalog`.
 
-| Status | Body `error.code` | When |
-|---|---|---|
-| `400` | `invalid_json` | Request body is not valid JSON. |
-| `401` | `unauthorized` | `channel = cs` and no valid F1 token, or token lacks `booking.create_on_behalf` permission. |
-| `404` | `package_not_found` | `package_id` not found, or package `status ≠ active`. |
-| `404` | `departure_not_found` | `departure_id` not found, does not belong to the package, or `status ≠ open`. |
-| `404` | `add_on_not_found` | Any `add_on_ids` entry not found or not linked to the package. |
-| `409` | `idempotency_conflict` | Same `Idempotency-Key` with a different request body within the 24 h window. Body includes `original_booking_id`. |
-| `422` | `validation_failed` | Field-level validation errors. Body's `error.details` carries an array of `{field, code, message}` per failed field (e.g. `{"field": "lead.whatsapp", "code": "not_e164", "message": "WhatsApp harus dalam format internasional (+62...)"}`). |
-| `500` | `internal_error` | Unexpected server error. |
+
+| Status | Body `error.code`      | When                                                                                                                                                                                                                                          |
+| ------ | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `400`  | `invalid_json`         | Request body is not valid JSON.                                                                                                                                                                                                               |
+| `401`  | `unauthorized`         | `channel = cs` and no valid F1 token, or token lacks `booking.create_on_behalf` permission.                                                                                                                                                   |
+| `404`  | `package_not_found`    | `package_id` not found, or package `status ≠ active`.                                                                                                                                                                                         |
+| `404`  | `departure_not_found`  | `departure_id` not found, does not belong to the package, or `status ≠ open`.                                                                                                                                                                 |
+| `404`  | `add_on_not_found`     | Any `add_on_ids` entry not found or not linked to the package.                                                                                                                                                                                |
+| `409`  | `idempotency_conflict` | Same `Idempotency-Key` with a different request body within the 24 h window. Body includes `original_booking_id`.                                                                                                                             |
+| `422`  | `validation_failed`    | Field-level validation errors. Body's `error.details` carries an array of `{field, code, message}` per failed field (e.g. `{"field": "lead.whatsapp", "code": "not_e164", "message": "WhatsApp harus dalam format internasional (+62...)"}`). |
+| `500`  | `internal_error`       | Unexpected server error.                                                                                                                                                                                                                      |
+
 
 Notably absent: **no `409 seats_unavailable`** at this endpoint. Seat reservation is `POST /v1/bookings/{id}/submit`'s job, per F4 W8. Creating a draft does not check seats; the submit saga may still fail with `seats_unavailable` if capacity ran out between draft and submit.
 
@@ -441,16 +459,18 @@ Notably absent: **no `409 seats_unavailable`** at this endpoint. Seat reservatio
 
 ## § Inventory
 
-_(Landed via `S1-J-03`, 2026-04-21.)_
+*(Landed via `S1-J-03`, 2026-04-21.)*
 
 Internal gRPC contract for atomic seat reservation on a `package_departure`. These are the **first internal-service methods** in this slice — all REST endpoints above are public; these two are the concurrency-critical inter-service calls that keep capacity honest under parallel submits.
 
 ### Service + methods
 
-| Service | Method | Purpose |
-|---|---|---|
+
+| Service                     | Method         | Purpose                                                                              |
+| --------------------------- | -------------- | ------------------------------------------------------------------------------------ |
 | `catalog.v1.CatalogService` | `ReserveSeats` | Atomic decrement of available seats on a departure; idempotent per `reservation_id`. |
 | `catalog.v1.CatalogService` | `ReleaseSeats` | Atomic increment, reversing a prior `ReserveSeats`; idempotent per `reservation_id`. |
+
 
 Both methods target `catalog-svc`'s gRPC port (50052 in dev). Callers today: `booking-svc` (submit saga) and, after refund-flow lands, `payment-svc`. Callers MUST NOT attempt to call these over REST — there is no REST equivalent for the inventory path, on purpose: the atomic SQL guard + dedup lookup live in a single gRPC handler transaction.
 
@@ -468,57 +488,69 @@ The booking saga uses the booking's own ULID (`bkg_...`) as the `reservation_id`
 
 **Request** (`ReserveSeatsRequest`):
 
-| Field | Type | Required | Notes |
-|---|---|---|---|
-| `reservation_id` | `string` | yes | ULID. Caller-supplied. Per `§ Booking`'s convention, booking-svc passes the booking's own ULID (`bkg_...`). Payment-svc later will pass a refund-specific ULID. |
-| `departure_id` | `string` | yes | ULID of the `package_departures` row (matches `GET /v1/package-departures/{id}` in `§ Catalog`). |
-| `seats` | `int32` | yes | Number of seats to reserve. Must be ≥ 1. For the booking saga, equals `len(booking.jamaah[])`. |
-| `idempotency_ttl_hours` | `int32` | no | Defaults to **24**. Clamps to `[1, 168]`. Optional override for long-running flows. |
+
+| Field                   | Type     | Required | Notes                                                                                                                                                           |
+| ----------------------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `reservation_id`        | `string` | yes      | ULID. Caller-supplied. Per `§ Booking`'s convention, booking-svc passes the booking's own ULID (`bkg_...`). Payment-svc later will pass a refund-specific ULID. |
+| `departure_id`          | `string` | yes      | ULID of the `package_departures` row (matches `GET /v1/package-departures/{id}` in `§ Catalog`).                                                                |
+| `seats`                 | `int32`  | yes      | Number of seats to reserve. Must be ≥ 1. For the booking saga, equals `len(booking.jamaah[])`.                                                                  |
+| `idempotency_ttl_hours` | `int32`  | no       | Defaults to **24**. Clamps to `[1, 168]`. Optional override for long-running flows.                                                                             |
+
 
 **Response** (`ReserveSeatsResponse`):
 
-| Field | Type | Notes |
-|---|---|---|
-| `reservation` | `Reservation` | `{ reservation_id, departure_id, seats, reserved_at, expires_at }`. `expires_at` = `reserved_at + idempotency_ttl_hours`; it's the dedup-row TTL, NOT a VA timeout. |
-| `remaining_seats` | `int32` | Post-decrement count. Matches what `GET /v1/package-departures/{id}` would return next, modulo parallel reservers. |
-| `replayed` | `bool` | `true` if this call matched a prior `(reservation_id, departure_id, seats)`; no new decrement occurred. |
+
+| Field             | Type          | Notes                                                                                                                                                               |
+| ----------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `reservation`     | `Reservation` | `{ reservation_id, departure_id, seats, reserved_at, expires_at }`. `expires_at` = `reserved_at + idempotency_ttl_hours`; it's the dedup-row TTL, NOT a VA timeout. |
+| `remaining_seats` | `int32`       | Post-decrement count. Matches what `GET /v1/package-departures/{id}` would return next, modulo parallel reservers.                                                  |
+| `replayed`        | `bool`        | `true` if this call matched a prior `(reservation_id, departure_id, seats)`; no new decrement occurred.                                                             |
+
 
 **Failure codes (gRPC `status.Code`):**
 
-| Code | `error.code` | When |
-|---|---|---|
-| `FAILED_PRECONDITION` | `insufficient_capacity` | Atomic SQL returned zero rows — `reserved_seats + seats > total_seats` at commit time. Expected outcome; caller should surface to user as "seat just taken". |
-| `NOT_FOUND` | `departure_not_found` | Unknown `departure_id`, or departure status is `departed` / `completed` / `cancelled` (inventory is frozen). |
-| `INVALID_ARGUMENT` | `invalid_request` | Missing required fields, `seats ≤ 0`, malformed ULID, or `idempotency_ttl_hours` out of range. |
-| `ALREADY_EXISTS` | `reservation_id_conflict` | Same `reservation_id` previously seen with a **different** `departure_id` or **different** `seats`. Response message carries the original values for the caller to diagnose. |
-| `INTERNAL` | `internal_error` | Catch-all; includes database transaction failures. |
+
+| Code                  | `error.code`              | When                                                                                                                                                                         |
+| --------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FAILED_PRECONDITION` | `insufficient_capacity`   | Atomic SQL returned zero rows — `reserved_seats + seats > total_seats` at commit time. Expected outcome; caller should surface to user as "seat just taken".                 |
+| `NOT_FOUND`           | `departure_not_found`     | Unknown `departure_id`, or departure status is `departed` / `completed` / `cancelled` (inventory is frozen).                                                                 |
+| `INVALID_ARGUMENT`    | `invalid_request`         | Missing required fields, `seats ≤ 0`, malformed ULID, or `idempotency_ttl_hours` out of range.                                                                               |
+| `ALREADY_EXISTS`      | `reservation_id_conflict` | Same `reservation_id` previously seen with a **different** `departure_id` or **different** `seats`. Response message carries the original values for the caller to diagnose. |
+| `INTERNAL`            | `internal_error`          | Catch-all; includes database transaction failures.                                                                                                                           |
+
 
 ### `catalog.v1.CatalogService/ReleaseSeats`
 
 **Request** (`ReleaseSeatsRequest`):
 
-| Field | Type | Required | Notes |
-|---|---|---|---|
-| `reservation_id` | `string` | yes | Must reference a prior `ReserveSeats` (live or already released). |
-| `seats` | `int32` | no | Optional partial-release override. If omitted, releases the full `seats` the reservation originally held. If specified and less than the original, a partial release is recorded (remainder stays reserved). Partial release > original → `INVALID_ARGUMENT`. |
-| `reason` | `string` | no | Free-form audit note (≤ 256 chars): `"saga_failure"`, `"refund_settled"`, `"departure_cancelled"`, etc. Written to `iam.audit_logs` via F1 `RecordAudit`. |
+
+| Field            | Type     | Required | Notes                                                                                                                                                                                                                                                         |
+| ---------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `reservation_id` | `string` | yes      | Must reference a prior `ReserveSeats` (live or already released).                                                                                                                                                                                             |
+| `seats`          | `int32`  | no       | Optional partial-release override. If omitted, releases the full `seats` the reservation originally held. If specified and less than the original, a partial release is recorded (remainder stays reserved). Partial release > original → `INVALID_ARGUMENT`. |
+| `reason`         | `string` | no       | Free-form audit note (≤ 256 chars): `"saga_failure"`, `"refund_settled"`, `"departure_cancelled"`, etc. Written to `iam.audit_logs` via F1 `RecordAudit`.                                                                                                     |
+
 
 **Response** (`ReleaseSeatsResponse`):
 
-| Field | Type | Notes |
-|---|---|---|
-| `released` | `Released` | `{ reservation_id, departure_id, seats_released, released_at }`. |
-| `remaining_seats` | `int32` | Post-increment count. |
-| `replayed` | `bool` | `true` if the reservation was already fully released; no new increment occurred. |
+
+| Field             | Type       | Notes                                                                            |
+| ----------------- | ---------- | -------------------------------------------------------------------------------- |
+| `released`        | `Released` | `{ reservation_id, departure_id, seats_released, released_at }`.                 |
+| `remaining_seats` | `int32`    | Post-increment count.                                                            |
+| `replayed`        | `bool`     | `true` if the reservation was already fully released; no new increment occurred. |
+
 
 **Failure codes:**
 
-| Code | `error.code` | When |
-|---|---|---|
-| `NOT_FOUND` | `reservation_not_found` | `reservation_id` never existed or TTL-expired from the dedup table. |
-| `INVALID_ARGUMENT` | `invalid_request` | `seats` ≤ 0, exceeds the reservation's original `seats`, or malformed ULID. |
+
+| Code                  | `error.code`             | When                                                                                                                      |
+| --------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `NOT_FOUND`           | `reservation_not_found`  | `reservation_id` never existed or TTL-expired from the dedup table.                                                       |
+| `INVALID_ARGUMENT`    | `invalid_request`        | `seats` ≤ 0, exceeds the reservation's original `seats`, or malformed ULID.                                               |
 | `FAILED_PRECONDITION` | `reservation_not_active` | Reservation exists in dedup but in a terminal released state where the specific `seats` partial override would overshoot. |
-| `INTERNAL` | `internal_error` | Catch-all. |
+| `INTERNAL`            | `internal_error`         | Catch-all.                                                                                                                |
+
 
 ### Atomic pattern (reference, not implementation)
 
@@ -560,7 +592,7 @@ Implementers **must not** release seats purely on the booking status reaching `c
 
 - **Q004 (seat return timing).** Cited above; compensation prose is the authoritative read of Q004's conditional rule for S1 saga code.
 - **ADR 0006 (in-process saga).** Contract assumes callers implement in-process compensation, not Temporal. Temporal returns for F6; no changes to this contract are needed when that lands.
-- **`reservation_id` is caller-supplied.** booking-svc passes `bkg_...` ULIDs; payment-svc will pass its own ULIDs later. No server-generated reservation IDs — the caller owns the key so retries don't need round-trips.
+- `**reservation_id` is caller-supplied.** booking-svc passes `bkg_...` ULIDs; payment-svc will pass its own ULIDs later. No server-generated reservation IDs — the caller owns the key so retries don't need round-trips.
 
 ### Honored by implementation
 
@@ -572,15 +604,17 @@ Implementers **must not** release seats purely on the booking status reaching `c
 
 ## § Booking States
 
-_(Landed via `S1-J-04`, 2026-04-21.)_
+*(Landed via `S1-J-04`, 2026-04-21.)*
 
 S1 exercises **only the `draft` state** of the full booking lifecycle. Everything past `draft` (payment, fulfillment, cancellation, completion) lives in **S2 and later slices**. This section documents the decision so implementers know what to reject + what to defer, and consumers know how far the current contract reaches.
 
 ### States in scope for S1
 
-| Status | Entered by | Exited by | Notes |
-|---|---|---|---|
+
+| Status  | Entered by                                      | Exited by                                                                                                                                                     | Notes                                                                     |
+| ------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `draft` | `POST /v1/bookings` (contracted in `§ Booking`) | No transitions are contracted in S1. `POST /v1/bookings/{id}/submit` — which moves `draft → pending_payment` — is contracted in a **later slice** (not here). | Only persistent status a booking can have at the end of any S1 code path. |
+
 
 Concretely for implementers:
 
@@ -642,9 +676,45 @@ This sub-section exists in S1 to freeze the intent so S2+ authors cannot quietly
 
 ---
 
+## § UI route matrix (S0-L-01 / BL-FE-PLN-001)
+
+Planning map for **`apps/core-web`** (and future staff console routes) so S1 UI, gateway auth, and `S1-E-04` middleware share one list of **public vs internal** surfaces. Path segments in `{braces}` are dynamic.
+
+### Conventions
+
+- **Surface** — `public`: B2C or B2B-attributed journeys without a staff F1 session. `internal`: staff console behind F1 (`docs/06-features/01-identity-and-access.md`).
+- **S1 status** — `active-now`: required for slice S1 (“discover + **draft** booking”). `coming-next`: same journey but depends on a **future** `Sx-J-*` contract row or another slice (noted per row).
+- **Role anchor** — Rows use F1 **personas** (Super Admin, Branch Manager, staff subtypes, Agent, Jamaah). Extra granularity is only in **Permission / scope** (for example `booking.create_on_behalf` for CS), not new role IDs.
+
+### Matrix
+
+| UI route pattern | Surface | S1 status | Role / persona (F1 anchor) | Permission / scope | Auth (session) | Wire anchor (`slice-S1`) | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `/` _(Inferred — may ship as `/catalog`.)_ | public | active-now | Jamaah (calon jamaah); Agent (same catalog read) | n/a | none | § Catalog — `GET /v1/packages` | Package list; B2B replica may restyle only. |
+| `/packages/{package_id}` | public | active-now | Jamaah; Agent | n/a | none | § Catalog — `GET /v1/packages/{id}` | “Package detail” from F2/F4 browse path. |
+| `/packages/{package_id}/departures/{departure_id}` _(Inferred — may be merged into package detail.)_ | public | active-now | Jamaah; Agent | n/a | none | § Catalog — `GET /v1/package-departures/{id}` | Departure detail + seat label; optional standalone page. |
+| `/booking/{package_id}` | public | active-now | Jamaah; Agent | `channel`: `b2c_self` or `b2b_agent`; B2B requires `agent_id` / referral context per F4 W2 | none (B2C/B2B) | § Booking — `POST /v1/bookings` | Self-Booking Engine / agent-stamped flow (F4 W1–W2). |
+| `/id/{agent_slug}` _(Inferred host/path — PRD “replicated site”; F4 W2.)_ | public | coming-next | Agent; Jamaah | Referral / `ref` handling on gateway _(partially in § Booking auth table)_ | none | § Catalog + § Booking | **Gap:** canonical URL + `ref` validation contract for `gateway-svc` not fully specified here. |
+| `/checkout/{booking_id}` | public | coming-next | Jamaah; Agent | n/a until submit is contracted | none until staff CS variant | § Booking (draft only today); submit + VA **not** in S1 | F4 W1 step 4–5: combines **submit saga** + VA (F5). **Split:** submit (`POST /v1/bookings/{id}/submit`) is a future `Sx-J-*` row in this file; VA UI is **S2** (`slice-S2.md`). |
+| `/portal/login` _(Inferred.)_ | public | coming-next | Agent | B2B portal session _(product TBD)_ | Agent portal session | F1 REST (`docs/03-services/00-iam-svc/01-api.md`) — not duplicated in `slice-S1` | Alternative F4 W2 path (“agent fills on behalf”). **Gap:** portal vs replica-only scope. |
+| `/console/login` _(Inferred.)_ | internal | coming-next | Staff (CS, ops, finance, …) | n/a | F1 access + refresh | F1 — `POST /v1/sessions` (service doc) | Console entry; **not** in `slice-S1` REST. |
+| `/console/bookings/new` _(Inferred.)_ | internal | coming-next | Staff with CS closing duty | `booking.create_on_behalf` (named in § Booking for `channel = cs`) | F1 bearer | § Booking — `POST /v1/bookings` with `channel = cs` | F4 W3 CS closing. **Gap:** internal navigation + which booking-svc read endpoints power the form (`GET/PATCH` draft — see below). |
+| `/console/bookings/{booking_id}` _(Inferred.)_ | internal | coming-next | Same as above | same | F1 bearer | § Booking — draft create only today | Read/edit draft in UI needs **GET/PATCH** contract (gap). |
+
+### Contract gaps to close (next Joint / slice rows)
+
+1. **`GET /v1/bookings/{id}` + `PATCH /v1/bookings/{id}` (draft read/update)** — Listed as planned in `docs/03-services/02-booking-svc/01-api.md` but **not** yet in `slice-S1.md § Booking`. Add when a `S1-J-*` card (or follow-up) lands, so public/internal booking forms share one wire shape.
+2. **`POST /v1/bookings/{id}/submit`** — F4 + Q006 gate; belongs in a **future** `slice-S1` § (or `slice-S2` boundary) once the Joint card is picked up. Drives `/checkout/{booking_id}` “pay” CTA behavior.
+3. **B2B replica routing** — Freeze host + path + `ref` / `agent_id` propagation in gateway + `core-web` (table above cites partial § Booking rules only).
+4. **Internal console shell** — Base path (`/console/...`), SSR vs SPA, and which routes require `CheckPermission` first (`S1-E-04`) — document when internal UX slice starts (may remain outside `slice-S1` if console is a separate app; if so, duplicate a slim matrix there).
+
+---
+
 ## § Changelog
 
+- **2026-04-21** — Added `§ UI route matrix` via `S0-L-01` / `BL-FE-PLN-001` — public vs internal URL table for S1, `active-now` vs `coming-next`, F1-aligned roles + permission column; **Contract gaps** list for draft GET/PATCH, submit, B2B routing, console shell.
 - **2026-04-21** — Added `§ Booking States` via `S1-J-04` — documents that S1 exercises only the `draft` state; includes the forward-looking full state machine from F4 W4 (unchanged, reproduced for readers); pins the Q006 KTP+passport gate on the future `draft → pending_payment` transition so S2+ authors cannot soften it. **All four S1 contracts are now in; the contract-first gate for S1 code (`S1-E-02`, `S1-E-03`, `S1-E-04`) is satisfied.**
 - **2026-04-21** — Added `§ Inventory` via `S1-J-03` — contracts `catalog.v1.CatalogService/ReserveSeats` + `ReleaseSeats` (gRPC): caller-supplied `reservation_id` for idempotency (option a), atomic-SQL pattern reference, five failure codes (`FAILED_PRECONDITION` / `NOT_FOUND` / `INVALID_ARGUMENT` / `ALREADY_EXISTS` / `INTERNAL`), and compensation prose covering the booking saga (ADR 0006) + the payment refund flow's Q004 conditional timing.
 - **2026-04-21** — Added `§ Booking` via `S1-J-02` — contracts the `POST /v1/bookings` draft endpoint (three channels, idempotency, auth table, error codes, JSON examples, Q006 documented as submit-time not draft-time).
 - **2026-04-20** — Initial version merged via `S1-J-01` (PR #7, commit `6c3fda8`). Adds `§ Catalog` with three public read endpoints. All other sections remain unfilled until their respective `S1-J-*` cards land.
+

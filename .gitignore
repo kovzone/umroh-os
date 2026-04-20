@@ -22,3 +22,6 @@ baseline/
 
 # prompts
 prompts/
+
+# VS Code / Cursor workspace folder (keep local; not shared via git)
+.vscode/
