@@ -91,13 +91,34 @@ Every PR in this repo passes through these two gates. `CONTRIBUTING.md § Canoni
 
 DoR items are checked before coding starts; DoD items are checked before the reviewer clicks merge. A PR that fails a DoR item is sent back for prep; a PR that fails a DoD item waits for the gap to close.
 
+## Service ownership matrix (S1–S2)
+
+Default PR-owner and reviewer for each backend service touched in slices S1–S2. The matrix is the starting point — either dev can still pick up the other's card when needed (per `§ Branch strategy + merge ownership`, Joint cards are pick-up-and-notify). This table names the **default**, not the mandatory executor.
+
+| Service | PR-owner | Reviewer | Active in | Notes |
+|---|---|---|---|---|
+| `iam-svc` | Elda | Lutfi | S1 (staff auth), F1-MIN | Per doc 04 RACI — A=Lutfi, R=Elda, C=Lutfi |
+| `catalog-svc` | Elda | Lutfi | S1 (read endpoints) + S2 (seat release during refund saga) | Owns `ReserveSeats` / `ReleaseSeats` gRPC |
+| `booking-svc` | Elda | Lutfi | S1 (draft + saga) + S2 (paid-state callback) | Saga orchestrator for submit/refund per ADR 0006 |
+| `payment-svc` | Elda | Lutfi | S2 | Webhooks, invoice/VA issuance, reconcile cron |
+| `finance-svc` | Elda | Lutfi | S3 (forward-reference) | Listed here so the ownership default extends into S3 without another card |
+| `logistics-svc` | Elda | Lutfi | S3 (forward-reference) | Same reasoning as `finance-svc` |
+
+**Cross-service gRPC contracts are Joint.** Any change to a gRPC method signature, request/response shape, or error-code convention between two services is a Joint change regardless of which service owns the implementation. Before editing:
+
+1. Notify the other dev (WA / issue comment) that the gRPC shape will change.
+2. Open a matching `Sx-J-*` contract PR against `docs/contracts/slice-Sx.md § <section>` (new or amended) **before** the implementation PR — the contract is the freeze point.
+3. The implementation PR then references the merged contract PR. No silent drift.
+
+Services not listed in the table (`gateway-svc`, `jamaah-svc`, `visa-svc`, `ops-svc`, `crm-svc`, and the deferred `broker-svc`) follow the same default (Elda as PR-owner, Lutfi as reviewer) until a future card formalises them when their slice becomes active.
+
 ## Appendix slots (filled by later S0 cards)
 
-This folder's README is intentionally a scaffold, expanded as the S0 chain completes:
+All three appendix slots are now filled — the S0 docs chain is complete:
 
-- **Branch strategy + merge ownership** — ✅ landed in `§ Branch strategy + merge ownership` above via `S0-J-02` (2026-04-20).
-- **DoR / DoD per PR** — ✅ landed in `§ Definition of Ready / Definition of Done (per PR)` above via `S0-J-03` (2026-04-20).
-- **Service ownership matrix (S1–S2)** → to be appended by `S0-E-01` (table mapping each backend service touched in S1–S2 to a PR-owner and a code-reviewer).
+- **Branch strategy + merge ownership** — ✅ landed in `§ Branch strategy + merge ownership` via `S0-J-02` (2026-04-20).
+- **DoR / DoD per PR** — ✅ landed in `§ Definition of Ready / Definition of Done (per PR)` via `S0-J-03` (2026-04-20).
+- **Service ownership matrix (S1–S2)** — ✅ landed in `§ Service ownership matrix (S1–S2)` via `S0-E-01` (2026-04-20).
 
 ## Related references
 
