@@ -63,7 +63,7 @@ Smaller numbers run first. Multiple rows may share the same number when safe to 
 
 | Phase | Feature ref | Summary | Priority | Exec seq | Slice | Task Code | Backlog ID | Owner | Status | Blocked by gate | Acceptance (short) |
 |------:|---|---|:---:|---:|---|---|---|---|---|---|---|
-| 0 | S0-J-01 | Contract templates + README `docs/contracts/` | MH-MVP | 005 | S0 | S0-J-01 | BL-ENG-001 | J | todo | — | `slice-Sx.md` template + README merged |
+| 0 | S0-J-01 | Contract templates + README `docs/contracts/` | MH-MVP | 005 | S0 | S0-J-01 | BL-ENG-001 | J | done | — | `slice-Sx.md` template + README merged |
 | 0 | S0-J-02 | Branch strategy + merge ownership | MH-MVP | 006 | S0 | S0-J-02 | BL-ENG-002 | J | todo | BL-ENG-001 | Written merge rules |
 | 0 | S0-J-03 | DoR/DoD per PR | MH-MVP | 007 | S0 | S0-J-03 | BL-ENG-003 | J | todo | BL-ENG-001 | Short DoR/DoD published |
 | 0 | S0-L-01 | Public vs internal UI route matrix (S1) | MH-MVP | 008 | S0 | S0-L-01 | BL-FE-PLN-001 | L | todo | BL-ENG-001 | Initial role vs URL table |
