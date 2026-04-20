@@ -9,6 +9,7 @@ task_codes:
   - S1-J-01
   - S1-J-02
   - S1-J-03
+  - S1-J-04
 ---
 
 # Slice S1 — Integration Contract
@@ -569,8 +570,81 @@ Implementers **must not** release seats purely on the booking status reaching `c
 
 ---
 
+## § Booking States
+
+_(Landed via `S1-J-04`, 2026-04-21.)_
+
+S1 exercises **only the `draft` state** of the full booking lifecycle. Everything past `draft` (payment, fulfillment, cancellation, completion) lives in **S2 and later slices**. This section documents the decision so implementers know what to reject + what to defer, and consumers know how far the current contract reaches.
+
+### States in scope for S1
+
+| Status | Entered by | Exited by | Notes |
+|---|---|---|---|
+| `draft` | `POST /v1/bookings` (contracted in `§ Booking`) | No transitions are contracted in S1. `POST /v1/bookings/{id}/submit` — which moves `draft → pending_payment` — is contracted in a **later slice** (not here). | Only persistent status a booking can have at the end of any S1 code path. |
+
+Concretely for implementers:
+
+- `S1-E-03` (booking-svc draft handler) **MUST** persist every new booking with `status = "draft"` and no other value.
+- `S1-E-03` **MUST NOT** expose any endpoint that attempts to transition a booking out of `draft` — retry semantics for aborted submits are a later-slice concern.
+- Any read endpoint added in S1 that observes `bookings.status` **MUST** short-circuit on non-`draft` values and return `404` (the record is not part of S1's observable state). This is a defence-in-depth check against future schema drift where rows from S2+ leak into S1 reads.
+
+### Forward-looking full state machine (not contracted in S1)
+
+Reproduced from `docs/06-features/04-booking-and-allocation.md § W4` for readers' reference. **Do not implement any transition below in S1 code.** The states are named here only so callers of `POST /v1/bookings` understand where their draft will eventually flow; each transition's trigger, compensation, and error handling belong to its own `Sx-J-*` contract.
+
+```
+draft
+  │
+  │ (submit + VA issued)
+  ▼
+pending_payment ──┐
+  │               │ (VA expires without payment — Q010: VA TTL 24h, global config)
+  │               ▼
+  │             expired ───┐
+  │                        │
+  │ (first payment received)
+  ▼                        │
+partially_paid             │
+  │                        │
+  │ (cumulative ≥ total)   │
+  ▼                        │
+paid_in_full               │
+  │                        │
+  │ (departure begins)     │
+  ▼                        │
+departed                   │
+  │                        │
+  │ (return + alumni move) │
+  ▼                        │
+completed                  │
+                           │
+cancelled ◄────────────────┘
+  ↑
+  └─────────── (from any pre-departure state, via refund flow)
+```
+
+Plus two system-fault states documented in F4's edge-cases (not reached in S1): `failed` (saga mid-flight fault; operator triage) and `expired` (VA timed out before any payment; terminal, distinct from customer-cancelled).
+
+### Q006 gate on the `draft → pending_payment` transition (future contract)
+
+When a future slice contracts `POST /v1/bookings/{id}/submit`, **Q006** mandates that the handler block the transition unless every jamaah on the booking has both a KTP scan and a passport scan present in the documents store (OCR may be pending/queued; presence is sufficient). See `docs/07-open-questions/Q006-minimum-docs-for-booking.md`:
+
+- Enforced **per-jamaah** — one jamaah's documents do NOT satisfy another's.
+- Enforced as a **hard block** in the B2C self-serve UI and as a **422 response** from the submit endpoint.
+- `draft` creation itself (contracted in `§ Booking` above) is **not** subject to this gate — customers can park a draft while they gather documents.
+
+This sub-section exists in S1 to freeze the intent so S2+ authors cannot quietly soften the gate or move it to a different transition. The rule is: documents gate `draft → pending_payment`, and only that transition.
+
+### Honored by implementation
+
+- `S1-E-03` — booking-svc draft handler. Persists only `draft`; refuses any status transition request; short-circuits reads of non-`draft` rows.
+- Future slice — submit handler (`POST /v1/bookings/{id}/submit`) will enforce the Q006 gate when contracted.
+
+---
+
 ## § Changelog
 
+- **2026-04-21** — Added `§ Booking States` via `S1-J-04` — documents that S1 exercises only the `draft` state; includes the forward-looking full state machine from F4 W4 (unchanged, reproduced for readers); pins the Q006 KTP+passport gate on the future `draft → pending_payment` transition so S2+ authors cannot soften it. **All four S1 contracts are now in; the contract-first gate for S1 code (`S1-E-02`, `S1-E-03`, `S1-E-04`) is satisfied.**
 - **2026-04-21** — Added `§ Inventory` via `S1-J-03` — contracts `catalog.v1.CatalogService/ReserveSeats` + `ReleaseSeats` (gRPC): caller-supplied `reservation_id` for idempotency (option a), atomic-SQL pattern reference, five failure codes (`FAILED_PRECONDITION` / `NOT_FOUND` / `INVALID_ARGUMENT` / `ALREADY_EXISTS` / `INTERNAL`), and compensation prose covering the booking saga (ADR 0006) + the payment refund flow's Q004 conditional timing.
 - **2026-04-21** — Added `§ Booking` via `S1-J-02` — contracts the `POST /v1/bookings` draft endpoint (three channels, idempotency, auth table, error codes, JSON examples, Q006 documented as submit-time not draft-time).
 - **2026-04-20** — Initial version merged via `S1-J-01` (PR #7, commit `6c3fda8`). Adds `§ Catalog` with three public read endpoints. All other sections remain unfilled until their respective `S1-J-*` cards land.
