@@ -2,11 +2,12 @@
 slice: S1
 title: Slice S1 — Integration Contract
 status: draft
-last_updated: 2026-04-20
+last_updated: 2026-04-21
 pr_owner: Elda
 reviewer: Elda (solo-exec S0 per § Current operating mode)
 task_codes:
   - S1-J-01
+  - S1-J-02
 ---
 
 # Slice S1 — Integration Contract
@@ -241,6 +242,202 @@ All entity IDs are **ULID** strings with a type prefix: `pkg_`, `dep_`, `itn_`, 
 
 ---
 
+## § Booking
+
+_(Landed via `S1-J-02`, 2026-04-21.)_
+
+Creates a **draft** booking via `POST /v1/bookings`. Scope for S1 is deliberately narrow: one endpoint, one transition (`∅ → draft`). Transitioning a draft onward (`draft → pending_payment`) happens via `POST /v1/bookings/{id}/submit`, which contracts in a later slice and runs the in-process booking saga per ADR 0006 + Q006's KTP+passport gate.
+
+### Endpoint
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| `POST` | `/v1/bookings` | **public OR staff** — see Auth rules below | Create a `draft` booking for B2C self / B2B agent / CS-closing flows. Persists only; does not issue VA, does not reserve seats (that's `POST /v1/bookings/{id}/submit`). |
+
+### Auth rules
+
+The endpoint accepts three closing channels per F4 W1–W3. The `channel` field in the request body is the source of truth for which authentication mode applies:
+
+| `channel` | Required auth | How `agent_id` / `staff_user_id` are populated |
+|---|---|---|
+| `b2c_self` | **public** — no token required | Neither field set. |
+| `b2b_agent` | **public** — no token required | `agent_id` comes from the request body (stamped by the agent's replicated landing page, sourced from the `ref=<agent_code>` referral link). `gateway-svc` may additionally validate the referral token before forwarding. |
+| `cs` | **staff** — F1 PASETO / JWT required; `iam-svc.CheckPermission(booking.create_on_behalf)` | `staff_user_id` is filled from the token's claims server-side, not from the request body. |
+
+Requests with `channel = "cs"` but no valid F1 token return `401 unauthorized`. Requests with `channel = "b2c_self"` and a token are still accepted (token ignored). Requests with `channel = "b2b_agent"` must include `agent_id`; absence returns `422 validation_failed`.
+
+### Idempotency
+
+Callers SHOULD send an `Idempotency-Key` HTTP header (string, ≤ 128 chars). Scope is `(channel, key)` + the fingerprint of the request body. Replay behavior:
+
+- Same key + **identical body** within **24 h** → returns the original booking (same `id`, same `created_at`, `Idempotency-Replayed: true` header).
+- Same key + **different body** within 24 h → returns `409 idempotency_conflict` with the original `booking.id` so the caller can diagnose.
+- Same key after 24 h → treated as a new request (the prior record has been GC'd).
+- Missing `Idempotency-Key` is allowed (server mints a row per request). B2C and B2B self-serve SHOULD include one; CS closing MUST include one.
+
+### Request body
+
+```json
+{
+  "channel": "b2c_self",
+  "package_id": "pkg_01JCDE...",
+  "departure_id": "dep_01JCDF...",
+  "room_type": "quad",
+  "lead": {
+    "full_name": "Budi Santoso",
+    "email": "budi@example.com",
+    "whatsapp": "+62811234567",
+    "domicile": "Jakarta"
+  },
+  "jamaah": [
+    {
+      "full_name": "Budi Santoso",
+      "email": "budi@example.com",
+      "whatsapp": "+62811234567",
+      "domicile": "Jakarta",
+      "is_lead": true
+    },
+    {
+      "full_name": "Siti Aminah",
+      "whatsapp": "+62811234568",
+      "domicile": "Jakarta",
+      "is_lead": false
+    }
+  ],
+  "add_on_ids": ["addon_01JCDK..."],
+  "agent_id": null,
+  "notes": null
+}
+```
+
+**Required fields** (422 if missing):
+
+| Field | Type | Notes |
+|---|---|---|
+| `channel` | enum | `b2c_self` \| `b2b_agent` \| `cs` |
+| `package_id` | string (ULID) | Must reference an `active` package; 404 if not found or `draft`/`archived` |
+| `departure_id` | string (ULID) | Must belong to the named package and have `status = open`; 404 if not found or not open |
+| `room_type` | enum | `double` \| `triple` \| `quad`; must exist in the departure's `pricing` array |
+| `lead.full_name` | string | Non-empty, ≤ 120 chars |
+| `lead.whatsapp` | string | E.164 format |
+| `lead.domicile` | string | Non-empty |
+| `jamaah[]` | array | At least one entry; exactly one must have `is_lead = true` and match `lead` fields |
+| `jamaah[].full_name` | string | Non-empty, ≤ 120 chars per entry |
+| `jamaah[].domicile` | string | Non-empty per entry |
+
+**Conditionally required:**
+
+- `lead.email` — required when `channel = b2c_self`; optional for `b2b_agent` / `cs`.
+- `agent_id` (ULID) — required when `channel = b2b_agent`; must be `null` otherwise.
+
+**Optional:**
+
+- `add_on_ids` (array of ULIDs) — must reference add-ons listed on the package; unknown IDs return `422 validation_failed`.
+- `notes` (string, ≤ 2000 chars) — free-form internal note (visible to staff only).
+- `jamaah[].email` and `jamaah[].whatsapp` for non-lead jamaah — encouraged but not required at draft.
+
+### Documents (Q006)
+
+**No documents are required at this endpoint.** Q006 (`docs/07-open-questions/Q006-minimum-docs-for-booking.md`) mandates KTP + passport scan per jamaah **before `draft → pending_payment`** — i.e. at the submit endpoint (`POST /v1/bookings/{id}/submit`), not here. Draft creation remains lightweight so a customer can fill the form without their docs immediately at hand; docs get uploaded via the Customer Portal (F3) before they click "Submit & Pay".
+
+Consumers of this contract must **not** require document uploads before calling `POST /v1/bookings`. The submit-side contract (future `S1-J-` or follow-up) will spell out the blocking check.
+
+### Response — `201 Created`
+
+```json
+{
+  "booking": {
+    "id": "bkg_01JCDL...",
+    "status": "draft",
+    "channel": "b2c_self",
+    "package_id": "pkg_01JCDE...",
+    "departure_id": "dep_01JCDF...",
+    "room_type": "quad",
+    "agent_id": null,
+    "staff_user_id": null,
+    "lead": {
+      "full_name": "Budi Santoso",
+      "email": "budi@example.com",
+      "whatsapp": "+62811234567",
+      "domicile": "Jakarta"
+    },
+    "jamaah": [
+      {
+        "id": "bkgitem_01JCDM...",
+        "full_name": "Budi Santoso",
+        "email": "budi@example.com",
+        "whatsapp": "+62811234567",
+        "domicile": "Jakarta",
+        "is_lead": true,
+        "status": "active"
+      },
+      {
+        "id": "bkgitem_01JCDN...",
+        "full_name": "Siti Aminah",
+        "whatsapp": "+62811234568",
+        "domicile": "Jakarta",
+        "is_lead": false,
+        "status": "active"
+      }
+    ],
+    "add_ons": [
+      { "id": "addon_01JCDK...", "name": "Extra night Medinah", "list_amount": 2500000, "list_currency": "IDR", "settlement_currency": "IDR" }
+    ],
+    "pricing": {
+      "list_amount": 79500000,
+      "list_currency": "IDR",
+      "settlement_currency": "IDR",
+      "breakdown": [
+        { "line": "2 × quad @ Rp 38,500,000", "list_amount": 77000000 },
+        { "line": "1 × Extra night Medinah", "list_amount": 2500000 }
+      ]
+    },
+    "notes": null,
+    "created_at": "2026-04-21T02:14:32.105Z",
+    "expires_at": "2026-04-21T02:44:32.105Z"
+  }
+}
+```
+
+- `booking.status` is always `"draft"` on this endpoint — no other state is reachable here.
+- `booking.pricing` shows the **list amount** at draft time per Q001; a payable IDR amount only gets locked at `POST /v1/bookings/{id}/submit` (via `payment-svc` VA issuance with FX snapshot).
+- `booking.expires_at` is a **non-binding** hint that a draft held for ≥ 30 min without being submitted may be GC'd. The hard expiry (VA TTL) only starts after submit. _(Inferred — keeps the draft table from growing unbounded.)_
+- `booking.add_ons` carries the full add-on record (not just IDs) for client convenience, matching the catalog shape in `§ Catalog`.
+
+Response header `Idempotency-Replayed: true` is set only when the request matched a prior (key, body) pair.
+
+### Errors
+
+All errors use the shared error envelope defined in `§ Catalog`.
+
+| Status | Body `error.code` | When |
+|---|---|---|
+| `400` | `invalid_json` | Request body is not valid JSON. |
+| `401` | `unauthorized` | `channel = cs` and no valid F1 token, or token lacks `booking.create_on_behalf` permission. |
+| `404` | `package_not_found` | `package_id` not found, or package `status ≠ active`. |
+| `404` | `departure_not_found` | `departure_id` not found, does not belong to the package, or `status ≠ open`. |
+| `404` | `add_on_not_found` | Any `add_on_ids` entry not found or not linked to the package. |
+| `409` | `idempotency_conflict` | Same `Idempotency-Key` with a different request body within the 24 h window. Body includes `original_booking_id`. |
+| `422` | `validation_failed` | Field-level validation errors. Body's `error.details` carries an array of `{field, code, message}` per failed field (e.g. `{"field": "lead.whatsapp", "code": "not_e164", "message": "WhatsApp harus dalam format internasional (+62...)"}`). |
+| `500` | `internal_error` | Unexpected server error. |
+
+Notably absent: **no `409 seats_unavailable`** at this endpoint. Seat reservation is `POST /v1/bookings/{id}/submit`'s job, per F4 W8. Creating a draft does not check seats; the submit saga may still fail with `seats_unavailable` if capacity ran out between draft and submit.
+
+### Conventions honored
+
+- **Q006 (min docs at submit).** Draft creation requires no documents; the requirement applies at submit. See the "Documents (Q006)" sub-section above.
+- **Q001 (currency).** `pricing.list_amount` + `list_currency` + `settlement_currency = "IDR"` mirror the catalog shape. No payable commitment here — that happens at VA issuance in `payment-svc`.
+- **Q003 (single-language MVP).** Validation error messages (`error.details[].message`) are in `id-ID`. `error.code` remains `snake_case` English — machine-readable, language-invariant.
+- **ULID IDs** with type prefixes: `bkg_` for bookings, `bkgitem_` for booking items. Reuse `pkg_`, `dep_`, `addon_` from `§ Catalog`.
+
+### Honored by implementation
+
+- `S1-E-03` — `booking-svc` draft creation handler. Must conform exactly to the shape above.
+- `S1-L-04` — booking UI (frontend) for all three channels. Consumes the shape above; wires the channel-specific auth behavior client-side.
+
+---
+
 ## § Changelog
 
-- **2026-04-20** — Initial version merged via `S1-J-01` (PR pending). Adds `§ Catalog` with three public read endpoints. All other sections (`§ Booking`, `§ Inventory`, `§ Booking States`) remain unfilled until their respective `S1-J-*` cards land.
+- **2026-04-21** — Added `§ Booking` via `S1-J-02` — contracts the `POST /v1/bookings` draft endpoint (three channels, idempotency, auth table, error codes, JSON examples, Q006 documented as submit-time not draft-time).
+- **2026-04-20** — Initial version merged via `S1-J-01` (PR #7, commit `6c3fda8`). Adds `§ Catalog` with three public read endpoints. All other sections remain unfilled until their respective `S1-J-*` cards land.
