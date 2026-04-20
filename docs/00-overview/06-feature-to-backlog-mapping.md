@@ -65,7 +65,7 @@ Smaller numbers run first. Multiple rows may share the same number when safe to 
 |------:|---|---|:---:|---:|---|---|---|---|---|---|---|
 | 0 | S0-J-01 | Contract templates + README `docs/contracts/` | MH-MVP | 005 | S0 | S0-J-01 | BL-ENG-001 | J | done | — | `slice-Sx.md` template + README merged |
 | 0 | S0-J-02 | Branch strategy + merge ownership | MH-MVP | 006 | S0 | S0-J-02 | BL-ENG-002 | J | done | BL-ENG-001 | Written merge rules |
-| 0 | S0-J-03 | DoR/DoD per PR | MH-MVP | 007 | S0 | S0-J-03 | BL-ENG-003 | J | todo | BL-ENG-001 | Short DoR/DoD published |
+| 0 | S0-J-03 | DoR/DoD per PR | MH-MVP | 007 | S0 | S0-J-03 | BL-ENG-003 | J | done | BL-ENG-001 | Short DoR/DoD published |
 | 0 | S0-L-01 | Public vs internal UI route matrix (S1) | MH-MVP | 008 | S0 | S0-L-01 | BL-FE-PLN-001 | L | todo | BL-ENG-001 | Initial role vs URL table |
 | 0 | S0-E-01 | Service ownership S1–S2 (PR owner) | MH-MVP | 009 | S0 | S0-E-01 | BL-ENG-004 | E | todo | BL-ENG-001 | Service vs owner table |
 | 0 | S0-J-04 | Repo scaffold sweep vs ADR-0004 | MH-MVP | 010 | S0 | S0-J-04 | BL-ENG-005 | J | todo | BL-ENG-001 | Drift fixed or exceptions documented |

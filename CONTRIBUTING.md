@@ -71,4 +71,6 @@ Use the PR template in `.github/pull_request_template.md` and ensure all require
 
 - Detailed Git workflow: `docs/04-backend-conventions/08-git-workflow.md`
 - Detailed commit message conventions: `docs/08-commit-conventions.md`
+- Per-PR Definition of Ready / Definition of Done: `docs/contracts/README.md § Definition of Ready / Definition of Done (per PR)`
+- Branch strategy + merge ownership: `docs/contracts/README.md § Branch strategy + merge ownership`
 - Team AI onboarding and doc authority: `AGENTS.md`
