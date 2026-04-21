@@ -107,7 +107,7 @@ func start() {
 	restServer := rest_oapi.NewServer(logger, tracer, svc)
 
 	// --- Run server ---
-	runRestServer(config.Api.Rest.Port, restServer, config.Api.Metrics.Enabled)
+	runRestServer(config.Api.Rest.Port, restServer, config.Api.Metrics.Enabled, config.OtelTracer.Name)
 
 	// --- Wait for signal ---
 	ch := make(chan os.Signal, 1)

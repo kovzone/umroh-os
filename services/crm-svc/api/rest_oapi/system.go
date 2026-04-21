@@ -59,7 +59,7 @@ func (s *Server) Readiness(c *fiber.Ctx) error {
 func (s *Server) DbTxDiagnostic(c *fiber.Ctx, params DbTxDiagnosticParams) error {
 	const op = "rest_oapi.Server.DbTxDiagnostic"
 
-	ctx, span := s.tracer.Start(c.Context(), op)
+	ctx, span := s.tracer.Start(c.UserContext(), op)
 	defer span.End()
 
 	logger := logging.LogWithTrace(ctx, s.logger)

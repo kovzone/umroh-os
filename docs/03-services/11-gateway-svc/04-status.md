@@ -59,3 +59,11 @@ This commit only scaffolds the gateway shell — the first adapter (`iam_rest_ad
 - Wire `iam_rest_adapter` + `GET /v1/iam/system/live` proxy proof.
 - Add `grafana/dashboards/gateway-svc.json`.
 - Add the remaining 9 REST adapters as routing needs each one (not at scaffold time).
+
+## 2026-04-21 — S0-J-05 OpenTelemetry baseline fix
+
+- `cmd/server.go` — `app.Use(otelfiber.Middleware(...))` wired as the first middleware after CORS; span name formatter prefixes with `<service-name-tracer>` for readable Tempo output. Gateway is the trace origin for edge requests and a trace continuer when upstream clients propagate.
+- `util/tracing/tracing.go` — `otel.SetTextMapPropagator(NewCompositeTextMapPropagator(TraceContext{}, Baggage{}))` set globally. Without this, `otelhttp.NewTransport` in every `*_rest_adapter` was silently not injecting `traceparent`.
+- `api/rest_oapi/proxy_iam.go` + other `proxy_*.go` — spans start from `c.UserContext()` (otelfiber's inbound-span context).
+- **New traced cross-service path:** `GET /v1/iam/system/diagnostics/db-tx` — proxies iam-svc's WithTx diagnostic. `openapi.yaml` + regenerated `api.gen.go`; `service/proxy_iam.go` + `service/service.go` add `GetIamSystemDbTxDiagnostic`; `adapter/iam_rest_adapter/system.go` adds `GetSystemDbTxDiagnostic` with `DbTxDiagnosticResult` type. This is the verification endpoint S0-J-05's acceptance criterion flows through.
+- `go.mod` — added `github.com/gofiber/contrib/otelfiber/v2 v2.2.3`.

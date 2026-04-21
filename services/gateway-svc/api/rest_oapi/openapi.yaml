@@ -66,6 +66,42 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
 
+  /v1/iam/system/diagnostics/db-tx:
+    get:
+      tags: [Proxy / iam]
+      summary: Proxy iam-svc DB transaction diagnostic
+      description: |
+        Traced cross-service verification path. Proxies to iam-svc's
+        state-mutating `/system/diagnostics/db-tx` diagnostic, which inserts a
+        row into `public.diagnostics` inside a WithTx and echoes the message
+        back. Used by the `S0-J-05` observability acceptance check: a single
+        request through this endpoint must produce one trace in Tempo whose
+        spans span gateway-svc and iam-svc, and matching `trace_id`-tagged log
+        lines in Loki for both containers.
+
+        Pilot-scope endpoint; not for health/readiness probes. Gate with auth
+        / a header secret before promoting past pilot.
+      operationId: getIamSystemDbTxDiagnostic
+      parameters:
+        - name: message
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "no message"
+          description: Message to store and echo back.
+      responses:
+        "200":
+          description: Upstream OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DbTxDiagnosticResponse" }
+        "502":
+          description: Upstream call failed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
   /v1/catalog/system/live:
     get:
       tags: [Proxy / catalog]
@@ -240,6 +276,22 @@ components:
           required: [ok]
           properties:
             ok: { type: boolean, example: true }
+
+    DbTxDiagnosticResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [diagnostic_id, message]
+          properties:
+            diagnostic_id:
+              type: integer
+              format: int64
+              description: ID of the row inserted by iam-svc.
+            message:
+              type: string
+              description: Echo of the message received from the client.
 
     ErrorResponse:
       type: object

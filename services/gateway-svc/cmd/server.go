@@ -9,6 +9,7 @@ import (
 	"gateway-svc/api/rest_oapi/middleware"
 	"gateway-svc/util/monitoring"
 
+	"github.com/gofiber/contrib/otelfiber/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/adaptor"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -22,7 +23,7 @@ import (
 //
 // Real per-route proxies (auth, packages, bookings, ...) land alongside each
 // backend's first feature work.
-func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool) {
+func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool, serviceName string) {
 	app := fiber.New()
 
 	// CORS — gateway is the edge, accept cross-origin from any browser client.
@@ -31,6 +32,19 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool)
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 	}
 	app.Use(cors.New(corsConfig))
+
+	// OpenTelemetry — start an inbound span for every request so cross-service
+	// traces initiated by an upstream caller (via W3C traceparent) continue in
+	// this process's spans instead of starting a new trace. gateway-svc is the
+	// trace origin for edge-initiated requests and a trace continuer when
+	// something (e.g. a frontend with OTel instrumentation) already propagates.
+	// Span names are prefixed with the service name so a multi-service trace
+	// in Tempo is easy to scan (e.g. "gateway-svc GET /v1/iam/system/live").
+	app.Use(otelfiber.Middleware(
+		otelfiber.WithSpanNameFormatter(func(c *fiber.Ctx) string {
+			return serviceName + " " + c.Method() + " " + c.Route().Path
+		}),
+	))
 
 	if metricsEnabled {
 		app.Use(monitoring.RecoveryMiddleware())
@@ -53,6 +67,7 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool)
 	v1 := app.Group("/v1")
 	{
 		v1.Get("/iam/system/live", wrapper.GetIamSystemLive)
+		v1.Get("/iam/system/diagnostics/db-tx", wrapper.GetIamSystemDbTxDiagnostic)
 		v1.Get("/catalog/system/live", wrapper.GetCatalogSystemLive)
 		v1.Get("/booking/system/live", wrapper.GetBookingSystemLive)
 		v1.Get("/jamaah/system/live", wrapper.GetJamaahSystemLive)

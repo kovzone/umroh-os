@@ -12,6 +12,7 @@ import (
 	"jamaah-svc/api/rest_oapi/middleware"
 	"jamaah-svc/util/monitoring"
 
+	"github.com/gofiber/contrib/otelfiber/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/adaptor"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -30,7 +31,7 @@ import (
 //
 // Real iam REST routes (user/role/branch/audit + auth login/refresh/logout)
 // land in F1.5–F1.11.
-func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool) {
+func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool, serviceName string) {
 	app := fiber.New()
 
 	// CORS
@@ -39,6 +40,17 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool)
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 	}
 	app.Use(cors.New(corsConfig))
+
+	// OpenTelemetry — start an inbound span for every request so cross-service
+	// traces initiated by an upstream caller (via W3C traceparent) continue in
+	// this process's spans instead of starting a new trace. Span names are
+	// prefixed with the service name so a multi-service trace in Tempo is easy
+	// to scan (e.g. "jamaah-svc GET /system/diagnostics/db-tx").
+	app.Use(otelfiber.Middleware(
+		otelfiber.WithSpanNameFormatter(func(c *fiber.Ctx) string {
+			return serviceName + " " + c.Method() + " " + c.Route().Path
+		}),
+	))
 
 	if metricsEnabled {
 		app.Use(monitoring.RecoveryMiddleware())

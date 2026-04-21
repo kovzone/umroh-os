@@ -59,3 +59,10 @@ Removed — baseline reference code not applicable to a minimal scaffold:
 - **Single shared database (ADR 0007)** — `umrohos_dev`, created by `POSTGRES_DB` in compose, schema applied by `make migrate-up`. No `_init/` directory.
 - **Shared `public.diagnostics`** — every service's `/system/diagnostics/db-tx` writes into the same table, stamped with its app name. Per-service schemas (`iam.*`, `catalog.*`, ...) land in feature-slice migrations, not in the scaffold.
 - **Task-named migrations** — `000002_scaffold_services` captures the scaffolding commit; later migrations follow the same task-oriented naming (`000003_add_iam_users_and_roles`, not `000003_create_users_table`).
+
+## 2026-04-21 — S0-J-05 OpenTelemetry baseline fix
+
+- `cmd/server.go` — `app.Use(otelfiber.Middleware(...))` wired as the first middleware after CORS so inbound `traceparent` is extracted and handler spans continue an upstream trace.
+- `util/tracing/tracing.go` — `otel.SetTextMapPropagator(NewCompositeTextMapPropagator(TraceContext{}, Baggage{}))` set globally so otelhttp outbound / otelfiber inbound share the W3C propagator.
+- `api/rest_oapi/system.go` — `DbTxDiagnostic` handler now starts its span from `c.UserContext()` (otelfiber's inbound-span context) instead of `c.Context()`, so handler spans correctly inherit the trace.
+- `go.mod` — added `github.com/gofiber/contrib/otelfiber/v2 v2.2.3`.

@@ -98,7 +98,7 @@ func start() {
 	grpcServer := grpc_api.NewServer(logger, tracer, svc)
 
 	// --- Run servers ---
-	runRestServer(config.Api.Rest.Port, restServer, config.Api.Metrics.Enabled)
+	runRestServer(config.Api.Rest.Port, restServer, config.Api.Metrics.Enabled, config.OtelTracer.Name)
 	runGrpcServer(config.Api.Grpc.Address, grpcServer)
 
 	// --- Wait for signal ---
