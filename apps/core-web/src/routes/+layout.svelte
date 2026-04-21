@@ -37,4 +37,8 @@
     padding: var(--space-4);
     flex: 1;
   }
+  .app.home-mode .container {
+    max-width: none;
+    padding: 0;
+  }
 </style>
