@@ -2,23 +2,10 @@
   let { data } = $props();
 
   const trustItems = [
-    { title: 'Izin PPIU No. 123/2024', subtitle: 'Terdaftar di Kemenag RI' },
-    { title: 'Akreditasi A', subtitle: 'Kualitas layanan terbaik' },
-    { title: '25,000+', subtitle: 'Jamaah terlayani sejak 2018' }
+    { title: 'Izin PPIU No. 123/2024', subtitle: 'Resmi Kemenag RI', icon: 'verified_user' },
+    { title: 'Akreditasi A', subtitle: 'Standar Internasional', icon: 'workspace_premium' },
+    { title: '25.000+ Jamaah', subtitle: 'Telah Berangkat', icon: 'groups' }
   ];
-
-  const filters = [
-    { label: 'Bulan', value: 'Semua bulan', active: true },
-    { label: 'Budget', value: 'Semua budget', active: false },
-    { label: 'Durasi', value: 'Semua durasi', active: false },
-    { label: 'Jenis', value: 'Reguler / Plus', active: false }
-  ];
-
-  function badgeForSeats(remainingSeats: number): string {
-    if (remainingSeats <= 5) return 'Terbatas';
-    if (remainingSeats <= 12) return 'Paling Populer';
-    return 'Tersedia';
-  }
 
   const packageImages = [
     '/images/packages/pkg-1.png',
@@ -29,361 +16,856 @@
     '/images/packages/pkg-6.png'
   ];
 
-  const sampleCards = [
-    {
-      title: 'Paket Silver',
-      price: 'Rp 28.5jt',
-      star: 'Bintang 3',
-      airline: 'Ekonomi Direct',
-      cityTour: '3 Hari Turki'
-    },
+  const cardTemplates = [
     {
       title: 'Paket Gold',
-      price: 'Rp 34.2jt',
-      star: 'Bintang 4',
-      airline: 'Garuda Indonesia',
-      cityTour: '3 Hari Turki'
+      price: 'Rp 28.5jt',
+      tag: 'Paling Populer',
+      departure: '15 Jan 2025',
+      left1: 'Bintang 5',
+      right1: 'Garuda Indonesia',
+      left2: 'City Tour',
+      right2: 'Sisa 5 Kursi',
+      right2Critical: true,
+      right2Icon: 'event_seat',
+      left1Icon: 'hotel',
+      right1Icon: 'flight_takeoff',
+      left2Icon: 'directions_bus',
+      tagStyle: 'secondary'
     },
     {
-      title: 'Paket Platinum',
+      title: 'Umroh Plus Turki',
+      price: 'Rp 42.0jt',
+      tag: 'Plus Turki',
+      departure: '10 Feb 2025',
+      left1: 'Bintang 5',
+      right1: 'Turkish Airlines',
+      left2: '3 Hari Turki',
+      right2: 'Sisa 12 Kursi',
+      right2Critical: false,
+      right2Icon: 'event_seat',
+      left1Icon: 'hotel',
+      right1Icon: 'flight_takeoff',
+      left2Icon: 'explore',
+      tagStyle: 'primary'
+    },
+    {
+      title: 'Paket Silver',
+      price: 'Rp 24.9jt',
+      tag: 'Hemat',
+      departure: '22 Jan 2025',
+      left1: 'Bintang 4',
+      right1: 'Saudia Air',
+      left2: 'Full Board',
+      right2: 'Tersedia',
+      right2Critical: false,
+      right2Icon: 'event_seat',
+      left1Icon: 'hotel',
+      right1Icon: 'flight_takeoff',
+      left2Icon: 'fastfood',
+      tagStyle: 'neutral'
+    },
+    {
+      title: 'Platinum Exclusive',
+      price: 'Rp 55.0jt',
+      tag: 'Mewah',
+      departure: '05 Mar 2025',
+      left1: 'Fairmont/Setaraf',
+      right1: 'Business Class',
+      left2: 'Private Mutawif',
+      right2: 'Sisa 2 Kursi',
+      right2Critical: true,
+      right2Icon: 'event_seat',
+      left1Icon: 'hotel',
+      right1Icon: 'flight_takeoff',
+      left2Icon: 'shield',
+      tagStyle: 'secondary'
+    },
+    {
+      title: 'Ramadhan Mubarak',
+      price: 'Rp 38.5jt',
+      tag: 'Best Value',
+      departure: '28 Mar 2025',
+      left1: 'Bintang 5',
+      right1: 'Sahur & Iftar',
+      left2: "12 Hari I'tikaf",
+      right2: 'Terbatas',
+      right2Critical: false,
+      right2Icon: 'event_seat',
+      left1Icon: 'hotel',
+      right1Icon: 'restaurant',
+      left2Icon: 'mosque',
+      tagStyle: 'primary'
+    },
+    {
+      title: 'Plus Dubai & Oman',
       price: 'Rp 48.9jt',
-      star: 'Bintang 5',
-      airline: 'Business Class',
-      cityTour: '3 Hari Turki'
+      tag: 'New Route',
+      departure: '12 Apr 2025',
+      left1: 'Premium Hotel',
+      right1: 'Emirates',
+      left2: '15 Hari Trip',
+      right2: 'Buka Kuota',
+      right2Critical: false,
+      right2Icon: 'event_seat',
+      left1Icon: 'hotel',
+      right1Icon: 'flight_takeoff',
+      left2Icon: 'location_on',
+      tagStyle: 'amber'
     }
   ];
 
-  function formatCompactDeparture(label: string): string {
-    const firstDateToken = label.match(/\d{4}-\d{2}-\d{2}/)?.[0];
-    if (!firstDateToken) return label;
-
-    const date = new Date(`${firstDateToken}T00:00:00`);
-    if (Number.isNaN(date.getTime())) return label;
-
-    return new Intl.DateTimeFormat('id-ID', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    }).format(date);
-  }
-
-  const stitchedCards = Array.from({ length: 6 }, (_, idx) => {
+  const cards = Array.from({ length: 6 }, (_, idx) => {
     const live = data.packages[idx % Math.max(1, data.packages.length)];
-    const sample = sampleCards[idx % sampleCards.length];
+    const template = cardTemplates[idx % cardTemplates.length];
     const sourcePackageId = live?.id ?? data.packages[0]?.id ?? 'demo-package';
     return {
       id: `${sourcePackageId}-${idx + 1}`,
       sourcePackageId,
       image: packageImages[idx % packageImages.length],
-      title: sample.title,
-      price: sample.price,
-      star: sample.star,
-      airline: sample.airline,
-      cityTour: sample.cityTour,
-      departure: formatCompactDeparture(live?.nextDepartureLabel ?? '2025-02-10 - 2025-02-21'),
-      seats: live?.remainingSeats ?? 9
+      ...template
     };
   });
 </script>
 
-<div class="packages-stitch">
-  <section class="canvas">
-    <nav class="top-nav">
+<svelte:head>
+  <title>Katalog Paket Umroh - UmrohOS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet"
+  />
+</svelte:head>
+
+<div class="packages-page">
+  <nav class="top-nav">
+    <div class="shell nav-inner">
       <a class="brand" href="/">UmrohOS</a>
       <div class="nav-links">
-        <a href="/">Beranda</a>
-        <a class="is-active" href="/packages">Paket Umrah</a>
-        <a href="/#proses-booking">Proses Booking</a>
-        <a href="/#testimoni">Testimoni</a>
-        <a href="/#faq">FAQ</a>
+        <a class="active" href="/packages">Paket Umroh</a>
+        <a href="/packages">Jadwal</a>
+        <a href="/#proses-booking">Manasik</a>
+        <a href="/">Tentang Kami</a>
       </div>
-      <div class="nav-right">
-        <a href="https://wa.me/6281200000000" target="_blank" rel="noreferrer">WhatsApp</a>
-        <a class="btn btn-primary btn-compact" href={data.packages[0] ? `/booking/${data.packages[0].id}` : '/packages'}>Daftar Sekarang</a>
-      </div>
-    </nav>
+      <a class="primary-btn" href={data.packages[0] ? `/booking/${data.packages[0].id}` : '/packages'}>Daftar Sekarang</a>
+    </div>
+  </nav>
 
-    <section class="hero">
-      <div>
-        <p class="kicker">Katalog paket</p>
-        <h1>Temukan perjalanan spiritual terbaik Anda</h1>
-        <p class="hero-desc">Paket dikurasi berdasarkan kualitas layanan, transparansi harga, dan kenyamanan perjalanan.</p>
-      </div>
-      <div class="hero-actions">
-        <a class="btn btn-secondary" href="#filter">Filter cepat</a>
-        <a class="btn btn-primary" href="https://wa.me/6281200000000" target="_blank" rel="noreferrer">Konsultasi WhatsApp</a>
+  <main class="main-shell">
+    <section class="hero shell">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <p class="kicker">Katalog Terkurasi 2024/2025</p>
+          <h1>Temukan Perjalanan Spiritual Terbaik Anda</h1>
+          <p>
+            Pilihan paket Umroh premium dengan layanan bintang lima, pendampingan manasik komprehensif, dan kepastian jadwal keberangkatan untuk kekhusyukan ibadah Anda.
+          </p>
+          <div class="hero-actions">
+            <a class="primary-btn hero-btn" href="#katalog">Lihat Paket Populer</a>
+            <a class="ghost-btn hero-btn" href="https://wa.me/6281200000000" target="_blank" rel="noreferrer">
+              <span class="material-symbols-outlined fill">chat</span>
+              Konsultasi WhatsApp
+            </a>
+          </div>
+        </div>
+        <div class="hero-media">
+          <div class="hero-image-wrap">
+            <img src="/images/kaabah-hero.png" alt="Ka'bah" loading="eager" />
+          </div>
+          <div class="rating-card">
+            <strong>4.9/5</strong>
+            <p>Rating Kepuasan Jamaah Indonesia</p>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="trust">
-      {#each trustItems as item (item.title)}
-        <article class="trust-item">
-          <h3>{item.title}</h3>
-          <p>{item.subtitle}</p>
-        </article>
-      {/each}
-    </section>
-
-    <section id="filter" class="filter-bar">
-      {#each filters as filter (filter.label)}
-        <button type="button" class="filter-chip" class:active={filter.active}>
-          <span>{filter.label}</span>
-          <strong>{filter.value}</strong>
-        </button>
-      {/each}
-    </section>
-
-    <section id="katalog-paket" class="catalog" data-testid="s1-package-catalog">
-      <div class="catalog-head">
-        <h2>Paket Umrah Pilihan</h2>
-        <p>{stitchedCards.length} paket tersedia</p>
+    <section class="trust-strip">
+      <div class="shell trust-row">
+        {#each trustItems as item, idx (item.title)}
+          <article class="trust-item">
+            <div class="icon">
+              <span class="material-symbols-outlined" class:fill={idx === 1}>{item.icon}</span>
+            </div>
+            <div>
+              <h3>{item.title}</h3>
+              <p>{item.subtitle}</p>
+            </div>
+          </article>
+          {#if idx < trustItems.length - 1}
+            <span class="divider"></span>
+          {/if}
+        {/each}
       </div>
-      <ul class="grid">
-        {#each stitchedCards as pkg (pkg.id)}
+    </section>
+
+    <section class="shell filters">
+      <div class="filter-wrap">
+        <div class="filter-col">
+          <p class="filter-label">Bulan Keberangkatan</p>
+          <select>
+            <option>Semua Bulan</option>
+            <option>Januari 2025</option>
+            <option>Februari 2025</option>
+            <option>Maret 2025</option>
+            <option>Ramadhan</option>
+          </select>
+        </div>
+        <div class="filter-col">
+          <p class="filter-label">Rentang Budget</p>
+          <select>
+            <option>Semua Budget</option>
+            <option>Hemat (Rp 25jt - 30jt)</option>
+            <option>Menengah (Rp 30jt - 40jt)</option>
+            <option>Premium (&gt; Rp 40jt)</option>
+          </select>
+        </div>
+        <div class="filter-col">
+          <p class="filter-label">Durasi Perjalanan</p>
+          <div class="durasi-row">
+            <button class="is-active" type="button">9 Hari</button>
+            <button type="button">12 Hari</button>
+          </div>
+        </div>
+        <div class="filter-col">
+          <p class="filter-label">Jenis Paket</p>
+          <div class="chip-row">
+            <span class="chip is-active">Reguler</span>
+            <span class="chip">Plus Turki</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="katalog" class="shell catalog" data-testid="s1-package-catalog">
+      <ul class="cards-grid">
+        {#each cards as card (card.id)}
           <li class="card">
             <div class="cover-wrap">
-              <img src={pkg.image} alt={pkg.title} class="cover" loading="lazy" />
-              <p class="badge">{badgeForSeats(pkg.seats)}</p>
+              <img src={card.image} alt={card.title} loading="lazy" />
+              <span class="tag" class:tag-primary={card.tagStyle === 'primary'} class:tag-secondary={card.tagStyle === 'secondary'} class:tag-neutral={card.tagStyle === 'neutral'} class:tag-amber={card.tagStyle === 'amber'}>{card.tag}</span>
             </div>
-            <div class="topline">
-              <div class="title-block">
-                <h3>{pkg.title}</h3>
-                <p class="departure" title={pkg.departure}>
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
-                  </svg>
-                  <span>{pkg.departure}</span>
+            <div class="content">
+              <div class="topline">
+                <div>
+                  <h3>{card.title}</h3>
+                  <p class="date"><span class="material-symbols-outlined">calendar_today</span>{card.departure}</p>
+                </div>
+                <p class="price-wrap">
+                  <span>Mulai dari</span>
+                  <strong>{card.price}</strong>
                 </p>
               </div>
-              <p class="price-wrap">
-                <span class="label">Mulai dari</span>
-                <strong>{pkg.price}</strong>
-              </p>
-            </div>
-            <div class="feature-grid">
-              <p><span>🏨</span>{pkg.star}</p>
-              <p><span>✈️</span>{pkg.airline}</p>
-              <p><span>🚌</span>{pkg.cityTour}</p>
-              <p class:seat-warn={pkg.seats <= 5}><span>🚨</span>Sisa {pkg.seats} Kursi</p>
-            </div>
-            <div class="card-actions">
-              <a class="btn btn-primary" href={`/packages/${pkg.sourcePackageId}`} data-testid="package-link-{pkg.sourcePackageId}">Lihat Detail</a>
-              <a class="btn btn-secondary" href={`/booking/${pkg.sourcePackageId}`}>Booking Cepat</a>
+              <div class="meta-grid">
+                <p><span class="material-symbols-outlined">{card.left1Icon}</span>{card.left1}</p>
+                <p><span class="material-symbols-outlined">{card.right1Icon}</span>{card.right1}</p>
+                <p><span class="material-symbols-outlined">{card.left2Icon}</span>{card.left2}</p>
+                <p class:critical={card.right2Critical}>
+                  <span class="material-symbols-outlined">{card.right2Icon}</span>
+                  {card.right2}
+                </p>
+              </div>
+              <div class="actions">
+                <a class="btn-primary" href={`/packages/${card.sourcePackageId}`} data-testid="package-link-{card.sourcePackageId}">Lihat Detail</a>
+                <a class="btn-secondary" href={`/booking/${card.sourcePackageId}`}>Booking Cepat</a>
+              </div>
             </div>
           </li>
         {/each}
       </ul>
+      <div class="more-row">
+        <button type="button" class="more-btn">
+          Tampilkan Lebih Banyak Paket
+          <span class="material-symbols-outlined">expand_more</span>
+        </button>
+      </div>
     </section>
+  </main>
 
-    <footer class="local-footer">
-      <p>UmrohOS &copy; 2026</p>
-      <a href="/">Kembali ke beranda</a>
-    </footer>
-  </section>
+  <footer class="footer">
+    <div class="shell footer-wrap">
+      <div class="footer-brand">
+        <h4>UmrohOS</h4>
+        <p>© 2024 UmrohOS. The Serene Path to Holy Land.</p>
+      </div>
+      <div class="footer-links">
+        <a href="/">Kebijakan Privasi</a>
+        <a href="/">Syarat & Ketentuan</a>
+        <a href="/">Bantuan</a>
+        <a href="/">Kontak</a>
+      </div>
+      <div class="footer-icons">
+        <span><span class="material-symbols-outlined">language</span></span>
+        <span><span class="material-symbols-outlined">mail</span></span>
+      </div>
+    </div>
+  </footer>
 </div>
 
 <style>
-  .packages-stitch {
+  .packages-page {
+    font-family: 'Manrope', sans-serif;
+    background: #fbf9f8;
     color: #1b1c1c;
-    max-width: 76rem;
-    margin: 0 auto;
-    font-family: 'Plus Jakarta Sans', 'Manrope', Inter, 'Segoe UI', Arial, sans-serif;
   }
-  .canvas {
-    background: #f8f7f4;
-    border: 1px solid #e7e3db;
-    border-radius: 1rem;
-    overflow: hidden;
-    padding-bottom: 1rem;
+  .packages-page h1,
+  .packages-page h3,
+  .packages-page h4,
+  .brand {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+  .material-symbols-outlined.fill {
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+  }
+  .shell {
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 0 2rem;
   }
   .top-nav {
-    display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
-    padding: 0.6rem 0.9rem; border-bottom: 1px solid #e5e1d8;
-    background: rgba(255, 255, 255, 0.72); backdrop-filter: blur(10px);
-  }
-  .brand { font-weight: 700; font-size: 1.95rem; text-decoration: none; color: #0f4f3a; margin-right: 0.8rem; }
-  .nav-links, .nav-right { display: flex; align-items: center; gap: 0.95rem; }
-  .top-nav a:not(.brand):not(.btn) { text-decoration: none; color: #4e5953; font-size: 0.75rem; font-weight: 500; padding: 0.2rem 0; }
-  .top-nav .is-active { color: #006747; font-weight: 700; border-bottom: 2px solid #d6a047; }
-  .btn {
-    display: inline-flex; align-items: center; justify-content: center; padding: 0.55rem 0.92rem;
-    border-radius: 0.7rem; font-weight: 700; font-size: 0.78rem; text-decoration: none;
-    min-height: 2.3rem; border: 1px solid transparent;
-  }
-  .btn-compact { min-height: 2rem; padding: 0.35rem 0.72rem; font-size: 0.72rem; }
-  .btn-primary { background: #006747; color: #fff; }
-  .btn-secondary { background: #fff; color: #2e4b40; border-color: #baccc2; }
-  .hero { padding: 1.4rem 1rem 1rem; display: flex; justify-content: space-between; align-items: end; gap: var(--space-3); }
-  .kicker {
-    margin: 0; font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; color: #7a621f;
-    font-weight: 700; background: #f7e3ac; border-radius: 999px; width: fit-content; padding: 0.2rem 0.55rem;
-  }
-  .hero h1 { margin: 0.8rem 0 0.4rem; font-size: clamp(2rem, 3.6vw, 3.2rem); line-height: 1.08; max-width: 16ch; }
-  .hero-desc { margin: 0; max-width: 52ch; color: #4e5a54; }
-  .hero-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
-  .trust {
-    display: grid; gap: 0; grid-template-columns: repeat(3, 1fr);
-    border-top: 1px solid #e5e1d8; background: #f4f2ee; margin-top: 1rem;
-  }
-  .trust-item { padding: 1rem 0.8rem; text-align: center; border-right: 1px solid #e8e3d9; }
-  .trust-item:last-child { border-right: none; }
-  .trust-item h3 { margin: 0; color: #0b5a41; font-size: 1.15rem; }
-  .trust-item p { margin: 0.25rem 0 0; color: #56615b; font-size: 0.8rem; }
-  .filter-bar { display: flex; gap: var(--space-2); flex-wrap: wrap; padding: 1.2rem 1rem 0.7rem; }
-  .filter-chip {
-    display: inline-flex; flex-direction: column; align-items: start; gap: 0.05rem; padding: 0.45rem 0.65rem;
-    border-radius: 0.7rem; border: 1px solid #ddd9cf; background: #fff; color: #44524c; cursor: pointer; min-width: 8rem;
-  }
-  .filter-chip span { font-size: 0.66rem; }
-  .filter-chip strong { font-size: 0.75rem; }
-  .filter-chip.active { border-color: #006747; background: #f0faf6; color: #0b5a41; }
-  .catalog { padding: 0.2rem 1rem 1rem; }
-  .catalog-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.8rem; }
-  .catalog-head h2 { margin: 0; font-size: clamp(1.6rem, 3vw, 2.5rem); }
-  .catalog-head p { margin: 0; color: #53615b; font-size: 0.86rem; }
-  .grid { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); }
-  .card {
-    background: #fff;
-    border: 1px solid #e5e1d8;
-    border-radius: 1rem;
-    padding: 0.88rem 0.88rem 0.92rem;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  .cover-wrap { position: relative; margin: -0.88rem -0.88rem 0.72rem; }
-  .cover {
+    position: fixed;
+    top: 0;
     width: 100%;
-    height: 13.2rem;
-    object-fit: cover;
-    border-radius: 1rem 1rem 0 0;
+    z-index: 50;
+    background: rgba(251, 249, 248, 0.85);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 16px 38px -12px rgba(27, 28, 28, 0.06);
+  }
+  .nav-inner {
+    height: 5.2rem;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 2rem;
+  }
+  .brand {
+    text-decoration: none;
+    color: #006747;
+    font-weight: 700;
+    font-size: 1.65rem;
+    letter-spacing: -0.02em;
+  }
+  .nav-links {
+    justify-self: center;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+  .nav-links a {
+    color: #57534e;
+    text-decoration: none;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 500;
+  }
+  .nav-links a.active {
+    color: #006747;
+    font-weight: 700;
+    border-bottom: 2px solid #775a19;
+    padding-bottom: 0.2rem;
+  }
+  .primary-btn {
     border: none;
+    text-decoration: none;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #004d34, #006747);
+    color: #fff;
+    font-weight: 700;
+    padding: 0.7rem 1.45rem;
+  }
+  .main-shell {
+    padding-top: 8rem;
+  }
+  .hero {
+    margin-bottom: 4rem;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+  }
+  .kicker {
+    margin: 0;
+    display: inline-flex;
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    text-transform: uppercase;
+    font-size: 0.74rem;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: #775a19;
+    background: rgba(254, 212, 136, 0.3);
+  }
+  .hero-copy h1 {
+    margin: 1.2rem 0 1rem;
+    font-size: clamp(2.25rem, 4.5vw, 3.9rem);
+    line-height: 1.1;
+    color: #004d34;
+    letter-spacing: -0.03em;
+  }
+  .hero-copy p {
+    margin: 0;
+    color: #3f4943;
+    font-size: 1.1rem;
+    line-height: 1.7;
+    max-width: 37rem;
+  }
+  .hero-actions {
+    margin-top: 1.7rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+  }
+  .hero-btn {
+    border-radius: 999px;
+    min-height: 3.35rem;
+    padding: 0.9rem 1.6rem;
+    font-size: 1.02rem;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+  }
+  .ghost-btn {
+    background: #fff;
+    color: #004d34;
+    border: 1px solid rgba(190, 201, 193, 0.7);
+  }
+  .hero-media {
+    position: relative;
+  }
+  .hero-image-wrap {
+    border-radius: 2.5rem;
+    overflow: hidden;
+    box-shadow: 0 26px 42px rgba(17, 24, 39, 0.2);
+    transform: rotate(2deg);
+    transition: transform 0.6s ease;
+  }
+  .hero-image-wrap:hover {
+    transform: rotate(0deg);
+  }
+  .hero-image-wrap img {
+    width: 100%;
+    height: 23rem;
+    object-fit: cover;
     display: block;
   }
-  .badge {
-    margin: 0;
+  .rating-card {
     position: absolute;
-    top: 0.74rem;
-    left: 0.74rem;
-    display: inline-flex;
-    width: fit-content;
-    padding: 0.34rem 0.7rem;
+    left: -2rem;
+    bottom: -2rem;
+    border-radius: 1.5rem;
+    background: #fff;
+    border: 1px solid rgba(190, 201, 193, 0.3);
+    box-shadow: 0 16px 28px rgba(0, 0, 0, 0.12);
+    padding: 1rem 1rem;
+    max-width: 13rem;
+  }
+  .rating-card strong {
+    font-size: 2rem;
+    line-height: 1;
+    color: #775a19;
+  }
+  .rating-card p {
+    margin: 0.4rem 0 0;
+    color: #3f4943;
+    font-size: 0.84rem;
+    line-height: 1.35;
+    font-weight: 600;
+  }
+  .trust-strip {
+    width: 100%;
+    background: #f5f3f3;
+    margin-bottom: 4rem;
+    padding: 2.2rem 0;
+  }
+  .trust-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+  }
+  .trust-item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .trust-item .icon {
+    width: 3rem;
+    height: 3rem;
     border-radius: 999px;
-    background: #006747;
-    color: #ffffff;
-    border: 1px solid #00573c;
-    font-size: 0.78rem;
+    display: grid;
+    place-items: center;
+    background: rgba(0, 103, 71, 0.1);
+    color: #006747;
+  }
+  .trust-item:nth-child(3) .icon {
+    background: rgba(119, 90, 25, 0.1);
+    color: #775a19;
+  }
+  .trust-item h3 {
+    margin: 0;
+    font-size: 1rem;
     font-weight: 700;
   }
-  .title-block h3 {
-    margin: 0;
-    font-size: 1.12rem;
-    color: #0b4d37;
-    line-height: 1.16;
-    letter-spacing: -0.01em;
+  .trust-item p {
+    margin: 0.15rem 0 0;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #3f4943;
+  }
+  .divider {
+    width: 1px;
+    height: 2rem;
+    background: rgba(190, 201, 193, 0.5);
+  }
+  .filters {
+    margin-bottom: 2.8rem;
+  }
+  .filter-wrap {
+    border-radius: 2rem;
+    border: 1px solid rgba(190, 201, 193, 0.24);
+    background: #fff;
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .filter-label {
+    display: block;
+    margin: 0 0 0.35rem 0.7rem;
+    color: #6f7a72;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
     font-weight: 700;
+  }
+  .filter-col select {
+    width: 100%;
+    border: none;
+    border-radius: 1rem;
+    background: rgba(228, 226, 226, 0.3);
+    padding: 0.8rem 0.9rem;
+    font-size: 0.9rem;
+    color: #1b1c1c;
+    font-family: inherit;
+  }
+  .durasi-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+  }
+  .durasi-row button {
+    border: none;
+    border-radius: 1rem;
+    background: rgba(228, 226, 226, 0.3);
+    color: #1b1c1c;
+    font-weight: 700;
+    min-height: 2.9rem;
+    cursor: pointer;
+  }
+  .durasi-row .is-active {
+    background: #006747;
+    color: #fff;
+  }
+  .chip-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .chip {
+    border-radius: 999px;
+    padding: 0.45rem 0.8rem;
+    background: rgba(228, 226, 226, 0.3);
+    color: #3f4943;
+    font-size: 0.74rem;
+    font-weight: 700;
+  }
+  .chip.is-active {
+    background: rgba(254, 212, 136, 0.5);
+    color: #775a19;
+  }
+  .catalog {
+    margin-bottom: 5rem;
+  }
+  .cards-grid {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem;
+  }
+  .card {
+    border-radius: 2rem;
+    overflow: hidden;
+    border: 1px solid rgba(190, 201, 193, 0.2);
+    background: #fff;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+    transition: box-shadow 0.3s ease;
+  }
+  .card:hover {
+    box-shadow: 0 20px 34px rgba(0, 0, 0, 0.1);
+  }
+  .cover-wrap {
+    height: 16rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.7s ease;
+  }
+  .card:hover .cover-wrap img {
+    transform: scale(1.08);
+  }
+  .tag {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    border-radius: 999px;
+    padding: 0.37rem 0.85rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #fff;
+  }
+  .tag-primary {
+    background: #006747;
+  }
+  .tag-secondary {
+    background: #775a19;
+  }
+  .tag-neutral {
+    background: #e4e2e2;
+    color: #1b1c1c;
+  }
+  .tag-amber {
+    background: #fed488;
+    color: #775a19;
+  }
+  .content {
+    padding: 1.7rem;
+    display: grid;
+    gap: 0.9rem;
   }
   .topline {
     display: flex;
     justify-content: space-between;
+    gap: 0.7rem;
     align-items: flex-start;
-    gap: 0.62rem;
-    padding-bottom: 0.78rem;
-    border-bottom: 1px solid #e9e5dc;
   }
-  .title-block {
-    min-width: 0;
-    display: grid;
-    gap: 0.34rem;
-  }
-  .departure {
+  .topline h3 {
     margin: 0;
+    color: #004d34;
+    font-size: 1.62rem;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  .date {
+    margin: 0.45rem 0 0;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    font-size: 0.9rem;
-    color: #2f3f38;
-    min-width: 0;
+    gap: 0.2rem;
+    color: #3f4943;
+    font-size: 0.87rem;
   }
-  .departure span {
-    display: inline-block;
-    overflow-wrap: anywhere;
-    line-height: 1.2;
-  }
-  .departure svg {
-    width: 0.92rem;
-    height: 0.92rem;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    flex: 0 0 auto;
+  .date .material-symbols-outlined {
+    font-size: 1rem;
   }
   .price-wrap {
     margin: 0;
     text-align: right;
-    display: grid;
-    gap: 0.06rem;
-    white-space: nowrap;
-    flex: 0 0 auto;
   }
-  .price-wrap .label {
-    font-size: 0.84rem;
-    color: #3a4a43;
-    line-height: 1.1;
+  .price-wrap span {
+    display: block;
+    color: #3f4943;
+    font-size: 0.75rem;
     font-weight: 500;
   }
   .price-wrap strong {
-    color: #006747;
-    font-size: 2rem;
-    line-height: 1.08;
+    color: #004d34;
+    font-size: 1.55rem;
+    font-weight: 800;
     letter-spacing: -0.02em;
-    font-family: 'Manrope', 'Plus Jakarta Sans', Inter, 'Segoe UI', Arial, sans-serif;
-    font-weight: 700;
   }
-  .feature-grid {
-    margin: 0.82rem 0 1rem;
+  .meta-grid {
+    padding: 1rem 0;
+    border-top: 1px solid rgba(190, 201, 193, 0.35);
+    border-bottom: 1px solid rgba(190, 201, 193, 0.35);
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.64rem 0.95rem;
+    gap: 0.45rem 0.75rem;
   }
-  .feature-grid p {
+  .meta-grid p {
     margin: 0;
     display: inline-flex;
     align-items: center;
-    gap: 0.38rem;
-    font-size: 0.96rem;
-    color: #2f3f38;
+    gap: 0.3rem;
+    color: #3f4943;
+    font-size: 0.88rem;
   }
-  .feature-grid span { width: 0.95rem; text-align: center; }
-  .feature-grid .seat-warn {
-    color: #c1121f;
+  .meta-grid .material-symbols-outlined {
+    color: #775a19;
+    font-size: 1.03rem;
+  }
+  .meta-grid p.critical {
+    color: #ba1a1a;
     font-style: italic;
     font-weight: 700;
   }
-  .card-actions { margin-top: auto; display: flex; gap: 0.7rem; }
-  .card-actions .btn { flex: 1; }
-  .card-actions .btn {
-    min-height: 2.7rem;
-    border-radius: 0.9rem;
-    font-size: 0.98rem;
+  .meta-grid p.critical .material-symbols-outlined {
+    color: #ba1a1a;
+  }
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    padding-top: 0.1rem;
+  }
+  .actions a {
+    border-radius: 1rem;
+    min-height: 3rem;
+    text-decoration: none;
     font-weight: 700;
+    font-size: 0.86rem;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
   }
-  .local-footer {
-    border-top: 1px solid #e5e1d8; margin: 0 1rem; padding: 0.8rem 0 0.2rem;
-    display: flex; justify-content: space-between; align-items: center; color: #5d6963; font-size: 0.78rem;
+  .actions .btn-primary {
+    background: #004d34;
+    color: #fff;
   }
-  .local-footer a { text-decoration: none; color: #0b5a41; font-weight: 700; }
-  @media (max-width: 900px) {
-    .hero { flex-direction: column; align-items: start; }
+  .actions .btn-secondary {
+    background: #efeded;
+    color: #004d34;
   }
-  @media (max-width: 740px) {
-    .top-nav { flex-wrap: wrap; }
-    .nav-links { order: 3; width: 100%; flex-wrap: wrap; }
-    .trust { grid-template-columns: 1fr; }
-    .trust-item { border-right: none; border-bottom: 1px solid #e8e3d9; }
-    .card-actions { flex-direction: column; }
-    .local-footer { flex-direction: column; align-items: start; gap: 0.35rem; }
+  .more-row {
+    margin-top: 2.7rem;
+    text-align: center;
+  }
+  .more-btn {
+    border: none;
+    border-radius: 999px;
+    background: #e9e8e7;
+    color: #004d34;
+    font-weight: 700;
+    min-height: 3.2rem;
+    padding: 0.65rem 1.7rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    cursor: pointer;
+  }
+  .footer {
+    border-radius: 2rem 2rem 0 0;
+    background: #f5f3f3;
+    padding: 3rem 0;
+  }
+  .footer-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .footer-brand h4 {
+    margin: 0;
+    color: #006747;
+    font-weight: 800;
+    font-size: 1.6rem;
+  }
+  .footer-brand p {
+    margin: 0.45rem 0 0;
+    color: #6b7280;
+    font-size: 0.88rem;
+  }
+  .footer-links {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .footer-links a {
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  .footer-icons {
+    display: flex;
+    gap: 0.6rem;
+  }
+  .footer-icons span {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 999px;
+    background: #efeded;
+    color: #004d34;
+    display: grid;
+    place-items: center;
+  }
+  @media (max-width: 1100px) {
+    .nav-links {
+      display: none;
+    }
+    .hero-grid,
+    .cards-grid {
+      grid-template-columns: 1fr;
+    }
+    .hero-image-wrap {
+      transform: none;
+    }
+    .rating-card {
+      position: static;
+      margin-top: 1rem;
+    }
+    .filter-wrap {
+      grid-template-columns: 1fr 1fr;
+    }
+    .divider {
+      display: none;
+    }
+  }
+  @media (max-width: 760px) {
+    .shell {
+      padding: 0 1rem;
+    }
+    .nav-inner {
+      grid-template-columns: 1fr auto;
+    }
+    .hero-copy h1 {
+      font-size: 2.35rem;
+    }
+    .trust-row {
+      flex-direction: column;
+      align-items: start;
+    }
+    .filter-wrap {
+      grid-template-columns: 1fr;
+    }
+    .actions,
+    .meta-grid {
+      grid-template-columns: 1fr;
+    }
+    .footer-wrap {
+      flex-direction: column;
+      align-items: start;
+    }
   }
 </style>
