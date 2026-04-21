@@ -60,7 +60,7 @@
 - **Auth.** No login form, no token handling, no protected routes. Arrives with F1.5 real iam auth.
 - **Production compose service.** `Dockerfile prod` target exists so CI can build it; no compose service runs it yet.
 - **Frontend observability.** No Sentry / RUM / web-vitals / frontend Grafana dashboard in this scaffold.
-- **Multi-app layout.** Only `apps/core-web/`. Siblings (`apps/storefront-web/`, `apps/agent-web/`, `apps/field-web/`) are Q009-rec #1 future work.
+- **Multi-app layout.** Only `apps/core-web/` today. Q009 target is `apps/b2c`, `apps/b2b`, `apps/admin`, `apps/field` plus shared packages — **deferred** until a second audience or deploy boundary forces the split. **Slice S1** (catalog → draft booking) **ships in `core-web`** first, with route-level separation between public journeys and future internal console paths; see `docs/contracts/slice-S1.md` § **S1 UI placement (core-web vs multi-app)**.
 - **Docs rename (Q009-rec #3).** `docs/03-services/12-core-web/` sits alongside the backend service folders for now; the rename to `08-frontend-apps/` is its own doc-only commit.
 - **`.claude/skills/scaffold-app/`** — a future companion skill to `scaffold-service`, not scoped here.
 
