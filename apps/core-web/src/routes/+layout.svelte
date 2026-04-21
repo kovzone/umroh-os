@@ -5,7 +5,12 @@
   import Footer from '$lib/components/Footer.svelte';
 
   let { children } = $props();
-  const useCustomMarketingChrome = $derived(page.url.pathname === '/' || page.url.pathname === '/packages');
+  const useCustomMarketingChrome = $derived(
+    page.url.pathname === '/' ||
+      page.url.pathname === '/packages' ||
+      /^\/packages\/[^/]+$/.test(page.url.pathname) ||
+      /^\/booking\/[^/]+$/.test(page.url.pathname)
+  );
 </script>
 
 <div class="app" class:home-mode={useCustomMarketingChrome}>
@@ -40,5 +45,8 @@
   .app.home-mode .container {
     max-width: none;
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
 </style>

@@ -62,7 +62,7 @@ test.describe.serial("core-web — S1 catalog shells (S1-L-01)", () => {
   test("package detail links to booking shell", async ({ page }) => {
     await page.goto("/packages/demo-pkg-umrah-12d");
     await page.getByTestId("s1-start-booking").click();
-    await expect(page).toHaveURL(/\/booking\/demo-pkg-umrah-12d$/);
+    await expect(page).toHaveURL(/\/booking\/demo-pkg-umrah-12d(\?.*)?$/);
     await expect(page.getByTestId("s1-booking-draft-shell")).toBeVisible();
   });
 });

@@ -1,5 +1,11 @@
 <script lang="ts">
+  import { MarketingPageLayout } from '$lib/components/marketing';
+
   let { data } = $props();
+
+  const navCtaHref = $derived(
+    data.packages[0] ? `/booking/${data.packages[0].id}` : '/packages'
+  );
 
   const trustItems = [
     { title: 'Izin PPIU No. 123/2024', subtitle: 'Resmi Kemenag RI', icon: 'verified_user' },
@@ -130,32 +136,9 @@
 
 <svelte:head>
   <title>Katalog Paket Umroh - UmrohOS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap"
-    rel="stylesheet"
-  />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-    rel="stylesheet"
-  />
 </svelte:head>
 
-<div class="packages-page">
-  <nav class="top-nav">
-    <div class="shell nav-inner">
-      <a class="brand" href="/">UmrohOS</a>
-      <div class="nav-links">
-        <a class="active" href="/packages">Paket Umroh</a>
-        <a href="/packages">Jadwal</a>
-        <a href="/#proses-booking">Manasik</a>
-        <a href="/">Tentang Kami</a>
-      </div>
-      <a class="primary-btn" href={data.packages[0] ? `/booking/${data.packages[0].id}` : '/packages'}>Daftar Sekarang</a>
-    </div>
-  </nav>
-
+<MarketingPageLayout ctaHref={navCtaHref}>
   <main class="main-shell">
     <section class="hero shell">
       <div class="hero-grid">
@@ -271,7 +254,10 @@
                 </p>
               </div>
               <div class="actions">
-                <a class="btn-primary" href={`/packages/${card.sourcePackageId}`} data-testid="package-link-{card.sourcePackageId}">Lihat Detail</a>
+                <a
+                  class="btn-primary"
+                  href={`/packages/${card.sourcePackageId}`}
+                  data-testid={`package-link-${card.sourcePackageId}`}>Lihat Detail</a>
                 <a class="btn-secondary" href={`/booking/${card.sourcePackageId}`}>Booking Cepat</a>
               </div>
             </div>
@@ -286,104 +272,12 @@
       </div>
     </section>
   </main>
-
-  <footer class="footer">
-    <div class="shell footer-wrap">
-      <div class="footer-brand">
-        <h4>UmrohOS</h4>
-        <p>© 2024 UmrohOS. The Serene Path to Holy Land.</p>
-      </div>
-      <div class="footer-links">
-        <a href="/">Kebijakan Privasi</a>
-        <a href="/">Syarat & Ketentuan</a>
-        <a href="/">Bantuan</a>
-        <a href="/">Kontak</a>
-      </div>
-      <div class="footer-icons">
-        <span><span class="material-symbols-outlined">language</span></span>
-        <span><span class="material-symbols-outlined">mail</span></span>
-      </div>
-    </div>
-  </footer>
-</div>
+</MarketingPageLayout>
 
 <style>
-  .packages-page {
-    font-family: 'Manrope', sans-serif;
-    background: #fbf9f8;
-    color: #1b1c1c;
-  }
-  .packages-page h1,
-  .packages-page h3,
-  .packages-page h4,
-  .brand {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-  }
-  .material-symbols-outlined {
-    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-    font-size: 1.2rem;
-    line-height: 1;
-  }
-  .material-symbols-outlined.fill {
-    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
-  }
-  .shell {
-    max-width: 80rem;
-    margin: 0 auto;
-    padding: 0 2rem;
-  }
-  .top-nav {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    z-index: 50;
-    background: rgba(251, 249, 248, 0.85);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 16px 38px -12px rgba(27, 28, 28, 0.06);
-  }
-  .nav-inner {
-    height: 5.2rem;
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    gap: 2rem;
-  }
-  .brand {
-    text-decoration: none;
-    color: #006747;
-    font-weight: 700;
-    font-size: 1.65rem;
-    letter-spacing: -0.02em;
-  }
-  .nav-links {
-    justify-self: center;
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-  }
-  .nav-links a {
-    color: #57534e;
-    text-decoration: none;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-weight: 500;
-  }
-  .nav-links a.active {
-    color: #006747;
-    font-weight: 700;
-    border-bottom: 2px solid #775a19;
-    padding-bottom: 0.2rem;
-  }
-  .primary-btn {
-    border: none;
-    text-decoration: none;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #004d34, #006747);
-    color: #fff;
-    font-weight: 700;
-    padding: 0.7rem 1.45rem;
-  }
   .main-shell {
-    padding-top: 8rem;
+    /* Previously 8rem from viewport top; spacer now covers fixed nav (5.2rem) */
+    padding-top: calc(8rem - 5.2rem);
   }
   .hero {
     margin-bottom: 4rem;
@@ -774,56 +668,7 @@
     gap: 0.3rem;
     cursor: pointer;
   }
-  .footer {
-    border-radius: 2rem 2rem 0 0;
-    background: #f5f3f3;
-    padding: 3rem 0;
-  }
-  .footer-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-  .footer-brand h4 {
-    margin: 0;
-    color: #006747;
-    font-weight: 800;
-    font-size: 1.6rem;
-  }
-  .footer-brand p {
-    margin: 0.45rem 0 0;
-    color: #6b7280;
-    font-size: 0.88rem;
-  }
-  .footer-links {
-    display: flex;
-    gap: 1.5rem;
-    flex-wrap: wrap;
-  }
-  .footer-links a {
-    color: #6b7280;
-    text-decoration: none;
-    font-size: 0.9rem;
-  }
-  .footer-icons {
-    display: flex;
-    gap: 0.6rem;
-  }
-  .footer-icons span {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 999px;
-    background: #efeded;
-    color: #004d34;
-    display: grid;
-    place-items: center;
-  }
   @media (max-width: 1100px) {
-    .nav-links {
-      display: none;
-    }
     .hero-grid,
     .cards-grid {
       grid-template-columns: 1fr;
@@ -843,12 +688,6 @@
     }
   }
   @media (max-width: 760px) {
-    .shell {
-      padding: 0 1rem;
-    }
-    .nav-inner {
-      grid-template-columns: 1fr auto;
-    }
     .hero-copy h1 {
       font-size: 2.35rem;
     }
@@ -862,10 +701,6 @@
     .actions,
     .meta-grid {
       grid-template-columns: 1fr;
-    }
-    .footer-wrap {
-      flex-direction: column;
-      align-items: start;
     }
   }
 </style>
