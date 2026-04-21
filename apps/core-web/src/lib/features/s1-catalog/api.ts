@@ -75,7 +75,8 @@ export async function fetchCatalogDepartureDetail(departureId: string): Promise<
     status: dep.status,
     pricing: dep.pricing.map((price) => ({
       roomType: price.room_type,
-      amountLabel: toPriceLabel(price.list_amount, price.list_currency)
+      amountLabel: toPriceLabel(price.list_amount, price.list_currency),
+      listAmountIdr: price.list_currency === 'IDR' ? price.list_amount : undefined
     }))
   };
 }

@@ -17,6 +17,25 @@ export type DepartureSummary = {
   returnDate: string;
   status: 'open' | 'closed';
   remainingSeats: number;
+  /** Optional; shown on marketing detail when set */
+  airline?: string;
+};
+
+export type PackageInclusion = {
+  icon: string;
+  title: string;
+  description: string;
+};
+
+export type PackageItineraryDay = {
+  dayLabel: string;
+  title: string;
+  body: string;
+};
+
+export type PackageFaq = {
+  question: string;
+  answer: string;
 };
 
 export type PackageDetail = {
@@ -27,12 +46,33 @@ export type PackageDetail = {
   highlights: string[];
   coverPhotoUrl: string;
   startingPriceLabel: string;
+  /** Large hero price line, e.g. "Rp 38,5 jt" (optional; falls back to startingPriceLabel) */
+  displayPriceShort?: string;
   departures: DepartureSummary[];
+  /** Rich marketing fields (mock-first; live API may omit until extended) */
+  galleryPhotoUrls?: string[];
+  primaryBadge?: string;
+  secondaryBadges?: string[];
+  priceFinePrint?: string;
+  trustPpiu?: string;
+  ratingScore?: string;
+  ratingReviewsLabel?: string;
+  whatsappHref?: string;
+  inclusions?: PackageInclusion[];
+  importantNotes?: string[];
+  itineraryDays?: PackageItineraryDay[];
+  faqs?: PackageFaq[];
+  /** Short paragraph for Fasilitas tab / section */
+  facilitiesBody?: string;
+  /** Short bullets or paragraph for S&K tab */
+  termsSummary?: string;
 };
 
 export type DeparturePricing = {
   roomType: RoomType;
   amountLabel: string;
+  /** Whole IDR per jamaah for this room type (optional; set from API `list_amount` when IDR). */
+  listAmountIdr?: number;
 };
 
 export type DepartureDetail = {
