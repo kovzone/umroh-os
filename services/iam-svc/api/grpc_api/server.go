@@ -67,7 +67,7 @@ func (s *Server) ValidateToken(ctx context.Context, req *pb.ValidateTokenRequest
 		logger.Warn().Err(err).Msg("")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return nil, status.Error(apperrors.GRPCCode(err), err.Error())
+		return nil, status.Error(apperrors.GRPCCode(err), apperrors.GRPCMessage(err))
 	}
 
 	span.SetStatus(codes.Ok, "success")
@@ -108,7 +108,7 @@ func (s *Server) CheckPermission(ctx context.Context, req *pb.CheckPermissionReq
 		logger.Warn().Err(err).Msg("")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return nil, status.Error(apperrors.GRPCCode(err), err.Error())
+		return nil, status.Error(apperrors.GRPCCode(err), apperrors.GRPCMessage(err))
 	}
 
 	span.SetAttributes(attribute.Bool("allowed", result.Allowed))
