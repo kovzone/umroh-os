@@ -95,6 +95,10 @@ GitHub Actions workflow **`.github/workflows/ci.yml`** (card **S0-J-06**) runs o
 
 Mixed PRs (for example `services/` + `docs/`) still match the backend and/or web filters, so the full relevant matrix runs. Editing **only** this workflow file matches both filters on purpose so CI self-validates.
 
+### Local Playwright e2e (without `make`, Windows)
+
+From repo root: **`tests/e2e/README.md`** documents **`make e2e-install` / `make e2e`** equivalents. On Windows PowerShell you can run **`.\scripts\e2e-local.ps1`** after Docker Desktop is up (starts compose, waits for Postgres, runs `migrate` if available, then Playwright).
+
 ## Canonical References
 
 - Detailed Git workflow: `docs/04-backend-conventions/08-git-workflow.md`

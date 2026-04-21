@@ -10,6 +10,7 @@
   --color-ok:        #2ea043;
   --color-fail:      #f85149;
   --color-pending:   #d29922;
+  --color-accent:    #4493f8;
   --radius-card:     0.5rem;
   --space-1:         0.25rem;
   --space-2:         0.5rem;
@@ -29,4 +30,84 @@ html, body {
   font-family: var(--font-sans);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+}
+
+/* S1 B2C shells — minimal primitives until `packages/ui` (Q009). */
+.s1-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-4);
+}
+.s1-card h2 {
+  margin: 0 0 var(--space-2) 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.s1-muted {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  margin: 0;
+  line-height: 1.5;
+}
+.s1-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+.s1-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-card);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: var(--font-sans);
+}
+.s1-btn--primary {
+  background: var(--color-accent);
+  color: #fff;
+}
+.s1-btn--primary:hover {
+  filter: brightness(1.08);
+}
+.s1-btn--ghost {
+  background: transparent;
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+.s1-btn--ghost:hover {
+  border-color: var(--color-muted);
+}
+.s1-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.s1-field label {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+.s1-input {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  color: var(--color-text);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9375rem;
+  font-family: var(--font-sans);
+}
+.s1-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.s1-grid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
 }
