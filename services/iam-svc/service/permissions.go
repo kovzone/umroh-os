@@ -97,6 +97,30 @@ func (s *Service) ValidateToken(ctx context.Context, params *ValidateTokenParams
 		return nil, e
 	}
 
+	// Reload users.status as belt-and-suspenders (BL-IAM-003). SuspendUser
+	// already flips status + revokes every session in one tx, so an active
+	// session + non-active status should never coexist — but any future admin
+	// path that mutates status without also revoking sessions would otherwise
+	// let an in-flight access token keep working until its TTL elapses. One
+	// extra DB hit per call; ValidateToken is the hot path but the query is
+	// index-backed on the primary key.
+	user, err := s.store.GetUserByID(ctx, session.UserID)
+	if err != nil {
+		wrapped := postgres_store.WrapDBError(err)
+		e := errors.Join(apperrors.ErrUnauthorized, fmt.Errorf("load user: %w", wrapped))
+		logger.Warn().Err(e).Msg("")
+		span.RecordError(e)
+		span.SetStatus(codes.Error, e.Error())
+		return nil, e
+	}
+	if user.Status != sqlc.IamUserStatusActive {
+		e := errors.Join(apperrors.ErrUnauthorized, fmt.Errorf("user status=%s", user.Status))
+		logger.Warn().Err(e).Msg("")
+		span.RecordError(e)
+		span.SetStatus(codes.Error, e.Error())
+		return nil, e
+	}
+
 	// Role-name snapshot from the DB. The token's Roles field is not trusted
 	// for authorization decisions — role changes must propagate without waiting
 	// for the token to roll over.

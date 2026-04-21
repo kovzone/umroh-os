@@ -73,6 +73,15 @@ func Test_ValidateToken_happyPath(t *testing.T) {
 		ExpiresAt: pgtype.Timestamptz{Time: time.Now().Add(time.Hour), Valid: true},
 	}, nil).Once()
 
+	// Status guard (BL-IAM-003): reload users.status and accept only `active`.
+	store.On("GetUserByID",
+		mock.Anything,
+		pgtype.UUID{Bytes: userUUID, Valid: true},
+	).Return(sqlc.IamUser{
+		ID:     pgtype.UUID{Bytes: userUUID, Valid: true},
+		Status: sqlc.IamUserStatusActive,
+	}, nil).Once()
+
 	store.On("ListRoleNamesForUser",
 		mock.Anything,
 		pgtype.UUID{Bytes: userUUID, Valid: true},
@@ -163,6 +172,50 @@ func Test_ValidateToken_rejectsExpiredSessionRow(t *testing.T) {
 
 	_, err = svc.ValidateToken(context.Background(), &service.ValidateTokenParams{AccessToken: signed})
 	require.ErrorIs(t, err, apperrors.ErrUnauthorized)
+}
+
+func Test_ValidateToken_rejectsSuspendedUserWithLiveSession(t *testing.T) {
+	// BL-IAM-003 defense-in-depth: SuspendUser revokes every session in the
+	// same tx as the status flip, so in practice this combination should never
+	// appear. But if a future admin code path flips status without also
+	// revoking sessions, we still fail closed at the per-request validation
+	// step rather than letting the access token keep working until its TTL.
+	store := mocks.NewIStore(t)
+	svc, tokenMaker := newServiceWithTokenMaker(t, store)
+
+	sessionUUID := uuid.New()
+	userUUID := uuid.New()
+	signed, err := tokenMaker.CreateToken(&token.Payload{
+		ID:       sessionUUID,
+		UserID:   userUUID.String(),
+		BranchID: uuid.NewString(),
+		Roles:    []string{},
+	}, 15*time.Minute)
+	require.NoError(t, err)
+
+	store.On("GetSessionByID",
+		mock.Anything,
+		pgtype.UUID{Bytes: sessionUUID, Valid: true},
+	).Return(sqlc.IamSession{
+		ID:        pgtype.UUID{Bytes: sessionUUID, Valid: true},
+		UserID:    pgtype.UUID{Bytes: userUUID, Valid: true},
+		ExpiresAt: pgtype.Timestamptz{Time: time.Now().Add(time.Hour), Valid: true},
+		// NB: RevokedAt intentionally left zero — the status guard must catch
+		// this on its own.
+	}, nil).Once()
+
+	store.On("GetUserByID",
+		mock.Anything,
+		pgtype.UUID{Bytes: userUUID, Valid: true},
+	).Return(sqlc.IamUser{
+		ID:     pgtype.UUID{Bytes: userUUID, Valid: true},
+		Status: sqlc.IamUserStatusSuspended,
+	}, nil).Once()
+
+	_, err = svc.ValidateToken(context.Background(), &service.ValidateTokenParams{AccessToken: signed})
+	require.ErrorIs(t, err, apperrors.ErrUnauthorized,
+		"suspended user with a live session must fail closed at ValidateToken")
+	store.AssertNotCalled(t, "ListRoleNamesForUser", mock.Anything, mock.Anything)
 }
 
 // ---------------------------- CheckPermission ----------------------------
