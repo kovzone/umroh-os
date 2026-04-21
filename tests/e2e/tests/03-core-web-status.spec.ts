@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { backendServices } from "../lib/services";
 
 // core-web browser e2e. Uses the `browser` project in playwright.config.ts
-// (baseURL defaults to http://localhost:3001).
+// (browser project baseURL defaults to http://localhost:3001 — see playwright.config.ts).
 //
 // Three groups of tests:
 //   1. Landing page (/) — hero, capability grid, disabled Sign-in, footer link.
