@@ -14,6 +14,14 @@ import (
 	"go.opentelemetry.io/otel/codes"
 )
 
+// suspendResource + suspendAction are the audit_logs row tags for the status
+// flip written from inside SuspendUser's WithTx. Kept as package constants so
+// the e2e spec asserting the row's shape can pin the exact strings.
+const (
+	suspendResource = "user"
+	suspendAction   = "suspend"
+)
+
 // ------------------------ SuspendUser ------------------------
 
 // SuspendUserParams identifies the caller (for self-suspend guard + future audit
@@ -79,7 +87,6 @@ func (s *Service) SuspendUser(ctx context.Context, params *SuspendUserParams) (*
 		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
-	_ = actorUUID // reserved for BL-IAM-004 audit write
 
 	targetUUID, err := stringToUUID(params.TargetUserID)
 	if err != nil {
@@ -100,6 +107,11 @@ func (s *Service) SuspendUser(ctx context.Context, params *SuspendUserParams) (*
 		return nil, wrapped
 	}
 
+	// Capture the target's pre-flip status so the audit row's old_value reflects
+	// reality (idempotent re-suspend writes old_value={"status":"suspended"} too).
+	oldStatusJSON := []byte(fmt.Sprintf(`{"status":%q}`, string(target.Status)))
+	newStatusJSON := []byte(fmt.Sprintf(`{"status":%q}`, string(sqlc.IamUserStatusSuspended)))
+
 	_, err = s.store.WithTx(ctx, &postgres_store.WithTxArgs{
 		Fn: func(q *sqlc.Queries) error {
 			if err := q.UpdateUserStatus(ctx, sqlc.UpdateUserStatusParams{
@@ -110,6 +122,20 @@ func (s *Service) SuspendUser(ctx context.Context, params *SuspendUserParams) (*
 			}
 			if err := q.RevokeAllSessionsForUser(ctx, targetUUID); err != nil {
 				return fmt.Errorf("revoke all sessions: %w", postgres_store.WrapDBError(err))
+			}
+			// Audit emit — inside the same tx so business-success ↔ audit-success
+			// are atomic. The append-only trigger prevents tampering; on tx rollback
+			// the audit row disappears with the status flip. BL-IAM-004.
+			if _, err := q.InsertAuditLog(ctx, sqlc.InsertAuditLogParams{
+				UserID:     actorUUID,
+				BranchID:   target.BranchID,
+				Resource:   suspendResource,
+				ResourceID: params.TargetUserID,
+				Action:     suspendAction,
+				OldValue:   oldStatusJSON,
+				NewValue:   newStatusJSON,
+			}); err != nil {
+				return fmt.Errorf("record audit: %w", postgres_store.WrapDBError(err))
 			}
 			return nil
 		},
