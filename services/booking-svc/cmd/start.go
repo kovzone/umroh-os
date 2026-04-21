@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"time"
 
+	"booking-svc/adapter/iam_grpc_adapter"
 	"booking-svc/api/grpc_api"
 	"booking-svc/api/rest_oapi"
 	"booking-svc/service"
@@ -15,6 +16,10 @@ import (
 	"booking-svc/util/logging"
 	"booking-svc/util/monitoring"
 	"booking-svc/util/tracing"
+
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func start() {
@@ -90,8 +95,36 @@ func start() {
 		}, 10*time.Second)
 	}
 
+	// --- Dial iam-svc gRPC (BL-IAM-004) ---
+	//
+	// Traffic stays inside the docker-compose network — insecure is fine today;
+	// the gateway-svc hardening card adds mTLS. Unary stats handler propagates
+	// the current trace context so iam-svc spans continue the booking-svc trace.
+	// No booking-svc handler calls iam-svc yet; the dial is scaffolded so S1-E-03
+	// (booking draft) and subsequent BL-BKG-* cards get a one-line adapter call.
+	iamConn, err := grpc.NewClient(
+		config.Iam.GrpcTarget,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Dial iam-svc gRPC").
+			Str("target", config.Iam.GrpcTarget).
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+	defer func() {
+		if err := iamConn.Close(); err != nil {
+			logger.Error().Err(err).Msg("close iam gRPC conn")
+		}
+	}()
+	iamAdapter := iam_grpc_adapter.NewAdapter(logger, tracer, iamConn)
+
 	// --- Init service layer ---
-	svc := service.NewService(logger, tracer, config.App.Name, store)
+	svc := service.NewService(logger, tracer, config.App.Name, store, iamAdapter)
 
 	// --- Init API layers ---
 	restServer := rest_oapi.NewServer(logger, tracer, svc)
