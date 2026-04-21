@@ -26,6 +26,9 @@ export default defineConfig({
       testMatch: /0[3-9]-.*\.spec\.ts$/,
       use: {
         ...devices["Desktop Chrome"],
+        // Prefer "localhost" for the browser baseURL: on Docker Desktop for Windows,
+        // 127.0.0.1:<hostPort> can be routed differently than localhost for some ports
+        // (observed: 127.0.0.1:3001 hit Grafana while localhost:3001 hit core-web).
         baseURL: process.env.CORE_WEB_URL || "http://localhost:3001",
       },
     },

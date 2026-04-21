@@ -8,9 +8,17 @@ Two projects (see `playwright.config.ts`):
 ## Prerequisites
 
 1. **Docker Desktop** running (Linux engine).
-2. **Dev stack up** — gateway `:4000`, services `:4001+`, **`core-web` `:3001`** (see repo root `README.md` / `docker-compose.dev.yml`).
-3. **Migrations applied** — `umrohos_dev` schema; same as `make migrate-up` from the Makefile (`golang-migrate` on PATH).
-4. **Node.js 20+**.
+2. **Per-service `config.json`** — `docker-compose.dev.yml` mounts `./services/<svc>/config.json` as a **file**. If that path is a **folder** (empty `config.json` directories are a common mistake on Windows) or the file is missing, Go services **restart forever** (`Config File "config" Not Found in [/app]`). From repo root, run the same seed as README bootstrap:
+   - **PowerShell:** `.\scripts\ensure-service-configs.ps1`
+   - **Bash:** the `for svc in services/*/` loop in root `README.md` § Bootstrap.
+3. **Dev stack up** — gateway `:4000`, services `:4001+`, **`core-web` `:3001`** (see repo root `README.md` / `docker-compose.dev.yml`).
+4. **Migrations applied** — `umrohos_dev` schema; same as `make migrate-up` from the Makefile (`golang-migrate` on PATH).
+5. **Node.js 20+**.
+
+### Windows / Playwright networking
+
+- **API** specs use Node’s HTTP client. On Windows, `localhost` often resolves to **`::1` first**, while Docker Desktop publishes backend ports on IPv4, which yields `ECONNREFUSED`. Defaults in `tests/e2e/lib/services.ts` use **`127.0.0.1`** for gateway and each service.
+- **Browser** specs load `core-web` via `baseURL` in `playwright.config.ts`, default **`http://localhost:3001`**. On some Docker Desktop + Windows setups, **`127.0.0.1:3001` hits the wrong process** (e.g. Grafana) while `localhost:3001` reaches core-web — set `CORE_WEB_URL` in `.env` if your machine differs.
 
 ## Linux / macOS (Makefile)
 
