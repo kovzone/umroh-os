@@ -1,19 +1,10 @@
 import type { PageLoad } from './$types';
+import { getCatalogPackages } from '$lib/features/s1-catalog/repository';
 
-/** Stub catalog rows — replaced by `GET /v1/packages` in S1-L-03. */
 export const load: PageLoad = async () => {
+  const packages = await getCatalogPackages();
+
   return {
-    packages: [
-      {
-        id: 'demo-pkg-umrah-12d',
-        name: 'Umrah Executive — 12 days',
-        blurb: 'Placeholder row until catalog API is wired.'
-      },
-      {
-        id: 'demo-pkg-economy-9d',
-        name: 'Umrah Economy — 9 days',
-        blurb: 'Placeholder row until catalog API is wired.'
-      }
-    ]
+    packages
   };
 };
