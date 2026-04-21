@@ -13,13 +13,15 @@ import (
 
 // IService is the business-layer interface for iam-svc.
 //
-// S1-E-04 (BL-IAM-001) adds the first real IAM endpoints:
+// S1-E-04 (BL-IAM-001) added the first real IAM endpoints:
 // internal login / refresh / logout / current-user, plus the
 // TOTP enrollment + verify half-flow. Login-time TOTP enforcement
 // is deferred to S1-E-06.
 //
+// S1-E-04 (BL-IAM-002) adds the two internal-gRPC hot-path RPCs
+// every consumer service depends on: ValidateToken + CheckPermission.
+//
 // Deferred (sibling S1-E-04 cards + S1-E-06 depth card):
-//   - ValidateToken / CheckPermission gRPC (BL-IAM-002)
 //   - Suspend / revoke-all (BL-IAM-003)
 //   - Audit log writes (BL-IAM-004)
 //   - Admin user / role / branch CRUD (S1-E-06)
@@ -38,6 +40,10 @@ type IService interface {
 	GetMe(ctx context.Context, params *GetMeParams) (*GetMeResult, error)
 	EnrollTOTP(ctx context.Context, params *EnrollTOTPParams) (*EnrollTOTPResult, error)
 	VerifyTOTP(ctx context.Context, params *VerifyTOTPParams) (*VerifyTOTPResult, error)
+
+	// Permission resolution — BL-IAM-002 (implemented in service/permissions.go).
+	ValidateToken(ctx context.Context, params *ValidateTokenParams) (*ValidateTokenResult, error)
+	CheckPermission(ctx context.Context, params *CheckPermissionParams) (*CheckPermissionResult, error)
 }
 
 type Service struct {

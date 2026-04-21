@@ -44,6 +44,11 @@ type Querier interface {
 	ListRecentAuditLogsByUser(ctx context.Context, arg ListRecentAuditLogsByUserParams) ([]IamAuditLog, error)
 	ListRoleIDsForPermission(ctx context.Context, permissionID pgtype.UUID) ([]pgtype.UUID, error)
 	ListRoleIDsForUser(ctx context.Context, userID pgtype.UUID) ([]pgtype.UUID, error)
+	// ListRoleNamesForUser returns the role names currently assigned to the user.
+	// Backs iam.v1.IamService/ValidateToken so downstream services receive role
+	// strings alongside identity claims (BL-IAM-002).
+	//
+	ListRoleNamesForUser(ctx context.Context, userID pgtype.UUID) ([]string, error)
 	ListRoles(ctx context.Context) ([]IamRole, error)
 	ListUserIDsForRole(ctx context.Context, roleID pgtype.UUID) ([]pgtype.UUID, error)
 	ListUsersByBranch(ctx context.Context, branchID pgtype.UUID) ([]IamUser, error)
@@ -62,6 +67,12 @@ type Querier interface {
 	UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (IamUser, error)
 	UpdateUserStatus(ctx context.Context, arg UpdateUserStatusParams) error
 	UpdateUserTOTP(ctx context.Context, arg UpdateUserTOTPParams) error
+	// UserHasPermission resolves whether the given user currently holds the
+	// (resource, action, scope) permission via any of their assigned roles.
+	// Backs iam.v1.IamService/CheckPermission (BL-IAM-002); the hot path must
+	// stay a single index-backed join.
+	//
+	UserHasPermission(ctx context.Context, arg UserHasPermissionParams) (bool, error)
 }
 
 var _ Querier = (*Queries)(nil)

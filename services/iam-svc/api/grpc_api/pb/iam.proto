@@ -6,20 +6,67 @@ option go_package="./pb";
 
 // IamService — internal gRPC surface for Identity, Access, Audit.
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// BL-IAM-002 lands the two hot-path RPCs that every downstream service calls:
+//   - ValidateToken   — verify a bearer + return identity claims + role names
+//   - CheckPermission — resolve (resource, action, scope) via user_roles × role_permissions × permissions
+//
+// GetUser + RecordAudit remain planned (BL-IAM-004 / S1-E-06) — not part of
+// this contract yet.
 service IamService {
   // Healthz returns ok=true if the service process is alive.
   // Placeholder for the pilot; real health checks go through gRPC health protocol.
   rpc Healthz(HealthzRequest) returns (HealthzResponse) {}
+
+  // ValidateToken verifies a bearer access token and returns identity + current role names.
+  //
+  // Fails with Unauthenticated when the token is missing, malformed, expired, or the
+  // backing session row is revoked / missing. Callers (consumer-side bearer middleware)
+  // treat any error as fail-closed 401 per F1 acceptance.
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse) {}
+
+  // CheckPermission resolves whether the user currently holds (resource, action, scope).
+  //
+  // Returns allowed=true when any of the user's roles grants the exact tuple.
+  // Returns allowed=false (ok gRPC status) when the tuple is not granted — consumers
+  // translate that to HTTP 403. Invalid scope or missing user_id yields InvalidArgument.
+  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse) {}
 }
 
 message HealthzRequest {}
 
 message HealthzResponse {
   bool ok = 1;
+}
+
+message ValidateTokenRequest {
+  // Raw bearer access token (the string after `Bearer `).
+  string access_token = 1;
+}
+
+message ValidateTokenResponse {
+  // UUID string of the authenticated user (iam.users.id).
+  string user_id = 1;
+  // UUID string of the user's branch (iam.users.branch_id).
+  string branch_id = 2;
+  // UUID string of the session row backing this token (iam.sessions.id).
+  string session_id = 3;
+  // Role names currently assigned to the user (snapshot at validation time).
+  repeated string roles = 4;
+  // Token expiry as Unix seconds UTC.
+  int64 expires_at_unix = 5;
+}
+
+message CheckPermissionRequest {
+  // UUID string of the user to evaluate.
+  string user_id = 1;
+  // Resource key (e.g. "journal_entry", "booking").
+  string resource = 2;
+  // Action key (e.g. "read", "write", "create_on_behalf").
+  string action = 3;
+  // Scope — one of "global" | "branch" | "personal" (matches iam.permission_scope).
+  string scope = 4;
+}
+
+message CheckPermissionResponse {
+  bool allowed = 1;
 }

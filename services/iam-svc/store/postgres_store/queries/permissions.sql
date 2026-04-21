@@ -27,3 +27,20 @@ ORDER BY action, scope;
 -- name: DeletePermission :exec
 DELETE FROM iam.permissions
 WHERE id = $1;
+
+-- UserHasPermission resolves whether the given user currently holds the
+-- (resource, action, scope) permission via any of their assigned roles.
+-- Backs iam.v1.IamService/CheckPermission (BL-IAM-002); the hot path must
+-- stay a single index-backed join.
+--
+-- name: UserHasPermission :one
+SELECT EXISTS (
+    SELECT 1
+    FROM iam.user_roles ur
+    JOIN iam.role_permissions rp ON rp.role_id = ur.role_id
+    JOIN iam.permissions p       ON p.id      = rp.permission_id
+    WHERE ur.user_id = $1
+      AND p.resource = $2
+      AND p.action   = $3
+      AND p.scope    = $4
+) AS allowed;

@@ -154,3 +154,39 @@ func (q *Queries) ListPermissionsByResource(ctx context.Context, resource string
 	}
 	return items, nil
 }
+
+const userHasPermission = `-- name: UserHasPermission :one
+SELECT EXISTS (
+    SELECT 1
+    FROM iam.user_roles ur
+    JOIN iam.role_permissions rp ON rp.role_id = ur.role_id
+    JOIN iam.permissions p       ON p.id      = rp.permission_id
+    WHERE ur.user_id = $1
+      AND p.resource = $2
+      AND p.action   = $3
+      AND p.scope    = $4
+) AS allowed
+`
+
+type UserHasPermissionParams struct {
+	UserID   pgtype.UUID        `json:"user_id"`
+	Resource string             `json:"resource"`
+	Action   string             `json:"action"`
+	Scope    IamPermissionScope `json:"scope"`
+}
+
+// UserHasPermission resolves whether the given user currently holds the
+// (resource, action, scope) permission via any of their assigned roles.
+// Backs iam.v1.IamService/CheckPermission (BL-IAM-002); the hot path must
+// stay a single index-backed join.
+func (q *Queries) UserHasPermission(ctx context.Context, arg UserHasPermissionParams) (bool, error) {
+	row := q.db.QueryRow(ctx, userHasPermission,
+		arg.UserID,
+		arg.Resource,
+		arg.Action,
+		arg.Scope,
+	)
+	var allowed bool
+	err := row.Scan(&allowed)
+	return allowed, err
+}
