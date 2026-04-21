@@ -28,6 +28,3 @@ prompts/
 
 # local scripts (keep out of repository)
 scripts/
-
-# local helper scripts (not for commit)
-scripts/
