@@ -2,7 +2,7 @@
 slice: S1
 title: Slice S1 — Integration Contract
 status: draft
-last_updated: 2026-04-22
+last_updated: 2026-04-21
 pr_owner: Elda
 reviewer: Elda (solo-exec S0 per § Current operating mode)
 task_codes:
@@ -10,6 +10,7 @@ task_codes:
   - S1-J-02
   - S1-J-03
   - S1-J-04
+  - S1-E-04
 ---
 
 # Slice S1 — Integration Contract
@@ -251,6 +252,141 @@ All entity IDs are **ULID** strings with a type prefix: `pkg_`, `dep_`, `itn_`, 
 
 - `S1-E-02` — catalog-svc read endpoints. Must conform exactly to the shapes above.
 - `S1-L-02` — catalog UI (frontend). Consumes exactly the shapes above.
+
+---
+
+## § IAM
+
+*(Landed incrementally via `S1-E-04` cards: `BL-IAM-002` ValidateToken + CheckPermission on 2026-04-21, `BL-IAM-004` RecordAudit on 2026-04-21. Producer-owned wire, moved into the slice contract once two consumers existed — finance-svc for the two hot-path RPCs and every write-path service for `RecordAudit`. Until BL-IAM-004, `iam-svc`'s gRPC surface was documented only at the proto file; § Inventory's 2026-04-21 `RecordAudit` reference then became load-bearing enough to promote.)*
+
+Internal gRPC surface on `iam-svc:50051` for every other service that needs to validate bearers, gate permissions, or emit audit rows. Three RPCs land in S1; `GetUser` and admin CRUD RPCs are planned for `S1-E-06`.
+
+**Source of truth:** `services/iam-svc/api/grpc_api/pb/iam.proto`. Per the **add-grpc-method** hard rule, consumer services must NOT import the producer's pb package directly — each consumer keeps its own vendored stub at `<consumer-svc>/adapter/iam_grpc_adapter/pb/iam.proto` containing only the RPCs it calls. `finance-svc` and `booking-svc` already carry such stubs; new consumers scaffold one when they first emit or validate.
+
+**No TLS in S1.** Inter-service traffic stays inside the docker-compose network, so consumers dial with `insecure.NewCredentials()`. The mTLS cutover lands with the gateway-svc hardening card; not a breaking change for any method shape.
+
+### RPCs
+
+
+| RPC                                  | Wire direction          | Purpose                                                                             |
+| ------------------------------------ | ----------------------- | ----------------------------------------------------------------------------------- |
+| `iam.v1.IamService/ValidateToken`    | Any service → `iam-svc` | Verify a bearer access token; return identity + current role names.                 |
+| `iam.v1.IamService/CheckPermission`  | Any service → `iam-svc` | Resolve whether a user holds `(resource, action, scope)` at call time.              |
+| `iam.v1.IamService/RecordAudit`      | Any service → `iam-svc` | Insert one append-only row into `iam.audit_logs` for a state-changing action.       |
+
+
+### `iam.v1.IamService/ValidateToken`
+
+**Request** (`ValidateTokenRequest`):
+
+
+| Field          | Type     | Required | Notes                                                                                |
+| -------------- | -------- | -------- | ------------------------------------------------------------------------------------ |
+| `access_token` | `string` | yes      | The raw bearer (the string after `Bearer ` in the consumer's HTTP Authorization header). Callers MUST NOT log this value — adapters in-repo intentionally omit it from span attributes and log lines. |
+
+
+**Response** (`ValidateTokenResponse`):
+
+
+| Field             | Type       | Notes                                                                            |
+| ----------------- | ---------- | -------------------------------------------------------------------------------- |
+| `user_id`         | `string`   | UUID of the authenticated user (`iam.users.id`).                                 |
+| `branch_id`       | `string`   | UUID of the user's branch (`iam.users.branch_id`).                               |
+| `session_id`      | `string`   | UUID of the backing session row (`iam.sessions.id`).                             |
+| `roles`           | `[]string` | Role names currently assigned (snapshot at validation time).                     |
+| `expires_at_unix` | `int64`    | Token expiry as Unix seconds UTC.                                                |
+
+
+**Failure codes:**
+
+
+| Code               | When                                                                                                                                           |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `UNAUTHENTICATED`  | Token missing, malformed, expired, session revoked, or owning user's `status != active` (e.g. suspended). Consumers map this to HTTP `401`.    |
+| `INTERNAL`         | DB-layer failure; consumers still fail-closed (render HTTP `401`) per "never default to allow".                                                |
+
+
+Message bodies are sanitised via `apperrors.GRPCMessage` (returns `"unauthorized"` / `"internal error"` etc.) so the wire never leaks a state oracle distinguishing "session revoked" from "user not found" from "status suspended".
+
+### `iam.v1.IamService/CheckPermission`
+
+**Request** (`CheckPermissionRequest`):
+
+
+| Field      | Type     | Required | Notes                                                                                  |
+| ---------- | -------- | -------- | -------------------------------------------------------------------------------------- |
+| `user_id`  | `string` | yes      | UUID of the user to evaluate.                                                          |
+| `resource` | `string` | yes      | Resource key (e.g. `"journal_entry"`, `"booking"`, `"user"`).                          |
+| `action`   | `string` | yes      | Action key (e.g. `"read"`, `"create_on_behalf"`, `"suspend"`).                         |
+| `scope`    | `string` | yes      | One of `"global"`, `"branch"`, `"personal"` — matches the `iam.permission_scope` enum. |
+
+
+**Response** (`CheckPermissionResponse`):
+
+
+| Field     | Type   | Notes                                                                                                        |
+| --------- | ------ | ------------------------------------------------------------------------------------------------------------ |
+| `allowed` | `bool` | `true` when any of the user's roles grants the exact tuple. `false` is a valid deny outcome — NOT an error. |
+
+
+**Failure codes:**
+
+
+| Code                  | When                                                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------- |
+| `INVALID_ARGUMENT`    | `user_id` missing or not a UUID; `resource` / `action` / `scope` empty; `scope` unrecognised. |
+| `INTERNAL`            | DB-layer failure.                                                                            |
+
+
+### `iam.v1.IamService/RecordAudit`
+
+**Request** (`RecordAuditRequest`):
+
+
+| Field         | Type     | Required | Notes                                                                                                                                                                                                 |
+| ------------- | -------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `user_id`     | `string` | no       | UUID of the actor. Empty string means "system-initiated" → stored as `NULL` in `iam.audit_logs.user_id`. Non-empty values must parse as UUIDs.                                                        |
+| `branch_id`   | `string` | no       | UUID of the actor's branch. Empty → `NULL`. Non-empty values must parse as UUIDs.                                                                                                                     |
+| `resource`    | `string` | yes      | Resource key (e.g. `"booking"`, `"package"`, `"user"`).                                                                                                                                               |
+| `resource_id` | `string` | no       | Opaque id of the touched resource. Column is `TEXT` and defaults to `''`; callers typically pass a UUID string but any opaque id is acceptable.                                                       |
+| `action`      | `string` | yes      | Action key (`"create"`, `"update"`, `"suspend"`, `"approve"`, …).                                                                                                                                     |
+| `old_value`   | `bytes`  | no       | JSONB-encoded pre-change state. Zero-length bytes → `NULL`. The server does not inspect the contents.                                                                                                 |
+| `new_value`   | `bytes`  | no       | JSONB-encoded post-change state. Zero-length bytes → `NULL`.                                                                                                                                          |
+| `ip`          | `string` | no       | Actor IP as an IPv4 / IPv6 literal. Empty → `NULL`. Non-empty values must parse (`netip.ParseAddr`).                                                                                                   |
+
+
+**Response** (`RecordAuditResponse`):
+
+
+| Field             | Type     | Notes                                                                   |
+| ----------------- | -------- | ----------------------------------------------------------------------- |
+| `audit_log_id`    | `string` | UUID of the newly-inserted `iam.audit_logs.id`.                         |
+| `created_at_unix` | `int64`  | Insertion timestamp as Unix seconds UTC (matches `ValidateToken`).      |
+
+
+**Failure codes:**
+
+
+| Code               | When                                                                                                                 |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `INVALID_ARGUMENT` | `resource` / `action` empty; `user_id` / `branch_id` non-empty but not a UUID; `ip` non-empty but not a valid IP.    |
+| `INTERNAL`         | DB-layer failure (including the rare case where the append-only trigger rejects a malformed INSERT).                 |
+
+
+**Atomicity.** The RPC is synchronous: the wire call returns only after the row is durably inserted. Callers that want best-effort emit (not blocking a business action on the audit write) wrap the RPC in a goroutine on their side — the adapter does not take that decision on their behalf. For a service emitting audit about *its own* `WithTx` transaction, prefer emitting inside that transaction via `q.InsertAuditLog` directly (atomic business-success ↔ audit-success) rather than a round-trip through `RecordAudit` — `iam-svc.SuspendUser` is the reference implementation.
+
+**Append-only guarantee.** `iam.audit_logs` carries a BEFORE UPDATE / BEFORE DELETE trigger that raises `insufficient_privilege` on tamper. Migration 000007 narrows the UPDATE branch to permit the FK `ON DELETE SET NULL` cascade (user deletion → `user_id` / `branch_id` set to NULL; all other columns frozen) so compliance-driven user deletion does not lose the audit trail.
+
+### Consumers in S1
+
+- `finance-svc` — BL-IAM-002 adapter; calls `ValidateToken` (bearer middleware) + `CheckPermission` (per-endpoint gate). Will add `RecordAudit` calls with its own state-changing cards.
+- `booking-svc` — BL-IAM-004 adapter scaffold; no consumer call yet (first consumer = `S1-E-03` draft create → `RecordAudit` for audit + `CheckPermission` for `booking.create_on_behalf` on the CS channel).
+- `catalog-svc` — emits `RecordAudit` for `ReserveSeats` / `ReleaseSeats` (see § Inventory § `ReleaseSeats.reason`).
+
+### Honored by implementation
+
+- `S1-E-04` (BL-IAM-001..004) — implements the three RPCs, the admin suspend surface that emits audit, and the finance-svc + booking-svc adapter scaffolds.
+- Every `Sx-E-*` / `Sx-L-*` card that lands a state-changing endpoint — must emit one `iam.audit_logs` row per call (F1-AC: "Every state-changing call in every service produces an audit log entry").
 
 ---
 
@@ -528,7 +664,7 @@ The booking saga uses the booking's own ULID (`bkg_...`) as the `reservation_id`
 | ---------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `reservation_id` | `string` | yes      | Must reference a prior `ReserveSeats` (live or already released).                                                                                                                                                                                             |
 | `seats`          | `int32`  | no       | Optional partial-release override. If omitted, releases the full `seats` the reservation originally held. If specified and less than the original, a partial release is recorded (remainder stays reserved). Partial release > original → `INVALID_ARGUMENT`. |
-| `reason`         | `string` | no       | Free-form audit note (≤ 256 chars): `"saga_failure"`, `"refund_settled"`, `"departure_cancelled"`, etc. Written to `iam.audit_logs` via F1 `RecordAudit`.                                                                                                     |
+| `reason`         | `string` | no       | Free-form audit note (≤ 256 chars): `"saga_failure"`, `"refund_settled"`, `"departure_cancelled"`, etc. Written to `iam.audit_logs` via `iam.v1.IamService/RecordAudit` (see § IAM).                                                                                                     |
 
 
 **Response** (`ReleaseSeatsResponse`):
@@ -759,6 +895,7 @@ Planning map for **`apps/core-web`** (and future staff console routes) so S1 UI,
 
 ## § Changelog
 
+- **2026-04-21** — Added `§ IAM` via `S1-E-04` / `BL-IAM-004` — documents `iam.v1.IamService/ValidateToken` + `CheckPermission` + `RecordAudit` (producer-owned wire, promoted into the slice contract now that two consumers exist and `§ Inventory`'s `RecordAudit` reference is load-bearing). Also updated `§ Inventory`'s `ReleaseSeats.reason` footnote to cite the new `§ IAM` anchor rather than a bare "F1 `RecordAudit`". Additive per the Bump-versi rule; no consumer-breaking changes.
 - **2026-04-22** — Added `S1-E-01` engineering approval note under `§ Inventory` (`BL-EGV-001`): reviewed seat concurrency + transaction atomicity requirements for `ReserveSeats` / `ReleaseSeats`; gate approved with implementation deferred to `S1-E-02` / `S1-E-03`.
 - **2026-04-22** — Added `§ S1-L-01 — UI screen inventory` + shipped route shells in `apps/core-web` — closes backlog **BL-LGV-001** / task **S1-L-01** per **05** (contract bullets + components; no Figma).
 - **2026-04-21** — Added `§ S1 UI placement (core-web vs multi-app)` — records engineering consensus: S1 ships in `apps/core-web` with route-level separation until Q009 multi-app / `packages/api-client` split is justified; aligns `S1-L-01` proof with code paths without requiring `apps/b2c` to exist yet.
