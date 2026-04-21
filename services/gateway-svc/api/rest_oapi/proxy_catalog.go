@@ -15,7 +15,7 @@ import (
 func (s *Server) GetCatalogSystemLive(c *fiber.Ctx) error {
 	const op = "rest_oapi.Server.GetCatalogSystemLive"
 
-	ctx, span := s.tracer.Start(c.Context(), op)
+	ctx, span := s.tracer.Start(c.UserContext(), op)
 	defer span.End()
 
 	logger := logging.LogWithTrace(ctx, s.logger)

@@ -5,6 +5,7 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -41,6 +42,15 @@ func InitTracer(serviceName, otlpEndpoint string) (func(context.Context) error, 
 
 	// Set global tracer provider
 	otel.SetTracerProvider(tracerProvider)
+
+	// Set the global text-map propagator so W3C traceparent + tracestate headers
+	// are injected on outbound HTTP calls (otelhttp) and extracted on inbound
+	// requests (otelfiber). Without this, the propagator defaults to a no-op
+	// composite and cross-service trace context is silently dropped.
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	))
 
 	// Return cleanup function
 	return tracerProvider.Shutdown, nil
