@@ -123,7 +123,7 @@ Slice **S1** engineering-freeze rows from **05** are listed first (`BL-JNT-001`�
 | 1     | F4-W6       | `ValidateMahram` integration as warning                | MH-MVP   | 135      | S1    | S1-E-03   | BL-BOOK-006    | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Mahram result stored, does not block submit                         |
 | 1     | F4-UI       | Catalog → detail → booking form UI                     | MH-MVP   | 140      | S1    | S1-L-02   | BL-FE-BOOK-001 | L     | done   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | User can reach booking form from catalog                            |
 | 1     | F4-UI       | FE integration to catalog API                          | MH-MVP   | 141      | S1    | S1-L-03   | BL-FE-BOOK-002 | L     | done   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | FE calls list/detail per contract                                   |
-| 1     | F4-UI       | FE integration create draft booking                    | MH-MVP   | 142      | S1    | S1-L-04   | BL-FE-BOOK-003 | L     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Form submit creates draft booking successfully                      |
+| 1     | F4-UI       | FE integration create draft booking                    | MH-MVP   | 142      | S1    | S1-L-04   | BL-FE-BOOK-003 | L     | done   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Form submit creates draft booking successfully                      |
 
 
 ---
