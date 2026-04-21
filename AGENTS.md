@@ -49,7 +49,7 @@ Guidance for **human developers** and **coding agents** (Cursor, Claude Code, et
    - If a feature spec says **TBD** or points to **Qnnn**, read that question file before inventing behavior. Do not silently override an `open` question with a firm product rule.
 
 7. **Contribution workflow (how to ship changes)**
-   - `CONTRIBUTING.md` — branch/PR workflow, minimum quality gate, and shared-vs-local config rules.
+   - `CONTRIBUTING.md` — branch/PR workflow, minimum quality gate, shared-vs-local config rules, and **pre-filled PR open links** (compare URL with `quick_pull=1` + encoded `title`/`body`).
 
 ---
 
@@ -67,6 +67,7 @@ Guidance for **human developers** and **coding agents** (Cursor, Claude Code, et
 - **Microservices boundaries:** One bounded context per service. Cross-context reads go via gRPC; cross-context **writes are coordinated in-process by the orchestrating service** with explicit per-step compensations, plus a reconciliation cron catching mid-saga crashes (see ADR-0006). Temporal is deferred from MVP and reintroduced only for the F6 visa pipeline — the one multi-day durable workflow. Do not bypass this model without an ADR-level discussion.  
 - **Observability:** Tracing/logging/metrics expectations are part of the baseline architecture — see architecture docs before merging “invisible” side paths.
 - **Commit messages (contract between the devs):** every commit — human or AI, either codebase — follows `docs/08-commit-conventions.md`. Format is `<type>: <short message in lower case>`, optional body, no mandatory scope parens, no trailing period on the subject. Types: `feat | fix | docs | refactor | test | chore | build | perf | style`. AI attribution footers (`Co-Authored-By: ...`) are allowed but not required; do not fail a PR over their presence or absence. See the full doc for examples and rationale.
+- **Sharing “open PR” links after `git push`:** Prefer a **pre-filled** GitHub compare URL (`dev...head` with `quick_pull=1` and URL-encoded `title`/`body`) so the PR description matches `.github/pull_request_template.md` without manual retyping. Do not use `/pull/new/<branch>` alone as the only handoff when a filled description is expected. See `CONTRIBUTING.md` § Pre-filled PR open links.
 
 ---
 

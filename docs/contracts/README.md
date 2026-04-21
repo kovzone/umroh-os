@@ -137,6 +137,7 @@ All three appendix slots are now filled — the S0 docs chain is complete:
 
 ## Related references
 
+- CI path filters + when Go / `core-web` jobs run: `CONTRIBUTING.md` § **CI and path filters**; workflow `.github/workflows/ci.yml` (**S0-J-06**).
 - Task codes + slice definitions: `docs/00-overview/05-slice-engineering-checklist-and-task-codes.md`
 - Backlog mapping (`BL-*` IDs): `docs/00-overview/06-feature-to-backlog-mapping.md`
 - Commit message format: `docs/08-commit-conventions.md`

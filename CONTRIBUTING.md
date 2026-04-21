@@ -18,6 +18,7 @@ Keep changes merge-ready, traceable, and safe across a mixed-tool workflow (Curs
 - MUST create a task branch from `dev` before any commit.
 - MUST NOT commit directly on `dev` or `main`.
 - MUST open a PR targeting `dev` for all shared changes; no direct push to protected trunks (`dev`, `main`).
+- When sharing a GitHub link so the PR form opens **with title and description already filled**, use a **compare URL** with `quick_pull=1` and URL-encoded `title` / `body` (not `/pull/new/<branch>` alone). See **Pre-filled PR open links** below.
 - MUST keep one PR focused on one concern/task.
 - MUST include verification evidence in the PR before requesting review.
 - MUST NOT force-push to `dev` or `main`, or to any `feat/*` branch once pushed.
@@ -63,9 +64,40 @@ Local only (do not commit):
 - Follow the authority hierarchy and domain boundaries documented in `AGENTS.md` and linked `docs/`.
 - If product behavior is ambiguous and open questions exist, do not silently invent final behavior.
 
+## Pre-filled PR open links
+
+GitHub can open the **Create pull request** screen with **title** and **description** already populated when you use a **compare** URL with `quick_pull=1` and encoded `title` / `body` parameters. Official reference: [Using query parameters to create a pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/using-query-parameters-to-create-a-pull-request).
+
+Pattern (integration PRs target `dev`):
+
+```text
+https://github.com/<owner>/<repo>/compare/dev...<your-branch>?quick_pull=1&title=<url-encoded>&body=<url-encoded>
+```
+
+Important:
+
+- The `body` parameter **replaces** the web UI default from `.github/pull_request_template.md`; it does not append to it. Put the **full** template sections (same headings as the file) into `body`, filled out for this PR, then URL-encode.
+- Very long URLs can hit server limits (**414**). If so, open the compare page with `quick_pull=1` and title only, then paste a pre-written body, or use `gh pr create` with `--body-file`.
+
 ## Pull Request Checklist
 
-Use the PR template in `.github/pull_request_template.md` and ensure all required sections are filled before requesting review.
+Use the PR template in `.github/pull_request_template.md` and ensure all required sections are filled before requesting review. For compare-link workflows, embed that same filled content in the `body` query parameter (see above).
+
+## CI and path filters
+
+GitHub Actions workflow **`.github/workflows/ci.yml`** (card **S0-J-06**) runs on every `pull_request` and on `push` to `dev` / `main`. It uses path filters so **expensive jobs are skipped** when the diff touches neither Go services nor `apps/core-web`:
+
+| Job | Runs when the PR / push changes any of |
+| --- | --- |
+| **Go unit tests** (`make test`) | `services/**`, `Makefile`, `migration/**`, `docker-compose.dev.yml`, or `.github/workflows/ci.yml` |
+| **core-web** (`npm run check` + `npm test` in `apps/core-web`) | `apps/core-web/**` or `.github/workflows/ci.yml` |
+| **Skip code checks** (fast no-op) | Neither of the above (for example **docs-only** or other non-code paths) |
+
+Mixed PRs (for example `services/` + `docs/`) still match the backend and/or web filters, so the full relevant matrix runs. Editing **only** this workflow file matches both filters on purpose so CI self-validates.
+
+### Local Playwright e2e (without `make`, Windows)
+
+From repo root: **`tests/e2e/README.md`** documents **`make e2e-install` / `make e2e`** equivalents. On Windows PowerShell you can run **`.\scripts\e2e-local.ps1`** after Docker Desktop is up (starts compose, waits for Postgres, runs `migrate` if available, then Playwright).
 
 ## Canonical References
 

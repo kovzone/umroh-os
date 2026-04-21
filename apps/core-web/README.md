@@ -10,10 +10,13 @@ Built on **SvelteKit + TypeScript + Svelte 5 (runes mode)** per ADR 0005.
 src/
 ├── routes/            # SvelteKit file-based routing
 │   ├── +layout.svelte # nav shell
-│   ├── +page.svelte   # status page (CSR — polls every 5s)
-│   └── +page.ts       # ssr=false, prerender=false
+│   ├── +page.svelte   # landing (prerendered)
+│   ├── (b2c)/         # S1 public catalog + draft booking shells (S1-L-01); group name omitted from URL
+│   │   ├── packages/  # /packages, /packages/[id], …/departures/[id]
+│   │   └── booking/   # /booking/[package_id]
+│   └── system/status/ # service-health dashboard (CSR)
 └── lib/
-    ├── components/    # reusable PascalCase.svelte
+    ├── components/    # reusable PascalCase.svelte (`s1/` = S1 B2C shells)
     ├── state/         # *.svelte.ts classes with $state (no stores)
     └── api/gateway/   # typed client; schema.d.ts is generated
 ```

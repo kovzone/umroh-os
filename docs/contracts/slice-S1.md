@@ -2,7 +2,7 @@
 slice: S1
 title: Slice S1 — Integration Contract
 status: draft
-last_updated: 2026-04-21
+last_updated: 2026-04-22
 pr_owner: Elda
 reviewer: Elda (solo-exec S0 per § Current operating mode)
 task_codes:
@@ -676,6 +676,20 @@ This sub-section exists in S1 to freeze the intent so S2+ authors cannot quietly
 
 ---
 
+## § S1 UI placement (core-web vs multi-app)
+
+**Authoritative product default:** Q009 (`docs/07-open-questions/Q009-frontend-scaffolding-and-tooling.md`) targets a **monorepo of multiple SvelteKit apps** (`apps/b2c`, `apps/b2b`, `apps/admin`, `apps/field`) plus shared `packages/ui` and `packages/api-client`.
+
+**Engineering consensus for S1 (this slice):**
+
+1. **Implement S1 in `apps/core-web` first.** The repo currently has one scaffolded frontend (`apps/core-web`). Public catalog + draft-booking journeys ship here until a split is justified (bundle size, independent deploy, or auth boundary pain).
+2. **Organize routes for a clean future split.** Use SvelteKit layout groups and/or clear URL segments so **public B2C/B2B-attributed** surfaces stay separable from **internal console** routes (see **§ UI route matrix** below). Prefer new S1 pages under a predictable subtree (for example `(public)/...` or `/packages/...` + `/booking/...`) rather than overloading `/` beyond the existing landing.
+3. **When to extract `apps/b2c` (and shared packages).** Follow Q009 timing: introduce `packages/api-client` + additional apps when the second major audience or deploy cadence forces it — not as a blocking prerequisite for `S1-L-02..04`.
+
+This section exists so `S1-L-01` / backlog gate **BL-LGV-001** can cite **code + contract** (screen inventory + file paths under `apps/core-web`) without implying the multi-app scaffold already exists.
+
+---
+
 ## § UI route matrix (S0-L-01 / BL-FE-PLN-001)
 
 Planning map for **`apps/core-web`** (and future staff console routes) so S1 UI, gateway auth, and `S1-E-04` middleware share one list of **public vs internal** surfaces. Path segments in `{braces}` are dynamic.
@@ -690,7 +704,7 @@ Planning map for **`apps/core-web`** (and future staff console routes) so S1 UI,
 
 | UI route pattern | Surface | S1 status | Role / persona (F1 anchor) | Permission / scope | Auth (session) | Wire anchor (`slice-S1`) | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `/` _(Inferred — may ship as `/catalog`.)_ | public | active-now | Jamaah (calon jamaah); Agent (same catalog read) | n/a | none | § Catalog — `GET /v1/packages` | Package list; B2B replica may restyle only. |
+| `/` _(Inferred — may ship as `/catalog`.)_ | public | active-now | Jamaah (calon jamaah); Agent (same catalog read) | n/a | none | § Catalog — `GET /v1/packages` | Product landing stays **`/`**; package **list** ships at **`/packages`** (see **§ S1-L-01**). B2B replica may restyle only. |
 | `/packages/{package_id}` | public | active-now | Jamaah; Agent | n/a | none | § Catalog — `GET /v1/packages/{id}` | “Package detail” from F2/F4 browse path. |
 | `/packages/{package_id}/departures/{departure_id}` _(Inferred — may be merged into package detail.)_ | public | active-now | Jamaah; Agent | n/a | none | § Catalog — `GET /v1/package-departures/{id}` | Departure detail + seat label; optional standalone page. |
 | `/booking/{package_id}` | public | active-now | Jamaah; Agent | `channel`: `b2c_self` or `b2b_agent`; B2B requires `agent_id` / referral context per F4 W2 | none (B2C/B2B) | § Booking — `POST /v1/bookings` | Self-Booking Engine / agent-stamped flow (F4 W1–W2). |
@@ -710,8 +724,29 @@ Planning map for **`apps/core-web`** (and future staff console routes) so S1 UI,
 
 ---
 
+## § S1-L-01 — UI screen inventory (BL-LGV-001)
+
+**Proof of done (replaces wireframe):** canonical **URL → SvelteKit route files → primary components → UI states** for every **`active-now`** public row in **§ UI route matrix**, implemented under **`apps/core-web`**. **Figma:** not used; this table + shipped shells satisfy **05** `S1-L-01` (“Figma link *or* bullets in contract”).
+
+**Catalog list URL:** **`/packages`** — product marketing landing stays **`/`**; the matrix row that inferred package list on `/` is implemented as **`/packages`** (equivalent to “may ship as `/catalog`”).
+
+| Canonical URL | `apps/core-web` route files | Main components | Wire anchor | States in this shell |
+| --- | --- | --- | --- | --- |
+| `/packages` | `(b2c)/packages/+page.ts`, `(b2c)/packages/+page.svelte` | `PageShell`, stub list cards | § Catalog — `GET /v1/packages` | **Static stub** (loading/empty/error reserved for **S1-L-03**) |
+| `/packages/{package_id}` | `(b2c)/packages/[package_id]/+page.ts`, `+page.svelte` | `PageShell`, CTA row | § Catalog — `GET /v1/packages/{id}` | Stub copy; **404** from gateway TBD **S1-L-03** |
+| `/packages/{package_id}/departures/{departure_id}` | `(b2c)/packages/[package_id]/departures/[departure_id]/+page.ts`, `+page.svelte` | `PageShell`, link to booking | § Catalog — `GET /v1/package-departures/{id}` | Stub copy; seat labels in **S1-L-03** |
+| `/booking/{package_id}` | `(b2c)/booking/[package_id]/+page.ts`, `+page.svelte` | `PageShell`, disabled form fields | § Booking — `POST /v1/bookings` | **Disabled** draft form; **submit** enabled in **S1-L-04** |
+
+**Global chrome:** `Header.svelte` adds a **Packages** nav link to `/packages`. Landing **`/`** adds **Browse packages** CTA (`+page.svelte`).
+
+**Route group `(b2c)`:** Does not appear in the URL; groups public catalog/booking trees for a future `apps/b2c` extract per **§ S1 UI placement**.
+
+---
+
 ## § Changelog
 
+- **2026-04-22** — Added `§ S1-L-01 — UI screen inventory` + shipped route shells in `apps/core-web` — closes backlog **BL-LGV-001** / task **S1-L-01** per **05** (contract bullets + components; no Figma).
+- **2026-04-21** — Added `§ S1 UI placement (core-web vs multi-app)` — records engineering consensus: S1 ships in `apps/core-web` with route-level separation until Q009 multi-app / `packages/api-client` split is justified; aligns `S1-L-01` proof with code paths without requiring `apps/b2c` to exist yet.
 - **2026-04-21** — Added `§ UI route matrix` via `S0-L-01` / `BL-FE-PLN-001` — public vs internal URL table for S1, `active-now` vs `coming-next`, F1-aligned roles + permission column; **Contract gaps** list for draft GET/PATCH, submit, B2B routing, console shell.
 - **2026-04-21** — Added `§ Booking States` via `S1-J-04` — documents that S1 exercises only the `draft` state; includes the forward-looking full state machine from F4 W4 (unchanged, reproduced for readers); pins the Q006 KTP+passport gate on the future `draft → pending_payment` transition so S2+ authors cannot soften it. **All four S1 contracts are now in; the contract-first gate for S1 code (`S1-E-02`, `S1-E-03`, `S1-E-04`) is satisfied.**
 - **2026-04-21** — Added `§ Inventory` via `S1-J-03` — contracts `catalog.v1.CatalogService/ReserveSeats` + `ReleaseSeats` (gRPC): caller-supplied `reservation_id` for idempotency (option a), atomic-SQL pattern reference, five failure codes (`FAILED_PRECONDITION` / `NOT_FOUND` / `INVALID_ARGUMENT` / `ALREADY_EXISTS` / `INTERNAL`), and compensation prose covering the booking saga (ADR 0006) + the payment refund flow's Q004 conditional timing.

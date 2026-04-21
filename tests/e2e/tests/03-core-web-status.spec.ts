@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { backendServices } from "../lib/services";
 
 // core-web browser e2e. Uses the `browser` project in playwright.config.ts
-// (baseURL defaults to http://localhost:3001).
+// (browser project baseURL defaults to http://localhost:3001 — see playwright.config.ts).
 //
 // Three groups of tests:
 //   1. Landing page (/) — hero, capability grid, disabled Sign-in, footer link.
@@ -41,6 +41,29 @@ test.describe.serial("core-web — landing page", () => {
     await page.goto("/");
     await page.getByTestId("footer-status-link").click();
     await expect(page).toHaveURL(/\/system\/status$/);
+  });
+
+  test("browse packages CTA navigates to /packages", async ({ page }) => {
+    await page.goto("/");
+    await page.getByTestId("browse-packages-cta").click();
+    await expect(page).toHaveURL(/\/packages$/);
+    await expect(page.getByTestId("s1-package-catalog")).toBeVisible();
+  });
+});
+
+test.describe.serial("core-web — S1 catalog shells (S1-L-01)", () => {
+  test("packages list links to package detail", async ({ page }) => {
+    await page.goto("/packages");
+    await page.getByTestId("package-link-demo-pkg-umrah-12d").click();
+    await expect(page).toHaveURL(/\/packages\/demo-pkg-umrah-12d$/);
+    await expect(page.getByTestId("s1-package-detail")).toBeVisible();
+  });
+
+  test("package detail links to booking shell", async ({ page }) => {
+    await page.goto("/packages/demo-pkg-umrah-12d");
+    await page.getByTestId("s1-start-booking").click();
+    await expect(page).toHaveURL(/\/booking\/demo-pkg-umrah-12d$/);
+    await expect(page.getByTestId("s1-booking-draft-shell")).toBeVisible();
   });
 });
 

@@ -9,7 +9,8 @@
 - [~] Status page (`/system/status`) polls all 10 gateway proxy endpoints every 5s via `createSubscriber`
 - [~] Shared `Header` + `Footer` components inside `+layout.svelte`; `Sign in` placeholder disabled until F1.5
 - [~] Vitest unit tests for `ServiceStatus` state class (4 tests, green)
-- [~] Playwright browser e2e spec at `tests/e2e/tests/03-core-web-status.spec.ts` (4 tests covering landing + status + footer navigation)
+- [~] Playwright browser e2e spec at `tests/e2e/tests/03-core-web-status.spec.ts` (7 tests: landing + S1 shell navigation + status + footer)
+- [~] **S1-L-01** — public catalog + draft-booking **route shells** under `src/routes/(b2c)/` (`/packages`, nested package + departure, `/booking/[package_id]`); stub data until **S1-L-03** / **S1-L-04**
 - [~] Production Dockerfile `prod` stage with `@sveltejs/adapter-node` (path exists; no compose service uses it yet)
 - [ ] Auth wiring (enable the Sign-in button, login form, token storage, protected routes) — F1.5 dependency
 - [ ] Real admin routes (users/roles/branches/audit) — land with their feature slices
@@ -60,7 +61,7 @@
 - **Auth.** No login form, no token handling, no protected routes. Arrives with F1.5 real iam auth.
 - **Production compose service.** `Dockerfile prod` target exists so CI can build it; no compose service runs it yet.
 - **Frontend observability.** No Sentry / RUM / web-vitals / frontend Grafana dashboard in this scaffold.
-- **Multi-app layout.** Only `apps/core-web/`. Siblings (`apps/storefront-web/`, `apps/agent-web/`, `apps/field-web/`) are Q009-rec #1 future work.
+- **Multi-app layout.** Only `apps/core-web/` today. Q009 target is `apps/b2c`, `apps/b2b`, `apps/admin`, `apps/field` plus shared packages — **deferred** until a second audience or deploy boundary forces the split. **Slice S1** (catalog → draft booking) **ships in `core-web`** first, with route-level separation between public journeys and future internal console paths; see `docs/contracts/slice-S1.md` § **S1 UI placement (core-web vs multi-app)**.
 - **Docs rename (Q009-rec #3).** `docs/03-services/12-core-web/` sits alongside the backend service folders for now; the rename to `08-frontend-apps/` is its own doc-only commit.
 - **`.claude/skills/scaffold-app/`** — a future companion skill to `scaffold-service`, not scoped here.
 
@@ -71,7 +72,7 @@ Run the manual walk in `docs/92-testing/testing-guide.md` Section 9. Automated:
 ```bash
 make dev-down-v && make dev-rm-all && make dev-bootstrap   # 20 containers Up
 make e2e-install                                            # idempotent
-make e2e                                                    # 47 passed (43 api + 4 browser)
+make e2e                                                    # 50 passed (43 api + 7 browser)
 cd apps/core-web && npm run check                           # 0 errors
 cd apps/core-web && npm run test                            # 4 passed
 cd apps/core-web && npm run build                           # adapter-node output in build/ + prerendered landing
