@@ -14,6 +14,16 @@ type Config struct {
 	Api        Api        `mapstructure:"api"`
 	Store      Store      `mapstructure:"store"`
 	OtelTracer OtelTracer `mapstructure:"otel_tracer"`
+	Iam        Iam        `mapstructure:"iam"`
+}
+
+// Iam config — how finance-svc reaches iam-svc's internal gRPC surface.
+//
+// The target is a plain host:port (no scheme); BL-IAM-002 adapter dials with
+// insecure credentials because the traffic stays inside the docker-compose
+// network. TLS-terminated ingress lands with the gateway-svc hardening card.
+type Iam struct {
+	GrpcTarget string `mapstructure:"grpc_target"`
 }
 
 // App config

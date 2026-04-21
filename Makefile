@@ -37,7 +37,7 @@ oapi: ## Generate REST API code (oapi-codegen) for all services
 		fi; \
 	done
 
-genpb: ## Generate protobuf code for all services
+genpb: ## Generate protobuf code for all services (servers + consumer adapters)
 	@for svc in $(SERVICES); do \
 		if ls $$svc/api/grpc_api/pb/*.proto >/dev/null 2>&1; then \
 			echo "protoc: $$svc"; \
@@ -45,6 +45,15 @@ genpb: ## Generate protobuf code for all services
 				--go_out=api/grpc_api/pb --go_opt=paths=source_relative \
 				--go-grpc_out=api/grpc_api/pb --go-grpc_opt=paths=source_relative && cd - > /dev/null; \
 		fi; \
+		for adapter in $$svc/adapter/*/pb; do \
+			if [ -d "$$adapter" ] && ls $$adapter/*.proto >/dev/null 2>&1; then \
+				echo "protoc: $$adapter"; \
+				cd $$svc && adapter_rel=$${adapter#$$svc/} && \
+					protoc --proto_path=$$adapter_rel $$adapter_rel/*.proto \
+						--go_out=$$adapter_rel --go_opt=paths=source_relative \
+						--go-grpc_out=$$adapter_rel --go-grpc_opt=paths=source_relative && cd - > /dev/null; \
+			fi; \
+		done; \
 	done
 
 gen-api-web: ## Regenerate typed API clients for all frontend apps from gateway-svc openapi.yaml

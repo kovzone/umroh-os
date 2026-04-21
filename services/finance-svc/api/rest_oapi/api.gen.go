@@ -10,6 +10,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/oapi-codegen/runtime"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // DbTxDiagnosticResponse defines model for DbTxDiagnosticResponse.
@@ -20,6 +21,27 @@ type DbTxDiagnosticResponse struct {
 
 		// Message Echo of the message received from the client.
 		Message string `json:"message"`
+	} `json:"data"`
+}
+
+// ErrorResponse defines model for ErrorResponse.
+type ErrorResponse struct {
+	Error struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	} `json:"error"`
+}
+
+// FinancePingResponse defines model for FinancePingResponse.
+type FinancePingResponse struct {
+	Data struct {
+		Message string `json:"message"`
+
+		// Roles Role names currently granted to the user (snapshot at validation time).
+		Roles []string `json:"roles"`
+
+		// UserId Authenticated user's UUID (from the bearer token's session).
+		UserId openapi_types.UUID `json:"user_id"`
 	} `json:"data"`
 }
 
@@ -54,6 +76,9 @@ type ServerInterface interface {
 	// Readiness probe
 	// (GET /system/ready)
 	Readiness(c *fiber.Ctx) error
+	// Authenticated finance ping (BL-IAM-002 placeholder)
+	// (GET /v1/finance/ping)
+	FinancePing(c *fiber.Ctx) error
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -99,6 +124,12 @@ func (siw *ServerInterfaceWrapper) Readiness(c *fiber.Ctx) error {
 	return siw.Handler.Readiness(c)
 }
 
+// FinancePing operation middleware
+func (siw *ServerInterfaceWrapper) FinancePing(c *fiber.Ctx) error {
+
+	return siw.Handler.FinancePing(c)
+}
+
 // FiberServerOptions provides options for the Fiber server.
 type FiberServerOptions struct {
 	BaseURL     string
@@ -125,6 +156,8 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 	router.Get(options.BaseURL+"/system/live", wrapper.Liveness)
 
 	router.Get(options.BaseURL+"/system/ready", wrapper.Readiness)
+
+	router.Get(options.BaseURL+"/v1/finance/ping", wrapper.FinancePing)
 
 }
 
@@ -177,6 +210,40 @@ func (response Readiness200JSONResponse) VisitReadinessResponse(ctx *fiber.Ctx) 
 	return ctx.JSON(&response)
 }
 
+type FinancePingRequestObject struct {
+}
+
+type FinancePingResponseObject interface {
+	VisitFinancePingResponse(ctx *fiber.Ctx) error
+}
+
+type FinancePing200JSONResponse FinancePingResponse
+
+func (response FinancePing200JSONResponse) VisitFinancePingResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type FinancePing401JSONResponse ErrorResponse
+
+func (response FinancePing401JSONResponse) VisitFinancePingResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type FinancePing403JSONResponse ErrorResponse
+
+func (response FinancePing403JSONResponse) VisitFinancePingResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// DB transaction diagnostic
@@ -188,6 +255,9 @@ type StrictServerInterface interface {
 	// Readiness probe
 	// (GET /system/ready)
 	Readiness(ctx context.Context, request ReadinessRequestObject) (ReadinessResponseObject, error)
+	// Authenticated finance ping (BL-IAM-002 placeholder)
+	// (GET /v1/finance/ping)
+	FinancePing(ctx context.Context, request FinancePingRequestObject) (FinancePingResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx *fiber.Ctx, args interface{}) (interface{}, error)
@@ -272,6 +342,31 @@ func (sh *strictHandler) Readiness(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else if validResponse, ok := response.(ReadinessResponseObject); ok {
 		if err := validResponse.VisitReadinessResponse(ctx); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// FinancePing operation middleware
+func (sh *strictHandler) FinancePing(ctx *fiber.Ctx) error {
+	var request FinancePingRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.FinancePing(ctx.UserContext(), request.(FinancePingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "FinancePing")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	} else if validResponse, ok := response.(FinancePingResponseObject); ok {
+		if err := validResponse.VisitFinancePingResponse(ctx); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
 	} else if response != nil {

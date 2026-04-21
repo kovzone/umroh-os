@@ -11,20 +11,24 @@ import (
 
 // IService is the business-layer interface for finance-svc.
 //
-// Pilot scaffold surfaces only the three standard scaffold endpoints:
+// Pilot scaffold surfaces the three standard scaffold endpoints:
 //
 //   - Liveness — process is up
 //   - Readiness — process is up AND the database is reachable
 //   - DbTxDiagnostic — writes + reads inside a WithTx, the canonical reference
 //     for how services should use transactions (per docs/04-backend-conventions)
 //
-// Real iam responsibilities (user/role/branch CRUD, auth login/refresh/logout,
-// permission checks, session lifecycle, audit writes) land in F1.5–F1.11 and
-// are deliberately out of scaffold scope.
+// BL-IAM-002 adds FinancePing — the placeholder authenticated route that
+// exercises the iam-svc permission gate so the "finance routes denied for
+// non-finance roles" acceptance has a concrete surface. Real finance endpoints
+// (journals, AR/AP, reports) land with S3-E-03 + S3-E-07.
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
 	DbTxDiagnostic(ctx context.Context, params *DbTxDiagnosticParams) (*DbTxDiagnosticResult, error)
+
+	// Finance — BL-IAM-002 placeholder.
+	FinancePing(ctx context.Context, params *FinancePingParams) (*FinancePingResult, error)
 }
 
 type Service struct {
@@ -36,6 +40,10 @@ type Service struct {
 	appName string
 
 	store postgres_store.IStore
+
+	// iamChecker is the consumer-side wrapper around iam-svc.CheckPermission.
+	// Injected so tests can supply a double without spinning up a real gRPC server.
+	iamChecker IamChecker
 }
 
 func NewService(
@@ -43,11 +51,13 @@ func NewService(
 	tracer trace.Tracer,
 	appName string,
 	store postgres_store.IStore,
+	iamChecker IamChecker,
 ) IService {
 	return &Service{
-		logger:  logger,
-		tracer:  tracer,
-		appName: appName,
-		store:   store,
+		logger:     logger,
+		tracer:     tracer,
+		appName:    appName,
+		store:      store,
+		iamChecker: iamChecker,
 	}
 }

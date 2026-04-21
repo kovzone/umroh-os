@@ -30,4 +30,8 @@ func bindEnvironmentVariables() {
 
 	viper.BindEnv("otel_tracer.name", "OTEL_TRACER_NAME")
 	viper.BindEnv("otel_tracer.endpoint", "OTEL_TRACER_ENDPOINT")
+
+	// Iam consumer config (BL-IAM-002)
+
+	viper.BindEnv("iam.grpc_target", "IAM_GRPC_TARGET")
 }
