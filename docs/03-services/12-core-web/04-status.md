@@ -9,7 +9,8 @@
 - [~] Status page (`/system/status`) polls all 10 gateway proxy endpoints every 5s via `createSubscriber`
 - [~] Shared `Header` + `Footer` components inside `+layout.svelte`; `Sign in` placeholder disabled until F1.5
 - [~] Vitest unit tests for `ServiceStatus` state class (4 tests, green)
-- [~] Playwright browser e2e spec at `tests/e2e/tests/03-core-web-status.spec.ts` (4 tests covering landing + status + footer navigation)
+- [~] Playwright browser e2e spec at `tests/e2e/tests/03-core-web-status.spec.ts` (7 tests: landing + S1 shell navigation + status + footer)
+- [~] **S1-L-01** — public catalog + draft-booking **route shells** under `src/routes/(b2c)/` (`/packages`, nested package + departure, `/booking/[package_id]`); stub data until **S1-L-03** / **S1-L-04**
 - [~] Production Dockerfile `prod` stage with `@sveltejs/adapter-node` (path exists; no compose service uses it yet)
 - [ ] Auth wiring (enable the Sign-in button, login form, token storage, protected routes) — F1.5 dependency
 - [ ] Real admin routes (users/roles/branches/audit) — land with their feature slices
@@ -71,7 +72,7 @@ Run the manual walk in `docs/92-testing/testing-guide.md` Section 9. Automated:
 ```bash
 make dev-down-v && make dev-rm-all && make dev-bootstrap   # 20 containers Up
 make e2e-install                                            # idempotent
-make e2e                                                    # 47 passed (43 api + 4 browser)
+make e2e                                                    # 50 passed (43 api + 7 browser)
 cd apps/core-web && npm run check                           # 0 errors
 cd apps/core-web && npm run test                            # 4 passed
 cd apps/core-web && npm run build                           # adapter-node output in build/ + prerendered landing

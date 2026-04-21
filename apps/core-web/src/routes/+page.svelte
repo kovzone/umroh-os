@@ -44,6 +44,10 @@
     and visa processing, warehouse logistics, PSAK-compliant finance, and jamaah field
     operations in Saudi Arabia.
   </p>
+  <p class="cta-row">
+    <a class="cta" href="/packages" data-testid="browse-packages-cta">Browse packages</a>
+    <span class="cta-hint">S1 catalog shell — API in S1-L-03</span>
+  </p>
 </section>
 
 <section class="capabilities">
@@ -68,6 +72,32 @@
     max-width: 44rem;
     margin: 0;
     line-height: 1.6;
+  }
+  .cta-row {
+    margin: var(--space-4) 0 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.55rem 1.1rem;
+    border-radius: var(--radius-card);
+    background: var(--color-accent, #4493f8);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    text-decoration: none;
+  }
+  .cta:hover {
+    filter: brightness(1.08);
+  }
+  .cta-hint {
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
   }
 
   .capabilities h2 {

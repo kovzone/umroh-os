@@ -12,7 +12,8 @@
     <span class="muted">core-web</span>
   </div>
 
-  <nav>
+  <nav class="nav">
+    <a href="/packages" class="nav-link" data-testid="nav-packages">Packages</a>
     <button
       type="button"
       disabled
@@ -34,6 +35,20 @@
     padding: var(--space-3) var(--space-4);
     border-bottom: 1px solid var(--color-border);
     background: var(--color-surface);
+  }
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .nav-link {
+    color: var(--color-accent, #4493f8);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  .nav-link:hover {
+    text-decoration: underline;
   }
   .brand { display: flex; align-items: baseline; gap: var(--space-3); }
   .brand-link { color: var(--color-text); text-decoration: none; }
