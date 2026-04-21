@@ -154,7 +154,10 @@ None. F1 is the root.
 
 - Scaffold from `baseline/go-backend-template/demo-svc` — the template includes PASETO token handling in `util/token`. Reuse.
 - Permission matrix is hot-path — benchmark the `CheckPermission` gRPC at ~5ms p95 under load. Cache per-request.
-- Audit log writes must not block the main request path — fire-and-forget to a buffered channel, with a flush-on-shutdown guarantee.
+- Audit log writes are **synchronous and atomic** with the business action they describe (revised 2026-04-21 with `BL-IAM-004`, superseding the earlier fire-and-forget/buffered-channel plan). Two emission paths:
+  - **In-process** (a service auditing its own action): emit `q.InsertAuditLog(...)` inside the same `WithTx` closure that performs the state change. Business-success ↔ audit-success are atomic; a failed tx rolls back both the state change and its audit row. This is the reference pattern — see `iam-svc.SuspendUser` in `services/iam-svc/service/admin.go`.
+  - **Cross-service**: call `iam.v1.IamService/RecordAudit` over gRPC (one RPC per row). The wire is synchronous and returns only after the row is durably inserted. Callers that need non-blocking semantics wrap the RPC in a goroutine on their side — the write itself remains atomic per call. See `docs/contracts/slice-S1.md § IAM` for the wire shape.
+  - Append-only is enforced at the DB layer (`iam.audit_logs` BEFORE UPDATE / BEFORE DELETE trigger raises `insufficient_privilege`); compliance-driven user deletion cascades `user_id` / `branch_id` to `NULL` via the narrowed trigger (migration 000007), leaving resource / action / old_value / new_value / ip / created_at frozen.
 - TOTP enrollment: store the secret encrypted at the application layer (AES-256, key from config) before INSERT. Never log the secret.
 
 ## Frontend notes

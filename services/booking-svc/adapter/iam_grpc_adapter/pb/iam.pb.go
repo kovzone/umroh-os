@@ -21,97 +21,16 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type HealthzRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *HealthzRequest) Reset() {
-	*x = HealthzRequest{}
-	mi := &file_iam_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HealthzRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HealthzRequest) ProtoMessage() {}
-
-func (x *HealthzRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_iam_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HealthzRequest.ProtoReflect.Descriptor instead.
-func (*HealthzRequest) Descriptor() ([]byte, []int) {
-	return file_iam_proto_rawDescGZIP(), []int{0}
-}
-
-type HealthzResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *HealthzResponse) Reset() {
-	*x = HealthzResponse{}
-	mi := &file_iam_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HealthzResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HealthzResponse) ProtoMessage() {}
-
-func (x *HealthzResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_iam_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HealthzResponse.ProtoReflect.Descriptor instead.
-func (*HealthzResponse) Descriptor() ([]byte, []int) {
-	return file_iam_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *HealthzResponse) GetOk() bool {
-	if x != nil {
-		return x.Ok
-	}
-	return false
-}
-
 type ValidateTokenRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Raw bearer access token (the string after `Bearer `).
-	AccessToken   string `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AccessToken   string                 `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ValidateTokenRequest) Reset() {
 	*x = ValidateTokenRequest{}
-	mi := &file_iam_proto_msgTypes[2]
+	mi := &file_iam_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -123,7 +42,7 @@ func (x *ValidateTokenRequest) String() string {
 func (*ValidateTokenRequest) ProtoMessage() {}
 
 func (x *ValidateTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_iam_proto_msgTypes[2]
+	mi := &file_iam_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -136,7 +55,7 @@ func (x *ValidateTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValidateTokenRequest.ProtoReflect.Descriptor instead.
 func (*ValidateTokenRequest) Descriptor() ([]byte, []int) {
-	return file_iam_proto_rawDescGZIP(), []int{2}
+	return file_iam_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ValidateTokenRequest) GetAccessToken() string {
@@ -147,24 +66,19 @@ func (x *ValidateTokenRequest) GetAccessToken() string {
 }
 
 type ValidateTokenResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// UUID string of the authenticated user (iam.users.id).
-	UserId string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	// UUID string of the user's branch (iam.users.branch_id).
-	BranchId string `protobuf:"bytes,2,opt,name=branch_id,json=branchId,proto3" json:"branch_id,omitempty"`
-	// UUID string of the session row backing this token (iam.sessions.id).
-	SessionId string `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	// Role names currently assigned to the user (snapshot at validation time).
-	Roles []string `protobuf:"bytes,4,rep,name=roles,proto3" json:"roles,omitempty"`
-	// Token expiry as Unix seconds UTC.
-	ExpiresAtUnix int64 `protobuf:"varint,5,opt,name=expires_at_unix,json=expiresAtUnix,proto3" json:"expires_at_unix,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	BranchId      string                 `protobuf:"bytes,2,opt,name=branch_id,json=branchId,proto3" json:"branch_id,omitempty"`
+	SessionId     string                 `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	Roles         []string               `protobuf:"bytes,4,rep,name=roles,proto3" json:"roles,omitempty"`
+	ExpiresAtUnix int64                  `protobuf:"varint,5,opt,name=expires_at_unix,json=expiresAtUnix,proto3" json:"expires_at_unix,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ValidateTokenResponse) Reset() {
 	*x = ValidateTokenResponse{}
-	mi := &file_iam_proto_msgTypes[3]
+	mi := &file_iam_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -176,7 +90,7 @@ func (x *ValidateTokenResponse) String() string {
 func (*ValidateTokenResponse) ProtoMessage() {}
 
 func (x *ValidateTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_iam_proto_msgTypes[3]
+	mi := &file_iam_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -189,7 +103,7 @@ func (x *ValidateTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValidateTokenResponse.ProtoReflect.Descriptor instead.
 func (*ValidateTokenResponse) Descriptor() ([]byte, []int) {
-	return file_iam_proto_rawDescGZIP(), []int{3}
+	return file_iam_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ValidateTokenResponse) GetUserId() string {
@@ -228,22 +142,18 @@ func (x *ValidateTokenResponse) GetExpiresAtUnix() int64 {
 }
 
 type CheckPermissionRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// UUID string of the user to evaluate.
-	UserId string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	// Resource key (e.g. "journal_entry", "booking").
-	Resource string `protobuf:"bytes,2,opt,name=resource,proto3" json:"resource,omitempty"`
-	// Action key (e.g. "read", "write", "create_on_behalf").
-	Action string `protobuf:"bytes,3,opt,name=action,proto3" json:"action,omitempty"`
-	// Scope — one of "global" | "branch" | "personal" (matches iam.permission_scope).
-	Scope         string `protobuf:"bytes,4,opt,name=scope,proto3" json:"scope,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Resource      string                 `protobuf:"bytes,2,opt,name=resource,proto3" json:"resource,omitempty"`
+	Action        string                 `protobuf:"bytes,3,opt,name=action,proto3" json:"action,omitempty"`
+	Scope         string                 `protobuf:"bytes,4,opt,name=scope,proto3" json:"scope,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CheckPermissionRequest) Reset() {
 	*x = CheckPermissionRequest{}
-	mi := &file_iam_proto_msgTypes[4]
+	mi := &file_iam_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -255,7 +165,7 @@ func (x *CheckPermissionRequest) String() string {
 func (*CheckPermissionRequest) ProtoMessage() {}
 
 func (x *CheckPermissionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_iam_proto_msgTypes[4]
+	mi := &file_iam_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -268,7 +178,7 @@ func (x *CheckPermissionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckPermissionRequest.ProtoReflect.Descriptor instead.
 func (*CheckPermissionRequest) Descriptor() ([]byte, []int) {
-	return file_iam_proto_rawDescGZIP(), []int{4}
+	return file_iam_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CheckPermissionRequest) GetUserId() string {
@@ -308,7 +218,7 @@ type CheckPermissionResponse struct {
 
 func (x *CheckPermissionResponse) Reset() {
 	*x = CheckPermissionResponse{}
-	mi := &file_iam_proto_msgTypes[5]
+	mi := &file_iam_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -320,7 +230,7 @@ func (x *CheckPermissionResponse) String() string {
 func (*CheckPermissionResponse) ProtoMessage() {}
 
 func (x *CheckPermissionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_iam_proto_msgTypes[5]
+	mi := &file_iam_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -333,7 +243,7 @@ func (x *CheckPermissionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckPermissionResponse.ProtoReflect.Descriptor instead.
 func (*CheckPermissionResponse) Descriptor() ([]byte, []int) {
-	return file_iam_proto_rawDescGZIP(), []int{5}
+	return file_iam_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CheckPermissionResponse) GetAllowed() bool {
@@ -344,36 +254,22 @@ func (x *CheckPermissionResponse) GetAllowed() bool {
 }
 
 type RecordAuditRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// UUID string of the actor (iam.users.id). Empty string means "system-initiated"
-	// (no foreign key — the audit_logs.user_id column is nullable). Non-empty values
-	// must parse as UUIDs or the call fails InvalidArgument.
-	UserId string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	// UUID string of the actor's branch (iam.users.branch_id), optional. Empty means
-	// "no branch scope" (column is nullable). Non-empty values must parse as UUIDs.
-	BranchId string `protobuf:"bytes,2,opt,name=branch_id,json=branchId,proto3" json:"branch_id,omitempty"`
-	// Resource key — e.g. "user", "booking", "package", "journal_entry". Required.
-	Resource string `protobuf:"bytes,3,opt,name=resource,proto3" json:"resource,omitempty"`
-	// Resource identifier — typically a UUID string, but the column is TEXT so any
-	// opaque id is acceptable. Empty string permitted (the column default is ”).
-	ResourceId string `protobuf:"bytes,4,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
-	// Action key — e.g. "create", "update", "suspend", "approve". Required.
-	Action string `protobuf:"bytes,5,opt,name=action,proto3" json:"action,omitempty"`
-	// JSONB-encoded pre-change state of the resource. Empty bytes → NULL in storage.
-	// Callers marshal their own JSON; the server does not interpret the contents.
-	OldValue []byte `protobuf:"bytes,6,opt,name=old_value,json=oldValue,proto3" json:"old_value,omitempty"`
-	// JSONB-encoded post-change state of the resource. Empty bytes → NULL in storage.
-	NewValue []byte `protobuf:"bytes,7,opt,name=new_value,json=newValue,proto3" json:"new_value,omitempty"`
-	// Actor IP as an IP literal (e.g. "203.0.113.5"). Empty string → NULL in storage.
-	// Non-empty values must be valid IPs (IPv4 or IPv6) or the call fails InvalidArgument.
-	Ip            string `protobuf:"bytes,8,opt,name=ip,proto3" json:"ip,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	BranchId      string                 `protobuf:"bytes,2,opt,name=branch_id,json=branchId,proto3" json:"branch_id,omitempty"`
+	Resource      string                 `protobuf:"bytes,3,opt,name=resource,proto3" json:"resource,omitempty"`
+	ResourceId    string                 `protobuf:"bytes,4,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
+	Action        string                 `protobuf:"bytes,5,opt,name=action,proto3" json:"action,omitempty"`
+	OldValue      []byte                 `protobuf:"bytes,6,opt,name=old_value,json=oldValue,proto3" json:"old_value,omitempty"`
+	NewValue      []byte                 `protobuf:"bytes,7,opt,name=new_value,json=newValue,proto3" json:"new_value,omitempty"`
+	Ip            string                 `protobuf:"bytes,8,opt,name=ip,proto3" json:"ip,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RecordAuditRequest) Reset() {
 	*x = RecordAuditRequest{}
-	mi := &file_iam_proto_msgTypes[6]
+	mi := &file_iam_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -385,7 +281,7 @@ func (x *RecordAuditRequest) String() string {
 func (*RecordAuditRequest) ProtoMessage() {}
 
 func (x *RecordAuditRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_iam_proto_msgTypes[6]
+	mi := &file_iam_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -398,7 +294,7 @@ func (x *RecordAuditRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordAuditRequest.ProtoReflect.Descriptor instead.
 func (*RecordAuditRequest) Descriptor() ([]byte, []int) {
-	return file_iam_proto_rawDescGZIP(), []int{6}
+	return file_iam_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *RecordAuditRequest) GetUserId() string {
@@ -458,18 +354,16 @@ func (x *RecordAuditRequest) GetIp() string {
 }
 
 type RecordAuditResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// UUID string of the newly-inserted iam.audit_logs.id.
-	AuditLogId string `protobuf:"bytes,1,opt,name=audit_log_id,json=auditLogId,proto3" json:"audit_log_id,omitempty"`
-	// Insertion timestamp as Unix seconds UTC (matches ValidateToken convention).
-	CreatedAtUnix int64 `protobuf:"varint,2,opt,name=created_at_unix,json=createdAtUnix,proto3" json:"created_at_unix,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AuditLogId    string                 `protobuf:"bytes,1,opt,name=audit_log_id,json=auditLogId,proto3" json:"audit_log_id,omitempty"`
+	CreatedAtUnix int64                  `protobuf:"varint,2,opt,name=created_at_unix,json=createdAtUnix,proto3" json:"created_at_unix,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RecordAuditResponse) Reset() {
 	*x = RecordAuditResponse{}
-	mi := &file_iam_proto_msgTypes[7]
+	mi := &file_iam_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -481,7 +375,7 @@ func (x *RecordAuditResponse) String() string {
 func (*RecordAuditResponse) ProtoMessage() {}
 
 func (x *RecordAuditResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_iam_proto_msgTypes[7]
+	mi := &file_iam_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -494,7 +388,7 @@ func (x *RecordAuditResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordAuditResponse.ProtoReflect.Descriptor instead.
 func (*RecordAuditResponse) Descriptor() ([]byte, []int) {
-	return file_iam_proto_rawDescGZIP(), []int{7}
+	return file_iam_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *RecordAuditResponse) GetAuditLogId() string {
@@ -515,10 +409,7 @@ var File_iam_proto protoreflect.FileDescriptor
 
 const file_iam_proto_rawDesc = "" +
 	"\n" +
-	"\tiam.proto\x12\x02pb\"\x10\n" +
-	"\x0eHealthzRequest\"!\n" +
-	"\x0fHealthzResponse\x12\x0e\n" +
-	"\x02ok\x18\x01 \x01(\bR\x02ok\"9\n" +
+	"\tiam.proto\x12\x02pb\"9\n" +
 	"\x14ValidateTokenRequest\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\"\xaa\x01\n" +
 	"\x15ValidateTokenResponse\x12\x17\n" +
@@ -548,10 +439,9 @@ const file_iam_proto_rawDesc = "" +
 	"\x13RecordAuditResponse\x12 \n" +
 	"\faudit_log_id\x18\x01 \x01(\tR\n" +
 	"auditLogId\x12&\n" +
-	"\x0fcreated_at_unix\x18\x02 \x01(\x03R\rcreatedAtUnix2\x9a\x02\n" +
+	"\x0fcreated_at_unix\x18\x02 \x01(\x03R\rcreatedAtUnix2\xe4\x01\n" +
 	"\n" +
-	"IamService\x124\n" +
-	"\aHealthz\x12\x12.pb.HealthzRequest\x1a\x13.pb.HealthzResponse\"\x00\x12F\n" +
+	"IamService\x12F\n" +
 	"\rValidateToken\x12\x18.pb.ValidateTokenRequest\x1a\x19.pb.ValidateTokenResponse\"\x00\x12L\n" +
 	"\x0fCheckPermission\x12\x1a.pb.CheckPermissionRequest\x1a\x1b.pb.CheckPermissionResponse\"\x00\x12@\n" +
 	"\vRecordAudit\x12\x16.pb.RecordAuditRequest\x1a\x17.pb.RecordAuditResponse\"\x00B\x06Z\x04./pbb\x06proto3"
@@ -568,28 +458,24 @@ func file_iam_proto_rawDescGZIP() []byte {
 	return file_iam_proto_rawDescData
 }
 
-var file_iam_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_iam_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_iam_proto_goTypes = []any{
-	(*HealthzRequest)(nil),          // 0: pb.HealthzRequest
-	(*HealthzResponse)(nil),         // 1: pb.HealthzResponse
-	(*ValidateTokenRequest)(nil),    // 2: pb.ValidateTokenRequest
-	(*ValidateTokenResponse)(nil),   // 3: pb.ValidateTokenResponse
-	(*CheckPermissionRequest)(nil),  // 4: pb.CheckPermissionRequest
-	(*CheckPermissionResponse)(nil), // 5: pb.CheckPermissionResponse
-	(*RecordAuditRequest)(nil),      // 6: pb.RecordAuditRequest
-	(*RecordAuditResponse)(nil),     // 7: pb.RecordAuditResponse
+	(*ValidateTokenRequest)(nil),    // 0: pb.ValidateTokenRequest
+	(*ValidateTokenResponse)(nil),   // 1: pb.ValidateTokenResponse
+	(*CheckPermissionRequest)(nil),  // 2: pb.CheckPermissionRequest
+	(*CheckPermissionResponse)(nil), // 3: pb.CheckPermissionResponse
+	(*RecordAuditRequest)(nil),      // 4: pb.RecordAuditRequest
+	(*RecordAuditResponse)(nil),     // 5: pb.RecordAuditResponse
 }
 var file_iam_proto_depIdxs = []int32{
-	0, // 0: pb.IamService.Healthz:input_type -> pb.HealthzRequest
-	2, // 1: pb.IamService.ValidateToken:input_type -> pb.ValidateTokenRequest
-	4, // 2: pb.IamService.CheckPermission:input_type -> pb.CheckPermissionRequest
-	6, // 3: pb.IamService.RecordAudit:input_type -> pb.RecordAuditRequest
-	1, // 4: pb.IamService.Healthz:output_type -> pb.HealthzResponse
-	3, // 5: pb.IamService.ValidateToken:output_type -> pb.ValidateTokenResponse
-	5, // 6: pb.IamService.CheckPermission:output_type -> pb.CheckPermissionResponse
-	7, // 7: pb.IamService.RecordAudit:output_type -> pb.RecordAuditResponse
-	4, // [4:8] is the sub-list for method output_type
-	0, // [0:4] is the sub-list for method input_type
+	0, // 0: pb.IamService.ValidateToken:input_type -> pb.ValidateTokenRequest
+	2, // 1: pb.IamService.CheckPermission:input_type -> pb.CheckPermissionRequest
+	4, // 2: pb.IamService.RecordAudit:input_type -> pb.RecordAuditRequest
+	1, // 3: pb.IamService.ValidateToken:output_type -> pb.ValidateTokenResponse
+	3, // 4: pb.IamService.CheckPermission:output_type -> pb.CheckPermissionResponse
+	5, // 5: pb.IamService.RecordAudit:output_type -> pb.RecordAuditResponse
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -606,7 +492,7 @@ func file_iam_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_iam_proto_rawDesc), len(file_iam_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -6,12 +6,15 @@ option go_package="./pb";
 
 // IamService — internal gRPC surface for Identity, Access, Audit.
 //
-// BL-IAM-002 lands the two hot-path RPCs that every downstream service calls:
+// BL-IAM-002 landed the two hot-path RPCs that every downstream service calls:
 //   - ValidateToken   — verify a bearer + return identity claims + role names
 //   - CheckPermission — resolve (resource, action, scope) via user_roles × role_permissions × permissions
 //
-// GetUser + RecordAudit remain planned (BL-IAM-004 / S1-E-06) — not part of
-// this contract yet.
+// BL-IAM-004 adds the audit-producer surface so state-changing calls in every
+// service record one append-only row in iam.audit_logs:
+//   - RecordAudit — insert one row into iam.audit_logs for a state-changing action
+//
+// GetUser remains planned (S1-E-06) — not part of this contract yet.
 service IamService {
   // Healthz returns ok=true if the service process is alive.
   // Placeholder for the pilot; real health checks go through gRPC health protocol.
@@ -30,6 +33,18 @@ service IamService {
   // Returns allowed=false (ok gRPC status) when the tuple is not granted — consumers
   // translate that to HTTP 403. Invalid scope or missing user_id yields InvalidArgument.
   rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse) {}
+
+  // RecordAudit inserts one row into iam.audit_logs for a state-changing action.
+  //
+  // The row is append-only at the DB layer (UPDATE/DELETE raise insufficient_privilege
+  // via trigger). Call this synchronously from the caller's business transaction where
+  // strict business-success ↔ audit-success atomicity is required. Callers that prefer
+  // best-effort emission wrap the RPC in a goroutine on their side — the wire contract
+  // itself is synchronous and atomic-per-call.
+  //
+  // Returns InvalidArgument when resource / action are empty, or when user_id /
+  // branch_id are set but not valid UUIDs.
+  rpc RecordAudit(RecordAuditRequest) returns (RecordAuditResponse) {}
 }
 
 message HealthzRequest {}
@@ -69,4 +84,44 @@ message CheckPermissionRequest {
 
 message CheckPermissionResponse {
   bool allowed = 1;
+}
+
+message RecordAuditRequest {
+  // UUID string of the actor (iam.users.id). Empty string means "system-initiated"
+  // (no foreign key — the audit_logs.user_id column is nullable). Non-empty values
+  // must parse as UUIDs or the call fails InvalidArgument.
+  string user_id = 1;
+
+  // UUID string of the actor's branch (iam.users.branch_id), optional. Empty means
+  // "no branch scope" (column is nullable). Non-empty values must parse as UUIDs.
+  string branch_id = 2;
+
+  // Resource key — e.g. "user", "booking", "package", "journal_entry". Required.
+  string resource = 3;
+
+  // Resource identifier — typically a UUID string, but the column is TEXT so any
+  // opaque id is acceptable. Empty string permitted (the column default is '').
+  string resource_id = 4;
+
+  // Action key — e.g. "create", "update", "suspend", "approve". Required.
+  string action = 5;
+
+  // JSONB-encoded pre-change state of the resource. Empty bytes → NULL in storage.
+  // Callers marshal their own JSON; the server does not interpret the contents.
+  bytes old_value = 6;
+
+  // JSONB-encoded post-change state of the resource. Empty bytes → NULL in storage.
+  bytes new_value = 7;
+
+  // Actor IP as an IP literal (e.g. "203.0.113.5"). Empty string → NULL in storage.
+  // Non-empty values must be valid IPs (IPv4 or IPv6) or the call fails InvalidArgument.
+  string ip = 8;
+}
+
+message RecordAuditResponse {
+  // UUID string of the newly-inserted iam.audit_logs.id.
+  string audit_log_id = 1;
+
+  // Insertion timestamp as Unix seconds UTC (matches ValidateToken convention).
+  int64 created_at_unix = 2;
 }
