@@ -51,11 +51,10 @@ Shared (commit to repo):
 - Team-level workflow rules in this file.
 - AI onboarding and routing guidance in `AGENTS.md`.
 - PR template and other repo-level collaboration files.
-- Shared Cursor agent rules under `.cursor/rules/` (see `.gitignore` — other `.cursor/*` paths stay local).
 
 Local only (do not commit):
 
-- Agent-specific private instructions (`CLAUDE.md`, local `.cursor/` files outside `rules/`, and similar local setup).
+- Agent-specific private instructions (`CLAUDE.md`, `.cursor/`, and similar local setup).
 - Personal editor preferences (theme, keymap, UI preferences).
 - Local helper scripts or notes that are not part of team workflow.
 
@@ -79,8 +78,6 @@ Important:
 
 - The `body` parameter **replaces** the web UI default from `.github/pull_request_template.md`; it does not append to it. Put the **full** template sections (same headings as the file) into `body`, filled out for this PR, then URL-encode.
 - Very long URLs can hit server limits (**414**). If so, open the compare page with `quick_pull=1` and title only, then paste a pre-written body, or use `gh pr create` with `--body-file`.
-
-Cursor agents follow the same convention in `.cursor/rules/pr-prefilled-open-link.mdc`.
 
 ## Pull Request Checklist
 
