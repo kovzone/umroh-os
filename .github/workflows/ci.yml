@@ -1,0 +1,89 @@
+# Path-filtered CI (S0-J-06). Expensive jobs run only when matching paths change.
+# See CONTRIBUTING.md § "CI and path filters".
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [dev, main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'services/**'
+              - 'Makefile'
+              - 'migration/**'
+              - 'docker-compose.dev.yml'
+              - '.github/workflows/ci.yml'
+            web:
+              - 'apps/core-web/**'
+              - '.github/workflows/ci.yml'
+
+  test-go:
+    name: Go unit tests (services)
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: services/iam-svc/go.mod
+          cache-dependency-path: |
+            services/gateway-svc/go.sum
+            services/iam-svc/go.sum
+            services/catalog-svc/go.sum
+            services/booking-svc/go.sum
+            services/jamaah-svc/go.sum
+            services/payment-svc/go.sum
+            services/visa-svc/go.sum
+            services/ops-svc/go.sum
+            services/logistics-svc/go.sum
+            services/finance-svc/go.sum
+            services/crm-svc/go.sum
+      - name: make test
+        run: make test
+
+  test-web:
+    name: core-web (check + test)
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/core-web/package-lock.json
+      - name: npm ci + check + test
+        working-directory: apps/core-web
+        run: |
+          npm ci
+          npm run check
+          npm test
+
+  skip-code-checks:
+    name: Skip code checks (no service or core-web paths)
+    needs: changes
+    if: needs.changes.outputs.backend != 'true' && needs.changes.outputs.web != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "No paths matched backend or web filters; Go and core-web jobs were skipped."

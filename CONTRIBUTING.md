@@ -67,6 +67,18 @@ Local only (do not commit):
 
 Use the PR template in `.github/pull_request_template.md` and ensure all required sections are filled before requesting review.
 
+## CI and path filters
+
+GitHub Actions workflow **`.github/workflows/ci.yml`** (card **S0-J-06**) runs on every `pull_request` and on `push` to `dev` / `main`. It uses path filters so **expensive jobs are skipped** when the diff touches neither Go services nor `apps/core-web`:
+
+| Job | Runs when the PR / push changes any of |
+| --- | --- |
+| **Go unit tests** (`make test`) | `services/**`, `Makefile`, `migration/**`, `docker-compose.dev.yml`, or `.github/workflows/ci.yml` |
+| **core-web** (`npm run check` + `npm test` in `apps/core-web`) | `apps/core-web/**` or `.github/workflows/ci.yml` |
+| **Skip code checks** (fast no-op) | Neither of the above (for example **docs-only** or other non-code paths) |
+
+Mixed PRs (for example `services/` + `docs/`) still match the backend and/or web filters, so the full relevant matrix runs. Editing **only** this workflow file matches both filters on purpose so CI self-validates.
+
 ## Canonical References
 
 - Detailed Git workflow: `docs/04-backend-conventions/08-git-workflow.md`
