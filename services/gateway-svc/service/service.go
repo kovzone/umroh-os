@@ -31,6 +31,11 @@ type IService interface {
 
 	// Per-backend liveness proxies — called by the web app's status page.
 	GetIamSystemLive(ctx context.Context) (*iam_rest_adapter.LivenessResult, error)
+
+	// Traced cross-service path — the S0-J-05 observability acceptance check
+	// flows through gateway-svc → iam-svc here.
+	GetIamSystemDbTxDiagnostic(ctx context.Context, message string) (*iam_rest_adapter.DbTxDiagnosticResult, error)
+
 	GetCatalogSystemLive(ctx context.Context) (*catalog_rest_adapter.LivenessResult, error)
 	GetBookingSystemLive(ctx context.Context) (*booking_rest_adapter.LivenessResult, error)
 	GetJamaahSystemLive(ctx context.Context) (*jamaah_rest_adapter.LivenessResult, error)

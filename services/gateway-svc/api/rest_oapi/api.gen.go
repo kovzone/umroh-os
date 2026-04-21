@@ -6,9 +6,22 @@ package rest_oapi
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/oapi-codegen/runtime"
 )
+
+// DbTxDiagnosticResponse defines model for DbTxDiagnosticResponse.
+type DbTxDiagnosticResponse struct {
+	Data struct {
+		// DiagnosticId ID of the row inserted by iam-svc.
+		DiagnosticId int64 `json:"diagnostic_id"`
+
+		// Message Echo of the message received from the client.
+		Message string `json:"message"`
+	} `json:"data"`
+}
 
 // ErrorResponse defines model for ErrorResponse.
 type ErrorResponse struct {
@@ -32,6 +45,12 @@ type ReadyResponse struct {
 	} `json:"data"`
 }
 
+// GetIamSystemDbTxDiagnosticParams defines parameters for GetIamSystemDbTxDiagnostic.
+type GetIamSystemDbTxDiagnosticParams struct {
+	// Message Message to store and echo back.
+	Message *string `form:"message,omitempty" json:"message,omitempty"`
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Liveness probe
@@ -52,6 +71,9 @@ type ServerInterface interface {
 	// Proxy finance-svc liveness
 	// (GET /v1/finance/system/live)
 	GetFinanceSystemLive(c *fiber.Ctx) error
+	// Proxy iam-svc DB transaction diagnostic
+	// (GET /v1/iam/system/diagnostics/db-tx)
+	GetIamSystemDbTxDiagnostic(c *fiber.Ctx, params GetIamSystemDbTxDiagnosticParams) error
 	// Proxy iam-svc liveness
 	// (GET /v1/iam/system/live)
 	GetIamSystemLive(c *fiber.Ctx) error
@@ -113,6 +135,30 @@ func (siw *ServerInterfaceWrapper) GetCrmSystemLive(c *fiber.Ctx) error {
 func (siw *ServerInterfaceWrapper) GetFinanceSystemLive(c *fiber.Ctx) error {
 
 	return siw.Handler.GetFinanceSystemLive(c)
+}
+
+// GetIamSystemDbTxDiagnostic operation middleware
+func (siw *ServerInterfaceWrapper) GetIamSystemDbTxDiagnostic(c *fiber.Ctx) error {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetIamSystemDbTxDiagnosticParams
+
+	var query url.Values
+	query, err = url.ParseQuery(string(c.Request().URI().QueryString()))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for query string: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "message" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "message", query, &params.Message)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter message: %w", err).Error())
+	}
+
+	return siw.Handler.GetIamSystemDbTxDiagnostic(c, params)
 }
 
 // GetIamSystemLive operation middleware
@@ -183,6 +229,8 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 	router.Get(options.BaseURL+"/v1/crm/system/live", wrapper.GetCrmSystemLive)
 
 	router.Get(options.BaseURL+"/v1/finance/system/live", wrapper.GetFinanceSystemLive)
+
+	router.Get(options.BaseURL+"/v1/iam/system/diagnostics/db-tx", wrapper.GetIamSystemDbTxDiagnostic)
 
 	router.Get(options.BaseURL+"/v1/iam/system/live", wrapper.GetIamSystemLive)
 
@@ -324,6 +372,32 @@ func (response GetFinanceSystemLive200JSONResponse) VisitGetFinanceSystemLiveRes
 type GetFinanceSystemLive502JSONResponse ErrorResponse
 
 func (response GetFinanceSystemLive502JSONResponse) VisitGetFinanceSystemLiveResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(502)
+
+	return ctx.JSON(&response)
+}
+
+type GetIamSystemDbTxDiagnosticRequestObject struct {
+	Params GetIamSystemDbTxDiagnosticParams
+}
+
+type GetIamSystemDbTxDiagnosticResponseObject interface {
+	VisitGetIamSystemDbTxDiagnosticResponse(ctx *fiber.Ctx) error
+}
+
+type GetIamSystemDbTxDiagnostic200JSONResponse DbTxDiagnosticResponse
+
+func (response GetIamSystemDbTxDiagnostic200JSONResponse) VisitGetIamSystemDbTxDiagnosticResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetIamSystemDbTxDiagnostic502JSONResponse ErrorResponse
+
+func (response GetIamSystemDbTxDiagnostic502JSONResponse) VisitGetIamSystemDbTxDiagnosticResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(502)
 
@@ -500,6 +574,9 @@ type StrictServerInterface interface {
 	// Proxy finance-svc liveness
 	// (GET /v1/finance/system/live)
 	GetFinanceSystemLive(ctx context.Context, request GetFinanceSystemLiveRequestObject) (GetFinanceSystemLiveResponseObject, error)
+	// Proxy iam-svc DB transaction diagnostic
+	// (GET /v1/iam/system/diagnostics/db-tx)
+	GetIamSystemDbTxDiagnostic(ctx context.Context, request GetIamSystemDbTxDiagnosticRequestObject) (GetIamSystemDbTxDiagnosticResponseObject, error)
 	// Proxy iam-svc liveness
 	// (GET /v1/iam/system/live)
 	GetIamSystemLive(ctx context.Context, request GetIamSystemLiveRequestObject) (GetIamSystemLiveResponseObject, error)
@@ -675,6 +752,33 @@ func (sh *strictHandler) GetFinanceSystemLive(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else if validResponse, ok := response.(GetFinanceSystemLiveResponseObject); ok {
 		if err := validResponse.VisitGetFinanceSystemLiveResponse(ctx); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetIamSystemDbTxDiagnostic operation middleware
+func (sh *strictHandler) GetIamSystemDbTxDiagnostic(ctx *fiber.Ctx, params GetIamSystemDbTxDiagnosticParams) error {
+	var request GetIamSystemDbTxDiagnosticRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetIamSystemDbTxDiagnostic(ctx.UserContext(), request.(GetIamSystemDbTxDiagnosticRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetIamSystemDbTxDiagnostic")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	} else if validResponse, ok := response.(GetIamSystemDbTxDiagnosticResponseObject); ok {
+		if err := validResponse.VisitGetIamSystemDbTxDiagnosticResponse(ctx); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
 	} else if response != nil {
