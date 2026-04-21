@@ -45,3 +45,59 @@ export type DepartureDetail = {
   status: 'open' | 'closed';
   pricing: DeparturePricing[];
 };
+
+export type CatalogListResponse = {
+  packages: Array<{
+    id: string;
+    kind: string;
+    name: string;
+    description: string;
+    cover_photo_url: string;
+    starting_price: {
+      list_amount: number;
+      list_currency: string;
+      settlement_currency: string;
+    };
+    next_departure?: {
+      id: string;
+      departure_date: string;
+      return_date: string;
+      remaining_seats: number;
+    };
+  }>;
+};
+
+export type CatalogPackageDetailResponse = {
+  package: {
+    id: string;
+    kind: string;
+    name: string;
+    description: string;
+    cover_photo_url: string;
+    highlights: string[];
+    departures: Array<{
+      id: string;
+      departure_date: string;
+      return_date: string;
+      status: 'open' | 'closed';
+      remaining_seats: number;
+    }>;
+  };
+};
+
+export type CatalogDepartureDetailResponse = {
+  departure: {
+    id: string;
+    package_id: string;
+    departure_date: string;
+    return_date: string;
+    total_seats: number;
+    remaining_seats: number;
+    status: 'open' | 'closed';
+    pricing: Array<{
+      room_type: RoomType;
+      list_amount: number;
+      list_currency: string;
+    }>;
+  };
+};
