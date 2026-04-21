@@ -676,6 +676,20 @@ This sub-section exists in S1 to freeze the intent so S2+ authors cannot quietly
 
 ---
 
+## § S1 UI placement (core-web vs multi-app)
+
+**Authoritative product default:** Q009 (`docs/07-open-questions/Q009-frontend-scaffolding-and-tooling.md`) targets a **monorepo of multiple SvelteKit apps** (`apps/b2c`, `apps/b2b`, `apps/admin`, `apps/field`) plus shared `packages/ui` and `packages/api-client`.
+
+**Engineering consensus for S1 (this slice):**
+
+1. **Implement S1 in `apps/core-web` first.** The repo currently has one scaffolded frontend (`apps/core-web`). Public catalog + draft-booking journeys ship here until a split is justified (bundle size, independent deploy, or auth boundary pain).
+2. **Organize routes for a clean future split.** Use SvelteKit layout groups and/or clear URL segments so **public B2C/B2B-attributed** surfaces stay separable from **internal console** routes (see **§ UI route matrix** below). Prefer new S1 pages under a predictable subtree (for example `(public)/...` or `/packages/...` + `/booking/...`) rather than overloading `/` beyond the existing landing.
+3. **When to extract `apps/b2c` (and shared packages).** Follow Q009 timing: introduce `packages/api-client` + additional apps when the second major audience or deploy cadence forces it — not as a blocking prerequisite for `S1-L-02..04`.
+
+This section exists so `S1-L-01` / backlog gate **BL-LGV-001** can cite **code + contract** (screen inventory + file paths under `apps/core-web`) without implying the multi-app scaffold already exists.
+
+---
+
 ## § UI route matrix (S0-L-01 / BL-FE-PLN-001)
 
 Planning map for **`apps/core-web`** (and future staff console routes) so S1 UI, gateway auth, and `S1-E-04` middleware share one list of **public vs internal** surfaces. Path segments in `{braces}` are dynamic.
@@ -712,6 +726,7 @@ Planning map for **`apps/core-web`** (and future staff console routes) so S1 UI,
 
 ## § Changelog
 
+- **2026-04-21** — Added `§ S1 UI placement (core-web vs multi-app)` — records engineering consensus: S1 ships in `apps/core-web` with route-level separation until Q009 multi-app / `packages/api-client` split is justified; aligns `S1-L-01` proof with code paths without requiring `apps/b2c` to exist yet.
 - **2026-04-21** — Added `§ UI route matrix` via `S0-L-01` / `BL-FE-PLN-001` — public vs internal URL table for S1, `active-now` vs `coming-next`, F1-aligned roles + permission column; **Contract gaps** list for draft GET/PATCH, submit, B2B routing, console shell.
 - **2026-04-21** — Added `§ Booking States` via `S1-J-04` — documents that S1 exercises only the `draft` state; includes the forward-looking full state machine from F4 W4 (unchanged, reproduced for readers); pins the Q006 KTP+passport gate on the future `draft → pending_payment` transition so S2+ authors cannot soften it. **All four S1 contracts are now in; the contract-first gate for S1 code (`S1-E-02`, `S1-E-03`, `S1-E-04`) is satisfied.**
 - **2026-04-21** — Added `§ Inventory` via `S1-J-03` — contracts `catalog.v1.CatalogService/ReserveSeats` + `ReleaseSeats` (gRPC): caller-supplied `reservation_id` for idempotency (option a), atomic-SQL pattern reference, five failure codes (`FAILED_PRECONDITION` / `NOT_FOUND` / `INVALID_ARGUMENT` / `ALREADY_EXISTS` / `INTERNAL`), and compensation prose covering the booking saga (ADR 0006) + the payment refund flow's Q004 conditional timing.
