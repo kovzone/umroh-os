@@ -1,9 +1,15 @@
 import type { PageLoad } from './$types';
+import { error } from '@sveltejs/kit';
+import { getCatalogPackageDetail } from '$lib/features/s1-catalog/repository';
 
 export const load: PageLoad = async ({ params }) => {
+  const pkg = await getCatalogPackageDetail(params.package_id);
+
+  if (!pkg) {
+    throw error(404, 'Package not found');
+  }
+
   return {
-    packageId: params.package_id,
-    stubNote:
-      'Draft create via POST /v1/bookings lands in S1-L-04; form fields stay disabled until booking-svc is wired.'
+    package: pkg
   };
 };
