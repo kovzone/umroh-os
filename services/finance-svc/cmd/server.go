@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 
+	"finance-svc/adapter/iam_grpc_adapter"
 	"finance-svc/api/grpc_api"
 	"finance-svc/api/grpc_api/pb"
 	"finance-svc/api/rest_oapi"
@@ -23,15 +24,15 @@ import (
 )
 
 // runRestServer runs the REST server using the OpenAPI-generated routes and handler.
-// finance-svc pilot scaffold exposes only the three standard scaffold endpoints:
 //
+// Public routes:
 //   - GET /system/live
 //   - GET /system/ready
 //   - GET /system/diagnostics/db-tx
 //
-// Real iam REST routes (user/role/branch/audit + auth login/refresh/logout)
-// land in F1.5–F1.11.
-func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool, serviceName string) {
+// Bearer-protected routes (BL-IAM-002) — require valid iam-svc token:
+//   - GET /v1/finance/ping
+func runRestServer(port int, api rest_oapi.ServerInterface, iamAdapter *iam_grpc_adapter.Adapter, metricsEnabled bool, serviceName string) {
 	app := fiber.New()
 
 	// CORS
@@ -45,7 +46,7 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool,
 	// traces initiated by an upstream caller (via W3C traceparent) continue in
 	// this process's spans instead of starting a new trace. Span names are
 	// prefixed with the service name so a multi-service trace in Tempo is easy
-	// to scan (e.g. "finance-svc GET /system/diagnostics/db-tx").
+	// to scan (e.g. "finance-svc GET /v1/finance/ping").
 	app.Use(otelfiber.Middleware(
 		otelfiber.WithSpanNameFormatter(func(c *fiber.Ctx) string {
 			return serviceName + " " + c.Method() + " " + c.Route().Path
@@ -62,12 +63,21 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool,
 
 	wrapper := rest_oapi.ServerInterfaceWrapper{Handler: api}
 
-	// System routes (probes + WithTx diagnostic)
+	// System routes (probes + WithTx diagnostic) — public.
 	system := app.Group("/system")
 	{
 		system.Get("/live", wrapper.Liveness)
 		system.Get("/ready", wrapper.Readiness)
 		system.Get("/diagnostics/db-tx", wrapper.DbTxDiagnostic)
+	}
+
+	// Authenticated routes (BL-IAM-002) — every handler under /v1/finance
+	// runs behind the bearer middleware, which fails closed on missing /
+	// invalid / unreachable iam-svc per F1 "never default to allow".
+	requireBearer := middleware.RequireBearerToken(iamAdapter)
+	finance := app.Group("/v1/finance", requireBearer)
+	{
+		finance.Get("/ping", wrapper.FinancePing)
 	}
 
 	go func() {
@@ -83,8 +93,9 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool,
 }
 
 // runGrpcServer runs the gRPC server exposing the FinanceService surface plus the
-// standard gRPC health protocol. Pilot wires a placeholder Healthz RPC;
-// ValidateToken, CheckPermission, GetUser, and RecordAudit land in F1.7.
+// standard gRPC health protocol. Finance-svc's own gRPC surface stays a
+// placeholder until S3-E-03 — real cross-service RPCs (e.g. the booking-saga
+// callback for `payment.received`) land with the S3 contracts.
 func runGrpcServer(address string, apiServer *grpc_api.Server) *grpc.Server {
 	grpcServer := grpc.NewServer()
 

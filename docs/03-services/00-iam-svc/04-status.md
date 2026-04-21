@@ -13,7 +13,7 @@
 - [x] Seed migration `000004_seed_initial_admin` — HQ branch + super_admin role + admin user (dev password)
 - [x] Unit tests for service-layer helpers + Logout / GetMe / VerifyTOTP — BL-IAM-001
 - [x] e2e spec `tests/e2e/tests/02a-iam-svc-sessions.spec.ts` — BL-IAM-001
-- [ ] gRPC service for `ValidateToken`, `CheckPermission`, `GetUser` — **BL-IAM-002** (`feat/s1-e-04-iam-middleware`)
+- [x] gRPC service for `ValidateToken` + `CheckPermission` — **BL-IAM-002** on 2026-04-21 (`feat/s1-e-04-iam-middleware`). `GetUser` stays deferred; F1-W3 acceptance did not require it.
 - [ ] Admin suspend + revoke-all-sessions flow — **BL-IAM-003** (`feat/s1-e-04-iam-suspend`)
 - [ ] Audit log write path + `RecordAudit` gRPC — **BL-IAM-004** (`feat/s1-e-04-iam-audit`)
 - [ ] User CRUD endpoints (admin) — `S1-E-06` depth card
@@ -47,11 +47,12 @@ Removed — baseline reference code not applicable to a minimal scaffold:
 
 **Path convention:** Per ADR 0004 all Go microservices live under `services/` at the repo root. `baseline/go-backend-template/` stays untouched as the reference.
 
-**Next:** sibling cards under `S1-E-04`:
+**Next:** remaining sibling cards under `S1-E-04`:
 
-1. **`BL-IAM-002`** (`feat/s1-e-04-iam-middleware`) — `iam.v1.IamService/ValidateToken` + `CheckPermission` gRPC + consumer middleware in other services.
-2. **`BL-IAM-003`** (`feat/s1-e-04-iam-suspend`) — admin suspend + revoke-all-sessions flow.
-3. **`BL-IAM-004`** (`feat/s1-e-04-iam-audit`) — `RecordAudit` gRPC + state-changing handlers in iam-svc + booking-svc start writing audit rows.
+1. **`BL-IAM-003`** (`feat/s1-e-04-iam-suspend`) — admin suspend + revoke-all-sessions flow.
+2. **`BL-IAM-004`** (`feat/s1-e-04-iam-audit`) — `RecordAudit` gRPC + state-changing handlers in iam-svc + booking-svc start writing audit rows.
+
+Known follow-up to ride along with `BL-IAM-003`: `/security-review` flagged a session-state oracle in the gRPC error messages (iam-svc's `server.go:70,111` forwards the full wrapped Go error string, which the finance-svc error middleware renders into the HTTP 401 body — `"session revoked"` vs `"load session: not found"` become distinguishable). Confidence 6/10, below the fix-before-merge threshold. One-line fix: return a code-derived constant string at both `status.Error` call sites and keep the detailed chain in logs/spans only.
 
 ## Assigned ports
 
@@ -74,3 +75,19 @@ Removed — baseline reference code not applicable to a minimal scaffold:
 - `util/tracing/tracing.go` — `otel.SetTextMapPropagator(NewCompositeTextMapPropagator(TraceContext{}, Baggage{}))` set globally so otelhttp outbound / otelfiber inbound share the W3C propagator.
 - `api/rest_oapi/system.go` — `DbTxDiagnostic` handler now starts its span from `c.UserContext()` (otelfiber's inbound-span context) instead of `c.Context()`, so handler spans correctly inherit the trace.
 - `go.mod` — added `github.com/gofiber/contrib/otelfiber/v2 v2.2.3`.
+
+## 2026-04-21 — BL-IAM-002 internal gRPC permission resolution
+
+The placeholder `pb.IamService` ships its first two real RPCs so downstream services can stop faking auth in tests. Shape matches the § Booking auth row in `docs/contracts/slice-S1.md` (permission strings as `resource` / `action` / `scope` tuples, e.g. `booking.create_on_behalf`); no new § IAM section needed in the slice contract — the wire is producer-owned.
+
+- `api/grpc_api/pb/iam.proto` — added `ValidateToken(ValidateTokenRequest)` returning `user_id` / `branch_id` / `session_id` / `roles[]` / `expires_at_unix`, and `CheckPermission(CheckPermissionRequest)` returning `allowed`. Regenerated via the root `make genpb` (`iam.pb.go` + `iam_grpc.pb.go`).
+- `api/grpc_api/server.go` — two new methods on `*Server` mirroring the `Healthz` pattern (tracer span, `LogWithTrace`, delegate to service). Errors map to gRPC codes via `apperrors.GRPCCode`.
+- `service/permissions.go` (new) — `ValidateToken` verifies via `tokenMaker.VerifyToken` (PASETO v2 local), reloads the session row (rejects revoked / expired), and fetches role names fresh from the DB on every call so role changes propagate without waiting for the token to roll. `CheckPermission` validates the scope against the `iam.permission_scope` enum at the service boundary before the DB hit; `allowed=false` is a valid outcome (not an error).
+- `store/postgres_store/queries/permissions.sql` — added `UserHasPermission :one` (EXISTS-based join over `user_roles × role_permissions × permissions`; pgx bound params, index-backed).
+- `store/postgres_store/queries/user_roles.sql` — added `ListRoleNamesForUser :many` (joins `user_roles × roles`, ORDER BY role name).
+- `internal/mocks/istore.go` — three new overrides for the service-test doubles: `GetSessionByID`, `ListRoleNamesForUser`, `UserHasPermission`.
+- `service/permissions_test.go` (new) — 11 cases: `ValidateToken` happy / empty-token / malformed-token / revoked-session / expired-session; `CheckPermission` allow / deny / unknown-scope / missing-field / malformed-uuid / store-error. Uses a real PASETO maker for the happy-path token so the verifier round-trip is exercised.
+
+Seed fixtures landed in `migration/000005_seed_iam_test_roles_and_permissions.{up,down}.sql`: one `journal_entry/read/global` permission, two roles (`finance_admin` + `cs_agent`), two dev-only users (`finance@umrohos.dev` with `finance_admin`, `cs@umrohos.dev` with `cs_agent`). `finance_admin` and `super_admin` both hold the permission; `cs_agent` holds nothing — drives the deny path. Passwords reuse the dev-only bcrypt hash from `000004_seed_initial_admin`.
+
+Consumer-side wire-up landed alongside in `services/finance-svc/`: new `adapter/iam_grpc_adapter/` + `api/rest_oapi/middleware/bearer_auth.go` + `GET /v1/finance/ping` handler + `cmd/start.go` dial to `iam-svc:50051`. The bearer middleware fails closed on any iam error (`mapIamError` default branch → `ErrUnauthorized`) per F1 "never default to allow". e2e coverage: `tests/e2e/tests/02b-iam-svc-permission-gate.spec.ts` (4 cases — 200 / 403 / 401 / 401). (finance-svc's `04-status.md` stays pristine — its own domain checklist lands with S3-E-03 + S3-E-07; nothing in this card's scope fills any of those boxes.)

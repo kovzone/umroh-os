@@ -1,15 +1,21 @@
 openapi: 3.0.3
 info:
   title: finance-svc API
-  version: 0.1.0
+  version: 0.2.0
   description: |
-    System endpoints for finance-svc (Identity, Access, Audit).
+    finance-svc REST surface.
 
-    Pilot scaffold — exposes only the three standard scaffold endpoints:
-    /system/live, /system/ready, /system/diagnostics/db-tx.
+    Scaffold exposes the three standard diagnostic endpoints under `/system/*`
+    plus the BL-IAM-002 placeholder `GET /v1/finance/ping` — the minimal
+    authenticated route that exercises the iam-svc permission gate ("finance
+    routes denied for non-finance roles"). Real finance endpoints (journals,
+    AR/AP, reports) land with S3-E-03 + S3-E-07.
 
-    Real auth endpoints (login, refresh, logout, /me) and user/role/branch/audit
-    endpoints land in F1.5–F1.11.
+    Authenticated routes require `Authorization: Bearer <token>`; the token is
+    verified against `iam.v1.IamService/ValidateToken` and the caller's
+    permissions via `iam.v1.IamService/CheckPermission`. The bearer enforcement
+    is middleware-level, not a schema concern — keep `security:` empty at the
+    path level and let `cmd/server.go` mount the middleware on protected groups.
 
 servers:
   - url: /
@@ -45,6 +51,44 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReadyResponse"
+
+  /v1/finance/ping:
+    get:
+      tags:
+        - Finance
+      summary: Authenticated finance ping (BL-IAM-002 placeholder)
+      description: |
+        Proves the iam-svc → finance-svc permission gate end-to-end.
+
+        Requires `Authorization: Bearer <token>`. The bearer is validated via
+        `iam-svc.ValidateToken` and the tuple `journal_entry/read/global` is
+        resolved via `iam-svc.CheckPermission`. Callers holding the permission
+        receive a 200 with their own identity echoed back; callers without it
+        receive a 403. Missing / invalid bearer is 401.
+
+        This route is the scaffold for every future finance endpoint's base
+        gate — real endpoints (journals, AR/AP, reports) land with S3-E-03 +
+        S3-E-07 and may substitute narrower permission tuples.
+      operationId: financePing
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancePingResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /system/diagnostics/db-tx:
     get:
@@ -106,6 +150,31 @@ components:
             ok:
               type: boolean
               example: true
+
+    FinancePingResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - message
+            - user_id
+            - roles
+          properties:
+            message:
+              type: string
+              example: ok
+            user_id:
+              type: string
+              format: uuid
+              description: Authenticated user's UUID (from the bearer token's session).
+            roles:
+              type: array
+              items:
+                type: string
+              description: Role names currently granted to the user (snapshot at validation time).
 
     DbTxDiagnosticResponse:
       type: object

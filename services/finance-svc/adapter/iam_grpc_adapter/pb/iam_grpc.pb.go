@@ -19,7 +19,6 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	IamService_Healthz_FullMethodName         = "/pb.IamService/Healthz"
 	IamService_ValidateToken_FullMethodName   = "/pb.IamService/ValidateToken"
 	IamService_CheckPermission_FullMethodName = "/pb.IamService/CheckPermission"
 )
@@ -27,30 +26,8 @@ const (
 // IamServiceClient is the client API for IamService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-//
-// IamService — internal gRPC surface for Identity, Access, Audit.
-//
-// BL-IAM-002 lands the two hot-path RPCs that every downstream service calls:
-//   - ValidateToken   — verify a bearer + return identity claims + role names
-//   - CheckPermission — resolve (resource, action, scope) via user_roles × role_permissions × permissions
-//
-// GetUser + RecordAudit remain planned (BL-IAM-004 / S1-E-06) — not part of
-// this contract yet.
 type IamServiceClient interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
-	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
-	// ValidateToken verifies a bearer access token and returns identity + current role names.
-	//
-	// Fails with Unauthenticated when the token is missing, malformed, expired, or the
-	// backing session row is revoked / missing. Callers (consumer-side bearer middleware)
-	// treat any error as fail-closed 401 per F1 acceptance.
 	ValidateToken(ctx context.Context, in *ValidateTokenRequest, opts ...grpc.CallOption) (*ValidateTokenResponse, error)
-	// CheckPermission resolves whether the user currently holds (resource, action, scope).
-	//
-	// Returns allowed=true when any of the user's roles grants the exact tuple.
-	// Returns allowed=false (ok gRPC status) when the tuple is not granted — consumers
-	// translate that to HTTP 403. Invalid scope or missing user_id yields InvalidArgument.
 	CheckPermission(ctx context.Context, in *CheckPermissionRequest, opts ...grpc.CallOption) (*CheckPermissionResponse, error)
 }
 
@@ -60,16 +37,6 @@ type iamServiceClient struct {
 
 func NewIamServiceClient(cc grpc.ClientConnInterface) IamServiceClient {
 	return &iamServiceClient{cc}
-}
-
-func (c *iamServiceClient) Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(HealthzResponse)
-	err := c.cc.Invoke(ctx, IamService_Healthz_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *iamServiceClient) ValidateToken(ctx context.Context, in *ValidateTokenRequest, opts ...grpc.CallOption) (*ValidateTokenResponse, error) {
@@ -95,30 +62,8 @@ func (c *iamServiceClient) CheckPermission(ctx context.Context, in *CheckPermiss
 // IamServiceServer is the server API for IamService service.
 // All implementations must embed UnimplementedIamServiceServer
 // for forward compatibility.
-//
-// IamService — internal gRPC surface for Identity, Access, Audit.
-//
-// BL-IAM-002 lands the two hot-path RPCs that every downstream service calls:
-//   - ValidateToken   — verify a bearer + return identity claims + role names
-//   - CheckPermission — resolve (resource, action, scope) via user_roles × role_permissions × permissions
-//
-// GetUser + RecordAudit remain planned (BL-IAM-004 / S1-E-06) — not part of
-// this contract yet.
 type IamServiceServer interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
-	Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error)
-	// ValidateToken verifies a bearer access token and returns identity + current role names.
-	//
-	// Fails with Unauthenticated when the token is missing, malformed, expired, or the
-	// backing session row is revoked / missing. Callers (consumer-side bearer middleware)
-	// treat any error as fail-closed 401 per F1 acceptance.
 	ValidateToken(context.Context, *ValidateTokenRequest) (*ValidateTokenResponse, error)
-	// CheckPermission resolves whether the user currently holds (resource, action, scope).
-	//
-	// Returns allowed=true when any of the user's roles grants the exact tuple.
-	// Returns allowed=false (ok gRPC status) when the tuple is not granted — consumers
-	// translate that to HTTP 403. Invalid scope or missing user_id yields InvalidArgument.
 	CheckPermission(context.Context, *CheckPermissionRequest) (*CheckPermissionResponse, error)
 	mustEmbedUnimplementedIamServiceServer()
 }
@@ -130,9 +75,6 @@ type IamServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedIamServiceServer struct{}
 
-func (UnimplementedIamServiceServer) Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Healthz not implemented")
-}
 func (UnimplementedIamServiceServer) ValidateToken(context.Context, *ValidateTokenRequest) (*ValidateTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ValidateToken not implemented")
 }
@@ -158,24 +100,6 @@ func RegisterIamServiceServer(s grpc.ServiceRegistrar, srv IamServiceServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&IamService_ServiceDesc, srv)
-}
-
-func _IamService_Healthz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HealthzRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(IamServiceServer).Healthz(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: IamService_Healthz_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IamServiceServer).Healthz(ctx, req.(*HealthzRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _IamService_ValidateToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -221,10 +145,6 @@ var IamService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "pb.IamService",
 	HandlerType: (*IamServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Healthz",
-			Handler:    _IamService_Healthz_Handler,
-		},
 		{
 			MethodName: "ValidateToken",
 			Handler:    _IamService_ValidateToken_Handler,

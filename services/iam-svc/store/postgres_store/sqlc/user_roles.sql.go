@@ -53,6 +53,37 @@ func (q *Queries) ListRoleIDsForUser(ctx context.Context, userID pgtype.UUID) ([
 	return items, nil
 }
 
+const listRoleNamesForUser = `-- name: ListRoleNamesForUser :many
+SELECT r.name
+FROM iam.user_roles ur
+JOIN iam.roles r ON r.id = ur.role_id
+WHERE ur.user_id = $1
+ORDER BY r.name
+`
+
+// ListRoleNamesForUser returns the role names currently assigned to the user.
+// Backs iam.v1.IamService/ValidateToken so downstream services receive role
+// strings alongside identity claims (BL-IAM-002).
+func (q *Queries) ListRoleNamesForUser(ctx context.Context, userID pgtype.UUID) ([]string, error) {
+	rows, err := q.db.Query(ctx, listRoleNamesForUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		items = append(items, name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUserIDsForRole = `-- name: ListUserIDsForRole :many
 SELECT user_id
 FROM iam.user_roles

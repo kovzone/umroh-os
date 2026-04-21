@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"time"
 
+	"finance-svc/adapter/iam_grpc_adapter"
 	"finance-svc/api/grpc_api"
 	"finance-svc/api/rest_oapi"
 	"finance-svc/service"
@@ -15,6 +16,10 @@ import (
 	"finance-svc/util/logging"
 	"finance-svc/util/monitoring"
 	"finance-svc/util/tracing"
+
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func start() {
@@ -90,15 +95,41 @@ func start() {
 		}, 10*time.Second)
 	}
 
+	// --- Dial iam-svc gRPC (BL-IAM-002) ---
+	//
+	// Traffic stays inside the docker-compose network — insecure is fine today;
+	// the gateway-svc hardening card adds mTLS. Unary interceptor propagates
+	// the current trace context so iam-svc spans continue the finance-svc trace.
+	iamConn, err := grpc.NewClient(
+		config.Iam.GrpcTarget,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Dial iam-svc gRPC").
+			Str("target", config.Iam.GrpcTarget).
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+	defer func() {
+		if err := iamConn.Close(); err != nil {
+			logger.Error().Err(err).Msg("close iam gRPC conn")
+		}
+	}()
+	iamAdapter := iam_grpc_adapter.NewAdapter(logger, tracer, iamConn)
+
 	// --- Init service layer ---
-	svc := service.NewService(logger, tracer, config.App.Name, store)
+	svc := service.NewService(logger, tracer, config.App.Name, store, iamAdapter)
 
 	// --- Init API layers ---
 	restServer := rest_oapi.NewServer(logger, tracer, svc)
 	grpcServer := grpc_api.NewServer(logger, tracer, svc)
 
 	// --- Run servers ---
-	runRestServer(config.Api.Rest.Port, restServer, config.Api.Metrics.Enabled, config.OtelTracer.Name)
+	runRestServer(config.Api.Rest.Port, restServer, iamAdapter, config.Api.Metrics.Enabled, config.OtelTracer.Name)
 	runGrpcServer(config.Api.Grpc.Address, grpcServer)
 
 	// --- Wait for signal ---

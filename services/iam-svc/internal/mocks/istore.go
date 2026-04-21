@@ -17,15 +17,16 @@ import (
 // the mock for this call" signal.
 //
 // Methods that this package bothers to override today are the ones used by
-// service/auth.go + service/me.go's non-WithTx code paths:
+// service/auth.go + service/me.go + service/permissions.go non-WithTx code paths:
 //
 //   - GetUserByEmail, GetUserByID
 //   - RevokeSession, RevokeAllSessionsForUser
 //   - UpdateUserTOTP
-//   - GetSessionByRefreshHash
+//   - GetSessionByRefreshHash, GetSessionByID
+//   - ListRoleNamesForUser, UserHasPermission
 //
 // The WithTx callback-threading paths (Login, RefreshSession, EnrollTOTP) are
-// exercised end-to-end in tests/e2e/tests/04-iam-svc-sessions.spec.ts against
+// exercised end-to-end in tests/e2e/tests/02a-iam-svc-sessions.spec.ts against
 // the real dev compose Postgres — no hand-rolled WithTx fake needed here.
 type IStore struct {
 	mock.Mock
@@ -72,9 +73,26 @@ func (m *IStore) RevokeAllSessionsForUser(ctx context.Context, userID pgtype.UUI
 	return args.Error(0)
 }
 
+func (m *IStore) GetSessionByID(ctx context.Context, id pgtype.UUID) (sqlc.IamSession, error) {
+	args := m.Called(ctx, id)
+	return args.Get(0).(sqlc.IamSession), args.Error(1)
+}
+
 // ─── TOTP / user updates ───
 
 func (m *IStore) UpdateUserTOTP(ctx context.Context, arg sqlc.UpdateUserTOTPParams) error {
 	args := m.Called(ctx, arg)
 	return args.Error(0)
+}
+
+// ─── Permission resolution (BL-IAM-002) ───
+
+func (m *IStore) ListRoleNamesForUser(ctx context.Context, userID pgtype.UUID) ([]string, error) {
+	args := m.Called(ctx, userID)
+	return args.Get(0).([]string), args.Error(1)
+}
+
+func (m *IStore) UserHasPermission(ctx context.Context, arg sqlc.UserHasPermissionParams) (bool, error) {
+	args := m.Called(ctx, arg)
+	return args.Bool(0), args.Error(1)
 }
