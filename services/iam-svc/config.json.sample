@@ -26,6 +26,16 @@
       }
     }
   },
+  "token": {
+    "type": "paseto",
+    "key": "iam_svc_development_paseto_key_0",
+    "access_duration": "15m",
+    "refresh_duration": "168h"
+  },
+  "totp": {
+    "issuer": "UmrohOS",
+    "encryption_key": "iam_svc_development_totp_aes_256"
+  },
   "otel_tracer": {
     "name": "iam-svc-tracer",
     "endpoint": "otel-collector:4317"

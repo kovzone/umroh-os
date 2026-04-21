@@ -5,14 +5,12 @@ import (
 )
 
 // Config holds all configuration for the application.
-//
-// Pilot scaffold scope: app name, REST + gRPC ports, Postgres pool, OTel
-// tracer. Token (auth) config returns with F1.5 when real login/refresh/logout
-// handlers land.
 type Config struct {
 	App        App        `mapstructure:"app"`
 	Api        Api        `mapstructure:"api"`
 	Store      Store      `mapstructure:"store"`
+	Token      Token      `mapstructure:"token"`
+	Totp       Totp       `mapstructure:"totp"`
 	OtelTracer OtelTracer `mapstructure:"otel_tracer"`
 }
 
@@ -61,6 +59,30 @@ type Postgres struct {
 
 type Store struct {
 	Postgres Postgres `mapstructure:"postgres"`
+}
+
+// Token config
+// Type selects the token scheme: "paseto" (default) or "jwt".
+// Key must be exactly 32 bytes for PASETO (ChaCha20-Poly1305 symmetric key);
+// at least 32 bytes for JWT (HS256 secret key).
+// AccessDuration is the short-lived access-token lifetime (e.g. 15m).
+// RefreshDuration is the opaque-refresh-token lifetime (e.g. 168h / 7d).
+
+type Token struct {
+	Type            string        `mapstructure:"type"`
+	Key             string        `mapstructure:"key"`
+	AccessDuration  time.Duration `mapstructure:"access_duration"`
+	RefreshDuration time.Duration `mapstructure:"refresh_duration"`
+}
+
+// TOTP config
+// Issuer is the label shown in the jamaah/staff authenticator app (e.g. "UmrohOS").
+// EncryptionKey is exactly 32 bytes; used as the AES-256-GCM key that wraps
+// iam.users.totp_secret at rest (F1 data-model requirement).
+
+type Totp struct {
+	Issuer        string `mapstructure:"issuer"`
+	EncryptionKey string `mapstructure:"encryption_key"`
 }
 
 // Otel tracer config

@@ -14,6 +14,7 @@ import (
 	"iam-svc/util/config"
 	"iam-svc/util/logging"
 	"iam-svc/util/monitoring"
+	"iam-svc/util/token"
 	"iam-svc/util/tracing"
 )
 
@@ -90,15 +91,47 @@ func start() {
 		}, 10*time.Second)
 	}
 
+	// --- Init token maker (PASETO / JWT per config) ---
+	tokenMaker, err := token.NewMaker(config.Token.Type, config.Token.Key)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Init token maker").
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+
+	// --- Validate TOTP encryption key (AES-256 requires 32 bytes) ---
+	totpKey := []byte(config.Totp.EncryptionKey)
+	if len(totpKey) != 32 {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Validate TOTP encryption key").
+			Int("len", len(totpKey)).
+			Msg("totp.encryption_key must be exactly 32 bytes (AES-256)")
+		os.Exit(1)
+	}
+
 	// --- Init service layer ---
-	svc := service.NewService(logger, tracer, config.App.Name, store)
+	svc := service.NewService(
+		logger,
+		tracer,
+		config.App.Name,
+		store,
+		tokenMaker,
+		config.Token.AccessDuration,
+		config.Token.RefreshDuration,
+		config.Totp.Issuer,
+		totpKey,
+	)
 
 	// --- Init API layers ---
 	restServer := rest_oapi.NewServer(logger, tracer, svc)
 	grpcServer := grpc_api.NewServer(logger, tracer, svc)
 
 	// --- Run servers ---
-	runRestServer(config.Api.Rest.Port, restServer, config.Api.Metrics.Enabled, config.OtelTracer.Name)
+	runRestServer(config.Api.Rest.Port, restServer, tokenMaker, config.Api.Metrics.Enabled, config.OtelTracer.Name)
 	runGrpcServer(config.Api.Grpc.Address, grpcServer)
 
 	// --- Wait for signal ---

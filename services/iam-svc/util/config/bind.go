@@ -26,6 +26,18 @@ func bindEnvironmentVariables() {
 	viper.BindEnv("store.postgres.pool.retry_base_delay", "POSTGRES_POOL_RETRY_BASE_DELAY")
 	viper.BindEnv("store.postgres.pool.retry_max_delay", "POSTGRES_POOL_RETRY_MAX_DELAY")
 
+	// Token config
+
+	viper.BindEnv("token.type", "TOKEN_TYPE")
+	viper.BindEnv("token.key", "TOKEN_KEY")
+	viper.BindEnv("token.access_duration", "TOKEN_ACCESS_DURATION")
+	viper.BindEnv("token.refresh_duration", "TOKEN_REFRESH_DURATION")
+
+	// TOTP config
+
+	viper.BindEnv("totp.issuer", "TOTP_ISSUER")
+	viper.BindEnv("totp.encryption_key", "TOTP_ENCRYPTION_KEY")
+
 	// Otel tracer config
 
 	viper.BindEnv("otel_tracer.name", "OTEL_TRACER_NAME")
