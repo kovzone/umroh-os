@@ -13,6 +13,7 @@ Core principles:
 2. `Phase` + `Exec seq` + `Slice` + `Task Code` describe **integration order** and **work packages** (not calendar deadlines).
 3. One feature detail may split into several backlog rows to keep PR size small.
 4. **`Blocked by gate`** — cell values mirror the **Engineering freeze** tables in [**05**](./05-slice-engineering-checklist-and-task-codes.md), not `Sx-J-*` contracts alone: **S1** = `S1-J-01..S1-J-04; S1-E-01; S1-L-01`; **S2** = `S2-J-01..S2-J-04; S2-E-01; S2-L-01`; **S3** = `S3-J-01..S3-J-03; S3-E-01`. **S4** / **S5** list Joint cards only (`S4-J-01..S4-J-02`, `S5-J-01..S5-J-02`) because **05** does not add `Sx-L-01` or a separate peer `Sx-E-01` row to those freeze tables.
+5. **Joint freeze vs `BL-*`:** each **`Sx-J-*`** card in **05** *may* have a matching backlog row (domain **`JNT`**, ids **`BL-JNT-*`**) so Joint contract work is traceable in this file. Implementation rows still use **freeze tokens** in **Blocked by gate** (same meaning as the **`BL-JNT-*`** set + `Sx-E-01` / `Sx-L-01` where **05** lists them).
 
 **Dashboard rows (`BL-DASH-*`, F11 widgets under Phase 6 slice codes such as `S3-L-05`, `S4-L-03`, `S5-L-02`):** these rows are **UI placement and product scope** (which screen owns which widget). **Data aggregation, cache TTLs, read-replica usage, and optional `dashboard-svc`** follow the engineering decision in **`docs/07-open-questions/Q066-dashboard-aggregation-architecture.md`** — not a second architecture.
 
@@ -40,6 +41,7 @@ Examples:
 - `BL-PAY-003`
 - `BL-B2C-001`
 - `BL-JMJ-001`
+- `BL-JNT-001` … **`JNT`** = Joint slice-freeze contract package (**05** `Sx-J-*`); one row per Joint card when the team wants explicit backlog ids (see Phase 1 `S1-J-01`–`S1-J-04`).
 
 Suggested workflow status:
 
@@ -80,8 +82,14 @@ Smaller numbers run first. Multiple rows may share the same number when safe to 
 
 ## Phase 1 — Discover + draft booking (S1)
 
+Slice **S1** Joint cards from **05** § Engineering freeze are tracked below as **`BL-JNT-001`**–**`BL-JNT-004`** (1:1 with **`S1-J-01`**–**`S1-J-04`**). **`S1-E-01`** / **`S1-L-01`** remain **05** task codes only until separate backlog rows are added.
+
 | Phase | Feature ref | Summary | Priority | Exec seq | Slice | Task Code | Backlog ID | Owner | Status | Blocked by gate | Acceptance (short) |
 |------:|---|---|:---:|---:|---|---|---|---|---|---|---|
+| 1 | S1-J-01 | Public catalog API contract (list/detail + seats read) | MH-MVP | 101 | S1 | S1-J-01 | BL-JNT-001 | J | todo | — | `docs/contracts/slice-S1.md` § Catalog merged + reviewed per **05** |
+| 1 | S1-J-02 | Draft booking API contract `POST /v1/bookings` | MH-MVP | 102 | S1 | S1-J-02 | BL-JNT-002 | J | todo | BL-JNT-001 | `slice-S1.md` § Booking merged + reviewed |
+| 1 | S1-J-03 | `ReserveSeats` / `ReleaseSeats` contract | MH-MVP | 103 | S1 | S1-J-03 | BL-JNT-003 | J | todo | BL-JNT-001; BL-JNT-002 | `slice-S1.md` § Inventory merged + reviewed |
+| 1 | S1-J-04 | S1 booking states + Q006 / document MVP gate | MH-MVP | 104 | S1 | S1-J-04 | BL-JNT-004 | J | todo | BL-JNT-001; BL-JNT-002; BL-JNT-003 | States + minimum document rule explicit in `slice-S1.md` per **05** |
 | 1 | F1-W1 | Internal login + refresh token flow | MH-MVP | 110 | S1 | S1-E-04 | BL-IAM-001 | E | todo | S1-J-01..S1-J-04; S1-E-01; S1-L-01 | Login succeeds, refresh works, unauthorized → 401 |
 | 1 | F1-W3 | `CheckPermission` middleware for internal routes | MH-MVP | 111 | S1 | S1-E-04 | BL-IAM-002 | E | todo | S1-J-01..S1-J-04; S1-E-01; S1-L-01 | Finance routes denied for non-finance roles |
 | 1 | F1-W5 | Basic suspend/revoke session | MH-MVP | 112 | S1 | S1-E-04 | BL-IAM-003 | E | todo | S1-J-01..S1-J-04; S1-E-01; S1-L-01 | Suspended user cannot access again |
