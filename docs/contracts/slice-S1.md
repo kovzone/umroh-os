@@ -569,6 +569,20 @@ RETURNING reserved_seats, total_seats;
 
 This is the **repo-wide pattern for atomic capacity decrements** and is referenced by F2 `Acceptance criteria` ("concurrent `ReserveSeats(n)` cannot oversell"). The actual DDL + sqlc query for the `package_departures` row + dedup table lives in `S1-E-02` (catalog-svc scaffolding); this contract deliberately does **not** prescribe table names or index choices beyond the capacity guard.
 
+### S1-E-01 engineering review (BL-EGV-001)
+
+**Date:** 2026-04-22  
+**Reviewer:** Engineering
+
+**Approved** for `S1-E-01` (seat concurrency + DB transaction gate) with the following findings:
+
+1. The contract requires a single atomic guard statement (`UPDATE ... WHERE reserved_seats + $seats <= total_seats RETURNING ...`) as the seat decrement primitive; this is sufficient to prevent oversell under concurrent writers when executed inside one DB transaction.
+2. The dedup write (`reservation_id`, `departure_id`, `seats`, `expires_at`) is explicitly required to commit in the same transaction as the capacity decrement, which preserves exactly-once semantics for retries/replays.
+3. Failure mapping is explicit and safe for concurrent races (`FAILED_PRECONDITION insufficient_capacity` for zero-row atomic update, `ALREADY_EXISTS reservation_id_conflict` for idempotency misuse).
+4. Compensation is contractually pinned to idempotent `ReleaseSeats` and disallows policy drift (Q004 timing lives in caller saga policy, mechanism remains transactional in catalog).
+
+**Gate note:** This review approves the `S1-J-03` contract and atomic pattern. Runtime enforcement lands in `S1-E-02` / `S1-E-03` implementation PRs.
+
 ### Compensation story
 
 Two callers invoke this pair today; their compensation patterns are documented here so implementers don't hand-roll inconsistent retry logic.
@@ -745,6 +759,7 @@ Planning map for **`apps/core-web`** (and future staff console routes) so S1 UI,
 
 ## § Changelog
 
+- **2026-04-22** — Added `S1-E-01` engineering approval note under `§ Inventory` (`BL-EGV-001`): reviewed seat concurrency + transaction atomicity requirements for `ReserveSeats` / `ReleaseSeats`; gate approved with implementation deferred to `S1-E-02` / `S1-E-03`.
 - **2026-04-22** — Added `§ S1-L-01 — UI screen inventory` + shipped route shells in `apps/core-web` — closes backlog **BL-LGV-001** / task **S1-L-01** per **05** (contract bullets + components; no Figma).
 - **2026-04-21** — Added `§ S1 UI placement (core-web vs multi-app)` — records engineering consensus: S1 ships in `apps/core-web` with route-level separation until Q009 multi-app / `packages/api-client` split is justified; aligns `S1-L-01` proof with code paths without requiring `apps/b2c` to exist yet.
 - **2026-04-21** — Added `§ UI route matrix` via `S0-L-01` / `BL-FE-PLN-001` — public vs internal URL table for S1, `active-now` vs `coming-next`, F1-aligned roles + permission column; **Contract gaps** list for draft GET/PATCH, submit, B2B routing, console shell.
