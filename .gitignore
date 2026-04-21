@@ -26,5 +26,5 @@ prompts/
 # VS Code / Cursor workspace folder (keep local; not shared via git)
 .vscode/
 
-# local helper scripts (not for commit)
+# local scripts (keep out of repository)
 scripts/
