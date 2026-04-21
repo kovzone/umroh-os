@@ -17,13 +17,15 @@ import (
 // the mock for this call" signal.
 //
 // Methods that this package bothers to override today are the ones used by
-// service/auth.go + service/me.go + service/permissions.go non-WithTx code paths:
+// service/auth.go + service/me.go + service/permissions.go + service/audit.go
+// non-WithTx code paths:
 //
 //   - GetUserByEmail, GetUserByID
 //   - RevokeSession, RevokeAllSessionsForUser
 //   - UpdateUserTOTP
 //   - GetSessionByRefreshHash, GetSessionByID
 //   - ListRoleNamesForUser, UserHasPermission
+//   - InsertAuditLog (BL-IAM-004)
 //
 // The WithTx callback-threading paths (Login, RefreshSession, EnrollTOTP) are
 // exercised end-to-end in tests/e2e/tests/02a-iam-svc-sessions.spec.ts against
@@ -95,4 +97,11 @@ func (m *IStore) ListRoleNamesForUser(ctx context.Context, userID pgtype.UUID) (
 func (m *IStore) UserHasPermission(ctx context.Context, arg sqlc.UserHasPermissionParams) (bool, error) {
 	args := m.Called(ctx, arg)
 	return args.Bool(0), args.Error(1)
+}
+
+// ─── Audit emit (BL-IAM-004) ───
+
+func (m *IStore) InsertAuditLog(ctx context.Context, arg sqlc.InsertAuditLogParams) (sqlc.IamAuditLog, error) {
+	args := m.Called(ctx, arg)
+	return args.Get(0).(sqlc.IamAuditLog), args.Error(1)
 }

@@ -24,8 +24,10 @@ import (
 // S1-E-04 (BL-IAM-003) adds the admin-side SuspendUser action that flips
 // `iam.users.status` to `suspended` and revokes every active session in one tx.
 //
-// Deferred (sibling S1-E-04 cards + S1-E-06 depth card):
-//   - Audit log writes (BL-IAM-004)
+// S1-E-04 (BL-IAM-004) adds the audit-producer RPC (RecordAudit) and wires
+// SuspendUser's WithTx to emit its own audit row inside the same transaction.
+//
+// Deferred (S1-E-06 depth card):
 //   - Admin user / role / branch CRUD (S1-E-06)
 type IService interface {
 	// System
@@ -49,6 +51,9 @@ type IService interface {
 
 	// Admin actions — BL-IAM-003 (implemented in service/admin.go).
 	SuspendUser(ctx context.Context, params *SuspendUserParams) (*SuspendUserResult, error)
+
+	// Audit producer — BL-IAM-004 (implemented in service/audit.go).
+	RecordAudit(ctx context.Context, params *RecordAuditParams) (*RecordAuditResult, error)
 }
 
 type Service struct {

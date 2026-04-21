@@ -343,6 +343,174 @@ func (x *CheckPermissionResponse) GetAllowed() bool {
 	return false
 }
 
+type RecordAuditRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// UUID string of the actor (iam.users.id). Empty string means "system-initiated"
+	// (no foreign key — the audit_logs.user_id column is nullable). Non-empty values
+	// must parse as UUIDs or the call fails InvalidArgument.
+	UserId string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// UUID string of the actor's branch (iam.users.branch_id), optional. Empty means
+	// "no branch scope" (column is nullable). Non-empty values must parse as UUIDs.
+	BranchId string `protobuf:"bytes,2,opt,name=branch_id,json=branchId,proto3" json:"branch_id,omitempty"`
+	// Resource key — e.g. "user", "booking", "package", "journal_entry". Required.
+	Resource string `protobuf:"bytes,3,opt,name=resource,proto3" json:"resource,omitempty"`
+	// Resource identifier — typically a UUID string, but the column is TEXT so any
+	// opaque id is acceptable. Empty string permitted (the column default is ”).
+	ResourceId string `protobuf:"bytes,4,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
+	// Action key — e.g. "create", "update", "suspend", "approve". Required.
+	Action string `protobuf:"bytes,5,opt,name=action,proto3" json:"action,omitempty"`
+	// JSONB-encoded pre-change state of the resource. Empty bytes → NULL in storage.
+	// Callers marshal their own JSON; the server does not interpret the contents.
+	OldValue []byte `protobuf:"bytes,6,opt,name=old_value,json=oldValue,proto3" json:"old_value,omitempty"`
+	// JSONB-encoded post-change state of the resource. Empty bytes → NULL in storage.
+	NewValue []byte `protobuf:"bytes,7,opt,name=new_value,json=newValue,proto3" json:"new_value,omitempty"`
+	// Actor IP as an IP literal (e.g. "203.0.113.5"). Empty string → NULL in storage.
+	// Non-empty values must be valid IPs (IPv4 or IPv6) or the call fails InvalidArgument.
+	Ip            string `protobuf:"bytes,8,opt,name=ip,proto3" json:"ip,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecordAuditRequest) Reset() {
+	*x = RecordAuditRequest{}
+	mi := &file_iam_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecordAuditRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecordAuditRequest) ProtoMessage() {}
+
+func (x *RecordAuditRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_iam_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecordAuditRequest.ProtoReflect.Descriptor instead.
+func (*RecordAuditRequest) Descriptor() ([]byte, []int) {
+	return file_iam_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *RecordAuditRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *RecordAuditRequest) GetBranchId() string {
+	if x != nil {
+		return x.BranchId
+	}
+	return ""
+}
+
+func (x *RecordAuditRequest) GetResource() string {
+	if x != nil {
+		return x.Resource
+	}
+	return ""
+}
+
+func (x *RecordAuditRequest) GetResourceId() string {
+	if x != nil {
+		return x.ResourceId
+	}
+	return ""
+}
+
+func (x *RecordAuditRequest) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *RecordAuditRequest) GetOldValue() []byte {
+	if x != nil {
+		return x.OldValue
+	}
+	return nil
+}
+
+func (x *RecordAuditRequest) GetNewValue() []byte {
+	if x != nil {
+		return x.NewValue
+	}
+	return nil
+}
+
+func (x *RecordAuditRequest) GetIp() string {
+	if x != nil {
+		return x.Ip
+	}
+	return ""
+}
+
+type RecordAuditResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// UUID string of the newly-inserted iam.audit_logs.id.
+	AuditLogId string `protobuf:"bytes,1,opt,name=audit_log_id,json=auditLogId,proto3" json:"audit_log_id,omitempty"`
+	// Insertion timestamp as Unix seconds UTC (matches ValidateToken convention).
+	CreatedAtUnix int64 `protobuf:"varint,2,opt,name=created_at_unix,json=createdAtUnix,proto3" json:"created_at_unix,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecordAuditResponse) Reset() {
+	*x = RecordAuditResponse{}
+	mi := &file_iam_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecordAuditResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecordAuditResponse) ProtoMessage() {}
+
+func (x *RecordAuditResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_iam_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecordAuditResponse.ProtoReflect.Descriptor instead.
+func (*RecordAuditResponse) Descriptor() ([]byte, []int) {
+	return file_iam_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *RecordAuditResponse) GetAuditLogId() string {
+	if x != nil {
+		return x.AuditLogId
+	}
+	return ""
+}
+
+func (x *RecordAuditResponse) GetCreatedAtUnix() int64 {
+	if x != nil {
+		return x.CreatedAtUnix
+	}
+	return 0
+}
+
 var File_iam_proto protoreflect.FileDescriptor
 
 const file_iam_proto_rawDesc = "" +
@@ -366,12 +534,27 @@ const file_iam_proto_rawDesc = "" +
 	"\x06action\x18\x03 \x01(\tR\x06action\x12\x14\n" +
 	"\x05scope\x18\x04 \x01(\tR\x05scope\"3\n" +
 	"\x17CheckPermissionResponse\x12\x18\n" +
-	"\aallowed\x18\x01 \x01(\bR\aallowed2\xd8\x01\n" +
+	"\aallowed\x18\x01 \x01(\bR\aallowed\"\xe9\x01\n" +
+	"\x12RecordAuditRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1b\n" +
+	"\tbranch_id\x18\x02 \x01(\tR\bbranchId\x12\x1a\n" +
+	"\bresource\x18\x03 \x01(\tR\bresource\x12\x1f\n" +
+	"\vresource_id\x18\x04 \x01(\tR\n" +
+	"resourceId\x12\x16\n" +
+	"\x06action\x18\x05 \x01(\tR\x06action\x12\x1b\n" +
+	"\told_value\x18\x06 \x01(\fR\boldValue\x12\x1b\n" +
+	"\tnew_value\x18\a \x01(\fR\bnewValue\x12\x0e\n" +
+	"\x02ip\x18\b \x01(\tR\x02ip\"_\n" +
+	"\x13RecordAuditResponse\x12 \n" +
+	"\faudit_log_id\x18\x01 \x01(\tR\n" +
+	"auditLogId\x12&\n" +
+	"\x0fcreated_at_unix\x18\x02 \x01(\x03R\rcreatedAtUnix2\x9a\x02\n" +
 	"\n" +
 	"IamService\x124\n" +
 	"\aHealthz\x12\x12.pb.HealthzRequest\x1a\x13.pb.HealthzResponse\"\x00\x12F\n" +
 	"\rValidateToken\x12\x18.pb.ValidateTokenRequest\x1a\x19.pb.ValidateTokenResponse\"\x00\x12L\n" +
-	"\x0fCheckPermission\x12\x1a.pb.CheckPermissionRequest\x1a\x1b.pb.CheckPermissionResponse\"\x00B\x06Z\x04./pbb\x06proto3"
+	"\x0fCheckPermission\x12\x1a.pb.CheckPermissionRequest\x1a\x1b.pb.CheckPermissionResponse\"\x00\x12@\n" +
+	"\vRecordAudit\x12\x16.pb.RecordAuditRequest\x1a\x17.pb.RecordAuditResponse\"\x00B\x06Z\x04./pbb\x06proto3"
 
 var (
 	file_iam_proto_rawDescOnce sync.Once
@@ -385,7 +568,7 @@ func file_iam_proto_rawDescGZIP() []byte {
 	return file_iam_proto_rawDescData
 }
 
-var file_iam_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_iam_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_iam_proto_goTypes = []any{
 	(*HealthzRequest)(nil),          // 0: pb.HealthzRequest
 	(*HealthzResponse)(nil),         // 1: pb.HealthzResponse
@@ -393,16 +576,20 @@ var file_iam_proto_goTypes = []any{
 	(*ValidateTokenResponse)(nil),   // 3: pb.ValidateTokenResponse
 	(*CheckPermissionRequest)(nil),  // 4: pb.CheckPermissionRequest
 	(*CheckPermissionResponse)(nil), // 5: pb.CheckPermissionResponse
+	(*RecordAuditRequest)(nil),      // 6: pb.RecordAuditRequest
+	(*RecordAuditResponse)(nil),     // 7: pb.RecordAuditResponse
 }
 var file_iam_proto_depIdxs = []int32{
 	0, // 0: pb.IamService.Healthz:input_type -> pb.HealthzRequest
 	2, // 1: pb.IamService.ValidateToken:input_type -> pb.ValidateTokenRequest
 	4, // 2: pb.IamService.CheckPermission:input_type -> pb.CheckPermissionRequest
-	1, // 3: pb.IamService.Healthz:output_type -> pb.HealthzResponse
-	3, // 4: pb.IamService.ValidateToken:output_type -> pb.ValidateTokenResponse
-	5, // 5: pb.IamService.CheckPermission:output_type -> pb.CheckPermissionResponse
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
+	6, // 3: pb.IamService.RecordAudit:input_type -> pb.RecordAuditRequest
+	1, // 4: pb.IamService.Healthz:output_type -> pb.HealthzResponse
+	3, // 5: pb.IamService.ValidateToken:output_type -> pb.ValidateTokenResponse
+	5, // 6: pb.IamService.CheckPermission:output_type -> pb.CheckPermissionResponse
+	7, // 7: pb.IamService.RecordAudit:output_type -> pb.RecordAuditResponse
+	4, // [4:8] is the sub-list for method output_type
+	0, // [0:4] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -419,7 +606,7 @@ func file_iam_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_iam_proto_rawDesc), len(file_iam_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

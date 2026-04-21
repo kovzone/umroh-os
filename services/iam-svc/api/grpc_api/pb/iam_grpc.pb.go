@@ -22,6 +22,7 @@ const (
 	IamService_Healthz_FullMethodName         = "/pb.IamService/Healthz"
 	IamService_ValidateToken_FullMethodName   = "/pb.IamService/ValidateToken"
 	IamService_CheckPermission_FullMethodName = "/pb.IamService/CheckPermission"
+	IamService_RecordAudit_FullMethodName     = "/pb.IamService/RecordAudit"
 )
 
 // IamServiceClient is the client API for IamService service.
@@ -30,12 +31,15 @@ const (
 //
 // IamService — internal gRPC surface for Identity, Access, Audit.
 //
-// BL-IAM-002 lands the two hot-path RPCs that every downstream service calls:
+// BL-IAM-002 landed the two hot-path RPCs that every downstream service calls:
 //   - ValidateToken   — verify a bearer + return identity claims + role names
 //   - CheckPermission — resolve (resource, action, scope) via user_roles × role_permissions × permissions
 //
-// GetUser + RecordAudit remain planned (BL-IAM-004 / S1-E-06) — not part of
-// this contract yet.
+// BL-IAM-004 adds the audit-producer surface so state-changing calls in every
+// service record one append-only row in iam.audit_logs:
+//   - RecordAudit — insert one row into iam.audit_logs for a state-changing action
+//
+// GetUser remains planned (S1-E-06) — not part of this contract yet.
 type IamServiceClient interface {
 	// Healthz returns ok=true if the service process is alive.
 	// Placeholder for the pilot; real health checks go through gRPC health protocol.
@@ -52,6 +56,17 @@ type IamServiceClient interface {
 	// Returns allowed=false (ok gRPC status) when the tuple is not granted — consumers
 	// translate that to HTTP 403. Invalid scope or missing user_id yields InvalidArgument.
 	CheckPermission(ctx context.Context, in *CheckPermissionRequest, opts ...grpc.CallOption) (*CheckPermissionResponse, error)
+	// RecordAudit inserts one row into iam.audit_logs for a state-changing action.
+	//
+	// The row is append-only at the DB layer (UPDATE/DELETE raise insufficient_privilege
+	// via trigger). Call this synchronously from the caller's business transaction where
+	// strict business-success ↔ audit-success atomicity is required. Callers that prefer
+	// best-effort emission wrap the RPC in a goroutine on their side — the wire contract
+	// itself is synchronous and atomic-per-call.
+	//
+	// Returns InvalidArgument when resource / action are empty, or when user_id /
+	// branch_id are set but not valid UUIDs.
+	RecordAudit(ctx context.Context, in *RecordAuditRequest, opts ...grpc.CallOption) (*RecordAuditResponse, error)
 }
 
 type iamServiceClient struct {
@@ -92,18 +107,31 @@ func (c *iamServiceClient) CheckPermission(ctx context.Context, in *CheckPermiss
 	return out, nil
 }
 
+func (c *iamServiceClient) RecordAudit(ctx context.Context, in *RecordAuditRequest, opts ...grpc.CallOption) (*RecordAuditResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RecordAuditResponse)
+	err := c.cc.Invoke(ctx, IamService_RecordAudit_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // IamServiceServer is the server API for IamService service.
 // All implementations must embed UnimplementedIamServiceServer
 // for forward compatibility.
 //
 // IamService — internal gRPC surface for Identity, Access, Audit.
 //
-// BL-IAM-002 lands the two hot-path RPCs that every downstream service calls:
+// BL-IAM-002 landed the two hot-path RPCs that every downstream service calls:
 //   - ValidateToken   — verify a bearer + return identity claims + role names
 //   - CheckPermission — resolve (resource, action, scope) via user_roles × role_permissions × permissions
 //
-// GetUser + RecordAudit remain planned (BL-IAM-004 / S1-E-06) — not part of
-// this contract yet.
+// BL-IAM-004 adds the audit-producer surface so state-changing calls in every
+// service record one append-only row in iam.audit_logs:
+//   - RecordAudit — insert one row into iam.audit_logs for a state-changing action
+//
+// GetUser remains planned (S1-E-06) — not part of this contract yet.
 type IamServiceServer interface {
 	// Healthz returns ok=true if the service process is alive.
 	// Placeholder for the pilot; real health checks go through gRPC health protocol.
@@ -120,6 +148,17 @@ type IamServiceServer interface {
 	// Returns allowed=false (ok gRPC status) when the tuple is not granted — consumers
 	// translate that to HTTP 403. Invalid scope or missing user_id yields InvalidArgument.
 	CheckPermission(context.Context, *CheckPermissionRequest) (*CheckPermissionResponse, error)
+	// RecordAudit inserts one row into iam.audit_logs for a state-changing action.
+	//
+	// The row is append-only at the DB layer (UPDATE/DELETE raise insufficient_privilege
+	// via trigger). Call this synchronously from the caller's business transaction where
+	// strict business-success ↔ audit-success atomicity is required. Callers that prefer
+	// best-effort emission wrap the RPC in a goroutine on their side — the wire contract
+	// itself is synchronous and atomic-per-call.
+	//
+	// Returns InvalidArgument when resource / action are empty, or when user_id /
+	// branch_id are set but not valid UUIDs.
+	RecordAudit(context.Context, *RecordAuditRequest) (*RecordAuditResponse, error)
 	mustEmbedUnimplementedIamServiceServer()
 }
 
@@ -138,6 +177,9 @@ func (UnimplementedIamServiceServer) ValidateToken(context.Context, *ValidateTok
 }
 func (UnimplementedIamServiceServer) CheckPermission(context.Context, *CheckPermissionRequest) (*CheckPermissionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckPermission not implemented")
+}
+func (UnimplementedIamServiceServer) RecordAudit(context.Context, *RecordAuditRequest) (*RecordAuditResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecordAudit not implemented")
 }
 func (UnimplementedIamServiceServer) mustEmbedUnimplementedIamServiceServer() {}
 func (UnimplementedIamServiceServer) testEmbeddedByValue()                    {}
@@ -214,6 +256,24 @@ func _IamService_CheckPermission_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _IamService_RecordAudit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecordAuditRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IamServiceServer).RecordAudit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IamService_RecordAudit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IamServiceServer).RecordAudit(ctx, req.(*RecordAuditRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // IamService_ServiceDesc is the grpc.ServiceDesc for IamService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -232,6 +292,10 @@ var IamService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckPermission",
 			Handler:    _IamService_CheckPermission_Handler,
+		},
+		{
+			MethodName: "RecordAudit",
+			Handler:    _IamService_RecordAudit_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
