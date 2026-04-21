@@ -121,6 +121,13 @@ type RefreshSessionResponse struct {
 	} `json:"data"`
 }
 
+// SuspendUserResponse defines model for SuspendUserResponse.
+type SuspendUserResponse struct {
+	Data struct {
+		User UserProfile `json:"user"`
+	} `json:"data"`
+}
+
 // UserProfile defines model for UserProfile.
 type UserProfile struct {
 	// BranchId Home-branch UUID. Empty for branch-less staff (super_admin seed).
@@ -195,6 +202,9 @@ type ServerInterface interface {
 	// Rotate refresh token — issue a new access + refresh pair
 	// (POST /v1/sessions/refresh)
 	RefreshSession(c *fiber.Ctx) error
+	// Suspend a user and revoke every active session
+	// (POST /v1/users/{id}/suspend)
+	SuspendUser(c *fiber.Ctx, id openapi_types.UUID) error
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -276,6 +286,22 @@ func (siw *ServerInterfaceWrapper) RefreshSession(c *fiber.Ctx) error {
 	return siw.Handler.RefreshSession(c)
 }
 
+// SuspendUser operation middleware
+func (siw *ServerInterfaceWrapper) SuspendUser(c *fiber.Ctx) error {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+
+	return siw.Handler.SuspendUser(c, id)
+}
+
 // FiberServerOptions provides options for the Fiber server.
 type FiberServerOptions struct {
 	BaseURL     string
@@ -314,6 +340,8 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 	router.Post(options.BaseURL+"/v1/sessions", wrapper.Login)
 
 	router.Post(options.BaseURL+"/v1/sessions/refresh", wrapper.RefreshSession)
+
+	router.Post(options.BaseURL+"/v1/users/:id/suspend", wrapper.SuspendUser)
 
 }
 
@@ -590,6 +618,59 @@ func (response RefreshSession403JSONResponse) VisitRefreshSessionResponse(ctx *f
 	return ctx.JSON(&response)
 }
 
+type SuspendUserRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type SuspendUserResponseObject interface {
+	VisitSuspendUserResponse(ctx *fiber.Ctx) error
+}
+
+type SuspendUser200JSONResponse SuspendUserResponse
+
+func (response SuspendUser200JSONResponse) VisitSuspendUserResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type SuspendUser400JSONResponse ErrorResponse
+
+func (response SuspendUser400JSONResponse) VisitSuspendUserResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type SuspendUser401JSONResponse ErrorResponse
+
+func (response SuspendUser401JSONResponse) VisitSuspendUserResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type SuspendUser403JSONResponse ErrorResponse
+
+func (response SuspendUser403JSONResponse) VisitSuspendUserResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type SuspendUser404JSONResponse ErrorResponse
+
+func (response SuspendUser404JSONResponse) VisitSuspendUserResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// DB transaction diagnostic
@@ -619,6 +700,9 @@ type StrictServerInterface interface {
 	// Rotate refresh token — issue a new access + refresh pair
 	// (POST /v1/sessions/refresh)
 	RefreshSession(ctx context.Context, request RefreshSessionRequestObject) (RefreshSessionResponseObject, error)
+	// Suspend a user and revoke every active session
+	// (POST /v1/users/{id}/suspend)
+	SuspendUser(ctx context.Context, request SuspendUserRequestObject) (SuspendUserResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx *fiber.Ctx, args interface{}) (interface{}, error)
@@ -871,6 +955,33 @@ func (sh *strictHandler) RefreshSession(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else if validResponse, ok := response.(RefreshSessionResponseObject); ok {
 		if err := validResponse.VisitRefreshSessionResponse(ctx); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// SuspendUser operation middleware
+func (sh *strictHandler) SuspendUser(ctx *fiber.Ctx, id openapi_types.UUID) error {
+	var request SuspendUserRequestObject
+
+	request.Id = id
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.SuspendUser(ctx.UserContext(), request.(SuspendUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SuspendUser")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	} else if validResponse, ok := response.(SuspendUserResponseObject); ok {
+		if err := validResponse.VisitSuspendUserResponse(ctx); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
 	} else if response != nil {

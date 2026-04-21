@@ -36,9 +36,12 @@ import (
 //   - GET    /v1/me                       (bearer)
 //   - POST   /v1/me/2fa/enroll            (bearer)
 //   - POST   /v1/me/2fa/verify            (bearer)
+//   - POST   /v1/users/:id/suspend        (bearer + super_admin — BL-IAM-003)
 //
 // `bearer` routes go through middleware.RequireBearerToken(tokenMaker) which
-// puts a verified *token.Payload into c.Locals(middleware.PayloadKey).
+// puts a verified *token.Payload into c.Locals(middleware.PayloadKey). The
+// admin-suspend route additionally gates on `iam.users/suspend/global` via
+// service.CheckPermission inside the handler.
 func runRestServer(port int, api rest_oapi.ServerInterface, tokenMaker token.Maker, metricsEnabled bool, serviceName string) {
 	app := fiber.New()
 
@@ -93,6 +96,14 @@ func runRestServer(port int, api rest_oapi.ServerInterface, tokenMaker token.Mak
 		me.Get("", wrapper.GetMe)
 		me.Post("/2fa/enroll", wrapper.EnrollTOTP)
 		me.Post("/2fa/verify", wrapper.VerifyTOTP)
+	}
+
+	// Admin routes — /v1/users. Bearer is required here; the handler performs
+	// an additional CheckPermission(iam.users, suspend, global) gate so an
+	// authenticated-but-unprivileged caller gets 403, not 200.
+	users := app.Group("/v1/users", requireBearer)
+	{
+		users.Post("/:id/suspend", wrapper.SuspendUser)
 	}
 
 	go func() {

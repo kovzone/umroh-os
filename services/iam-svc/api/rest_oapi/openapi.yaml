@@ -5,23 +5,26 @@ info:
   description: |
     Identity, Access, and Audit endpoints for UmrohOS.
 
-    Current scope (S1-E-04 / BL-IAM-001):
+    Current scope (S1-E-04 / BL-IAM-001 + BL-IAM-003):
       - System probes: `/system/live`, `/system/ready`, `/system/diagnostics/db-tx`
       - Sessions: `POST /v1/sessions` (login), `POST /v1/sessions/refresh`, `DELETE /v1/sessions`
       - Current user: `GET /v1/me`
       - TOTP self-enrollment: `POST /v1/me/2fa/enroll`, `POST /v1/me/2fa/verify`
+      - Admin suspend: `POST /v1/users/{id}/suspend`
 
-    Bearer-token authentication is enforced by middleware on every `/v1/me*` route
-    and on `DELETE /v1/sessions` (see `api/rest_oapi/middleware/bearer_auth.go`).
-    The middleware is not reflected in this spec because oapi-codegen + Fiber
-    do not round-trip the OpenAPI `securityScheme` type the way we'd want for
-    extraction into a request-context `*token.Payload`. A 401 response with
-    `ErrorResponse` is documented per operation instead.
+    Bearer-token authentication is enforced by middleware on every `/v1/me*` route,
+    on `DELETE /v1/sessions`, and on `POST /v1/users/{id}/suspend`
+    (see `api/rest_oapi/middleware/bearer_auth.go`). The middleware is not
+    reflected in this spec because oapi-codegen + Fiber do not round-trip the
+    OpenAPI `securityScheme` type the way we'd want for extraction into a
+    request-context `*token.Payload`. A 401 response with `ErrorResponse` is
+    documented per operation instead. The admin-suspend route additionally
+    enforces `iam.users/suspend/global` via `service.CheckPermission` and
+    responds 403 when the bearer's user lacks that grant.
 
     Deferred (sibling S1-E-04 cards + S1-E-06 depth card):
-      - gRPC ValidateToken / CheckPermission (BL-IAM-002)
-      - Admin suspend / revoke-all (BL-IAM-003)
       - Audit log write path (BL-IAM-004)
+      - Admin reactivate / force password reset (S1-E-06)
       - User / role / branch / audit-log admin CRUD (S1-E-06)
 
 servers:
@@ -313,6 +316,71 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  # ── Admin actions on users ────────────────────────────────────────────
+  /v1/users/{id}/suspend:
+    post:
+      tags:
+        - Admin
+      summary: Suspend a user and revoke every active session
+      description: |
+        Flips `iam.users.status` for the target user from `active` to `suspended`
+        and revokes every non-revoked row in `iam.sessions` for that user inside
+        one transaction. Closes F1-W5 acceptance ("Suspended user cannot access
+        again"): the status column gates any new login or refresh, the session
+        sweep invalidates outstanding refresh tokens, and `ValidateToken`
+        additionally reloads `users.status` on every call so consumer-side
+        permission checks fail closed before the short-lived access token TTL
+        elapses.
+
+        Requires a valid `Authorization: Bearer <access_token>` header. The
+        bearer's user must hold the `iam.users/suspend/global` permission
+        (granted to `super_admin` by migration `000006`). Idempotent: calling
+        this on an already-suspended user returns 200 and still sweeps any
+        sessions that raced in. An admin cannot suspend themselves — a
+        self-suspend request returns 400.
+
+        Unsuspend / reactivate and force-password-reset are deferred to S1-E-06.
+      operationId: suspendUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Target user UUID.
+      responses:
+        "200":
+          description: User suspended (echoes the post-suspend profile)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuspendUserResponse"
+        "400":
+          description: Malformed user id OR actor equals target (self-suspend)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Bearer's user lacks the `iam.users/suspend/global` permission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Target user not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     # ── System schemas ────────────────────────────────────────────────
@@ -555,3 +623,17 @@ components:
             verified_at:
               type: string
               format: date-time
+
+    # ── Admin schemas ─────────────────────────────────────────────────
+    SuspendUserResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - user
+          properties:
+            user:
+              $ref: "#/components/schemas/UserProfile"

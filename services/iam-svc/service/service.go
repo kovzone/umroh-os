@@ -21,8 +21,10 @@ import (
 // S1-E-04 (BL-IAM-002) adds the two internal-gRPC hot-path RPCs
 // every consumer service depends on: ValidateToken + CheckPermission.
 //
+// S1-E-04 (BL-IAM-003) adds the admin-side SuspendUser action that flips
+// `iam.users.status` to `suspended` and revokes every active session in one tx.
+//
 // Deferred (sibling S1-E-04 cards + S1-E-06 depth card):
-//   - Suspend / revoke-all (BL-IAM-003)
 //   - Audit log writes (BL-IAM-004)
 //   - Admin user / role / branch CRUD (S1-E-06)
 type IService interface {
@@ -44,6 +46,9 @@ type IService interface {
 	// Permission resolution — BL-IAM-002 (implemented in service/permissions.go).
 	ValidateToken(ctx context.Context, params *ValidateTokenParams) (*ValidateTokenResult, error)
 	CheckPermission(ctx context.Context, params *CheckPermissionParams) (*CheckPermissionResult, error)
+
+	// Admin actions — BL-IAM-003 (implemented in service/admin.go).
+	SuspendUser(ctx context.Context, params *SuspendUserParams) (*SuspendUserResult, error)
 }
 
 type Service struct {
