@@ -11,6 +11,7 @@ import (
 	"iam-svc/api/rest_oapi"
 	"iam-svc/api/rest_oapi/middleware"
 	"iam-svc/util/monitoring"
+	"iam-svc/util/token"
 
 	"github.com/gofiber/contrib/otelfiber/v2"
 	"github.com/gofiber/fiber/v2"
@@ -23,15 +24,22 @@ import (
 )
 
 // runRestServer runs the REST server using the OpenAPI-generated routes and handler.
-// iam-svc pilot scaffold exposes only the three standard scaffold endpoints:
 //
-//   - GET /system/live
-//   - GET /system/ready
-//   - GET /system/diagnostics/db-tx
+// Routes:
 //
-// Real iam REST routes (user/role/branch/audit + auth login/refresh/logout)
-// land in F1.5–F1.11.
-func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool, serviceName string) {
+//   - GET    /system/live                 (public)
+//   - GET    /system/ready                (public)
+//   - GET    /system/diagnostics/db-tx    (public; pilot scope)
+//   - POST   /v1/sessions                 (public — login)
+//   - POST   /v1/sessions/refresh         (public — rotate)
+//   - DELETE /v1/sessions                 (bearer — logout)
+//   - GET    /v1/me                       (bearer)
+//   - POST   /v1/me/2fa/enroll            (bearer)
+//   - POST   /v1/me/2fa/verify            (bearer)
+//
+// `bearer` routes go through middleware.RequireBearerToken(tokenMaker) which
+// puts a verified *token.Payload into c.Locals(middleware.PayloadKey).
+func runRestServer(port int, api rest_oapi.ServerInterface, tokenMaker token.Maker, metricsEnabled bool, serviceName string) {
 	app := fiber.New()
 
 	// CORS
@@ -61,13 +69,30 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool,
 	app.Use(middleware.ErrorHandler())
 
 	wrapper := rest_oapi.ServerInterfaceWrapper{Handler: api}
+	requireBearer := middleware.RequireBearerToken(tokenMaker)
 
-	// System routes (probes + WithTx diagnostic)
+	// System routes (probes + WithTx diagnostic) — public.
 	system := app.Group("/system")
 	{
 		system.Get("/live", wrapper.Liveness)
 		system.Get("/ready", wrapper.Readiness)
 		system.Get("/diagnostics/db-tx", wrapper.DbTxDiagnostic)
+	}
+
+	// Session routes — /v1/sessions. Login + refresh are public; logout requires bearer.
+	sessions := app.Group("/v1/sessions")
+	{
+		sessions.Post("", wrapper.Login)
+		sessions.Post("/refresh", wrapper.RefreshSession)
+		sessions.Delete("", requireBearer, wrapper.Logout)
+	}
+
+	// Current-user routes — /v1/me. All require bearer.
+	me := app.Group("/v1/me", requireBearer)
+	{
+		me.Get("", wrapper.GetMe)
+		me.Post("/2fa/enroll", wrapper.EnrollTOTP)
+		me.Post("/2fa/verify", wrapper.VerifyTOTP)
 	}
 
 	go func() {

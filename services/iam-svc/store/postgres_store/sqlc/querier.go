@@ -6,12 +6,62 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
+	AssignRoleToUser(ctx context.Context, arg AssignRoleToUserParams) error
+	CreateBranch(ctx context.Context, arg CreateBranchParams) (IamBranch, error)
+	CreatePermission(ctx context.Context, arg CreatePermissionParams) (IamPermission, error)
+	CreateRole(ctx context.Context, arg CreateRoleParams) (IamRole, error)
+	CreateSession(ctx context.Context, arg CreateSessionParams) (IamSession, error)
+	CreateUser(ctx context.Context, arg CreateUserParams) (IamUser, error)
+	DeleteBranch(ctx context.Context, id pgtype.UUID) error
+	DeletePermission(ctx context.Context, id pgtype.UUID) error
+	DeleteRole(ctx context.Context, id pgtype.UUID) error
+	GetAuditLogByID(ctx context.Context, id pgtype.UUID) (IamAuditLog, error)
+	GetBranchByCode(ctx context.Context, code string) (IamBranch, error)
+	GetBranchByID(ctx context.Context, id pgtype.UUID) (IamBranch, error)
 	GetDbTxDiagnostic(ctx context.Context, id int64) (Diagnostic, error)
+	GetPermissionByID(ctx context.Context, id pgtype.UUID) (IamPermission, error)
+	GetPermissionByTuple(ctx context.Context, arg GetPermissionByTupleParams) (IamPermission, error)
+	GetRoleByID(ctx context.Context, id pgtype.UUID) (IamRole, error)
+	GetRoleByName(ctx context.Context, name string) (IamRole, error)
+	GetSessionByID(ctx context.Context, id pgtype.UUID) (IamSession, error)
+	GetSessionByRefreshHash(ctx context.Context, refreshTokenHash string) (IamSession, error)
+	GetUserByEmail(ctx context.Context, email string) (IamUser, error)
+	GetUserByID(ctx context.Context, id pgtype.UUID) (IamUser, error)
+	GrantPermissionToRole(ctx context.Context, arg GrantPermissionToRoleParams) error
+	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) (IamAuditLog, error)
 	InsertDbTxDiagnostic(ctx context.Context, arg InsertDbTxDiagnosticParams) (Diagnostic, error)
+	ListActiveSessionsForUser(ctx context.Context, userID pgtype.UUID) ([]IamSession, error)
+	ListBranches(ctx context.Context) ([]IamBranch, error)
+	ListPermissionIDsForRole(ctx context.Context, roleID pgtype.UUID) ([]pgtype.UUID, error)
+	ListPermissions(ctx context.Context) ([]IamPermission, error)
+	ListPermissionsByResource(ctx context.Context, resource string) ([]IamPermission, error)
+	ListRecentAuditLogsByResource(ctx context.Context, arg ListRecentAuditLogsByResourceParams) ([]IamAuditLog, error)
+	ListRecentAuditLogsByUser(ctx context.Context, arg ListRecentAuditLogsByUserParams) ([]IamAuditLog, error)
+	ListRoleIDsForPermission(ctx context.Context, permissionID pgtype.UUID) ([]pgtype.UUID, error)
+	ListRoleIDsForUser(ctx context.Context, userID pgtype.UUID) ([]pgtype.UUID, error)
+	ListRoles(ctx context.Context) ([]IamRole, error)
+	ListUserIDsForRole(ctx context.Context, roleID pgtype.UUID) ([]pgtype.UUID, error)
+	ListUsersByBranch(ctx context.Context, branchID pgtype.UUID) ([]IamUser, error)
 	ReadyCheck(ctx context.Context) (int32, error)
+	RevokeAllPermissionsForRole(ctx context.Context, roleID pgtype.UUID) error
+	RevokeAllRolesForUser(ctx context.Context, userID pgtype.UUID) error
+	RevokeAllSessionsForUser(ctx context.Context, userID pgtype.UUID) error
+	RevokePermissionFromRole(ctx context.Context, arg RevokePermissionFromRoleParams) error
+	RevokeRoleFromUser(ctx context.Context, arg RevokeRoleFromUserParams) error
+	RevokeSession(ctx context.Context, id pgtype.UUID) error
+	SoftDeleteUser(ctx context.Context, id pgtype.UUID) error
+	UpdateBranch(ctx context.Context, arg UpdateBranchParams) (IamBranch, error)
+	UpdateRole(ctx context.Context, arg UpdateRoleParams) (IamRole, error)
+	UpdateUserLastLoginAt(ctx context.Context, id pgtype.UUID) error
+	UpdateUserPasswordHash(ctx context.Context, arg UpdateUserPasswordHashParams) error
+	UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (IamUser, error)
+	UpdateUserStatus(ctx context.Context, arg UpdateUserStatusParams) error
+	UpdateUserTOTP(ctx context.Context, arg UpdateUserTOTPParams) error
 }
 
 var _ Querier = (*Queries)(nil)

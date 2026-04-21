@@ -5,12 +5,178 @@
 package sqlc
 
 import (
+	"database/sql/driver"
+	"fmt"
+	"net/netip"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type IamPermissionScope string
+
+const (
+	IamPermissionScopeGlobal   IamPermissionScope = "global"
+	IamPermissionScopeBranch   IamPermissionScope = "branch"
+	IamPermissionScopePersonal IamPermissionScope = "personal"
+)
+
+func (e *IamPermissionScope) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = IamPermissionScope(s)
+	case string:
+		*e = IamPermissionScope(s)
+	default:
+		return fmt.Errorf("unsupported scan type for IamPermissionScope: %T", src)
+	}
+	return nil
+}
+
+type NullIamPermissionScope struct {
+	IamPermissionScope IamPermissionScope `json:"iam_permission_scope"`
+	Valid              bool               `json:"valid"` // Valid is true if IamPermissionScope is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullIamPermissionScope) Scan(value interface{}) error {
+	if value == nil {
+		ns.IamPermissionScope, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.IamPermissionScope.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullIamPermissionScope) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.IamPermissionScope), nil
+}
+
+type IamUserStatus string
+
+const (
+	IamUserStatusActive    IamUserStatus = "active"
+	IamUserStatusSuspended IamUserStatus = "suspended"
+	IamUserStatusPending   IamUserStatus = "pending"
+)
+
+func (e *IamUserStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = IamUserStatus(s)
+	case string:
+		*e = IamUserStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for IamUserStatus: %T", src)
+	}
+	return nil
+}
+
+type NullIamUserStatus struct {
+	IamUserStatus IamUserStatus `json:"iam_user_status"`
+	Valid         bool          `json:"valid"` // Valid is true if IamUserStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullIamUserStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.IamUserStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.IamUserStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullIamUserStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.IamUserStatus), nil
+}
 
 type Diagnostic struct {
 	ID        int64              `json:"id"`
 	Service   string             `json:"service"`
 	Message   string             `json:"message"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type IamAuditLog struct {
+	ID         pgtype.UUID        `json:"id"`
+	UserID     pgtype.UUID        `json:"user_id"`
+	BranchID   pgtype.UUID        `json:"branch_id"`
+	Resource   string             `json:"resource"`
+	ResourceID string             `json:"resource_id"`
+	Action     string             `json:"action"`
+	OldValue   []byte             `json:"old_value"`
+	NewValue   []byte             `json:"new_value"`
+	Ip         *netip.Addr        `json:"ip"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+}
+
+type IamBranch struct {
+	ID        pgtype.UUID        `json:"id"`
+	Name      string             `json:"name"`
+	Code      string             `json:"code"`
+	ParentID  pgtype.UUID        `json:"parent_id"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
+type IamPermission struct {
+	ID        pgtype.UUID        `json:"id"`
+	Resource  string             `json:"resource"`
+	Action    string             `json:"action"`
+	Scope     IamPermissionScope `json:"scope"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type IamRole struct {
+	ID          pgtype.UUID        `json:"id"`
+	Name        string             `json:"name"`
+	Description string             `json:"description"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+}
+
+type IamRolePermission struct {
+	RoleID       pgtype.UUID        `json:"role_id"`
+	PermissionID pgtype.UUID        `json:"permission_id"`
+	GrantedAt    pgtype.Timestamptz `json:"granted_at"`
+}
+
+type IamSession struct {
+	ID               pgtype.UUID        `json:"id"`
+	UserID           pgtype.UUID        `json:"user_id"`
+	RefreshTokenHash string             `json:"refresh_token_hash"`
+	UserAgent        string             `json:"user_agent"`
+	Ip               *netip.Addr        `json:"ip"`
+	IssuedAt         pgtype.Timestamptz `json:"issued_at"`
+	ExpiresAt        pgtype.Timestamptz `json:"expires_at"`
+	RevokedAt        pgtype.Timestamptz `json:"revoked_at"`
+}
+
+type IamUser struct {
+	ID             pgtype.UUID        `json:"id"`
+	Email          string             `json:"email"`
+	PasswordHash   string             `json:"password_hash"`
+	Name           string             `json:"name"`
+	BranchID       pgtype.UUID        `json:"branch_id"`
+	Status         IamUserStatus      `json:"status"`
+	TotpSecret     pgtype.Text        `json:"totp_secret"`
+	TotpVerifiedAt pgtype.Timestamptz `json:"totp_verified_at"`
+	LastLoginAt    pgtype.Timestamptz `json:"last_login_at"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt      pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type IamUserRole struct {
+	UserID    pgtype.UUID        `json:"user_id"`
+	RoleID    pgtype.UUID        `json:"role_id"`
+	GrantedAt pgtype.Timestamptz `json:"granted_at"`
 }
