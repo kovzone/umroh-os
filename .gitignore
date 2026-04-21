@@ -6,8 +6,10 @@
 .claude/
 CLAUDE.md
 
-# Cursor (local agent settings and rules)
-.cursor/
+# Cursor — ignore local workspace/agent state; commit shared rules under .cursor/rules/
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
 
 # docs
 docs/elda_mahaindra_cv.pdf

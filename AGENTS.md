@@ -13,7 +13,7 @@ Guidance for **human developers** and **coding agents** (Cursor, Claude Code, et
 ## Working model (humans + AI, vendor-neutral)
 
 - **Two full-stack developers**, each owning functional feature slices end-to-end across both the Go services and the Svelte 5 + Vite frontend. The split is per-workflow, not per-specialization.
-- **Each developer may use a different AI coding agent** (Claude Code, Cursor, Copilot, or none) with a different working-file layout. Do not assume any specific agent's conventions. If your agent has its own instruction file (`CLAUDE.md`, `.cursor/`, etc.) it is **gitignored and private to that developer** — don't expect to find it, and don't commit your own.
+- **Each developer may use a different AI coding agent** (Claude Code, Cursor, Copilot, or none) with a different working-file layout. Do not assume any specific agent's conventions. **Shared** Cursor rules for this repo live under **`.cursor/rules/`** (tracked in git). Other agent files (`CLAUDE.md`, local-only `.cursor/*` outside `rules/`, etc.) stay **private** — don't commit personal agent setup.
 - **`AGENTS.md` + `CONTRIBUTING.md` are the shared, committed onboarding and workflow docs** for humans and AI agents alike. `AGENTS.md` routes source-of-truth product/architecture docs; `CONTRIBUTING.md` defines contribution and PR quality-gate workflow. If a rule in your private agent file contradicts these shared docs, shared docs win.
 - **Private task trackers, session rituals, and agent-specific skills are scoped to each developer's local environment** and not part of the shared repo. The shared backlog is in `docs/06-features/` (feature specs) and `docs/07-open-questions/` (unresolved product decisions).
 
@@ -49,7 +49,7 @@ Guidance for **human developers** and **coding agents** (Cursor, Claude Code, et
    - If a feature spec says **TBD** or points to **Qnnn**, read that question file before inventing behavior. Do not silently override an `open` question with a firm product rule.
 
 7. **Contribution workflow (how to ship changes)**
-   - `CONTRIBUTING.md` — branch/PR workflow, minimum quality gate, and shared-vs-local config rules.
+   - `CONTRIBUTING.md` — branch/PR workflow, minimum quality gate, shared-vs-local config rules, and **pre-filled PR open links** (compare URL with `quick_pull=1` + encoded `title`/`body`). Cursor detail: `.cursor/rules/pr-prefilled-open-link.mdc`.
 
 ---
 
@@ -67,12 +67,13 @@ Guidance for **human developers** and **coding agents** (Cursor, Claude Code, et
 - **Microservices boundaries:** One bounded context per service. Cross-context reads go via gRPC; cross-context **writes are coordinated in-process by the orchestrating service** with explicit per-step compensations, plus a reconciliation cron catching mid-saga crashes (see ADR-0006). Temporal is deferred from MVP and reintroduced only for the F6 visa pipeline — the one multi-day durable workflow. Do not bypass this model without an ADR-level discussion.  
 - **Observability:** Tracing/logging/metrics expectations are part of the baseline architecture — see architecture docs before merging “invisible” side paths.
 - **Commit messages (contract between the devs):** every commit — human or AI, either codebase — follows `docs/08-commit-conventions.md`. Format is `<type>: <short message in lower case>`, optional body, no mandatory scope parens, no trailing period on the subject. Types: `feat | fix | docs | refactor | test | chore | build | perf | style`. AI attribution footers (`Co-Authored-By: ...`) are allowed but not required; do not fail a PR over their presence or absence. See the full doc for examples and rationale.
+- **Sharing “open PR” links after `git push`:** Prefer a **pre-filled** GitHub compare URL (`dev...head` with `quick_pull=1` and URL-encoded `title`/`body`) so the PR description matches `.github/pull_request_template.md` without manual retyping. Do not use `/pull/new/<branch>` alone as the only handoff when a filled description is expected. See `CONTRIBUTING.md` § Pre-filled PR open links and `.cursor/rules/pr-prefilled-open-link.mdc`.
 
 ---
 
 ## Out of scope for this file
 
-- **Agent-specific instruction files** (`CLAUDE.md`, `.cursor/`, etc.) — gitignored, scoped to the developer who uses that agent.
+- **Private agent-only files** (`CLAUDE.md`, local `.cursor/` state outside committed `.cursor/rules/`, etc.) — not shared via this repo.
 - **Private per-developer task trackers, progress checklists, testing guides** — each developer keeps their own under their own conventions.
 - **Credentials, production URLs, environment secrets** — never committed.
 - **Duplicated content from `docs/06-features` or `docs/03-services`** — acceptance criteria, full API fields, and data models live there, not here.

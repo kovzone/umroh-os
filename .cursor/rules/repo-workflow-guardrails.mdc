@@ -1,0 +1,19 @@
+---
+description: Enforce branch-first and PR-first workflow
+alwaysApply: true
+---
+
+# Repo Workflow Guardrails
+
+- Never commit directly on `main`.
+- Never push directly to `main`.
+- Never force-push to `main`.
+- Never bypass git hooks with `--no-verify`.
+- Before making commits, create a task branch from latest `main`.
+- Open PRs for all shared changes.
+- Keep each PR focused on one concern/task.
+- If user asks to commit/push while on `main`, ask whether to create a branch first and only proceed on `main` as an explicit exception.
+
+Canonical references:
+- `CONTRIBUTING.md`
+- `docs/04-backend-conventions/08-git-workflow.md`
