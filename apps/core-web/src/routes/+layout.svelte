@@ -1,17 +1,23 @@
 <script lang="ts">
   import '../app.css';
+  import { page } from '$app/state';
   import Header from '$lib/components/Header.svelte';
   import Footer from '$lib/components/Footer.svelte';
 
   let { children } = $props();
+  const useCustomMarketingChrome = $derived(page.url.pathname === '/' || page.url.pathname === '/packages');
 </script>
 
-<div class="app">
-  <Header />
+<div class="app" class:home-mode={useCustomMarketingChrome}>
+  {#if !useCustomMarketingChrome}
+    <Header />
+  {/if}
   <main class="container">
     {@render children()}
   </main>
-  <Footer />
+  {#if !useCustomMarketingChrome}
+    <Footer />
+  {/if}
 </div>
 
 <style>
@@ -19,6 +25,10 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+  }
+  .app.home-mode {
+    background: #f8f7f4;
+    color: #1b1c1c;
   }
   .container {
     max-width: 72rem;

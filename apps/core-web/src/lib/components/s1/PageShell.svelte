@@ -9,12 +9,14 @@
     subtitle,
     backHref,
     backLabel = 'Back',
+    maxWidth = '48rem',
     children
   }: {
     title: string;
     subtitle?: string;
     backHref?: string;
     backLabel?: string;
+    maxWidth?: string;
     children: Snippet;
   } = $props();
 </script>
@@ -23,7 +25,7 @@
   <title>{title} — UmrohOS</title>
 </svelte:head>
 
-<div class="shell">
+<div class="shell" style={`--shell-max-width: ${maxWidth};`}>
   {#if backHref}
     <p class="back-row">
       <a class="back" href={backHref}>{backLabel}</a>
@@ -42,7 +44,7 @@
 
 <style>
   .shell {
-    max-width: 48rem;
+    max-width: var(--shell-max-width, 48rem);
   }
   .back-row {
     margin: 0 0 var(--space-3) 0;
