@@ -14,7 +14,13 @@ Go service ──zerolog (stdout JSON)── Fluent-Bit ── Loki ──┐
 
 All three converge in Grafana. Loki, Tempo, and Prometheus are configured as data sources; Grafana correlates them via the `trace_id` field.
 
-Per ADR 0009, downstream services are gRPC-only for business calls. The `/metrics` endpoint lives on a **minimal admin HTTP handler** on each backend — single handler, no OpenAPI spec, no business routes. Liveness / readiness probes use the **standard gRPC health protocol** (`grpc.health.v1.Health/Check`); docker-compose and Kubernetes health checks use the `grpc_health_probe` binary. `gateway-svc` keeps a full REST surface (it is the only external-facing service) and serves its own `/metrics` on the same REST port.
+Per ADR 0009, downstream services are gRPC-only for business calls. The overall architecture target: gRPC health for liveness/readiness probes; `/metrics` via OTLP push or a minimal admin HTTP handler once each service's REST package is removed (per `BL-REFACTOR-*`).
+
+**Current state (after `BL-MON-001` / S1-E-08):**
+- **Liveness / readiness — done.** Every downstream service registers the standard `grpc.health.v1.Health/Check` protocol (both `""` whole-server and `<domain>.v1.<Service>` names). Docker-compose healthchecks use the `grpc_health_probe` binary (baked into each backend Dockerfile), invoked as `grpc_health_probe -addr=localhost:<grpc-port>`. Gateway is REST-only and uses `wget --spider http://localhost:4000/system/live` instead.
+- **Metrics — transitional.** The per-service `/metrics` endpoint remains on the REST port (4001–4010) until each service's REST package is removed under its own `BL-REFACTOR-*` card. After each removal, that service's metrics move to OTLP push (pushed via OTLP-gRPC to the OTel Collector) or to a small admin HTTP endpoint — decision deferred to a separate card; see ADR 0009 § Consequences.
+- **Tracing — unchanged.** OTLP gRPC to the OTel Collector (already wired via `otelgrpc.StatsHandler` / `otelhttp.NewTransport`); traces flow into Tempo.
+- **Logs — unchanged.** stdout JSON → Fluent-Bit → Loki.
 
 ## Tracing
 
@@ -66,14 +72,18 @@ This is the workflow the reviewer should use when reviewing a session: pick a sa
 The `scaffold-service` skill ensures these are wired. Per ADR 0009, downstream services (everything except `gateway-svc`) are gRPC-only:
 
 For a non-gateway service:
-- [ ] `google.golang.org/grpc/health` standard health service registered; `grpc_health_probe -addr=:<grpc-port>` returns SERVING
-- [ ] Minimal admin HTTP handler exposing `/metrics` on its configured admin port; Prometheus target is UP
-- [ ] zerolog initialized with `LogWithTrace`
-- [ ] OTel tracer initialized in `cmd/start.go`; `otelgrpc.StatsHandler` on the gRPC server
-- [ ] Service appears in Grafana with at least one trace after a smoke gRPC request (e.g. from another service or via `grpcurl`)
-- [ ] Logs for the smoke request appear in Loki tagged with the right service name
+- [ ] `google.golang.org/grpc/health` standard health service registered with **both** `""` (whole-server) and `<domain>.v1.<Service>` names. Verify: `grpc_health_probe -addr=localhost:<grpc-port>` returns SERVING.
+- [ ] `grpc_health_probe` binary installed in the Dockerfile (stage 2: `wget -qO /bin/grpc_health_probe …`).
+- [ ] `docker-compose.dev.yml` healthcheck block uses `["CMD", "grpc_health_probe", "-addr=localhost:<grpc-port>"]` with `start_period: 15s`.
+- [ ] `/metrics` remains on the REST port until the service's REST package is removed per `BL-REFACTOR-*` (transitional). Prometheus target stays UP.
+- [ ] zerolog initialized with `LogWithTrace`.
+- [ ] OTel tracer initialized in `cmd/start.go`; `otelgrpc.StatsHandler` on the gRPC server.
+- [ ] Service appears in Grafana with at least one trace after a smoke gRPC request (e.g. from another service or via `grpcurl`).
+- [ ] Logs for the smoke request appear in Loki tagged with the right service name.
 
-For `gateway-svc`:
-- [ ] `/metrics`, `/livez`, `/readyz` on the REST port return 200
-- [ ] zerolog, OTel REST middleware, and outbound `otelgrpc` client handlers wired
-- [ ] Service appears in Grafana with at least one trace after a smoke REST request
+For `gateway-svc` (the only REST service per ADR 0009):
+- [ ] `/metrics`, `/system/live`, `/system/ready` on the REST port return 200.
+- [ ] `docker-compose.dev.yml` healthcheck uses `["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4000/system/live"]` (wget installed via `apk add wget` in the Dockerfile).
+- [ ] Gateway's `depends_on` uses `condition: service_healthy` for each downstream service so the stack comes up in correct order.
+- [ ] zerolog, OTel REST middleware, and outbound `otelgrpc` client handlers wired.
+- [ ] Service appears in Grafana with at least one trace after a smoke REST request.
