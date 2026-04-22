@@ -20,33 +20,43 @@ func bindEnvironmentVariables() {
 
 	viper.BindEnv("external.iam_svc.name", "IAM_SVC_NAME")
 	viper.BindEnv("external.iam_svc.address", "IAM_SVC_ADDRESS")
+	viper.BindEnv("external.iam_svc.grpc_target", "IAM_SVC_GRPC_TARGET")
 
 	viper.BindEnv("external.catalog_svc.name", "CATALOG_SVC_NAME")
 	viper.BindEnv("external.catalog_svc.address", "CATALOG_SVC_ADDRESS")
+	viper.BindEnv("external.catalog_svc.grpc_target", "CATALOG_SVC_GRPC_TARGET")
 
 	viper.BindEnv("external.booking_svc.name", "BOOKING_SVC_NAME")
 	viper.BindEnv("external.booking_svc.address", "BOOKING_SVC_ADDRESS")
+	viper.BindEnv("external.booking_svc.grpc_target", "BOOKING_SVC_GRPC_TARGET")
 
 	viper.BindEnv("external.jamaah_svc.name", "JAMAAH_SVC_NAME")
 	viper.BindEnv("external.jamaah_svc.address", "JAMAAH_SVC_ADDRESS")
+	viper.BindEnv("external.jamaah_svc.grpc_target", "JAMAAH_SVC_GRPC_TARGET")
 
 	viper.BindEnv("external.payment_svc.name", "PAYMENT_SVC_NAME")
 	viper.BindEnv("external.payment_svc.address", "PAYMENT_SVC_ADDRESS")
+	viper.BindEnv("external.payment_svc.grpc_target", "PAYMENT_SVC_GRPC_TARGET")
 
 	viper.BindEnv("external.visa_svc.name", "VISA_SVC_NAME")
 	viper.BindEnv("external.visa_svc.address", "VISA_SVC_ADDRESS")
+	viper.BindEnv("external.visa_svc.grpc_target", "VISA_SVC_GRPC_TARGET")
 
 	viper.BindEnv("external.ops_svc.name", "OPS_SVC_NAME")
 	viper.BindEnv("external.ops_svc.address", "OPS_SVC_ADDRESS")
+	viper.BindEnv("external.ops_svc.grpc_target", "OPS_SVC_GRPC_TARGET")
 
 	viper.BindEnv("external.logistics_svc.name", "LOGISTICS_SVC_NAME")
 	viper.BindEnv("external.logistics_svc.address", "LOGISTICS_SVC_ADDRESS")
+	viper.BindEnv("external.logistics_svc.grpc_target", "LOGISTICS_SVC_GRPC_TARGET")
 
 	viper.BindEnv("external.finance_svc.name", "FINANCE_SVC_NAME")
 	viper.BindEnv("external.finance_svc.address", "FINANCE_SVC_ADDRESS")
+	viper.BindEnv("external.finance_svc.grpc_target", "FINANCE_SVC_GRPC_TARGET")
 
 	viper.BindEnv("external.crm_svc.name", "CRM_SVC_NAME")
 	viper.BindEnv("external.crm_svc.address", "CRM_SVC_ADDRESS")
+	viper.BindEnv("external.crm_svc.grpc_target", "CRM_SVC_GRPC_TARGET")
 
 	// Otel tracer config
 
