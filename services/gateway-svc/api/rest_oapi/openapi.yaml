@@ -119,6 +119,138 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
 
+  # ── Public catalog read (BL-GTW-002 / S1-E-10) ─────────────────────────
+  # Gateway REST → catalog-svc gRPC via catalog_grpc_adapter. Responses
+  # mirror services/catalog-svc/api/rest_oapi/openapi.yaml § Catalog
+  # shape-for-shape so e2e specs passing against either port yield
+  # identical bodies. After G7 (BL-REFACTOR-001) the catalog REST port
+  # goes away and these gateway routes become the only client-facing
+  # surface.
+  /v1/packages:
+    get:
+      tags: [Catalog]
+      summary: List active packages
+      operationId: listPackages
+      security: []
+      parameters:
+        - name: kind
+          in: query
+          required: false
+          schema: { $ref: "#/components/schemas/PackageKind" }
+        - name: airline_code
+          in: query
+          required: false
+          schema: { type: string }
+        - name: hotel_id
+          in: query
+          required: false
+          schema: { type: string }
+        - name: departure_from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: departure_to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: cursor
+          in: query
+          required: false
+          schema: { type: string }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListPackagesResponse" }
+        "400":
+          description: Bad request (invalid_query_param / invalid_cursor)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "502":
+          description: catalog-svc unreachable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+
+  /v1/packages/{id}:
+    get:
+      tags: [Catalog]
+      summary: Active package detail
+      operationId: getPackageById
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Package ULID, `pkg_`-prefixed.
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GetPackageResponse" }
+        "404":
+          description: Package not found or not publicly visible.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "502":
+          description: catalog-svc unreachable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+
+  /v1/package-departures/{id}:
+    get:
+      tags: [Catalog]
+      summary: Active package-departure detail
+      operationId: getPackageDepartureById
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Departure ULID, `dep_`-prefixed.
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GetDepartureResponse" }
+        "404":
+          description: Departure not found or not publicly visible.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "502":
+          description: catalog-svc unreachable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+
   /v1/booking/system/live:
     get:
       tags: [Proxy / booking]
@@ -319,3 +451,276 @@ components:
           properties:
             code:    { type: string, example: BAD_GATEWAY }
             message: { type: string, example: upstream service unavailable }
+
+    # ── Catalog error envelope (BL-GTW-002 / S1-E-10) ──────────────────
+    # Mirror of services/catalog-svc/api/rest_oapi/openapi.yaml
+    # ErrorResponse: snake_case code, id-ID message, optional trace_id.
+    # Catalog handlers on gateway write this directly (bypassing the
+    # default gateway error middleware that emits UPPER_SNAKE codes).
+    CatalogErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: |
+                snake_case catalog error code (e.g. `package_not_found`,
+                `departure_not_found`, `invalid_query_param`,
+                `invalid_cursor`, `internal_error`, `service_unavailable`).
+              example: package_not_found
+            message:
+              type: string
+              description: Human-readable message in Bahasa Indonesia (Q003).
+              example: paket tidak ditemukan
+            trace_id:
+              type: string
+              description: OTel span ID (hex) for correlation with Tempo.
+
+    # ── Catalog: money / enum helpers ──────────────────────────────────
+    Money:
+      type: object
+      required: [list_amount, list_currency, settlement_currency]
+      properties:
+        list_amount:
+          type: integer
+          format: int64
+          example: 38500000
+        list_currency:
+          type: string
+          example: IDR
+        settlement_currency:
+          type: string
+          enum: [IDR]
+          example: IDR
+
+    PackageKind:
+      type: string
+      enum: [umrah_reguler, umrah_plus, hajj_furoda, hajj_khusus, badal, financial, retail]
+
+    RoomType:
+      type: string
+      enum: [double, triple, quad]
+
+    DepartureStatus:
+      type: string
+      enum: [open, closed]
+
+    OperatorKind:
+      type: string
+      enum: [airline, rail, bus]
+
+    VendorReadinessState:
+      type: string
+      enum: [not_started, in_progress, ready, blocked]
+
+    # ── Catalog: master-data refs ──────────────────────────────────────
+    HotelRef:
+      type: object
+      required: [id, name, city, star_rating, walking_distance_m]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        city: { type: string }
+        star_rating: { type: integer, minimum: 0, maximum: 5 }
+        walking_distance_m: { type: integer, minimum: 0 }
+
+    AirlineRef:
+      type: object
+      required: [id, code, name, operator_kind]
+      properties:
+        id: { type: string }
+        code: { type: string }
+        name: { type: string }
+        operator_kind: { $ref: "#/components/schemas/OperatorKind" }
+
+    MuthawwifRef:
+      type: object
+      required: [id, name, portrait_url]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        portrait_url: { type: string }
+
+    AddonRef:
+      type: object
+      required: [id, name, list_amount, list_currency, settlement_currency]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        list_amount: { type: integer, format: int64 }
+        list_currency: { type: string, example: IDR }
+        settlement_currency: { type: string, enum: [IDR], example: IDR }
+
+    ItineraryDay:
+      type: object
+      required: [day, title, description]
+      properties:
+        day: { type: integer, minimum: 1 }
+        title: { type: string }
+        description: { type: string }
+        photo_url: { type: string }
+
+    Itinerary:
+      type: object
+      required: [id, days, public_url]
+      properties:
+        id: { type: string }
+        days:
+          type: array
+          items: { $ref: "#/components/schemas/ItineraryDay" }
+        public_url: { type: string }
+
+    # ── Catalog: departure-detail shapes ───────────────────────────────
+    PackagePricing:
+      type: object
+      required: [room_type, list_amount, list_currency, settlement_currency]
+      properties:
+        room_type: { $ref: "#/components/schemas/RoomType" }
+        list_amount: { type: integer, format: int64 }
+        list_currency: { type: string, example: IDR }
+        settlement_currency: { type: string, enum: [IDR], example: IDR }
+
+    VendorReadiness:
+      type: object
+      required: [ticket, hotel, visa]
+      properties:
+        ticket: { $ref: "#/components/schemas/VendorReadinessState" }
+        hotel: { $ref: "#/components/schemas/VendorReadinessState" }
+        visa: { $ref: "#/components/schemas/VendorReadinessState" }
+
+    DepartureDetail:
+      type: object
+      required:
+        - id
+        - package_id
+        - departure_date
+        - return_date
+        - total_seats
+        - remaining_seats
+        - status
+        - pricing
+        - vendor_readiness
+      properties:
+        id: { type: string }
+        package_id: { type: string }
+        departure_date: { type: string, format: date }
+        return_date: { type: string, format: date }
+        total_seats: { type: integer, minimum: 0 }
+        remaining_seats: { type: integer, minimum: 0 }
+        status: { $ref: "#/components/schemas/DepartureStatus" }
+        pricing:
+          type: array
+          items: { $ref: "#/components/schemas/PackagePricing" }
+        vendor_readiness: { $ref: "#/components/schemas/VendorReadiness" }
+
+    GetDepartureResponse:
+      type: object
+      required: [departure]
+      properties:
+        departure: { $ref: "#/components/schemas/DepartureDetail" }
+
+    # ── Catalog: package-specific ──────────────────────────────────────
+    NextDeparture:
+      type: object
+      required: [id, departure_date, return_date, remaining_seats]
+      properties:
+        id: { type: string }
+        departure_date: { type: string, format: date }
+        return_date: { type: string, format: date }
+        remaining_seats: { type: integer, minimum: 0 }
+
+    DepartureSummary:
+      type: object
+      required: [id, departure_date, return_date, remaining_seats, status]
+      properties:
+        id: { type: string }
+        departure_date: { type: string, format: date }
+        return_date: { type: string, format: date }
+        remaining_seats: { type: integer, minimum: 0 }
+        status: { $ref: "#/components/schemas/DepartureStatus" }
+
+    PackageListItem:
+      type: object
+      required: [id, kind, name, description, cover_photo_url, starting_price]
+      properties:
+        id: { type: string }
+        kind: { $ref: "#/components/schemas/PackageKind" }
+        name: { type: string }
+        description: { type: string }
+        cover_photo_url: { type: string }
+        starting_price: { $ref: "#/components/schemas/Money" }
+        next_departure:
+          allOf:
+            - $ref: "#/components/schemas/NextDeparture"
+          nullable: true
+
+    PackageDetail:
+      type: object
+      required:
+        - id
+        - kind
+        - name
+        - description
+        - highlights
+        - cover_photo_url
+        - hotels
+        - add_ons
+        - departures
+      properties:
+        id: { type: string }
+        kind: { $ref: "#/components/schemas/PackageKind" }
+        name: { type: string }
+        description: { type: string }
+        highlights:
+          type: array
+          items: { type: string }
+        cover_photo_url: { type: string }
+        itinerary:
+          allOf:
+            - $ref: "#/components/schemas/Itinerary"
+          nullable: true
+        hotels:
+          type: array
+          items: { $ref: "#/components/schemas/HotelRef" }
+        airline:
+          allOf:
+            - $ref: "#/components/schemas/AirlineRef"
+          nullable: true
+        muthawwif:
+          allOf:
+            - $ref: "#/components/schemas/MuthawwifRef"
+          nullable: true
+        add_ons:
+          type: array
+          items: { $ref: "#/components/schemas/AddonRef" }
+        departures:
+          type: array
+          items: { $ref: "#/components/schemas/DepartureSummary" }
+
+    PageMeta:
+      type: object
+      required: [has_more]
+      properties:
+        next_cursor:
+          type: string
+          nullable: true
+        has_more: { type: boolean }
+
+    ListPackagesResponse:
+      type: object
+      required: [packages, page]
+      properties:
+        packages:
+          type: array
+          items: { $ref: "#/components/schemas/PackageListItem" }
+        page: { $ref: "#/components/schemas/PageMeta" }
+
+    GetPackageResponse:
+      type: object
+      required: [package]
+      properties:
+        package: { $ref: "#/components/schemas/PackageDetail" }

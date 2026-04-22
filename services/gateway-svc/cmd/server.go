@@ -63,9 +63,10 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool,
 		system.Get("/ready", wrapper.Readiness)
 	}
 
-	// /v1 proxy routes — one per backend, dispatched via its REST adapter.
+	// /v1 proxy routes — one per backend, dispatched via its adapter.
 	v1 := app.Group("/v1")
 	{
+		// System-probe proxies (REST adapters; retire with each BL-REFACTOR-* card).
 		v1.Get("/iam/system/live", wrapper.GetIamSystemLive)
 		v1.Get("/iam/system/diagnostics/db-tx", wrapper.GetIamSystemDbTxDiagnostic)
 		v1.Get("/catalog/system/live", wrapper.GetCatalogSystemLive)
@@ -77,6 +78,11 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool,
 		v1.Get("/logistics/system/live", wrapper.GetLogisticsSystemLive)
 		v1.Get("/finance/system/live", wrapper.GetFinanceSystemLive)
 		v1.Get("/crm/system/live", wrapper.GetCrmSystemLive)
+
+		// Public catalog read (BL-GTW-002 / S1-E-10) — gRPC adapter.
+		v1.Get("/packages", wrapper.ListPackages)
+		v1.Get("/packages/:id", wrapper.GetPackageById)
+		v1.Get("/package-departures/:id", wrapper.GetPackageDepartureById)
 	}
 
 	go func() {
