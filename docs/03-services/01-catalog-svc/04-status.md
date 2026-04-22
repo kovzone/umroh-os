@@ -13,6 +13,7 @@
 - [ ] Atomic seat reservation (gRPC `ReserveSeats` / `ReleaseSeats`) — S1-E-03 territory
 - [ ] Bulk import / export — BL-CAT-010 / BL-CAT-011
 - [x] Unit tests (cursor helpers) + integration/e2e (Playwright `02e-catalog-svc-read.spec.ts`)
+- [ ] **ADR 0009 refactor** — remove `services/catalog-svc/api/rest_oapi/` after gateway routing (`BL-GTW-002` / S1-E-10) lands; migrate `/system/diagnostics/db-tx` to a `DiagnosticsDbTx` gRPC method — `BL-REFACTOR-001` / S1-E-11
 - [x] Verified by reviewer — BL-CAT-001 merged to `dev` on 2026-04-22 (PR #38)
 
 ## Current status
