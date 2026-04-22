@@ -1,21 +1,34 @@
 openapi: 3.0.3
 info:
   title: catalog-svc API
-  version: 0.1.0
+  version: 0.2.0
   description: |
-    System endpoints for catalog-svc (Identity, Access, Audit).
+    Product catalog + master data endpoints for UmrohOS (F2).
 
-    Pilot scaffold — exposes only the three standard scaffold endpoints:
-    /system/live, /system/ready, /system/diagnostics/db-tx.
+    Current scope (S1-E-02 / BL-CAT-001):
+      - System probes: `/system/live`, `/system/ready`, `/system/diagnostics/db-tx`
+      - Public catalog read: `GET /v1/packages` (list), `GET /v1/packages/{id}` (detail)
 
-    Real auth endpoints (login, refresh, logout, /me) and user/role/branch/audit
-    endpoints land in F1.5–F1.11.
+    All `/v1/packages*` endpoints are **public** — no bearer required. Admin
+    write endpoints (`POST`/`PATCH`/`DELETE`) and bulk import/export land in
+    later slice cards (`S1-E-05`). The departure-detail endpoint
+    `GET /v1/package-departures/{id}` lands via the sibling `BL-CAT-002` card
+    together with the `remaining_seats` live-read pattern.
+
+    Wire shapes, ULID prefixes (`pkg_`, `dep_`, `itn_`, `htl_`, `arl_`,
+    `mtw_`, `addon_`), Q001 currency handling (`list_currency`, `settlement_
+    currency = IDR`), Q003 Bahasa-only strings, and the snake_case error
+    envelope are all pinned in `docs/contracts/slice-S1.md § Catalog`
+    (landed via `S1-J-01`, 2026-04-20). This file is an exact OpenAPI
+    representation of that contract — consumers must treat the contract
+    document as the single source of truth; the spec mirrors it.
 
 servers:
   - url: /
     description: Base path (prefixed by gateway as needed)
 
 paths:
+  # ── System ────────────────────────────────────────────────────────────
   /system/live:
     get:
       tags:
@@ -77,8 +90,148 @@ paths:
               schema:
                 $ref: "#/components/schemas/DbTxDiagnosticResponse"
 
+  # ── Public catalog (§ Catalog) ────────────────────────────────────────
+  /v1/packages:
+    get:
+      tags:
+        - Packages
+      summary: List active packages
+      description: |
+        Public read endpoint for B2C catalog browsing. Returns only
+        `packages.status = 'active'` rows; `draft` / `archived` are filtered
+        server-side and never leak through this endpoint. No bearer token
+        required; `gateway-svc` forwards without validation.
+
+        Pagination is cursor-based. Callers pass the `page.next_cursor` from
+        a prior response unchanged; opaque base64 payload, do not parse.
+      operationId: listPackages
+      parameters:
+        - name: kind
+          in: query
+          required: false
+          description: Filter by package kind. Omit to list all kinds.
+          schema:
+            type: string
+            enum:
+              - umrah_reguler
+              - umrah_plus
+              - hajj_furoda
+              - hajj_khusus
+              - badal
+              - financial
+              - retail
+        - name: departure_from
+          in: query
+          required: false
+          description: Lower bound on departure date (earliest departure ≥ this date).
+          schema:
+            type: string
+            format: date
+        - name: departure_to
+          in: query
+          required: false
+          description: Upper bound on departure date.
+          schema:
+            type: string
+            format: date
+        - name: airline_code
+          in: query
+          required: false
+          description: IATA airline code filter (matches `airlines.code`).
+          schema:
+            type: string
+        - name: hotel_id
+          in: query
+          required: false
+          description: Filter to packages referencing this hotel (`hotels.id`, prefixed ULID).
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          required: false
+          description: Pagination cursor from previous response's `page.next_cursor`.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          description: Page size, 1–100, default 20.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Active packages page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListPackagesResponse"
+        "400":
+          description: |
+            Query validation failed: `invalid_query_param` (bad date, unknown
+            `kind`, `limit` out of range) or `invalid_cursor` (malformed).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Unexpected server error (`internal_error`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/packages/{id}:
+    get:
+      tags:
+        - Packages
+      summary: Get active package detail
+      description: |
+        Public read endpoint for the package detail page. Returns `404
+        package_not_found` for any `id` that does not exist OR whose
+        `status != active` — the endpoint explicitly does not leak the
+        existence of draft/archived packages.
+
+        The response eagerly hydrates master references (airline,
+        muthawwif, hotels, itinerary, add-ons) and the list of open/closed
+        departures with `remaining_seats` computed at read time. Live seat
+        recomputation (vendor_readiness, partial-release adjustments) is
+        load-bearing for `BL-CAT-002` and deliberately simple here — the
+        `remaining_seats` figure is `total_seats - reserved_seats` read
+        from the departure row without any locks.
+      operationId: getPackageById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Package ULID, `pkg_`-prefixed.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Package detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPackageResponse"
+        "404":
+          description: Package not found or not active (`package_not_found`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Unexpected server error (`internal_error`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
+    # ── System schemas ────────────────────────────────────────────────
     LiveResponse:
       type: object
       required:
@@ -126,6 +279,7 @@ components:
               type: string
               description: Echo of the message received from the client.
 
+    # ── Error envelope (§ Catalog shared) ─────────────────────────────
     ErrorResponse:
       type: object
       required:
@@ -139,7 +293,362 @@ components:
           properties:
             code:
               type: string
-              example: INTERNAL_ERROR
+              description: |
+                Machine-readable error code. Catalog endpoints use
+                snake_case lowercase per § Catalog contract (e.g.
+                `invalid_query_param`, `package_not_found`,
+                `internal_error`). System endpoints (pre-contract legacy)
+                emit SCREAMING_SNAKE_CASE (e.g. `INTERNAL_ERROR`).
+              example: package_not_found
             message:
               type: string
-              example: Internal server error
+              description: Human-readable message in `id-ID` (Bahasa Indonesia) per Q003.
+              example: paket tidak ditemukan
+            trace_id:
+              type: string
+              description: |
+                OTel span ID (hex) for correlation with Tempo/Grafana logs.
+                Optional — only catalog endpoints include it today; system
+                endpoints may omit it.
+
+    # ── Catalog: money / enum helpers ─────────────────────────────────
+    Money:
+      type: object
+      required:
+        - list_amount
+        - list_currency
+        - settlement_currency
+      properties:
+        list_amount:
+          type: integer
+          format: int64
+          description: |
+            Integer "display list" figure in the lowest whole unit of
+            `list_currency` (i.e. IDR has no sub-units; USD uses cents
+            handled here as whole currency units for display consistency).
+            This is NOT a payable amount — invoice/VA totals lock later
+            via payment-svc with an FX snapshot.
+          example: 38500000
+        list_currency:
+          type: string
+          description: ISO 4217 display currency — `IDR` or `USD` in MVP.
+          example: IDR
+        settlement_currency:
+          type: string
+          description: Always `IDR` in MVP per Q001.
+          enum: [IDR]
+          example: IDR
+
+    PackageKind:
+      type: string
+      enum:
+        - umrah_reguler
+        - umrah_plus
+        - hajj_furoda
+        - hajj_khusus
+        - badal
+        - financial
+        - retail
+
+    RoomType:
+      type: string
+      enum:
+        - double
+        - triple
+        - quad
+
+    DepartureStatus:
+      type: string
+      description: |
+        Public-read departures surface only `open` and `closed`;
+        `departed` / `completed` / `cancelled` rows are hidden server-side
+        and their `GET /v1/package-departures/{id}` returns 404.
+      enum:
+        - open
+        - closed
+
+    OperatorKind:
+      type: string
+      enum:
+        - airline
+        - rail
+        - bus
+
+    # ── Catalog: master-data refs ─────────────────────────────────────
+    HotelRef:
+      type: object
+      required:
+        - id
+        - name
+        - city
+        - star_rating
+        - walking_distance_m
+      properties:
+        id:
+          type: string
+          example: htl_01JCDH00000000000000000000
+        name:
+          type: string
+        city:
+          type: string
+          example: mecca
+        star_rating:
+          type: integer
+          minimum: 0
+          maximum: 5
+          example: 4
+        walking_distance_m:
+          type: integer
+          minimum: 0
+          example: 300
+
+    AirlineRef:
+      type: object
+      required:
+        - id
+        - code
+        - name
+        - operator_kind
+      properties:
+        id:
+          type: string
+          example: arl_01JCDI00000000000000000000
+        code:
+          type: string
+          example: GA
+        name:
+          type: string
+        operator_kind:
+          $ref: "#/components/schemas/OperatorKind"
+
+    MuthawwifRef:
+      type: object
+      required:
+        - id
+        - name
+        - portrait_url
+      properties:
+        id:
+          type: string
+          example: mtw_01JCDJ00000000000000000000
+        name:
+          type: string
+        portrait_url:
+          type: string
+
+    AddonRef:
+      type: object
+      required:
+        - id
+        - name
+        - list_amount
+        - list_currency
+        - settlement_currency
+      properties:
+        id:
+          type: string
+          example: addon_01JCDK00000000000000000000
+        name:
+          type: string
+        list_amount:
+          type: integer
+          format: int64
+        list_currency:
+          type: string
+          example: IDR
+        settlement_currency:
+          type: string
+          enum: [IDR]
+          example: IDR
+
+    ItineraryDay:
+      type: object
+      required:
+        - day
+        - title
+        - description
+      properties:
+        day:
+          type: integer
+          minimum: 1
+        title:
+          type: string
+        description:
+          type: string
+        photo_url:
+          type: string
+
+    Itinerary:
+      type: object
+      required:
+        - id
+        - days
+        - public_url
+      properties:
+        id:
+          type: string
+          example: itn_01JCDG00000000000000000000
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItineraryDay"
+        public_url:
+          type: string
+
+    # ── Catalog: package-specific ─────────────────────────────────────
+    NextDeparture:
+      type: object
+      required:
+        - id
+        - departure_date
+        - return_date
+        - remaining_seats
+      properties:
+        id:
+          type: string
+          example: dep_01JCDF00000000000000000000
+        departure_date:
+          type: string
+          format: date
+        return_date:
+          type: string
+          format: date
+        remaining_seats:
+          type: integer
+          minimum: 0
+
+    DepartureSummary:
+      type: object
+      required:
+        - id
+        - departure_date
+        - return_date
+        - remaining_seats
+        - status
+      properties:
+        id:
+          type: string
+        departure_date:
+          type: string
+          format: date
+        return_date:
+          type: string
+          format: date
+        remaining_seats:
+          type: integer
+          minimum: 0
+        status:
+          $ref: "#/components/schemas/DepartureStatus"
+
+    PackageListItem:
+      type: object
+      required:
+        - id
+        - kind
+        - name
+        - description
+        - cover_photo_url
+        - starting_price
+      properties:
+        id:
+          type: string
+          example: pkg_01JCDE00000000000000000000
+        kind:
+          $ref: "#/components/schemas/PackageKind"
+        name:
+          type: string
+        description:
+          type: string
+        cover_photo_url:
+          type: string
+        starting_price:
+          $ref: "#/components/schemas/Money"
+        next_departure:
+          $ref: "#/components/schemas/NextDeparture"
+          nullable: true
+
+    PackageDetail:
+      type: object
+      required:
+        - id
+        - kind
+        - name
+        - description
+        - highlights
+        - cover_photo_url
+        - hotels
+        - add_ons
+        - departures
+      properties:
+        id:
+          type: string
+          example: pkg_01JCDE00000000000000000000
+        kind:
+          $ref: "#/components/schemas/PackageKind"
+        name:
+          type: string
+        description:
+          type: string
+        highlights:
+          type: array
+          items:
+            type: string
+        cover_photo_url:
+          type: string
+        itinerary:
+          allOf:
+            - $ref: "#/components/schemas/Itinerary"
+          nullable: true
+        hotels:
+          type: array
+          items:
+            $ref: "#/components/schemas/HotelRef"
+        airline:
+          allOf:
+            - $ref: "#/components/schemas/AirlineRef"
+          nullable: true
+        muthawwif:
+          allOf:
+            - $ref: "#/components/schemas/MuthawwifRef"
+          nullable: true
+        add_ons:
+          type: array
+          items:
+            $ref: "#/components/schemas/AddonRef"
+        departures:
+          type: array
+          items:
+            $ref: "#/components/schemas/DepartureSummary"
+
+    PageMeta:
+      type: object
+      required:
+        - has_more
+      properties:
+        next_cursor:
+          type: string
+          nullable: true
+          description: Opaque base64 cursor. Present when `has_more=true`.
+        has_more:
+          type: boolean
+
+    ListPackagesResponse:
+      type: object
+      required:
+        - packages
+        - page
+      properties:
+        packages:
+          type: array
+          items:
+            $ref: "#/components/schemas/PackageListItem"
+        page:
+          $ref: "#/components/schemas/PageMeta"
+
+    GetPackageResponse:
+      type: object
+      required:
+        - package
+      properties:
+        package:
+          $ref: "#/components/schemas/PackageDetail"
