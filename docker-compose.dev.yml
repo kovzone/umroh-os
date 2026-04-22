@@ -24,6 +24,7 @@ services:
     ports:
       - "4317:4317" # gRPC OTLP
       - "4318:4318" # HTTP OTLP
+      - "8889:8889" # Prometheus exporter (scraped by Prometheus for OTLP-push services)
       - "55679:55679" # zPages (optional)
     depends_on:
       - jaeger
@@ -315,7 +316,6 @@ services:
     container_name: catalog-svc
     restart: unless-stopped
     ports:
-      - "4002:4002"
       - "50052:50052"
     volumes:
       - ./services/catalog-svc/config.json:/app/config.json

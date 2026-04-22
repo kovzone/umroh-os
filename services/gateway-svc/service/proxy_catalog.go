@@ -2,41 +2,13 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"gateway-svc/adapter/catalog_grpc_adapter"
-	"gateway-svc/adapter/catalog_rest_adapter"
 	"gateway-svc/util/logging"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 )
-
-// GetCatalogSystemLive proxies a liveness probe to catalog-svc through the REST
-// adapter. Scaffold-time proof of the REST adapter pattern. Retires with
-// BL-REFACTOR-001 / S1-E-11 when catalog-svc drops its REST port.
-func (s *Service) GetCatalogSystemLive(ctx context.Context) (*catalog_rest_adapter.LivenessResult, error) {
-	const op = "service.Service.GetCatalogSystemLive"
-
-	ctx, span := s.tracer.Start(ctx, op)
-	defer span.End()
-
-	logger := logging.LogWithTrace(ctx, s.logger)
-	span.SetAttributes(attribute.String("operation", op))
-	logger.Info().Str("op", op).Msg("")
-
-	result, err := s.adapters.catalogRest.GetSystemLive(ctx)
-	if err != nil {
-		err = fmt.Errorf("call catalog-svc: %w", err)
-		logger.Error().Err(err).Msg("")
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		return nil, err
-	}
-
-	span.SetStatus(codes.Ok, "success")
-	return result, nil
-}
 
 // ListPackages proxies GET /v1/packages to catalog-svc.ListPackages (gRPC)
 // via catalog_grpc_adapter. Thin — all business logic stays in catalog-svc.

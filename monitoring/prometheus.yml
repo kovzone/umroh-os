@@ -17,9 +17,12 @@ scrape_configs:
       - targets: ["iam-svc:4001"]
     metrics_path: /metrics
 
-  - job_name: catalog-svc
+  # catalog-svc pushes metrics via OTLP to the collector (per ADR 0009 / BL-REFACTOR-001);
+  # its series appear in the otel-collector job below, labeled with
+  # service_name="catalog-svc".
+  - job_name: otel-collector
     static_configs:
-      - targets: ["catalog-svc:4002"]
+      - targets: ["otel-collector:8889"]
     metrics_path: /metrics
 
   - job_name: booking-svc

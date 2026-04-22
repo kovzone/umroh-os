@@ -23,26 +23,24 @@ const (
 	CatalogService_ListPackages_FullMethodName        = "/pb.CatalogService/ListPackages"
 	CatalogService_GetPackage_FullMethodName          = "/pb.CatalogService/GetPackage"
 	CatalogService_GetPackageDeparture_FullMethodName = "/pb.CatalogService/GetPackageDeparture"
+	CatalogService_DiagnosticsDbTx_FullMethodName     = "/pb.CatalogService/DiagnosticsDbTx"
 )
 
 // CatalogServiceClient is the client API for CatalogService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// CatalogService — internal gRPC surface for the catalog (packages +
-// master data). Per ADR 0009 backend services are gRPC-only; the public
-// REST surface lives on gateway-svc which proxies to these RPCs.
+// CatalogService — the catalog's only transport surface (packages + master
+// data). Per ADR 0009 this service is gRPC-only; the public REST surface
+// lives on gateway-svc (services/gateway-svc/api/rest_oapi/openapi.yaml
+// § Catalog) which proxies to these RPCs.
 //
-// BL-GTW-002 / S1-E-10 adds the public-read trio (ListPackages,
-// GetPackage, GetPackageDeparture) mirroring the shapes in
-// services/catalog-svc/api/rest_oapi/openapi.yaml § Catalog. Dates are
-// ISO YYYY-MM-DD strings (matching the service layer); enums stay as
-// strings per the adapter pattern (cross-service type churn avoided; the
-// REST layer's oapi-generated enum validation is the authoritative gate).
-//
-// Catalog-svc's REST handlers still exist and call the same service-layer
-// methods as these gRPC handlers; G7 (BL-REFACTOR-001) removes the REST
-// side once gateway is proven end-to-end.
+// ListPackages / GetPackage / GetPackageDeparture landed in BL-GTW-002
+// (S1-E-10). Dates are ISO YYYY-MM-DD strings (matching the service
+// layer); enums stay as strings per the adapter pattern (cross-service
+// type churn avoided; gateway's oapi-generated enum validation is the
+// authoritative gate). DiagnosticsDbTx landed in BL-REFACTOR-001 (S1-E-11)
+// when the legacy REST /system/diagnostics/db-tx was retired.
 type CatalogServiceClient interface {
 	// Healthz — pilot placeholder. Retained for reflection-based probing
 	// that predates the standard grpc.health.v1.Health protocol added in
@@ -60,6 +58,13 @@ type CatalogServiceClient interface {
 	// Returns NOT_FOUND for departed/completed/cancelled/unknown.
 	// Mirrors GET /v1/package-departures/{id}.
 	GetPackageDeparture(ctx context.Context, in *GetPackageDepartureRequest, opts ...grpc.CallOption) (*GetPackageDepartureResponse, error)
+	// DiagnosticsDbTx — state-mutating WithTx reference path. Inserts one
+	// row into public.diagnostics, reads it back inside the same
+	// transaction, echoes the message. Dev verification only (invoked via
+	// grpcurl); per ADR 0009 there is no gateway REST route for this —
+	// iam-svc's /v1/iam/system/diagnostics/db-tx already proves the
+	// cross-service trace story (S0-J-05).
+	DiagnosticsDbTx(ctx context.Context, in *DiagnosticsDbTxRequest, opts ...grpc.CallOption) (*DiagnosticsDbTxResponse, error)
 }
 
 type catalogServiceClient struct {
@@ -110,24 +115,31 @@ func (c *catalogServiceClient) GetPackageDeparture(ctx context.Context, in *GetP
 	return out, nil
 }
 
+func (c *catalogServiceClient) DiagnosticsDbTx(ctx context.Context, in *DiagnosticsDbTxRequest, opts ...grpc.CallOption) (*DiagnosticsDbTxResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DiagnosticsDbTxResponse)
+	err := c.cc.Invoke(ctx, CatalogService_DiagnosticsDbTx_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CatalogServiceServer is the server API for CatalogService service.
 // All implementations must embed UnimplementedCatalogServiceServer
 // for forward compatibility.
 //
-// CatalogService — internal gRPC surface for the catalog (packages +
-// master data). Per ADR 0009 backend services are gRPC-only; the public
-// REST surface lives on gateway-svc which proxies to these RPCs.
+// CatalogService — the catalog's only transport surface (packages + master
+// data). Per ADR 0009 this service is gRPC-only; the public REST surface
+// lives on gateway-svc (services/gateway-svc/api/rest_oapi/openapi.yaml
+// § Catalog) which proxies to these RPCs.
 //
-// BL-GTW-002 / S1-E-10 adds the public-read trio (ListPackages,
-// GetPackage, GetPackageDeparture) mirroring the shapes in
-// services/catalog-svc/api/rest_oapi/openapi.yaml § Catalog. Dates are
-// ISO YYYY-MM-DD strings (matching the service layer); enums stay as
-// strings per the adapter pattern (cross-service type churn avoided; the
-// REST layer's oapi-generated enum validation is the authoritative gate).
-//
-// Catalog-svc's REST handlers still exist and call the same service-layer
-// methods as these gRPC handlers; G7 (BL-REFACTOR-001) removes the REST
-// side once gateway is proven end-to-end.
+// ListPackages / GetPackage / GetPackageDeparture landed in BL-GTW-002
+// (S1-E-10). Dates are ISO YYYY-MM-DD strings (matching the service
+// layer); enums stay as strings per the adapter pattern (cross-service
+// type churn avoided; gateway's oapi-generated enum validation is the
+// authoritative gate). DiagnosticsDbTx landed in BL-REFACTOR-001 (S1-E-11)
+// when the legacy REST /system/diagnostics/db-tx was retired.
 type CatalogServiceServer interface {
 	// Healthz — pilot placeholder. Retained for reflection-based probing
 	// that predates the standard grpc.health.v1.Health protocol added in
@@ -145,6 +157,13 @@ type CatalogServiceServer interface {
 	// Returns NOT_FOUND for departed/completed/cancelled/unknown.
 	// Mirrors GET /v1/package-departures/{id}.
 	GetPackageDeparture(context.Context, *GetPackageDepartureRequest) (*GetPackageDepartureResponse, error)
+	// DiagnosticsDbTx — state-mutating WithTx reference path. Inserts one
+	// row into public.diagnostics, reads it back inside the same
+	// transaction, echoes the message. Dev verification only (invoked via
+	// grpcurl); per ADR 0009 there is no gateway REST route for this —
+	// iam-svc's /v1/iam/system/diagnostics/db-tx already proves the
+	// cross-service trace story (S0-J-05).
+	DiagnosticsDbTx(context.Context, *DiagnosticsDbTxRequest) (*DiagnosticsDbTxResponse, error)
 	mustEmbedUnimplementedCatalogServiceServer()
 }
 
@@ -166,6 +185,9 @@ func (UnimplementedCatalogServiceServer) GetPackage(context.Context, *GetPackage
 }
 func (UnimplementedCatalogServiceServer) GetPackageDeparture(context.Context, *GetPackageDepartureRequest) (*GetPackageDepartureResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPackageDeparture not implemented")
+}
+func (UnimplementedCatalogServiceServer) DiagnosticsDbTx(context.Context, *DiagnosticsDbTxRequest) (*DiagnosticsDbTxResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DiagnosticsDbTx not implemented")
 }
 func (UnimplementedCatalogServiceServer) mustEmbedUnimplementedCatalogServiceServer() {}
 func (UnimplementedCatalogServiceServer) testEmbeddedByValue()                        {}
@@ -260,6 +282,24 @@ func _CatalogService_GetPackageDeparture_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CatalogService_DiagnosticsDbTx_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DiagnosticsDbTxRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).DiagnosticsDbTx(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CatalogService_DiagnosticsDbTx_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).DiagnosticsDbTx(ctx, req.(*DiagnosticsDbTxRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CatalogService_ServiceDesc is the grpc.ServiceDesc for CatalogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -282,6 +322,10 @@ var CatalogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPackageDeparture",
 			Handler:    _CatalogService_GetPackageDeparture_Handler,
+		},
+		{
+			MethodName: "DiagnosticsDbTx",
+			Handler:    _CatalogService_DiagnosticsDbTx_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

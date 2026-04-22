@@ -67,9 +67,10 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool,
 	v1 := app.Group("/v1")
 	{
 		// System-probe proxies (REST adapters; retire with each BL-REFACTOR-* card).
+		// catalog-svc's proxy was removed in G7 (BL-REFACTOR-001) — catalog is
+		// gRPC-only; operators probe via grpc_health_probe.
 		v1.Get("/iam/system/live", wrapper.GetIamSystemLive)
 		v1.Get("/iam/system/diagnostics/db-tx", wrapper.GetIamSystemDbTxDiagnostic)
-		v1.Get("/catalog/system/live", wrapper.GetCatalogSystemLive)
 		v1.Get("/booking/system/live", wrapper.GetBookingSystemLive)
 		v1.Get("/jamaah/system/live", wrapper.GetJamaahSystemLive)
 		v1.Get("/payment/system/live", wrapper.GetPaymentSystemLive)

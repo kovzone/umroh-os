@@ -13,7 +13,7 @@
   },
   "external": {
     "iam_svc":       { "name": "iam-svc",       "address": "http://iam-svc:4001",       "grpc_target": "iam-svc:50051" },
-    "catalog_svc":   { "name": "catalog-svc",   "address": "http://catalog-svc:4002",   "grpc_target": "catalog-svc:50052" },
+    "catalog_svc":   { "name": "catalog-svc",                                           "grpc_target": "catalog-svc:50052" },
     "booking_svc":   { "name": "booking-svc",   "address": "http://booking-svc:4003",   "grpc_target": "booking-svc:50053" },
     "jamaah_svc":    { "name": "jamaah-svc",    "address": "http://jamaah-svc:4004",    "grpc_target": "jamaah-svc:50054" },
     "payment_svc":   { "name": "payment-svc",   "address": "http://payment-svc:4005",   "grpc_target": "payment-svc:50055" },

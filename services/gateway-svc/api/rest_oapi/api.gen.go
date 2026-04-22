@@ -317,9 +317,6 @@ type ServerInterface interface {
 	// Proxy booking-svc liveness
 	// (GET /v1/booking/system/live)
 	GetBookingSystemLive(c *fiber.Ctx) error
-	// Proxy catalog-svc liveness
-	// (GET /v1/catalog/system/live)
-	GetCatalogSystemLive(c *fiber.Ctx) error
 	// Proxy crm-svc liveness
 	// (GET /v1/crm/system/live)
 	GetCrmSystemLive(c *fiber.Ctx) error
@@ -381,12 +378,6 @@ func (siw *ServerInterfaceWrapper) Readiness(c *fiber.Ctx) error {
 func (siw *ServerInterfaceWrapper) GetBookingSystemLive(c *fiber.Ctx) error {
 
 	return siw.Handler.GetBookingSystemLive(c)
-}
-
-// GetCatalogSystemLive operation middleware
-func (siw *ServerInterfaceWrapper) GetCatalogSystemLive(c *fiber.Ctx) error {
-
-	return siw.Handler.GetCatalogSystemLive(c)
 }
 
 // GetCrmSystemLive operation middleware
@@ -586,8 +577,6 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 
 	router.Get(options.BaseURL+"/v1/booking/system/live", wrapper.GetBookingSystemLive)
 
-	router.Get(options.BaseURL+"/v1/catalog/system/live", wrapper.GetCatalogSystemLive)
-
 	router.Get(options.BaseURL+"/v1/crm/system/live", wrapper.GetCrmSystemLive)
 
 	router.Get(options.BaseURL+"/v1/finance/system/live", wrapper.GetFinanceSystemLive)
@@ -665,31 +654,6 @@ func (response GetBookingSystemLive200JSONResponse) VisitGetBookingSystemLiveRes
 type GetBookingSystemLive502JSONResponse ErrorResponse
 
 func (response GetBookingSystemLive502JSONResponse) VisitGetBookingSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(502)
-
-	return ctx.JSON(&response)
-}
-
-type GetCatalogSystemLiveRequestObject struct {
-}
-
-type GetCatalogSystemLiveResponseObject interface {
-	VisitGetCatalogSystemLiveResponse(ctx *fiber.Ctx) error
-}
-
-type GetCatalogSystemLive200JSONResponse LiveResponse
-
-func (response GetCatalogSystemLive200JSONResponse) VisitGetCatalogSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type GetCatalogSystemLive502JSONResponse ErrorResponse
-
-func (response GetCatalogSystemLive502JSONResponse) VisitGetCatalogSystemLiveResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(502)
 
@@ -1065,9 +1029,6 @@ type StrictServerInterface interface {
 	// Proxy booking-svc liveness
 	// (GET /v1/booking/system/live)
 	GetBookingSystemLive(ctx context.Context, request GetBookingSystemLiveRequestObject) (GetBookingSystemLiveResponseObject, error)
-	// Proxy catalog-svc liveness
-	// (GET /v1/catalog/system/live)
-	GetCatalogSystemLive(ctx context.Context, request GetCatalogSystemLiveRequestObject) (GetCatalogSystemLiveResponseObject, error)
 	// Proxy crm-svc liveness
 	// (GET /v1/crm/system/live)
 	GetCrmSystemLive(ctx context.Context, request GetCrmSystemLiveRequestObject) (GetCrmSystemLiveResponseObject, error)
@@ -1186,31 +1147,6 @@ func (sh *strictHandler) GetBookingSystemLive(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else if validResponse, ok := response.(GetBookingSystemLiveResponseObject); ok {
 		if err := validResponse.VisitGetBookingSystemLiveResponse(ctx); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// GetCatalogSystemLive operation middleware
-func (sh *strictHandler) GetCatalogSystemLive(ctx *fiber.Ctx) error {
-	var request GetCatalogSystemLiveRequestObject
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetCatalogSystemLive(ctx.UserContext(), request.(GetCatalogSystemLiveRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetCatalogSystemLive")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(GetCatalogSystemLiveResponseObject); ok {
-		if err := validResponse.VisitGetCatalogSystemLiveResponse(ctx); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
 	} else if response != nil {

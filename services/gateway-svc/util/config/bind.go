@@ -22,8 +22,8 @@ func bindEnvironmentVariables() {
 	viper.BindEnv("external.iam_svc.address", "IAM_SVC_ADDRESS")
 	viper.BindEnv("external.iam_svc.grpc_target", "IAM_SVC_GRPC_TARGET")
 
+	// catalog-svc is gRPC-only (per ADR 0009 / BL-REFACTOR-001) — no REST address.
 	viper.BindEnv("external.catalog_svc.name", "CATALOG_SVC_NAME")
-	viper.BindEnv("external.catalog_svc.address", "CATALOG_SVC_ADDRESS")
 	viper.BindEnv("external.catalog_svc.grpc_target", "CATALOG_SVC_GRPC_TARGET")
 
 	viper.BindEnv("external.booking_svc.name", "BOOKING_SVC_NAME")

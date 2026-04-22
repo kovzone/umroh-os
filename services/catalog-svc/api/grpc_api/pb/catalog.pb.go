@@ -1552,6 +1552,106 @@ func (x *GetPackageDepartureResponse) GetDeparture() *DepartureDetail {
 	return nil
 }
 
+type DiagnosticsDbTxRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Empty / unset is treated as "no message" server-side, matching the
+	// previous REST default.
+	Message       string `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DiagnosticsDbTxRequest) Reset() {
+	*x = DiagnosticsDbTxRequest{}
+	mi := &file_catalog_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DiagnosticsDbTxRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DiagnosticsDbTxRequest) ProtoMessage() {}
+
+func (x *DiagnosticsDbTxRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DiagnosticsDbTxRequest.ProtoReflect.Descriptor instead.
+func (*DiagnosticsDbTxRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *DiagnosticsDbTxRequest) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type DiagnosticsDbTxResponse struct {
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	DiagnosticId int64                  `protobuf:"varint,1,opt,name=diagnostic_id,json=diagnosticId,proto3" json:"diagnostic_id,omitempty"`
+	// Echo of the form `received '<message>' from client`, same shape as
+	// the retired REST envelope.
+	Message       string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DiagnosticsDbTxResponse) Reset() {
+	*x = DiagnosticsDbTxResponse{}
+	mi := &file_catalog_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DiagnosticsDbTxResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DiagnosticsDbTxResponse) ProtoMessage() {}
+
+func (x *DiagnosticsDbTxResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DiagnosticsDbTxResponse.ProtoReflect.Descriptor instead.
+func (*DiagnosticsDbTxResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *DiagnosticsDbTxResponse) GetDiagnosticId() int64 {
+	if x != nil {
+		return x.DiagnosticId
+	}
+	return 0
+}
+
+func (x *DiagnosticsDbTxResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_catalog_proto protoreflect.FileDescriptor
 
 const file_catalog_proto_rawDesc = "" +
@@ -1683,13 +1783,19 @@ const file_catalog_proto_rawDesc = "" +
 	"\apricing\x18\b \x03(\v2\x12.pb.PackagePricingR\apricing\x12>\n" +
 	"\x10vendor_readiness\x18\t \x01(\v2\x13.pb.VendorReadinessR\x0fvendorReadiness\"P\n" +
 	"\x1bGetPackageDepartureResponse\x121\n" +
-	"\tdeparture\x18\x01 \x01(\v2\x13.pb.DepartureDetailR\tdeparture2\xa4\x02\n" +
+	"\tdeparture\x18\x01 \x01(\v2\x13.pb.DepartureDetailR\tdeparture\"2\n" +
+	"\x16DiagnosticsDbTxRequest\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"X\n" +
+	"\x17DiagnosticsDbTxResponse\x12#\n" +
+	"\rdiagnostic_id\x18\x01 \x01(\x03R\fdiagnosticId\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage2\xf2\x02\n" +
 	"\x0eCatalogService\x124\n" +
 	"\aHealthz\x12\x12.pb.HealthzRequest\x1a\x13.pb.HealthzResponse\"\x00\x12C\n" +
 	"\fListPackages\x12\x17.pb.ListPackagesRequest\x1a\x18.pb.ListPackagesResponse\"\x00\x12=\n" +
 	"\n" +
 	"GetPackage\x12\x15.pb.GetPackageRequest\x1a\x16.pb.GetPackageResponse\"\x00\x12X\n" +
-	"\x13GetPackageDeparture\x12\x1e.pb.GetPackageDepartureRequest\x1a\x1f.pb.GetPackageDepartureResponse\"\x00B\x06Z\x04./pbb\x06proto3"
+	"\x13GetPackageDeparture\x12\x1e.pb.GetPackageDepartureRequest\x1a\x1f.pb.GetPackageDepartureResponse\"\x00\x12L\n" +
+	"\x0fDiagnosticsDbTx\x12\x1a.pb.DiagnosticsDbTxRequest\x1a\x1b.pb.DiagnosticsDbTxResponse\"\x00B\x06Z\x04./pbb\x06proto3"
 
 var (
 	file_catalog_proto_rawDescOnce sync.Once
@@ -1703,7 +1809,7 @@ func file_catalog_proto_rawDescGZIP() []byte {
 	return file_catalog_proto_rawDescData
 }
 
-var file_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_catalog_proto_goTypes = []any{
 	(*HealthzRequest)(nil),              // 0: pb.HealthzRequest
 	(*HealthzResponse)(nil),             // 1: pb.HealthzResponse
@@ -1728,6 +1834,8 @@ var file_catalog_proto_goTypes = []any{
 	(*VendorReadiness)(nil),             // 20: pb.VendorReadiness
 	(*DepartureDetail)(nil),             // 21: pb.DepartureDetail
 	(*GetPackageDepartureResponse)(nil), // 22: pb.GetPackageDepartureResponse
+	(*DiagnosticsDbTxRequest)(nil),      // 23: pb.DiagnosticsDbTxRequest
+	(*DiagnosticsDbTxResponse)(nil),     // 24: pb.DiagnosticsDbTxResponse
 }
 var file_catalog_proto_depIdxs = []int32{
 	7,  // 0: pb.Itinerary.days:type_name -> pb.ItineraryDay
@@ -1749,12 +1857,14 @@ var file_catalog_proto_depIdxs = []int32{
 	9,  // 16: pb.CatalogService.ListPackages:input_type -> pb.ListPackagesRequest
 	14, // 17: pb.CatalogService.GetPackage:input_type -> pb.GetPackageRequest
 	18, // 18: pb.CatalogService.GetPackageDeparture:input_type -> pb.GetPackageDepartureRequest
-	1,  // 19: pb.CatalogService.Healthz:output_type -> pb.HealthzResponse
-	13, // 20: pb.CatalogService.ListPackages:output_type -> pb.ListPackagesResponse
-	17, // 21: pb.CatalogService.GetPackage:output_type -> pb.GetPackageResponse
-	22, // 22: pb.CatalogService.GetPackageDeparture:output_type -> pb.GetPackageDepartureResponse
-	19, // [19:23] is the sub-list for method output_type
-	15, // [15:19] is the sub-list for method input_type
+	23, // 19: pb.CatalogService.DiagnosticsDbTx:input_type -> pb.DiagnosticsDbTxRequest
+	1,  // 20: pb.CatalogService.Healthz:output_type -> pb.HealthzResponse
+	13, // 21: pb.CatalogService.ListPackages:output_type -> pb.ListPackagesResponse
+	17, // 22: pb.CatalogService.GetPackage:output_type -> pb.GetPackageResponse
+	22, // 23: pb.CatalogService.GetPackageDeparture:output_type -> pb.GetPackageDepartureResponse
+	24, // 24: pb.CatalogService.DiagnosticsDbTx:output_type -> pb.DiagnosticsDbTxResponse
+	20, // [20:25] is the sub-list for method output_type
+	15, // [15:20] is the sub-list for method input_type
 	15, // [15:15] is the sub-list for extension type_name
 	15, // [15:15] is the sub-list for extension extendee
 	0,  // [0:15] is the sub-list for field type_name
@@ -1771,7 +1881,7 @@ func file_catalog_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_catalog_proto_rawDesc), len(file_catalog_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   23,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
