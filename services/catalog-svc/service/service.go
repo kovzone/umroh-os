@@ -11,20 +11,23 @@ import (
 
 // IService is the business-layer interface for catalog-svc.
 //
-// Pilot scaffold surfaces only the three standard scaffold endpoints:
+// Current scope (S1-E-02 / BL-CAT-001):
 //
 //   - Liveness — process is up
 //   - Readiness — process is up AND the database is reachable
-//   - DbTxDiagnostic — writes + reads inside a WithTx, the canonical reference
-//     for how services should use transactions (per docs/04-backend-conventions)
+//   - DbTxDiagnostic — WithTx reference implementation (§ backend-conventions)
+//   - GetPackages — § Catalog public list (active only)
+//   - GetPackageByID — § Catalog public detail (active only)
 //
-// Real iam responsibilities (user/role/branch CRUD, auth login/refresh/logout,
-// permission checks, session lifecycle, audit writes) land in F1.5–F1.11 and
-// are deliberately out of scaffold scope.
+// Admin write endpoints (create/update/archive), bulk import/export,
+// and the gRPC Reserve/ReleaseSeats pair land in later S1 cards.
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
 	DbTxDiagnostic(ctx context.Context, params *DbTxDiagnosticParams) (*DbTxDiagnosticResult, error)
+
+	GetPackages(ctx context.Context, params *GetPackagesParams) (*GetPackagesResult, error)
+	GetPackageByID(ctx context.Context, params *GetPackageByIDParams) (*PackageDetail, error)
 }
 
 type Service struct {
