@@ -18,6 +18,11 @@ var (
 	ErrUnauthorized = errors.New("unauthorized")
 	ErrForbidden    = errors.New("forbidden")
 	ErrInternal     = errors.New("internal error")
+	// ErrServiceUnavailable is raised when an upstream service gateway depends on
+	// (notably iam-svc for bearer validation per F1-W7 / ADR 0009) is unreachable.
+	// Distinct from ErrUnauthorized so the client can tell "your bearer is bad"
+	// (401) apart from "the auth layer is down" (502).
+	ErrServiceUnavailable = errors.New("service unavailable")
 )
 
 // ErrorCode returns a machine-readable code for the error. Used in REST/API response envelopes.
@@ -35,6 +40,8 @@ func ErrorCode(err error) string {
 		return "UNAUTHORIZED"
 	case errors.Is(err, ErrForbidden):
 		return "FORBIDDEN"
+	case errors.Is(err, ErrServiceUnavailable):
+		return "SERVICE_UNAVAILABLE"
 	case errors.Is(err, ErrInternal):
 		return "INTERNAL_ERROR"
 	default:

@@ -256,6 +256,22 @@ paths:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: PASETO
+      description: |
+        Single-point edge authentication per ADR 0009 / F1-W7. Clients send
+        `Authorization: Bearer <access_token>` on any protected route.
+        gateway-svc validates the token once against `iam-svc.ValidateToken`
+        (gRPC); backends do NOT re-validate. Failure modes: missing/malformed
+        → 401 UNAUTHORIZED; iam-svc rejects → 401 UNAUTHORIZED; iam-svc
+        unreachable → 502 SERVICE_UNAVAILABLE (fail-closed).
+
+        No route is currently tagged with this scheme — first consumer lands
+        with BL-IAM-018 / S1-E-12 when iam auth REST routes move to gateway.
+
   schemas:
     LiveResponse:
       type: object

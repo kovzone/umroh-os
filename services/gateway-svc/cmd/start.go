@@ -10,6 +10,7 @@ import (
 	"gateway-svc/adapter/catalog_rest_adapter"
 	"gateway-svc/adapter/crm_rest_adapter"
 	"gateway-svc/adapter/finance_rest_adapter"
+	"gateway-svc/adapter/iam_grpc_adapter"
 	"gateway-svc/adapter/iam_rest_adapter"
 	"gateway-svc/adapter/jamaah_rest_adapter"
 	"gateway-svc/adapter/logistics_rest_adapter"
@@ -21,6 +22,10 @@ import (
 	"gateway-svc/util/config"
 	"gateway-svc/util/logging"
 	"gateway-svc/util/tracing"
+
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func start() {
@@ -70,11 +75,44 @@ func start() {
 		Str("config", fmt.Sprintf("%+v", config)).
 		Msg(fmt.Sprintf("Starting '%s' service ...", config.App.Name))
 
+	// --- Dial iam-svc gRPC for edge bearer validation (BL-GTW-001 / F1-W7) ---
+	//
+	// Per ADR 0009, gateway validates every authenticated request once at the
+	// edge via iam-svc.ValidateToken (gRPC). Traffic stays inside the
+	// docker-compose network — insecure is fine today; the trust-contract
+	// card (BL-GTW-100) adds mTLS. Unary stats handler propagates the current
+	// trace context so iam-svc spans continue the gateway trace.
+	iamConn, err := grpc.NewClient(
+		config.External.IamSvc.GrpcTarget,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Dial iam-svc gRPC").
+			Str("target", config.External.IamSvc.GrpcTarget).
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+	defer func() {
+		if err := iamConn.Close(); err != nil {
+			logger.Error().Err(err).Msg("close iam gRPC conn")
+		}
+	}()
+	iamGrpcAdapter := iam_grpc_adapter.NewAdapter(logger, tracer, iamConn)
+
 	// --- Init REST adapters (one per backend service) ---
 	// gateway-svc has no DB and no internal store; the service layer dispatches
 	// to these per-backend adapters. As real per-route methods are added on
 	// each adapter (e.g. iam.GetUser, catalog.GetPackage), the gateway proxies
 	// them via the same dispatch shape.
+	//
+	// Note: iamGrpcAdapter (above) handles ValidateToken for the bearer-auth
+	// middleware. iam_rest_adapter (below) still serves the interim public
+	// system-probe proxy routes (/v1/iam/system/live, /v1/iam/system/diagnostics/db-tx)
+	// and is retired as part of BL-IAM-018 / S1-E-12 when iam's REST goes away.
 	iamAdapter := iam_rest_adapter.NewAdapter(logger, tracer, config.External.IamSvc.Address)
 	catalogAdapter := catalog_rest_adapter.NewAdapter(logger, tracer, config.External.CatalogSvc.Address)
 	bookingAdapter := booking_rest_adapter.NewAdapter(logger, tracer, config.External.BookingSvc.Address)
@@ -104,7 +142,7 @@ func start() {
 	})
 
 	// --- Init API layer (REST only — gateway is the edge proxy, no gRPC server) ---
-	restServer := rest_oapi.NewServer(logger, tracer, svc)
+	restServer := rest_oapi.NewServer(logger, tracer, svc, iamGrpcAdapter)
 
 	// --- Run server ---
 	runRestServer(config.Api.Rest.Port, restServer, config.Api.Metrics.Enabled, config.OtelTracer.Name)

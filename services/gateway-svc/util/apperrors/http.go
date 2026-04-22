@@ -18,6 +18,8 @@ func HTTPStatus(err error) int {
 		return 401
 	case errors.Is(err, ErrForbidden):
 		return 403
+	case errors.Is(err, ErrServiceUnavailable):
+		return 502
 	case errors.Is(err, ErrInternal):
 		return 500
 	default:

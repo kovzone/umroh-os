@@ -49,14 +49,20 @@ type External struct {
 	CrmSvc       BackendSvc `mapstructure:"crm_svc"`
 }
 
-// BackendSvc is the address of one REST backend.
+// BackendSvc is the address of one backend.
 //
-// Address is a base URL like "http://iam-svc:4001"; the adapter appends the
-// route path (e.g. "/system/live"). Name is used for logging and span
-// attribution.
+// Address is the REST base URL like "http://iam-svc:4001"; the rest_adapter
+// appends the route path (e.g. "/system/live"). GrpcTarget is a plain
+// host:port like "iam-svc:50051" used by the gRPC adapter (per ADR 0009 —
+// gateway dials the backend's gRPC surface for authenticated workflows).
+// GrpcTarget is optional on backends that have no gateway-side gRPC adapter
+// yet; it becomes required when a card introduces one.
+//
+// Name is used for logging and span attribution.
 type BackendSvc struct {
-	Name    string `mapstructure:"name"`
-	Address string `mapstructure:"address"`
+	Name       string `mapstructure:"name"`
+	Address    string `mapstructure:"address"`
+	GrpcTarget string `mapstructure:"grpc_target"`
 }
 
 // Otel tracer config
