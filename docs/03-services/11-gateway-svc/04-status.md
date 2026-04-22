@@ -7,7 +7,8 @@
 - [x] First adapter: `iam_rest_adapter` + `GET /v1/iam/system/live` proof *(interim; replaced by `iam_grpc_adapter` in `BL-GTW-001` per ADR 0009)*
 - [ ] **`iam_grpc_adapter`** — gateway's gRPC client to `iam-svc` (replaces the interim REST adapter per ADR 0009) — `BL-GTW-001` / S1-E-09
 - [ ] **Bearer-auth middleware** — extracts `Authorization: Bearer`, calls `iam.v1.IamService/ValidateToken`, fail-closed 502 on iam-svc unreachable — `BL-GTW-001` / S1-E-09
-- [x] **`catalog_grpc_adapter`** + public REST routes (`GET /v1/packages`, `GET /v1/packages/{id}`, `GET /v1/package-departures/{id}`); e2e migrated to `gateway-svc:4000` — `BL-GTW-002` / S1-E-10 (PR pending)
+- [x] **`catalog_grpc_adapter`** + public REST routes (`GET /v1/packages`, `GET /v1/packages/{id}`, `GET /v1/package-departures/{id}`); e2e migrated to `gateway-svc:4000` — `BL-GTW-002` / S1-E-10 (merged 2026-04-22, PR #48)
+- [x] **`catalog_rest_adapter` retired** + `/v1/catalog/system/live` removed + `external.catalog_svc.address` dropped from config — `BL-REFACTOR-001` / S1-E-11 (2026-04-23). catalog-svc is now gRPC-only; operators probe via `grpc_health_probe`.
 - [ ] **Iam client-facing REST** (`/v1/sessions*`, `/v1/me*`, `/v1/users*`) proxied to iam gRPC — `BL-IAM-018` / S1-E-12
 - [ ] Per-backend gRPC adapters for the remaining services (booking, jamaah, payment, visa, ops, logistics, finance, crm) — opened as each consumer slice lands
 - [ ] **Trust contract (gateway↔backend)** — signed header or mTLS, closes the defense-in-depth gap — `BL-GTW-100` (deferred, later slice)
@@ -56,7 +57,7 @@ Gateway is the only REST surface in UmrohOS. For each backend it calls, it carri
 - `<topic>.go` — typed methods that call the backend's gRPC RPCs and translate gRPC status codes to `apperrors` sentinels for consistent Fiber rendering.
 - `pb/<svc>.proto` — local copy of the backend's proto (per ADR 0004).
 
-The original REST-adapter pattern (`services/gateway-svc/adapter/<svc>_rest_adapter/`) was an interim shape used during S0 scaffolding. `iam_rest_adapter` is the only concrete example today; it is replaced by `iam_grpc_adapter` as part of `BL-GTW-001` / S1-E-09 (and deleted as part of `BL-IAM-018` / S1-E-12 when iam's REST package goes away altogether).
+The original REST-adapter pattern (`services/gateway-svc/adapter/<svc>_rest_adapter/`) was an interim shape used during S0 scaffolding. Each backend's REST adapter retires as its `BL-REFACTOR-*` card lands; `catalog_rest_adapter` was the first to go (2026-04-23, `BL-REFACTOR-001`). `iam_rest_adapter` still serves the interim system-probe + WithTx-diagnostic routes and retires as part of `BL-IAM-018` / S1-E-12. Remaining REST adapters (booking, jamaah, payment, visa, ops, logistics, finance, crm) retire per their own refactor cards as those services gain gateway gRPC counterparts.
 
 ## Next
 

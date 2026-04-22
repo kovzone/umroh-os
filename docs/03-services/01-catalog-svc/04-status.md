@@ -13,7 +13,7 @@
 - [ ] Atomic seat reservation (gRPC `ReserveSeats` / `ReleaseSeats`) — S1-E-03 territory
 - [ ] Bulk import / export — BL-CAT-010 / BL-CAT-011
 - [x] Unit tests (cursor helpers) + integration/e2e (Playwright `02e-catalog-svc-read.spec.ts`)
-- [ ] **ADR 0009 refactor** — remove `services/catalog-svc/api/rest_oapi/` after gateway routing (`BL-GTW-002` / S1-E-10) lands; migrate `/system/diagnostics/db-tx` to a `DiagnosticsDbTx` gRPC method — `BL-REFACTOR-001` / S1-E-11
+- [x] **ADR 0009 refactor** — `api/rest_oapi/` removed; `/system/diagnostics/db-tx` migrated to the `DiagnosticsDbTx` gRPC RPC; `util/monitoring` rewritten from Prometheus SDK to OTel SDK (OTLP metrics push to the collector's `:8889` Prometheus exporter); REST port `4002` retired from compose (`BL-REFACTOR-001` / S1-E-11, 2026-04-23)
 - [x] Verified by reviewer — BL-CAT-001 merged to `dev` on 2026-04-22 (PR #38)
 
 ## Current status
@@ -42,7 +42,18 @@
 - **Migration `000010`** — seed one cancelled departure (`dep_01JCDF00000000000000000003`) for e2e 404 coverage. Immutable post-merge; extended as a new migration not an edit to 000009.
 - **e2e coverage** — 3 new cases in `02e-catalog-svc-read.spec.ts`: happy-path 200 (seat math, 3 pricing rows, vendor_readiness shape), cancelled-departure 404, unknown-departure 404. Total now 12 passed.
 
+## 2026-04-23 — what landed with BL-REFACTOR-001 (S1-E-11)
+
+- **REST surface removed.** `services/catalog-svc/api/rest_oapi/` (openapi.yaml + generated handler + middleware + probes + `packages.go`) deleted. Catalog is now gRPC-only per ADR 0009. `cmd/start.go` dropped the REST server wiring; `cmd/server.go` kept only `runGrpcServer`. `util/apperrors/http.go` deleted (no remaining callers); `grpc.go` + `domain.go` stay.
+- **DiagnosticsDbTx gRPC RPC.** New `pb.CatalogService/DiagnosticsDbTx` replaces the retired `GET /system/diagnostics/db-tx`. Reuses the existing `service.DbTxDiagnostic` method; dev-only verification via `grpcurl`. Per ADR 0009 no gateway REST route proxies it — iam-svc's `/v1/iam/system/diagnostics/db-tx` keeps the cross-service WithTx trace demo (S0-J-05).
+- **Monitoring: Prometheus SDK → OTel metrics SDK.** `util/monitoring/metrics.go` now exposes `InitMeter(serviceName, otlpEndpoint)` — constructs an OTLP gRPC exporter + `MeterProvider` with a 15-second `PeriodicReader`, mirroring `util/tracing.InitTracer`. `dbpool.go` replaced its Prometheus gauges + goroutine ticker with three `Int64ObservableGauge`s + one `RegisterCallback` pull; the OTel SDK drives collection. `panic.go` deleted (Fiber-only). No local `/metrics` HTTP endpoint — metrics flow OTLP → `otel-collector:4317` → collector's Prometheus exporter (`:8889`) → Prometheus scrape.
+- **Infra updates.** `monitoring/otel-collector-config.yaml` grew a `prometheus` exporter on `0.0.0.0:8889` and a `metrics` pipeline (`otlp` → `batch` → `prometheus`). `monitoring/prometheus.yml` replaced the `catalog-svc:4002` scrape with a single `otel-collector:8889` job — individual services are distinguished by the `job` Prometheus label (the OTel Collector exporter projects the `service.name` resource attribute into `job=` per Prometheus convention). `docker-compose.dev.yml` added `8889:8889` to `otel-collector` and dropped `4002:4002` from `catalog-svc`.
+- **Gateway cleanup (same PR card).** `services/gateway-svc/adapter/catalog_rest_adapter/` deleted; `GET /v1/catalog/system/live` removed from gateway's openapi + `proxy_catalog.go` + `cmd/server.go`; `catalogRest` field + `GetCatalogSystemLive` method removed from gateway's `IService` + `Service`; `external.catalog_svc.address` removed from gateway config + bind.go (kept `grpc_target`).
+- **Config trim.** `services/catalog-svc/util/config/config.go` dropped the `Rest` + `Metrics` structs — `Api` is now just `{ Grpc Grpc }`. `config.json` + `config.json.sample` lost their `api.rest` and `api.metrics` blocks. `bind.go` dropped the three corresponding BindEnv calls.
+- **Build/test clean.** `go build ./...`, `go vet ./...`, `go test ./...` all pass for both catalog-svc and gateway-svc. `make genpb` + `make oapi` regenerate cleanly.
+
 ## § Next
 
 - `BL-CAT-004` (F2-AC) — B2C browse integration wrap-up + gateway route smoke. Exec seq 123; same task code `S1-E-02`.
+- `BL-IAM-018` / S1-E-12 (G8) — iam-svc's client-facing REST endpoints move to gateway; iam's REST package deleted. Largest remaining ADR-0009 code card.
 - After S1-E-02 closes: `BL-CAT-003` (atomic `ReserveSeats` / `ReleaseSeats` gRPC) moves to `S1-E-03`, which also covers the booking draft handler and its submit saga.
