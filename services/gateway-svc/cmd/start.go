@@ -8,7 +8,6 @@ import (
 
 	"gateway-svc/adapter/booking_rest_adapter"
 	"gateway-svc/adapter/catalog_grpc_adapter"
-	"gateway-svc/adapter/catalog_rest_adapter"
 	"gateway-svc/adapter/crm_rest_adapter"
 	"gateway-svc/adapter/finance_rest_adapter"
 	"gateway-svc/adapter/iam_grpc_adapter"
@@ -141,7 +140,6 @@ func start() {
 	// system-probe proxy routes (/v1/iam/system/live, /v1/iam/system/diagnostics/db-tx)
 	// and is retired as part of BL-IAM-018 / S1-E-12 when iam's REST goes away.
 	iamAdapter := iam_rest_adapter.NewAdapter(logger, tracer, config.External.IamSvc.Address)
-	catalogAdapter := catalog_rest_adapter.NewAdapter(logger, tracer, config.External.CatalogSvc.Address)
 	bookingAdapter := booking_rest_adapter.NewAdapter(logger, tracer, config.External.BookingSvc.Address)
 	jamaahAdapter := jamaah_rest_adapter.NewAdapter(logger, tracer, config.External.JamaahSvc.Address)
 	paymentAdapter := payment_rest_adapter.NewAdapter(logger, tracer, config.External.PaymentSvc.Address)
@@ -157,7 +155,6 @@ func start() {
 		Tracer:        tracer,
 		AppName:       config.App.Name,
 		IamRest:       iamAdapter,
-		CatalogRest:   catalogAdapter,
 		CatalogGrpc:   catalogGrpcAdapter,
 		BookingRest:   bookingAdapter,
 		JamaahRest:    jamaahAdapter,

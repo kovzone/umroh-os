@@ -29,28 +29,25 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// CatalogService — internal gRPC surface for the catalog (packages +
-// master data). Per ADR 0009 backend services are gRPC-only; the public
-// REST surface lives on gateway-svc which proxies to these RPCs.
+// CatalogService — gateway-side consumer proto for catalog-svc. Per
+// ADR 0004 each adapter copies only the RPCs it uses; this file mirrors
+// the owner at services/catalog-svc/api/grpc_api/pb/catalog.proto but
+// omits methods gateway does not call (e.g. DiagnosticsDbTx).
 //
-// BL-GTW-002 / S1-E-10 adds the public-read trio (ListPackages,
-// GetPackage, GetPackageDeparture) mirroring the shapes in
-// services/catalog-svc/api/rest_oapi/openapi.yaml § Catalog. Dates are
-// ISO YYYY-MM-DD strings (matching the service layer); enums stay as
-// strings per the adapter pattern (cross-service type churn avoided; the
-// REST layer's oapi-generated enum validation is the authoritative gate).
-//
-// Catalog-svc's REST handlers still exist and call the same service-layer
-// methods as these gRPC handlers; G7 (BL-REFACTOR-001) removes the REST
-// side once gateway is proven end-to-end.
+// ListPackages / GetPackage / GetPackageDeparture are the public catalog
+// read trio the gateway REST routes /v1/packages*, /v1/package-departures
+// proxy to. Dates are ISO YYYY-MM-DD strings (matching the service
+// layer); enums stay as strings per the adapter pattern (cross-service
+// type churn avoided; gateway's oapi-generated enum validation is the
+// authoritative gate).
 type CatalogServiceClient interface {
 	// Healthz — pilot placeholder. Retained for reflection-based probing
 	// that predates the standard grpc.health.v1.Health protocol added in
 	// BL-MON-001; the standard protocol (empty + named service) is the
 	// real health surface used by docker-compose and grpc_health_probe.
 	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
-	// ListPackages — public paginated list of active packages. Mirrors
-	// GET /v1/packages on the current REST surface.
+	// ListPackages — public paginated list of active packages. Backs
+	// gateway's GET /v1/packages route.
 	ListPackages(ctx context.Context, in *ListPackagesRequest, opts ...grpc.CallOption) (*ListPackagesResponse, error)
 	// GetPackage — public active-package detail. Returns NOT_FOUND for
 	// draft/archived/unknown ids (no existence oracle). Mirrors
@@ -114,28 +111,25 @@ func (c *catalogServiceClient) GetPackageDeparture(ctx context.Context, in *GetP
 // All implementations must embed UnimplementedCatalogServiceServer
 // for forward compatibility.
 //
-// CatalogService — internal gRPC surface for the catalog (packages +
-// master data). Per ADR 0009 backend services are gRPC-only; the public
-// REST surface lives on gateway-svc which proxies to these RPCs.
+// CatalogService — gateway-side consumer proto for catalog-svc. Per
+// ADR 0004 each adapter copies only the RPCs it uses; this file mirrors
+// the owner at services/catalog-svc/api/grpc_api/pb/catalog.proto but
+// omits methods gateway does not call (e.g. DiagnosticsDbTx).
 //
-// BL-GTW-002 / S1-E-10 adds the public-read trio (ListPackages,
-// GetPackage, GetPackageDeparture) mirroring the shapes in
-// services/catalog-svc/api/rest_oapi/openapi.yaml § Catalog. Dates are
-// ISO YYYY-MM-DD strings (matching the service layer); enums stay as
-// strings per the adapter pattern (cross-service type churn avoided; the
-// REST layer's oapi-generated enum validation is the authoritative gate).
-//
-// Catalog-svc's REST handlers still exist and call the same service-layer
-// methods as these gRPC handlers; G7 (BL-REFACTOR-001) removes the REST
-// side once gateway is proven end-to-end.
+// ListPackages / GetPackage / GetPackageDeparture are the public catalog
+// read trio the gateway REST routes /v1/packages*, /v1/package-departures
+// proxy to. Dates are ISO YYYY-MM-DD strings (matching the service
+// layer); enums stay as strings per the adapter pattern (cross-service
+// type churn avoided; gateway's oapi-generated enum validation is the
+// authoritative gate).
 type CatalogServiceServer interface {
 	// Healthz — pilot placeholder. Retained for reflection-based probing
 	// that predates the standard grpc.health.v1.Health protocol added in
 	// BL-MON-001; the standard protocol (empty + named service) is the
 	// real health surface used by docker-compose and grpc_health_probe.
 	Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error)
-	// ListPackages — public paginated list of active packages. Mirrors
-	// GET /v1/packages on the current REST surface.
+	// ListPackages — public paginated list of active packages. Backs
+	// gateway's GET /v1/packages route.
 	ListPackages(context.Context, *ListPackagesRequest) (*ListPackagesResponse, error)
 	// GetPackage — public active-package detail. Returns NOT_FOUND for
 	// draft/archived/unknown ids (no existence oracle). Mirrors

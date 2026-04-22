@@ -5,7 +5,6 @@ import (
 
 	"gateway-svc/adapter/booking_rest_adapter"
 	"gateway-svc/adapter/catalog_grpc_adapter"
-	"gateway-svc/adapter/catalog_rest_adapter"
 	"gateway-svc/adapter/crm_rest_adapter"
 	"gateway-svc/adapter/finance_rest_adapter"
 	"gateway-svc/adapter/iam_rest_adapter"
@@ -37,8 +36,6 @@ type IService interface {
 	// flows through gateway-svc → iam-svc here.
 	GetIamSystemDbTxDiagnostic(ctx context.Context, message string) (*iam_rest_adapter.DbTxDiagnosticResult, error)
 
-	GetCatalogSystemLive(ctx context.Context) (*catalog_rest_adapter.LivenessResult, error)
-
 	// Public catalog read (BL-GTW-002 / S1-E-10) — proxies to catalog-svc
 	// gRPC via catalog_grpc_adapter. Mirrors GET /v1/packages,
 	// /v1/packages/{id}, /v1/package-departures/{id}.
@@ -62,7 +59,6 @@ type IService interface {
 // graduates to gRPC-only as its BL-REFACTOR-* card lands.
 type Adapters struct {
 	iamRest       *iam_rest_adapter.Adapter
-	catalogRest   *catalog_rest_adapter.Adapter
 	catalogGrpc   *catalog_grpc_adapter.Adapter
 	bookingRest   *booking_rest_adapter.Adapter
 	jamaahRest    *jamaah_rest_adapter.Adapter
@@ -88,7 +84,6 @@ type NewServiceParams struct {
 	Tracer        trace.Tracer
 	AppName       string
 	IamRest       *iam_rest_adapter.Adapter
-	CatalogRest   *catalog_rest_adapter.Adapter
 	CatalogGrpc   *catalog_grpc_adapter.Adapter
 	BookingRest   *booking_rest_adapter.Adapter
 	JamaahRest    *jamaah_rest_adapter.Adapter
@@ -107,7 +102,6 @@ func NewService(p NewServiceParams) IService {
 		appName: p.AppName,
 		adapters: Adapters{
 			iamRest:       p.IamRest,
-			catalogRest:   p.CatalogRest,
 			catalogGrpc:   p.CatalogGrpc,
 			bookingRest:   p.BookingRest,
 			jamaahRest:    p.JamaahRest,

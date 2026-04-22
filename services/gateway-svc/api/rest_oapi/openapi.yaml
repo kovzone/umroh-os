@@ -102,30 +102,12 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
 
-  /v1/catalog/system/live:
-    get:
-      tags: [Proxy / catalog]
-      summary: Proxy catalog-svc liveness
-      operationId: getCatalogSystemLive
-      responses:
-        "200":
-          description: Upstream OK
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/LiveResponse" }
-        "502":
-          description: Upstream call failed
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/ErrorResponse" }
-
   # ── Public catalog read (BL-GTW-002 / S1-E-10) ─────────────────────────
-  # Gateway REST → catalog-svc gRPC via catalog_grpc_adapter. Responses
-  # mirror services/catalog-svc/api/rest_oapi/openapi.yaml § Catalog
-  # shape-for-shape so e2e specs passing against either port yield
-  # identical bodies. After G7 (BL-REFACTOR-001) the catalog REST port
-  # goes away and these gateway routes become the only client-facing
-  # surface.
+  # Gateway REST → catalog-svc gRPC via catalog_grpc_adapter. Catalog-svc's
+  # own REST port was retired in G7 (BL-REFACTOR-001); these gateway routes
+  # are now the sole client-facing surface. Operators probe catalog health
+  # via grpc_health_probe (see monitoring setup per BL-MON-001), not via a
+  # gateway proxy.
   /v1/packages:
     get:
       tags: [Catalog]
