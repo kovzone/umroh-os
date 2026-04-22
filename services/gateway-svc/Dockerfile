@@ -27,9 +27,11 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/*.go
 # Using minimal alpine image for the final container
 FROM alpine:latest
 
-# Install additional packages needed for the application
+# Install additional packages needed for the application.
+# wget is used by the docker-compose REST healthcheck (gateway is REST-only per ADR 0009;
+# backends use grpc_health_probe instead).
 RUN apk update && apk upgrade && \
-     apk add --no-cache bash git openssh
+     apk add --no-cache bash git openssh wget
 
 # Set the working directory for the application
 WORKDIR /app

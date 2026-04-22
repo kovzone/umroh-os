@@ -29,7 +29,14 @@ FROM alpine:latest
 
 # Install additional packages needed for the application
 RUN apk update && apk upgrade && \
-     apk add --no-cache bash git openssh
+     apk add --no-cache bash git openssh wget
+
+# Install grpc_health_probe for docker-compose gRPC healthcheck (ADR 0009 / BL-MON-001).
+# grpc_health_probe calls grpc.health.v1.Health/Check against the service's gRPC port.
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.24
+RUN wget -qO /bin/grpc_health_probe \
+    https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 && \
+    chmod +x /bin/grpc_health_probe
 
 # Set the working directory for the application
 WORKDIR /app

@@ -109,6 +109,12 @@ func runGrpcServer(address string, apiServer *grpc_api.Server) *grpc.Server {
 		"catalog.v1.CatalogService",
 		health_pb.HealthCheckResponse_SERVING,
 	)
+	// Empty service name = whole-server health. Required for grpc_health_probe's default
+	// probe (called from docker-compose healthchecks per ADR 0009 / BL-MON-001).
+	healthServer.SetServingStatus(
+		"",
+		health_pb.HealthCheckResponse_SERVING,
+	)
 
 	reflection.Register(grpcServer)
 

@@ -242,17 +242,36 @@ services:
         fluentd-async: "true"
         tag: gateway-svc
     depends_on:
-      - fluent-bit
-      - iam-svc
-      - catalog-svc
-      - booking-svc
-      - jamaah-svc
-      - payment-svc
-      - visa-svc
-      - ops-svc
-      - logistics-svc
-      - finance-svc
-      - crm-svc
+      fluent-bit:
+        condition: service_started
+      iam-svc:
+        condition: service_healthy
+      catalog-svc:
+        condition: service_healthy
+      booking-svc:
+        condition: service_healthy
+      jamaah-svc:
+        condition: service_healthy
+      payment-svc:
+        condition: service_healthy
+      visa-svc:
+        condition: service_healthy
+      ops-svc:
+        condition: service_healthy
+      logistics-svc:
+        condition: service_healthy
+      finance-svc:
+        condition: service_healthy
+      crm-svc:
+        condition: service_healthy
+    healthcheck:
+      # gateway-svc is REST-only per ADR 0009 — use wget against /system/live instead of
+      # grpc_health_probe. Backends use grpc_health_probe against their gRPC port.
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4000/system/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - umrohos-network
 
@@ -279,6 +298,12 @@ services:
     depends_on:
       - postgres
       - fluent-bit
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50051"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - umrohos-network
 
@@ -305,6 +330,12 @@ services:
     depends_on:
       - postgres
       - fluent-bit
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50052"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - umrohos-network
 
@@ -331,6 +362,12 @@ services:
     depends_on:
       - postgres
       - fluent-bit
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50053"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - umrohos-network
 
@@ -357,6 +394,12 @@ services:
     depends_on:
       - postgres
       - fluent-bit
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50054"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - umrohos-network
 
@@ -383,6 +426,12 @@ services:
     depends_on:
       - postgres
       - fluent-bit
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50055"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - umrohos-network
 
@@ -409,6 +458,12 @@ services:
     depends_on:
       - postgres
       - fluent-bit
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50056"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - umrohos-network
 
@@ -435,6 +490,12 @@ services:
     depends_on:
       - postgres
       - fluent-bit
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50057"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - umrohos-network
 
@@ -461,6 +522,12 @@ services:
     depends_on:
       - postgres
       - fluent-bit
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50058"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - umrohos-network
 
@@ -487,6 +554,12 @@ services:
     depends_on:
       - postgres
       - fluent-bit
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50059"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - umrohos-network
 
@@ -513,6 +586,12 @@ services:
     depends_on:
       - postgres
       - fluent-bit
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50060"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - umrohos-network
 
