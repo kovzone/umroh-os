@@ -202,6 +202,7 @@ services:
       - /app/node_modules
     environment:
       - APP_NAME=core-web
+      - IAM_API_BASE_URL=http://iam-svc:4001
       # Browser-side fetch target. The bundle JS runs in the user's browser
       # (not inside the container), so it hits the host-mapped gateway port.
       - VITE_GATEWAY_URL=http://localhost:4000
