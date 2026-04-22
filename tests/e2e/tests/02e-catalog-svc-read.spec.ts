@@ -2,15 +2,18 @@ import { test, expect } from "@playwright/test";
 import { createApiClient } from "../lib/api-client";
 import { backendServices } from "../lib/services";
 
-// S1-E-02 / BL-CAT-001 — catalog-svc public read smoke.
+// S1-E-02 / BL-CAT-001 + BL-CAT-002 — catalog-svc public read smoke.
 //
 // Exercises the § Catalog contract in `docs/contracts/slice-S1.md`:
 //
 //   GET /v1/packages              — active-only list + filters + cursor
 //   GET /v1/packages/{id}         — active-only detail with 404 on draft/archived
+//   GET /v1/package-departures/{id} — departure detail with live seats + 404 on hidden/unknown
 //
-// Depends on the dev fixtures seeded by migration
-// `000009_seed_catalog_dev_fixtures` — one active, one draft, one archived.
+// Depends on the dev fixtures seeded by migrations:
+//   000009_seed_catalog_dev_fixtures — one active, one draft, one archived package
+//                                      + two open departures + pricing rows
+//   000010_seed_catalog_hidden_departure — one cancelled departure for 404 coverage
 // Reviewer runs `make dev-bootstrap` (or a targeted `make migrate-up`)
 // before this spec.
 
@@ -20,6 +23,10 @@ const ACTIVE_ID = "pkg_01JCDE00000000000000000001";
 const DRAFT_ID = "pkg_01JCDE00000000000000000002";
 const ARCHIVED_ID = "pkg_01JCDE00000000000000000003";
 const UNKNOWN_ID = "pkg_01JCDE00000000000000000099";
+
+const ACTIVE_DEPARTURE_ID = "dep_01JCDF00000000000000000001";
+const CANCELLED_DEPARTURE_ID = "dep_01JCDF00000000000000000003";
+const UNKNOWN_DEPARTURE_ID = "dep_01JCDF00000000000000000099";
 
 test.describe.serial("catalog-svc — public read (S1-E-02 / BL-CAT-001)", () => {
   test("GET /v1/packages returns only active packages", async () => {
@@ -130,5 +137,53 @@ test.describe.serial("catalog-svc — public read (S1-E-02 / BL-CAT-001)", () =>
     expect(res.status()).toBe(404);
     const body = await res.json();
     expect(body.error.code).toBe("package_not_found");
+  });
+
+  // BL-CAT-002: departure detail endpoint tests.
+
+  test(`GET /v1/package-departures/{active-id} returns full detail`, async () => {
+    const api = await createApiClient(catalog.baseURL);
+    const res = await api.get(`/v1/package-departures/${ACTIVE_DEPARTURE_ID}`);
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+
+    expect(body.departure.id).toBe(ACTIVE_DEPARTURE_ID);
+    expect(body.departure.package_id).toBe(ACTIVE_ID);
+    expect(body.departure.status).toBe("open");
+    expect(body.departure.total_seats).toBeGreaterThan(0);
+    expect(body.departure.remaining_seats).toBeGreaterThanOrEqual(0);
+    expect(body.departure.remaining_seats).toBeLessThanOrEqual(body.departure.total_seats);
+
+    expect(Array.isArray(body.departure.pricing)).toBe(true);
+    expect(body.departure.pricing.length).toBe(3); // quad, triple, double
+    for (const p of body.departure.pricing) {
+      expect(["double", "triple", "quad"]).toContain(p.room_type);
+      expect(p.list_currency).toBe("IDR");
+      expect(p.settlement_currency).toBe("IDR");
+    }
+
+    expect(body.departure.vendor_readiness).toBeTruthy();
+    for (const k of ["ticket", "hotel", "visa"] as const) {
+      expect(["not_started", "in_progress", "ready", "blocked"]).toContain(
+        body.departure.vendor_readiness[k]
+      );
+    }
+  });
+
+  test(`GET /v1/package-departures/{cancelled-id} returns 404 departure_not_found`, async () => {
+    const api = await createApiClient(catalog.baseURL);
+    const res = await api.get(`/v1/package-departures/${CANCELLED_DEPARTURE_ID}`);
+    expect(res.status()).toBe(404);
+    const body = await res.json();
+    expect(body.error.code).toBe("departure_not_found");
+    expect(typeof body.error.trace_id).toBe("string");
+  });
+
+  test(`GET /v1/package-departures/{unknown-id} returns 404 departure_not_found`, async () => {
+    const api = await createApiClient(catalog.baseURL);
+    const res = await api.get(`/v1/package-departures/${UNKNOWN_DEPARTURE_ID}`);
+    expect(res.status()).toBe(404);
+    const body = await res.json();
+    expect(body.error.code).toBe("departure_not_found");
   });
 });
