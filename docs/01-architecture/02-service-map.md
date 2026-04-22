@@ -2,22 +2,26 @@
 
 The full inventory of services in UmrohOS, their bounded contexts, ports, and key dependencies.
 
+Per ADR 0009: **`gateway-svc` is the only REST surface**; all downstream services expose gRPC only. The REST port column below applies to `gateway-svc` only. Every other service has a gRPC port for business calls and a small admin HTTP port for Prometheus `/metrics` scraping (liveness/readiness go through `grpc.health.v1.Health`).
+
 ## Services
 
-| # | Service | Style | Port | Bounded context | Owns (data) |
-|---|---|---|---|---|---|
-| 0 | `gateway-svc` | REST (Fiber) | 4000 | Edge | none — proxies to internal services |
-| 1 | `iam-svc` | REST + gRPC | 4001 / 50051 | Identity, RBAC, audit | users, roles, permissions, branches, sessions, audit_logs |
-| 2 | `catalog-svc` | REST + gRPC | 4002 / 50052 | Master product & inventory | packages, hotels, airlines, muthawwif, itineraries, seat_inventory |
-| 3 | `booking-svc` | REST + gRPC | 4003 / 50053 | Bookings & reservations | bookings, booking_items, room_allocations, bus_allocations, manifests |
-| 4 | `jamaah-svc` | REST + gRPC | 4004 / 50054 | Pilgrim profile & documents | jamaah, family_graph, mahram_relations, documents, ocr_results |
-| 5 | `payment-svc` | REST + gRPC | 4005 / 50055 | Payments & reconciliation | invoices, virtual_accounts, payment_events, refunds |
-| 6 | `visa-svc` | REST + gRPC | 4006 / 50056 | Visa & Raudhah | visa_applications, visa_status_history, e_visas, tasreh |
-| 7 | `ops-svc` | REST + gRPC | 4007 / 50057 | Operational handling | document_verification_queue, luggage_tags, airport_handling_events |
-| 8 | `logistics-svc` | REST + gRPC | 4008 / 50058 | Warehouse & procurement | stock_items, warehouses, purchase_orders, grn, kits, shipments |
-| 9 | `finance-svc` | REST + gRPC | 4009 / 50059 | PSAK accounting | journal_entries, chart_of_accounts, ar, ap, tax_records, fx_rates |
-| 10 | `crm-svc` | REST + gRPC | 4010 / 50060 | Marketing, CRM, agents | leads, campaigns, agents, commission_ledger, broadcasts, alumni_threads |
-| 11 | `broker-svc` | gRPC + Temporal | 4099 / 50099 | Cross-service workflows — **DEFERRED (ADR 0006); reserved for F6 visa pipeline; not in MVP** | none |
+| # | Service | gRPC port | REST port | Admin `/metrics` | Bounded context | Owns (data) |
+|---|---|---|---|---|---|---|
+| 0 | `gateway-svc` | — | 4000 | 4000 (same as REST) | Edge | none — proxies client REST to downstream gRPC |
+| 1 | `iam-svc` | 50051 | — | e.g. 9001 | Identity, RBAC, audit | users, roles, permissions, branches, sessions, audit_logs |
+| 2 | `catalog-svc` | 50052 | — | e.g. 9002 | Master product & inventory | packages, hotels, airlines, muthawwif, itineraries, seat_inventory |
+| 3 | `booking-svc` | 50053 | — | e.g. 9003 | Bookings & reservations | bookings, booking_items, room_allocations, bus_allocations, manifests |
+| 4 | `jamaah-svc` | 50054 | — | e.g. 9004 | Pilgrim profile & documents | jamaah, family_graph, mahram_relations, documents, ocr_results |
+| 5 | `payment-svc` | 50055 | — | e.g. 9005 | Payments & reconciliation | invoices, virtual_accounts, payment_events, refunds |
+| 6 | `visa-svc` | 50056 | — | e.g. 9006 | Visa & Raudhah | visa_applications, visa_status_history, e_visas, tasreh |
+| 7 | `ops-svc` | 50057 | — | e.g. 9007 | Operational handling | document_verification_queue, luggage_tags, airport_handling_events |
+| 8 | `logistics-svc` | 50058 | — | e.g. 9008 | Warehouse & procurement | stock_items, warehouses, purchase_orders, grn, kits, shipments |
+| 9 | `finance-svc` | 50059 | — | e.g. 9009 | PSAK accounting | journal_entries, chart_of_accounts, ar, ap, tax_records, fx_rates |
+| 10 | `crm-svc` | 50060 | — | e.g. 9010 | Marketing, CRM, agents | leads, campaigns, agents, commission_ledger, broadcasts, alumni_threads |
+| 11 | `broker-svc` | 50099 | — | — | Cross-service workflows — **DEFERRED (ADR 0006); reserved for F6 visa pipeline; not in MVP** | none |
+
+Admin port numbers are proposed conventions and finalized in `BL-MON-001`. The existing REST ports (4001–4010) are retired as each backend's `api/rest_oapi/` package is removed per `BL-REFACTOR-001..010`.
 
 ## Dependency edges
 
