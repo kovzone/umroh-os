@@ -11,13 +11,14 @@ import (
 
 // IService is the business-layer interface for catalog-svc.
 //
-// Current scope (S1-E-02 / BL-CAT-001):
+// Current scope (S1-E-02 / BL-CAT-001 + BL-CAT-002):
 //
 //   - Liveness — process is up
 //   - Readiness — process is up AND the database is reachable
 //   - DbTxDiagnostic — WithTx reference implementation (§ backend-conventions)
 //   - GetPackages — § Catalog public list (active only)
 //   - GetPackageByID — § Catalog public detail (active only)
+//   - GetDepartureByID — § Catalog departure detail with live remaining_seats
 //
 // Admin write endpoints (create/update/archive), bulk import/export,
 // and the gRPC Reserve/ReleaseSeats pair land in later S1 cards.
@@ -28,6 +29,7 @@ type IService interface {
 
 	GetPackages(ctx context.Context, params *GetPackagesParams) (*GetPackagesResult, error)
 	GetPackageByID(ctx context.Context, params *GetPackageByIDParams) (*PackageDetail, error)
+	GetDepartureByID(ctx context.Context, params *GetDepartureByIDParams) (*DepartureDetail, error)
 }
 
 type Service struct {
