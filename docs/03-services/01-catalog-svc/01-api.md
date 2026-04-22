@@ -4,15 +4,15 @@
 
 | Method | Path | Purpose |
 |---|---|---|
-| `GET` | `/v1/packages` | List packages (filterable) |
-| `POST` | `/v1/packages` | Create package |
-| `GET` | `/v1/packages/{id}` | Get package detail |
-| `PATCH` | `/v1/packages/{id}` | Update package |
-| `DELETE` | `/v1/packages/{id}` | Soft-delete package |
+| `GET` | `/v1/packages` | List packages (filterable) — **public** (no Bearer) |
+| `POST` | `/v1/packages` | Create package — **staff only** (Bearer + `catalog.package.manage`; see `slice-S1.md` § Catalog — internal write MVP / backlog `BL-CAT-014`) |
+| `GET` | `/v1/packages/{id}` | Get package detail — **public** |
+| `PATCH` | `/v1/packages/{id}` | Update package — **staff only** |
+| `DELETE` | `/v1/packages/{id}` | Soft-delete package — **staff only** |
 | `GET` | `/v1/packages/{id}/departures` | List departures for package |
-| `POST` | `/v1/packages/{id}/departures` | Create departure |
-| `GET` | `/v1/package-departures/{id}` | Get departure detail |
-| `PATCH` | `/v1/package-departures/{id}` | Update departure |
+| `POST` | `/v1/packages/{id}/departures` | Create departure — **staff only** |
+| `GET` | `/v1/package-departures/{id}` | Get departure detail — **public** |
+| `PATCH` | `/v1/package-departures/{id}` | Update departure — **staff only** |
 | `GET` | `/v1/hotels` | List hotels |
 | `POST` | `/v1/hotels` | Create hotel |
 | `GET` | `/v1/hotels/{id}` | Get hotel detail |

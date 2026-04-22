@@ -121,6 +121,8 @@ _Backlog alignment:_ rows in `docs/00-overview/06-feature-to-backlog-mapping.md`
 | S1-E-02 | E | `catalog-svc` read endpoints per contract | S1-J-01 |
 | S1-E-03 | E | `booking-svc` draft + reserve-seat orchestration per contract | S1-J-02, S1-J-03 |
 | S1-E-04 | E | **Internal** auth middleware for admin/CS routes used in tests (if S1 needs it) | S0-L-01 |
+| S1-E-07 | E | Staff-authenticated **catalog write** REST (package + departure MVP; mutating methods on the same path family as public `GET`, Bearer + permission per `slice-S1.md` § Catalog — internal write) | S1-J-01, S1-E-04 |
+| S1-L-06 | L | Internal console: package + departure CRUD screens (`/console/packages/...`) wired to **S1-E-07** | S1-L-01, S1-E-04, S1-E-07 |
 
 ---
 
