@@ -9,8 +9,50 @@ import (
 )
 
 type Querier interface {
+	GetActivePackageByID(ctx context.Context, id string) (GetActivePackageByIDRow, error)
+	GetAirlineByID(ctx context.Context, id string) (CatalogAirline, error)
 	GetDbTxDiagnostic(ctx context.Context, id int64) (Diagnostic, error)
+	GetItineraryByID(ctx context.Context, id string) (CatalogItineraryTemplate, error)
+	GetMuthawwifByID(ctx context.Context, id string) (CatalogMuthawwif, error)
+	// Returns pgx.ErrNoRows when the package has no upcoming open/closed
+	// departure. Service layer treats that as "no next_departure" and
+	// emits `null` on the wire.
+	GetNextDepartureForPackage(ctx context.Context, packageID string) (GetNextDepartureForPackageRow, error)
+	// Returns the lowest priced room type across the package's upcoming
+	// open/closed departures. Returns pgx.ErrNoRows if the package has
+	// no priced upcoming departure (unusual for an active package).
+	//
+	// `list_amount` is cast to BIGINT for wire conformance (whole currency
+	// units per § Catalog). MVP single-currency (Q001) means no sub-unit
+	// loss; multi-currency handling revisits this when it lands.
+	GetStartingPriceForPackage(ctx context.Context, packageID string) (GetStartingPriceForPackageRow, error)
 	InsertDbTxDiagnostic(ctx context.Context, arg InsertDbTxDiagnosticParams) (Diagnostic, error)
+	// S1-E-02 / BL-CAT-001 — package read queries.
+	//
+	// All queries are read-only. Only `status = 'active'` rows are returned
+	// by every query; draft/archived packages must never leak through these
+	// endpoints per `slice-S1.md § Catalog`.
+	//
+	// The list page is built by three queries: `ListActivePackages` returns
+	// the base package rows (filtered + cursor-paginated), and for each row
+	// the service layer fetches `GetStartingPriceForPackage` and
+	// `GetNextDepartureForPackage` to hydrate `starting_price` and
+	// `next_departure`. A package with no upcoming open/closed departure
+	// returns `pgx.ErrNoRows` from the latter two — the handler emits
+	// `next_departure: null` and `starting_price: {0, IDR, IDR}` (an
+	// intentional "no priced departure" signal for the UI).
+	//
+	// Cursor pagination keys off `packages.id` ULID (time-sortable), so
+	// `WHERE id > $cursor ORDER BY id` yields a stable chronological page
+	// across the active set.
+	// Filters are all optional; pass NULL / empty string to skip a filter.
+	// Caller fetches `row_limit+1` rows; the extra row signals
+	// `has_more=true` and is dropped before shaping the response.
+	ListActivePackages(ctx context.Context, arg ListActivePackagesParams) ([]ListActivePackagesRow, error)
+	ListAddonsForPackage(ctx context.Context, packageID string) ([]ListAddonsForPackageRow, error)
+	ListHotelsForPackage(ctx context.Context, packageID string) ([]ListHotelsForPackageRow, error)
+	// Public-readable departures: open/closed only, upcoming only.
+	ListOpenDeparturesForPackage(ctx context.Context, packageID string) ([]ListOpenDeparturesForPackageRow, error)
 	ReadyCheck(ctx context.Context) (int32, error)
 }
 

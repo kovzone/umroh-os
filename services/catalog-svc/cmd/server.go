@@ -23,14 +23,19 @@ import (
 )
 
 // runRestServer runs the REST server using the OpenAPI-generated routes and handler.
-// catalog-svc pilot scaffold exposes only the three standard scaffold endpoints:
+// catalog-svc exposes:
 //
+//   System probes:
 //   - GET /system/live
 //   - GET /system/ready
 //   - GET /system/diagnostics/db-tx
 //
-// Real iam REST routes (user/role/branch/audit + auth login/refresh/logout)
-// land in F1.5–F1.11.
+//   Public catalog (§ Catalog, S1-E-02 / BL-CAT-001):
+//   - GET /v1/packages       — list active packages (filterable, cursor-paginated)
+//   - GET /v1/packages/{id}  — package detail (active only; 404 for draft/archived)
+//
+// Departure detail (`GET /v1/package-departures/{id}`) and admin write
+// endpoints land in later S1-E-02 / S1-E-05 cards.
 func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool, serviceName string) {
 	app := fiber.New()
 
@@ -68,6 +73,13 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool,
 		system.Get("/live", wrapper.Liveness)
 		system.Get("/ready", wrapper.Readiness)
 		system.Get("/diagnostics/db-tx", wrapper.DbTxDiagnostic)
+	}
+
+	// Public catalog routes (no bearer; § Catalog contract)
+	v1 := app.Group("/v1")
+	{
+		v1.Get("/packages", wrapper.ListPackages)
+		v1.Get("/packages/:id", wrapper.GetPackageById)
 	}
 
 	go func() {

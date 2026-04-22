@@ -10,7 +10,73 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/oapi-codegen/runtime"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
+
+// Defines values for AddonRefSettlementCurrency.
+const (
+	AddonRefSettlementCurrencyIDR AddonRefSettlementCurrency = "IDR"
+)
+
+// Defines values for DepartureStatus.
+const (
+	Closed DepartureStatus = "closed"
+	Open   DepartureStatus = "open"
+)
+
+// Defines values for MoneySettlementCurrency.
+const (
+	MoneySettlementCurrencyIDR MoneySettlementCurrency = "IDR"
+)
+
+// Defines values for OperatorKind.
+const (
+	Airline OperatorKind = "airline"
+	Bus     OperatorKind = "bus"
+	Rail    OperatorKind = "rail"
+)
+
+// Defines values for PackageKind.
+const (
+	PackageKindBadal        PackageKind = "badal"
+	PackageKindFinancial    PackageKind = "financial"
+	PackageKindHajjFuroda   PackageKind = "hajj_furoda"
+	PackageKindHajjKhusus   PackageKind = "hajj_khusus"
+	PackageKindRetail       PackageKind = "retail"
+	PackageKindUmrahPlus    PackageKind = "umrah_plus"
+	PackageKindUmrahReguler PackageKind = "umrah_reguler"
+)
+
+// Defines values for ListPackagesParamsKind.
+const (
+	ListPackagesParamsKindBadal        ListPackagesParamsKind = "badal"
+	ListPackagesParamsKindFinancial    ListPackagesParamsKind = "financial"
+	ListPackagesParamsKindHajjFuroda   ListPackagesParamsKind = "hajj_furoda"
+	ListPackagesParamsKindHajjKhusus   ListPackagesParamsKind = "hajj_khusus"
+	ListPackagesParamsKindRetail       ListPackagesParamsKind = "retail"
+	ListPackagesParamsKindUmrahPlus    ListPackagesParamsKind = "umrah_plus"
+	ListPackagesParamsKindUmrahReguler ListPackagesParamsKind = "umrah_reguler"
+)
+
+// AddonRef defines model for AddonRef.
+type AddonRef struct {
+	Id                 string                     `json:"id"`
+	ListAmount         int64                      `json:"list_amount"`
+	ListCurrency       string                     `json:"list_currency"`
+	Name               string                     `json:"name"`
+	SettlementCurrency AddonRefSettlementCurrency `json:"settlement_currency"`
+}
+
+// AddonRefSettlementCurrency defines model for AddonRef.SettlementCurrency.
+type AddonRefSettlementCurrency string
+
+// AirlineRef defines model for AirlineRef.
+type AirlineRef struct {
+	Code         string       `json:"code"`
+	Id           string       `json:"id"`
+	Name         string       `json:"name"`
+	OperatorKind OperatorKind `json:"operator_kind"`
+}
 
 // DbTxDiagnosticResponse defines model for DbTxDiagnosticResponse.
 type DbTxDiagnosticResponse struct {
@@ -23,11 +89,159 @@ type DbTxDiagnosticResponse struct {
 	} `json:"data"`
 }
 
+// DepartureStatus Public-read departures surface only `open` and `closed`;
+// `departed` / `completed` / `cancelled` rows are hidden server-side
+// and their `GET /v1/package-departures/{id}` returns 404.
+type DepartureStatus string
+
+// DepartureSummary defines model for DepartureSummary.
+type DepartureSummary struct {
+	DepartureDate  openapi_types.Date `json:"departure_date"`
+	Id             string             `json:"id"`
+	RemainingSeats int                `json:"remaining_seats"`
+	ReturnDate     openapi_types.Date `json:"return_date"`
+
+	// Status Public-read departures surface only `open` and `closed`;
+	// `departed` / `completed` / `cancelled` rows are hidden server-side
+	// and their `GET /v1/package-departures/{id}` returns 404.
+	Status DepartureStatus `json:"status"`
+}
+
+// ErrorResponse defines model for ErrorResponse.
+type ErrorResponse struct {
+	Error struct {
+		// Code Machine-readable error code. Catalog endpoints use
+		// snake_case lowercase per § Catalog contract (e.g.
+		// `invalid_query_param`, `package_not_found`,
+		// `internal_error`). System endpoints (pre-contract legacy)
+		// emit SCREAMING_SNAKE_CASE (e.g. `INTERNAL_ERROR`).
+		Code string `json:"code"`
+
+		// Message Human-readable message in `id-ID` (Bahasa Indonesia) per Q003.
+		Message string `json:"message"`
+
+		// TraceId OTel span ID (hex) for correlation with Tempo/Grafana logs.
+		// Optional — only catalog endpoints include it today; system
+		// endpoints may omit it.
+		TraceId *string `json:"trace_id,omitempty"`
+	} `json:"error"`
+}
+
+// GetPackageResponse defines model for GetPackageResponse.
+type GetPackageResponse struct {
+	Package PackageDetail `json:"package"`
+}
+
+// HotelRef defines model for HotelRef.
+type HotelRef struct {
+	City             string `json:"city"`
+	Id               string `json:"id"`
+	Name             string `json:"name"`
+	StarRating       int    `json:"star_rating"`
+	WalkingDistanceM int    `json:"walking_distance_m"`
+}
+
+// Itinerary defines model for Itinerary.
+type Itinerary struct {
+	Days      []ItineraryDay `json:"days"`
+	Id        string         `json:"id"`
+	PublicUrl string         `json:"public_url"`
+}
+
+// ItineraryDay defines model for ItineraryDay.
+type ItineraryDay struct {
+	Day         int     `json:"day"`
+	Description string  `json:"description"`
+	PhotoUrl    *string `json:"photo_url,omitempty"`
+	Title       string  `json:"title"`
+}
+
+// ListPackagesResponse defines model for ListPackagesResponse.
+type ListPackagesResponse struct {
+	Packages []PackageListItem `json:"packages"`
+	Page     PageMeta          `json:"page"`
+}
+
 // LiveResponse defines model for LiveResponse.
 type LiveResponse struct {
 	Data struct {
 		Ok bool `json:"ok"`
 	} `json:"data"`
+}
+
+// Money defines model for Money.
+type Money struct {
+	// ListAmount Integer "display list" figure in the lowest whole unit of
+	// `list_currency` (i.e. IDR has no sub-units; USD uses cents
+	// handled here as whole currency units for display consistency).
+	// This is NOT a payable amount — invoice/VA totals lock later
+	// via payment-svc with an FX snapshot.
+	ListAmount int64 `json:"list_amount"`
+
+	// ListCurrency ISO 4217 display currency — `IDR` or `USD` in MVP.
+	ListCurrency string `json:"list_currency"`
+
+	// SettlementCurrency Always `IDR` in MVP per Q001.
+	SettlementCurrency MoneySettlementCurrency `json:"settlement_currency"`
+}
+
+// MoneySettlementCurrency Always `IDR` in MVP per Q001.
+type MoneySettlementCurrency string
+
+// MuthawwifRef defines model for MuthawwifRef.
+type MuthawwifRef struct {
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	PortraitUrl string `json:"portrait_url"`
+}
+
+// NextDeparture defines model for NextDeparture.
+type NextDeparture struct {
+	DepartureDate  openapi_types.Date `json:"departure_date"`
+	Id             string             `json:"id"`
+	RemainingSeats int                `json:"remaining_seats"`
+	ReturnDate     openapi_types.Date `json:"return_date"`
+}
+
+// OperatorKind defines model for OperatorKind.
+type OperatorKind string
+
+// PackageDetail defines model for PackageDetail.
+type PackageDetail struct {
+	AddOns        []AddonRef         `json:"add_ons"`
+	Airline       *AirlineRef        `json:"airline"`
+	CoverPhotoUrl string             `json:"cover_photo_url"`
+	Departures    []DepartureSummary `json:"departures"`
+	Description   string             `json:"description"`
+	Highlights    []string           `json:"highlights"`
+	Hotels        []HotelRef         `json:"hotels"`
+	Id            string             `json:"id"`
+	Itinerary     *Itinerary         `json:"itinerary"`
+	Kind          PackageKind        `json:"kind"`
+	Muthawwif     *MuthawwifRef      `json:"muthawwif"`
+	Name          string             `json:"name"`
+}
+
+// PackageKind defines model for PackageKind.
+type PackageKind string
+
+// PackageListItem defines model for PackageListItem.
+type PackageListItem struct {
+	CoverPhotoUrl string         `json:"cover_photo_url"`
+	Description   string         `json:"description"`
+	Id            string         `json:"id"`
+	Kind          PackageKind    `json:"kind"`
+	Name          string         `json:"name"`
+	NextDeparture *NextDeparture `json:"next_departure,omitempty"`
+	StartingPrice Money          `json:"starting_price"`
+}
+
+// PageMeta defines model for PageMeta.
+type PageMeta struct {
+	HasMore bool `json:"has_more"`
+
+	// NextCursor Opaque base64 cursor. Present when `has_more=true`.
+	NextCursor *string `json:"next_cursor"`
 }
 
 // ReadyResponse defines model for ReadyResponse.
@@ -43,6 +257,33 @@ type DbTxDiagnosticParams struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty"`
 }
 
+// ListPackagesParams defines parameters for ListPackages.
+type ListPackagesParams struct {
+	// Kind Filter by package kind. Omit to list all kinds.
+	Kind *ListPackagesParamsKind `form:"kind,omitempty" json:"kind,omitempty"`
+
+	// DepartureFrom Lower bound on departure date (earliest departure ≥ this date).
+	DepartureFrom *openapi_types.Date `form:"departure_from,omitempty" json:"departure_from,omitempty"`
+
+	// DepartureTo Upper bound on departure date.
+	DepartureTo *openapi_types.Date `form:"departure_to,omitempty" json:"departure_to,omitempty"`
+
+	// AirlineCode IATA airline code filter (matches `airlines.code`).
+	AirlineCode *string `form:"airline_code,omitempty" json:"airline_code,omitempty"`
+
+	// HotelId Filter to packages referencing this hotel (`hotels.id`, prefixed ULID).
+	HotelId *string `form:"hotel_id,omitempty" json:"hotel_id,omitempty"`
+
+	// Cursor Pagination cursor from previous response's `page.next_cursor`.
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit Page size, 1–100, default 20.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListPackagesParamsKind defines parameters for ListPackages.
+type ListPackagesParamsKind string
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// DB transaction diagnostic
@@ -54,6 +295,12 @@ type ServerInterface interface {
 	// Readiness probe
 	// (GET /system/ready)
 	Readiness(c *fiber.Ctx) error
+	// List active packages
+	// (GET /v1/packages)
+	ListPackages(c *fiber.Ctx, params ListPackagesParams) error
+	// Get active package detail
+	// (GET /v1/packages/{id})
+	GetPackageById(c *fiber.Ctx, id string) error
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -99,6 +346,88 @@ func (siw *ServerInterfaceWrapper) Readiness(c *fiber.Ctx) error {
 	return siw.Handler.Readiness(c)
 }
 
+// ListPackages operation middleware
+func (siw *ServerInterfaceWrapper) ListPackages(c *fiber.Ctx) error {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListPackagesParams
+
+	var query url.Values
+	query, err = url.ParseQuery(string(c.Request().URI().QueryString()))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for query string: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "kind" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "kind", query, &params.Kind)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter kind: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "departure_from" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "departure_from", query, &params.DepartureFrom)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter departure_from: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "departure_to" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "departure_to", query, &params.DepartureTo)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter departure_to: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "airline_code" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "airline_code", query, &params.AirlineCode)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter airline_code: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "hotel_id" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "hotel_id", query, &params.HotelId)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter hotel_id: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cursor", query, &params.Cursor)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter cursor: %w", err).Error())
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", query, &params.Limit)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter limit: %w", err).Error())
+	}
+
+	return siw.Handler.ListPackages(c, params)
+}
+
+// GetPackageById operation middleware
+func (siw *ServerInterfaceWrapper) GetPackageById(c *fiber.Ctx) error {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+
+	return siw.Handler.GetPackageById(c, id)
+}
+
 // FiberServerOptions provides options for the Fiber server.
 type FiberServerOptions struct {
 	BaseURL     string
@@ -125,6 +454,10 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 	router.Get(options.BaseURL+"/system/live", wrapper.Liveness)
 
 	router.Get(options.BaseURL+"/system/ready", wrapper.Readiness)
+
+	router.Get(options.BaseURL+"/v1/packages", wrapper.ListPackages)
+
+	router.Get(options.BaseURL+"/v1/packages/:id", wrapper.GetPackageById)
 
 }
 
@@ -177,6 +510,76 @@ func (response Readiness200JSONResponse) VisitReadinessResponse(ctx *fiber.Ctx) 
 	return ctx.JSON(&response)
 }
 
+type ListPackagesRequestObject struct {
+	Params ListPackagesParams
+}
+
+type ListPackagesResponseObject interface {
+	VisitListPackagesResponse(ctx *fiber.Ctx) error
+}
+
+type ListPackages200JSONResponse ListPackagesResponse
+
+func (response ListPackages200JSONResponse) VisitListPackagesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type ListPackages400JSONResponse ErrorResponse
+
+func (response ListPackages400JSONResponse) VisitListPackagesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type ListPackages500JSONResponse ErrorResponse
+
+func (response ListPackages500JSONResponse) VisitListPackagesResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
+type GetPackageByIdRequestObject struct {
+	Id string `json:"id"`
+}
+
+type GetPackageByIdResponseObject interface {
+	VisitGetPackageByIdResponse(ctx *fiber.Ctx) error
+}
+
+type GetPackageById200JSONResponse GetPackageResponse
+
+func (response GetPackageById200JSONResponse) VisitGetPackageByIdResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetPackageById404JSONResponse ErrorResponse
+
+func (response GetPackageById404JSONResponse) VisitGetPackageByIdResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type GetPackageById500JSONResponse ErrorResponse
+
+func (response GetPackageById500JSONResponse) VisitGetPackageByIdResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
+
+	return ctx.JSON(&response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// DB transaction diagnostic
@@ -188,6 +591,12 @@ type StrictServerInterface interface {
 	// Readiness probe
 	// (GET /system/ready)
 	Readiness(ctx context.Context, request ReadinessRequestObject) (ReadinessResponseObject, error)
+	// List active packages
+	// (GET /v1/packages)
+	ListPackages(ctx context.Context, request ListPackagesRequestObject) (ListPackagesResponseObject, error)
+	// Get active package detail
+	// (GET /v1/packages/{id})
+	GetPackageById(ctx context.Context, request GetPackageByIdRequestObject) (GetPackageByIdResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx *fiber.Ctx, args interface{}) (interface{}, error)
@@ -272,6 +681,60 @@ func (sh *strictHandler) Readiness(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else if validResponse, ok := response.(ReadinessResponseObject); ok {
 		if err := validResponse.VisitReadinessResponse(ctx); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// ListPackages operation middleware
+func (sh *strictHandler) ListPackages(ctx *fiber.Ctx, params ListPackagesParams) error {
+	var request ListPackagesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.ListPackages(ctx.UserContext(), request.(ListPackagesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListPackages")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	} else if validResponse, ok := response.(ListPackagesResponseObject); ok {
+		if err := validResponse.VisitListPackagesResponse(ctx); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetPackageById operation middleware
+func (sh *strictHandler) GetPackageById(ctx *fiber.Ctx, id string) error {
+	var request GetPackageByIdRequestObject
+
+	request.Id = id
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetPackageById(ctx.UserContext(), request.(GetPackageByIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPackageById")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	} else if validResponse, ok := response.(GetPackageByIdResponseObject); ok {
+		if err := validResponse.VisitGetPackageByIdResponse(ctx); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
 	} else if response != nil {
