@@ -17,7 +17,7 @@
 
 ## Current status
 
-**S1-E-02 / BL-CAT-001 + BL-CAT-002 both in flight** (branch `feat/s1-e-02-catalog-departures`, 2026-04-22). Public catalog read (list + detail + departure detail) is fully live in dev. B2C integration wrap-up (`BL-CAT-004`) is the next card under the same task code.
+**S1-E-02 / BL-CAT-001 + BL-CAT-002 merged to `dev`** on 2026-04-22 (PR #38 + PR #40). All three § Catalog public read endpoints are live. B2C integration wrap-up (`BL-CAT-004`) is the next card under the same task code.
 
 ## 2026-04-22 — what landed with BL-CAT-001
 
