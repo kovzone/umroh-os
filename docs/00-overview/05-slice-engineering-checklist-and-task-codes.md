@@ -123,6 +123,8 @@ _Backlog alignment:_ rows in `docs/00-overview/06-feature-to-backlog-mapping.md`
 | S1-E-04 | E | **Internal** auth middleware for admin/CS routes used in tests (if S1 needs it) | S0-L-01 |
 | S1-E-07 | E | Staff-authenticated **catalog write** REST (package + departure MVP; mutating methods on the same path family as public `GET`, Bearer + permission per `slice-S1.md` § Catalog — internal write) | S1-J-01, S1-E-04 |
 | S1-L-06 | L | Internal console: package + departure CRUD screens (`/console/packages/...`) wired to **S1-E-07** | S1-L-01, S1-E-04, S1-E-07 |
+| S1-L-07 | L | Internal console login page (`/console/login`) integrated to F1 session endpoint | S1-L-01, S1-E-04 |
+| S1-L-08 | L | Internal console shell (`/console`) with full sidemenu + route-level 403 state | S1-L-01, S1-E-04, S1-L-07 |
 
 ---
 
