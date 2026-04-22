@@ -4,20 +4,17 @@ package pb;
 
 option go_package="./pb";
 
-// CatalogService — internal gRPC surface for the catalog (packages +
-// master data). Per ADR 0009 backend services are gRPC-only; the public
-// REST surface lives on gateway-svc which proxies to these RPCs.
+// CatalogService — the catalog's only transport surface (packages + master
+// data). Per ADR 0009 this service is gRPC-only; the public REST surface
+// lives on gateway-svc (services/gateway-svc/api/rest_oapi/openapi.yaml
+// § Catalog) which proxies to these RPCs.
 //
-// BL-GTW-002 / S1-E-10 adds the public-read trio (ListPackages,
-// GetPackage, GetPackageDeparture) mirroring the shapes in
-// services/catalog-svc/api/rest_oapi/openapi.yaml § Catalog. Dates are
-// ISO YYYY-MM-DD strings (matching the service layer); enums stay as
-// strings per the adapter pattern (cross-service type churn avoided; the
-// REST layer's oapi-generated enum validation is the authoritative gate).
-//
-// Catalog-svc's REST handlers still exist and call the same service-layer
-// methods as these gRPC handlers; G7 (BL-REFACTOR-001) removes the REST
-// side once gateway is proven end-to-end.
+// ListPackages / GetPackage / GetPackageDeparture landed in BL-GTW-002
+// (S1-E-10). Dates are ISO YYYY-MM-DD strings (matching the service
+// layer); enums stay as strings per the adapter pattern (cross-service
+// type churn avoided; gateway's oapi-generated enum validation is the
+// authoritative gate). DiagnosticsDbTx landed in BL-REFACTOR-001 (S1-E-11)
+// when the legacy REST /system/diagnostics/db-tx was retired.
 service CatalogService {
   // Healthz — pilot placeholder. Retained for reflection-based probing
   // that predates the standard grpc.health.v1.Health protocol added in
@@ -38,6 +35,14 @@ service CatalogService {
   // Returns NOT_FOUND for departed/completed/cancelled/unknown.
   // Mirrors GET /v1/package-departures/{id}.
   rpc GetPackageDeparture(GetPackageDepartureRequest) returns (GetPackageDepartureResponse) {}
+
+  // DiagnosticsDbTx — state-mutating WithTx reference path. Inserts one
+  // row into public.diagnostics, reads it back inside the same
+  // transaction, echoes the message. Dev verification only (invoked via
+  // grpcurl); per ADR 0009 there is no gateway REST route for this —
+  // iam-svc's /v1/iam/system/diagnostics/db-tx already proves the
+  // cross-service trace story (S0-J-05).
+  rpc DiagnosticsDbTx(DiagnosticsDbTxRequest) returns (DiagnosticsDbTxResponse) {}
 }
 
 // -----------------------------------------------------------------------------
@@ -220,4 +225,21 @@ message DepartureDetail {
 
 message GetPackageDepartureResponse {
   DepartureDetail departure = 1;
+}
+
+// -----------------------------------------------------------------------------
+// DiagnosticsDbTx
+// -----------------------------------------------------------------------------
+
+message DiagnosticsDbTxRequest {
+  // Empty / unset is treated as "no message" server-side, matching the
+  // previous REST default.
+  string message = 1;
+}
+
+message DiagnosticsDbTxResponse {
+  int64 diagnostic_id = 1;
+  // Echo of the form `received '<message>' from client`, same shape as
+  // the retired REST envelope.
+  string message = 2;
 }

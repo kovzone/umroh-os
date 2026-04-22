@@ -16,6 +16,12 @@ exporters:
     endpoint: tempo:4317
     tls:
       insecure: true
+  # Prometheus exporter — serves /metrics on :8889 with OTel resource attributes
+  # (service.name, etc.) projected as Prometheus labels. Services that have
+  # migrated to OTLP metrics push (per BL-REFACTOR-*) flow through this; those
+  # still on Prometheus SDK expose their own /metrics directly.
+  prometheus:
+    endpoint: 0.0.0.0:8889
   debug:
     verbosity: detailed
 
@@ -25,3 +31,7 @@ service:
       receivers: [otlp]
       processors: [batch]
       exporters: [zipkin, otlp/tempo, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]
