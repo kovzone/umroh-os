@@ -151,6 +151,37 @@ type GetPackageByIDParams struct {
 	ID string
 }
 
+// --- Departure detail shapes -----------------------------------------------
+
+type PackagePricing struct {
+	RoomType           string `json:"room_type"`
+	ListAmount         int64  `json:"list_amount"`
+	ListCurrency       string `json:"list_currency"`
+	SettlementCurrency string `json:"settlement_currency"`
+}
+
+type VendorReadiness struct {
+	Ticket string `json:"ticket"`
+	Hotel  string `json:"hotel"`
+	Visa   string `json:"visa"`
+}
+
+type DepartureDetail struct {
+	ID              string           `json:"id"`
+	PackageID       string           `json:"package_id"`
+	DepartureDate   string           `json:"departure_date"` // ISO date YYYY-MM-DD
+	ReturnDate      string           `json:"return_date"`
+	TotalSeats      int              `json:"total_seats"`
+	RemainingSeats  int              `json:"remaining_seats"`
+	Status          string           `json:"status"`
+	Pricing         []PackagePricing `json:"pricing"`
+	VendorReadiness VendorReadiness  `json:"vendor_readiness"`
+}
+
+type GetDepartureByIDParams struct {
+	ID string
+}
+
 // ---------------------------------------------------------------------------
 // Service-layer extensions
 // ---------------------------------------------------------------------------
@@ -161,6 +192,7 @@ type GetPackageByIDParams struct {
 type PackagesService interface {
 	GetPackages(ctx context.Context, params *GetPackagesParams) (*GetPackagesResult, error)
 	GetPackageByID(ctx context.Context, params *GetPackageByIDParams) (*PackageDetail, error)
+	GetDepartureByID(ctx context.Context, params *GetDepartureByIDParams) (*DepartureDetail, error)
 }
 
 const (
@@ -443,6 +475,73 @@ func (s *Service) GetPackageByID(ctx context.Context, params *GetPackageByIDPara
 			RemainingSeats: int(d.RemainingSeats),
 			Status:         string(d.Status),
 		})
+	}
+
+	span.SetStatus(codes.Ok, "success")
+	return detail, nil
+}
+
+// GetDepartureByID fetches a single public-visible departure (status in
+// {open, closed}) with its pricing rows and a stubbed vendor readiness
+// summary. Returns apperrors.ErrNotFound with identical shape for
+// unknown-id / hidden-status — no existence oracle per § Catalog.
+//
+// vendor_readiness is currently stubbed to "not_started" across all three
+// sub-states; real readiness updates come from visa-svc / logistics-svc
+// over gRPC, wired in S3-E-02 / S3-E-06.
+// TODO(BL-CAT-002 → S3): wire real readiness via gRPC from visa-svc / logistics-svc.
+func (s *Service) GetDepartureByID(ctx context.Context, params *GetDepartureByIDParams) (*DepartureDetail, error) {
+	const op = "service.Service.GetDepartureByID"
+
+	logger := logging.LogWithTrace(ctx, s.logger)
+	ctx, span := s.tracer.Start(ctx, op)
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("operation", op),
+		attribute.String("input.id", params.ID),
+	)
+	logger.Info().Str("op", op).Str("id", params.ID).Msg("")
+
+	row, err := s.store.GetActiveDeparture(ctx, params.ID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.Join(apperrors.ErrNotFound, fmt.Errorf("departure %q not visible or not found", params.ID))
+		}
+		return nil, fmt.Errorf("get active departure: %w", postgres_store.WrapDBError(err))
+	}
+
+	pricingRows, err := s.store.ListPricingForDeparture(ctx, row.ID)
+	if err != nil {
+		return nil, fmt.Errorf("list pricing: %w", postgres_store.WrapDBError(err))
+	}
+	pricing := make([]PackagePricing, 0, len(pricingRows))
+	for _, p := range pricingRows {
+		pricing = append(pricing, PackagePricing{
+			RoomType:           string(p.RoomType),
+			ListAmount:         p.ListAmount,
+			ListCurrency:       strings.TrimSpace(p.ListCurrency),
+			SettlementCurrency: strings.TrimSpace(p.SettlementCurrency),
+		})
+	}
+
+	depDate, _ := row.DepartureDate.Value()
+	retDate, _ := row.ReturnDate.Value()
+
+	detail := &DepartureDetail{
+		ID:             row.ID,
+		PackageID:      row.PackageID,
+		DepartureDate:  dateToISO(depDate),
+		ReturnDate:     dateToISO(retDate),
+		TotalSeats:     int(row.TotalSeats),
+		RemainingSeats: int(row.RemainingSeats),
+		Status:         string(row.Status),
+		Pricing:        pricing,
+		VendorReadiness: VendorReadiness{
+			Ticket: "not_started",
+			Hotel:  "not_started",
+			Visa:   "not_started",
+		},
 	}
 
 	span.SetStatus(codes.Ok, "success")

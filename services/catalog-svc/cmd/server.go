@@ -80,6 +80,7 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool,
 	{
 		v1.Get("/packages", wrapper.ListPackages)
 		v1.Get("/packages/:id", wrapper.GetPackageById)
+		v1.Get("/package-departures/:id", wrapper.GetPackageDepartureById)
 	}
 
 	go func() {

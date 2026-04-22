@@ -217,20 +217,84 @@ func (s *Server) GetPackageById(c *fiber.Ctx, id string) error {
 	return c.Status(fiber.StatusOK).JSON(resp)
 }
 
+// GetPackageDepartureById implements ServerInterface.
+// GET /v1/package-departures/{id} — public, single-row. Returns 404
+// departure_not_found for any id whose status is departed / completed /
+// cancelled or does not exist. No existence oracle per § Catalog.
+func (s *Server) GetPackageDepartureById(c *fiber.Ctx, id string) error {
+	const op = "rest_oapi.Server.GetPackageDepartureById"
+
+	ctx, span := s.tracer.Start(c.UserContext(), op)
+	defer span.End()
+	logger := logging.LogWithTrace(ctx, s.logger)
+
+	span.SetAttributes(
+		attribute.String("operation", op),
+		attribute.String("endpoint", "/v1/package-departures/:id"),
+		attribute.String("method", "GET"),
+		attribute.String("departure_id", id),
+	)
+	logger.Info().Str("op", op).Str("departure_id", id).Msg("")
+
+	detail, err := s.svc.GetDepartureByID(ctx, &service.GetDepartureByIDParams{ID: id})
+	if err != nil {
+		logger.Warn().Err(err).Str("op", op).Str("departure_id", id).Msg("")
+		return s.writeCatalogErrorFor(c, span, err, "departure_not_found", "keberangkatan tidak ditemukan")
+	}
+
+	pricing := make([]PackagePricing, 0, len(detail.Pricing))
+	for _, p := range detail.Pricing {
+		pricing = append(pricing, PackagePricing{
+			RoomType:           RoomType(p.RoomType),
+			ListAmount:         p.ListAmount,
+			ListCurrency:       p.ListCurrency,
+			SettlementCurrency: PackagePricingSettlementCurrency(p.SettlementCurrency),
+		})
+	}
+
+	resp := GetDepartureResponse{
+		Departure: DepartureDetail{
+			Id:             detail.ID,
+			PackageId:      detail.PackageID,
+			DepartureDate:  parseISODate(detail.DepartureDate),
+			ReturnDate:     parseISODate(detail.ReturnDate),
+			TotalSeats:     detail.TotalSeats,
+			RemainingSeats: detail.RemainingSeats,
+			Status:         DepartureStatus(detail.Status),
+			Pricing:        pricing,
+			VendorReadiness: VendorReadiness{
+				Ticket: VendorReadinessState(detail.VendorReadiness.Ticket),
+				Hotel:  VendorReadinessState(detail.VendorReadiness.Hotel),
+				Visa:   VendorReadinessState(detail.VendorReadiness.Visa),
+			},
+		},
+	}
+
+	span.SetStatus(codes.Ok, "success")
+	return c.Status(fiber.StatusOK).JSON(resp)
+}
+
 // ---------------------------------------------------------------------------
 // Error shaping — § Catalog envelope (snake_case code + trace_id)
 // ---------------------------------------------------------------------------
 
 // writeCatalogError emits the contract-exact error envelope for catalog
-// endpoints. Records the error on the span, maps the domain sentinel
-// to a (status, snake_case code, id-ID message) triple, and includes
-// the current span's trace_id for correlation with Tempo/Grafana.
-// Unrecognised errors fall back to `internal_error` / 500.
+// endpoints. Uses "package_not_found" for ErrNotFound — the default for
+// package-scoped handlers. For departure-scoped handlers use writeCatalogErrorFor.
 func (s *Server) writeCatalogError(c *fiber.Ctx, span trace.Span, err error) error {
+	return s.writeCatalogErrorFor(c, span, err, "package_not_found", "paket tidak ditemukan")
+}
+
+// writeCatalogErrorFor is the resource-aware variant. It records the error
+// on the span, maps the domain sentinel to a (status, code, message) triple
+// using the caller-supplied notFoundCode + notFoundMessage for ErrNotFound,
+// and includes the span's trace_id. Unrecognised errors fall back to
+// `internal_error` / 500.
+func (s *Server) writeCatalogErrorFor(c *fiber.Ctx, span trace.Span, err error, notFoundCode, notFoundMessage string) error {
 	span.RecordError(err)
 	span.SetStatus(codes.Error, err.Error())
 
-	status, code, message := mapCatalogError(err)
+	status, code, message := mapCatalogError(err, notFoundCode, notFoundMessage)
 
 	resp := ErrorResponse{}
 	resp.Error.Code = code
@@ -242,10 +306,10 @@ func (s *Server) writeCatalogError(c *fiber.Ctx, span trace.Span, err error) err
 	return c.Status(status).JSON(resp)
 }
 
-func mapCatalogError(err error) (int, string, string) {
+func mapCatalogError(err error, notFoundCode, notFoundMessage string) (int, string, string) {
 	switch {
 	case errors.Is(err, apperrors.ErrNotFound):
-		return fiber.StatusNotFound, "package_not_found", "paket tidak ditemukan"
+		return fiber.StatusNotFound, notFoundCode, notFoundMessage
 	case errors.Is(err, apperrors.ErrValidation):
 		// Reached from the service layer for bad cursor payloads. Handler-
 		// level enum / range validation uses writeInvalidQueryParam

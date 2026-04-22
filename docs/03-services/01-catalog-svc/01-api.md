@@ -1,14 +1,14 @@
 # catalog-svc — API
 
-## Current status (S1-E-02 / BL-CAT-001)
+## Current status (S1-E-02 / BL-CAT-001 + BL-CAT-002)
 
-The two public read endpoints below are **live** (merged 2026-04-22). All other endpoints are planned/stub and land via later cards (`BL-CAT-002` for departure detail, `BL-CAT-005..011` for admin CRUD + bulk, `S1-E-03` for the seat RPCs).
+The three public read endpoints below are **live** (all merged 2026-04-22). All other endpoints are planned/stub and land via later cards (`BL-CAT-005..011` for admin CRUD + bulk, `S1-E-03` for the seat RPCs).
 
 | Method | Path | Status | Purpose |
 |---|---|---|---|
 | `GET` | `/v1/packages` | **live** (BL-CAT-001) | List active packages. Filter by `kind`, `departure_from/to`, `airline_code`, `hotel_id`; cursor-paginated. |
 | `GET` | `/v1/packages/{id}` | **live** (BL-CAT-001) | Active package detail with eager master refs + upcoming open/closed departures. |
-| `GET` | `/v1/package-departures/{id}` | planned (BL-CAT-002) | Departure detail with live `remaining_seats` + `vendor_readiness`. |
+| `GET` | `/v1/package-departures/{id}` | **live** (BL-CAT-002) | Departure detail with live `remaining_seats`, pricing per room type, and stubbed `vendor_readiness`. |
 | `GET` | `/v1/hotels` | planned | List hotels (admin). |
 | … | | | |
 

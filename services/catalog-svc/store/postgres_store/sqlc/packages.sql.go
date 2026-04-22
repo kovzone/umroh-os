@@ -11,6 +11,52 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getActiveDeparture = `-- name: GetActiveDeparture :one
+SELECT
+    id,
+    package_id,
+    departure_date,
+    return_date,
+    total_seats,
+    reserved_seats,
+    (total_seats - reserved_seats)::integer AS remaining_seats,
+    status
+FROM catalog.package_departures
+WHERE id = $1
+  AND status IN ('open', 'closed')
+`
+
+type GetActiveDepartureRow struct {
+	ID             string                 `json:"id"`
+	PackageID      string                 `json:"package_id"`
+	DepartureDate  pgtype.Date            `json:"departure_date"`
+	ReturnDate     pgtype.Date            `json:"return_date"`
+	TotalSeats     int32                  `json:"total_seats"`
+	ReservedSeats  int32                  `json:"reserved_seats"`
+	RemainingSeats int32                  `json:"remaining_seats"`
+	Status         CatalogDepartureStatus `json:"status"`
+}
+
+// Returns the departure row only if its status is publicly visible
+// (open or closed). Any other status returns pgx.ErrNoRows which the
+// service layer maps to apperrors.ErrNotFound → 404 departure_not_found.
+// Identical 404 shape for unknown-id vs hidden-status — no existence oracle.
+func (q *Queries) GetActiveDeparture(ctx context.Context, id string) (GetActiveDepartureRow, error) {
+	row := q.db.QueryRow(ctx, getActiveDeparture, id)
+	var i GetActiveDepartureRow
+	err := row.Scan(
+		&i.ID,
+		&i.PackageID,
+		&i.DepartureDate,
+		&i.ReturnDate,
+		&i.TotalSeats,
+		&i.ReservedSeats,
+		&i.RemainingSeats,
+		&i.Status,
+	)
+	return i, err
+}
+
 const getActivePackageByID = `-- name: GetActivePackageByID :one
 SELECT
     id,
@@ -446,6 +492,52 @@ func (q *Queries) ListOpenDeparturesForPackage(ctx context.Context, packageID st
 			&i.ReservedSeats,
 			&i.RemainingSeats,
 			&i.Status,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPricingForDeparture = `-- name: ListPricingForDeparture :many
+SELECT
+    room_type,
+    list_amount::bigint AS list_amount,
+    list_currency,
+    settlement_currency
+FROM catalog.package_pricing
+WHERE package_departure_id = $1
+ORDER BY list_amount ASC
+`
+
+type ListPricingForDepartureRow struct {
+	RoomType           CatalogRoomType `json:"room_type"`
+	ListAmount         int64           `json:"list_amount"`
+	ListCurrency       string          `json:"list_currency"`
+	SettlementCurrency string          `json:"settlement_currency"`
+}
+
+// Returns all price rows for a departure ordered by list_amount ascending
+// so the cheapest room type surfaces first. `list_amount` cast to bigint
+// for wire-integer conformance (whole currency units per § Catalog + Q001).
+func (q *Queries) ListPricingForDeparture(ctx context.Context, packageDepartureID string) ([]ListPricingForDepartureRow, error) {
+	rows, err := q.db.Query(ctx, listPricingForDeparture, packageDepartureID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListPricingForDepartureRow{}
+	for rows.Next() {
+		var i ListPricingForDepartureRow
+		if err := rows.Scan(
+			&i.RoomType,
+			&i.ListAmount,
+			&i.ListCurrency,
+			&i.SettlementCurrency,
 		); err != nil {
 			return nil, err
 		}

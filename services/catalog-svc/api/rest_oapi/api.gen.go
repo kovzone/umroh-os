@@ -47,6 +47,26 @@ const (
 	PackageKindUmrahReguler PackageKind = "umrah_reguler"
 )
 
+// Defines values for PackagePricingSettlementCurrency.
+const (
+	IDR PackagePricingSettlementCurrency = "IDR"
+)
+
+// Defines values for RoomType.
+const (
+	Double RoomType = "double"
+	Quad   RoomType = "quad"
+	Triple RoomType = "triple"
+)
+
+// Defines values for VendorReadinessState.
+const (
+	Blocked    VendorReadinessState = "blocked"
+	InProgress VendorReadinessState = "in_progress"
+	NotStarted VendorReadinessState = "not_started"
+	Ready      VendorReadinessState = "ready"
+)
+
 // Defines values for ListPackagesParamsKind.
 const (
 	ListPackagesParamsKindBadal        ListPackagesParamsKind = "badal"
@@ -89,6 +109,26 @@ type DbTxDiagnosticResponse struct {
 	} `json:"data"`
 }
 
+// DepartureDetail defines model for DepartureDetail.
+type DepartureDetail struct {
+	DepartureDate openapi_types.Date `json:"departure_date"`
+	Id            string             `json:"id"`
+	PackageId     string             `json:"package_id"`
+	Pricing       []PackagePricing   `json:"pricing"`
+
+	// RemainingSeats `total_seats − reserved_seats`, computed at read time. Eventually
+	// consistent with concurrent `ReserveSeats` calls.
+	RemainingSeats int                `json:"remaining_seats"`
+	ReturnDate     openapi_types.Date `json:"return_date"`
+
+	// Status Public-read departures surface only `open` and `closed`;
+	// `departed` / `completed` / `cancelled` rows are hidden server-side
+	// and their `GET /v1/package-departures/{id}` returns 404.
+	Status          DepartureStatus `json:"status"`
+	TotalSeats      int             `json:"total_seats"`
+	VendorReadiness VendorReadiness `json:"vendor_readiness"`
+}
+
 // DepartureStatus Public-read departures surface only `open` and `closed`;
 // `departed` / `completed` / `cancelled` rows are hidden server-side
 // and their `GET /v1/package-departures/{id}` returns 404.
@@ -125,6 +165,11 @@ type ErrorResponse struct {
 		// endpoints may omit it.
 		TraceId *string `json:"trace_id,omitempty"`
 	} `json:"error"`
+}
+
+// GetDepartureResponse defines model for GetDepartureResponse.
+type GetDepartureResponse struct {
+	Departure DepartureDetail `json:"departure"`
 }
 
 // GetPackageResponse defines model for GetPackageResponse.
@@ -236,6 +281,19 @@ type PackageListItem struct {
 	StartingPrice Money          `json:"starting_price"`
 }
 
+// PackagePricing defines model for PackagePricing.
+type PackagePricing struct {
+	// ListAmount Integer IDR amount per person for this room type. Cast from
+	// `numeric(18,4)` in the DB to bigint on the wire per Q001.
+	ListAmount         int64                            `json:"list_amount"`
+	ListCurrency       string                           `json:"list_currency"`
+	RoomType           RoomType                         `json:"room_type"`
+	SettlementCurrency PackagePricingSettlementCurrency `json:"settlement_currency"`
+}
+
+// PackagePricingSettlementCurrency defines model for PackagePricing.SettlementCurrency.
+type PackagePricingSettlementCurrency string
+
 // PageMeta defines model for PageMeta.
 type PageMeta struct {
 	HasMore bool `json:"has_more"`
@@ -250,6 +308,19 @@ type ReadyResponse struct {
 		Ok bool `json:"ok"`
 	} `json:"data"`
 }
+
+// RoomType defines model for RoomType.
+type RoomType string
+
+// VendorReadiness defines model for VendorReadiness.
+type VendorReadiness struct {
+	Hotel  VendorReadinessState `json:"hotel"`
+	Ticket VendorReadinessState `json:"ticket"`
+	Visa   VendorReadinessState `json:"visa"`
+}
+
+// VendorReadinessState defines model for VendorReadinessState.
+type VendorReadinessState string
 
 // DbTxDiagnosticParams defines parameters for DbTxDiagnostic.
 type DbTxDiagnosticParams struct {
@@ -295,6 +366,9 @@ type ServerInterface interface {
 	// Readiness probe
 	// (GET /system/ready)
 	Readiness(c *fiber.Ctx) error
+	// Get active package-departure detail
+	// (GET /v1/package-departures/{id})
+	GetPackageDepartureById(c *fiber.Ctx, id string) error
 	// List active packages
 	// (GET /v1/packages)
 	ListPackages(c *fiber.Ctx, params ListPackagesParams) error
@@ -344,6 +418,22 @@ func (siw *ServerInterfaceWrapper) Liveness(c *fiber.Ctx) error {
 func (siw *ServerInterfaceWrapper) Readiness(c *fiber.Ctx) error {
 
 	return siw.Handler.Readiness(c)
+}
+
+// GetPackageDepartureById operation middleware
+func (siw *ServerInterfaceWrapper) GetPackageDepartureById(c *fiber.Ctx) error {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+
+	return siw.Handler.GetPackageDepartureById(c, id)
 }
 
 // ListPackages operation middleware
@@ -455,6 +545,8 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 
 	router.Get(options.BaseURL+"/system/ready", wrapper.Readiness)
 
+	router.Get(options.BaseURL+"/v1/package-departures/:id", wrapper.GetPackageDepartureById)
+
 	router.Get(options.BaseURL+"/v1/packages", wrapper.ListPackages)
 
 	router.Get(options.BaseURL+"/v1/packages/:id", wrapper.GetPackageById)
@@ -506,6 +598,41 @@ type Readiness200JSONResponse ReadyResponse
 func (response Readiness200JSONResponse) VisitReadinessResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetPackageDepartureByIdRequestObject struct {
+	Id string `json:"id"`
+}
+
+type GetPackageDepartureByIdResponseObject interface {
+	VisitGetPackageDepartureByIdResponse(ctx *fiber.Ctx) error
+}
+
+type GetPackageDepartureById200JSONResponse GetDepartureResponse
+
+func (response GetPackageDepartureById200JSONResponse) VisitGetPackageDepartureByIdResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type GetPackageDepartureById404JSONResponse ErrorResponse
+
+func (response GetPackageDepartureById404JSONResponse) VisitGetPackageDepartureByIdResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type GetPackageDepartureById500JSONResponse ErrorResponse
+
+func (response GetPackageDepartureById500JSONResponse) VisitGetPackageDepartureByIdResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(500)
 
 	return ctx.JSON(&response)
 }
@@ -591,6 +718,9 @@ type StrictServerInterface interface {
 	// Readiness probe
 	// (GET /system/ready)
 	Readiness(ctx context.Context, request ReadinessRequestObject) (ReadinessResponseObject, error)
+	// Get active package-departure detail
+	// (GET /v1/package-departures/{id})
+	GetPackageDepartureById(ctx context.Context, request GetPackageDepartureByIdRequestObject) (GetPackageDepartureByIdResponseObject, error)
 	// List active packages
 	// (GET /v1/packages)
 	ListPackages(ctx context.Context, request ListPackagesRequestObject) (ListPackagesResponseObject, error)
@@ -681,6 +811,33 @@ func (sh *strictHandler) Readiness(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else if validResponse, ok := response.(ReadinessResponseObject); ok {
 		if err := validResponse.VisitReadinessResponse(ctx); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetPackageDepartureById operation middleware
+func (sh *strictHandler) GetPackageDepartureById(ctx *fiber.Ctx, id string) error {
+	var request GetPackageDepartureByIdRequestObject
+
+	request.Id = id
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetPackageDepartureById(ctx.UserContext(), request.(GetPackageDepartureByIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetPackageDepartureById")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	} else if validResponse, ok := response.(GetPackageDepartureByIdResponseObject); ok {
+		if err := validResponse.VisitGetPackageDepartureByIdResponse(ctx); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
 	} else if response != nil {

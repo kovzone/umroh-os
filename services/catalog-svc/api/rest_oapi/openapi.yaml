@@ -5,15 +5,14 @@ info:
   description: |
     Product catalog + master data endpoints for UmrohOS (F2).
 
-    Current scope (S1-E-02 / BL-CAT-001):
+    Current scope (S1-E-02 / BL-CAT-001 + BL-CAT-002):
       - System probes: `/system/live`, `/system/ready`, `/system/diagnostics/db-tx`
       - Public catalog read: `GET /v1/packages` (list), `GET /v1/packages/{id}` (detail)
+      - Public departure read: `GET /v1/package-departures/{id}` (departure detail with live seat math)
 
-    All `/v1/packages*` endpoints are **public** — no bearer required. Admin
-    write endpoints (`POST`/`PATCH`/`DELETE`) and bulk import/export land in
-    later slice cards (`S1-E-05`). The departure-detail endpoint
-    `GET /v1/package-departures/{id}` lands via the sibling `BL-CAT-002` card
-    together with the `remaining_seats` live-read pattern.
+    All `/v1/packages*` and `/v1/package-departures*` endpoints are **public** —
+    no bearer required. Admin write endpoints (`POST`/`PATCH`/`DELETE`) and bulk
+    import/export land in later slice cards (`S1-E-05`).
 
     Wire shapes, ULID prefixes (`pkg_`, `dep_`, `itn_`, `htl_`, `arl_`,
     `mtw_`, `addon_`), Q001 currency handling (`list_currency`, `settlement_
@@ -218,6 +217,46 @@ paths:
                 $ref: "#/components/schemas/GetPackageResponse"
         "404":
           description: Package not found or not active (`package_not_found`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Unexpected server error (`internal_error`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/package-departures/{id}:
+    get:
+      tags:
+        - Packages
+      summary: Get active package-departure detail
+      description: |
+        Public read endpoint for a single departure with live seat math,
+        pricing per room type, and vendor readiness summary. Returns 404
+        `departure_not_found` for any id whose status is `departed`,
+        `completed`, or `cancelled` — public-read only surfaces `open`
+        and `closed` departures. Identical 404 shape for "unknown id" vs
+        "hidden status" — no existence oracle for public callers.
+      operationId: getPackageDepartureById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Departure ULID, `dep_`-prefixed.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Departure detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetDepartureResponse"
+        "404":
+          description: Departure not found or not publicly visible (`departure_not_found`).
           content:
             application/json:
               schema:
@@ -494,6 +533,105 @@ components:
             $ref: "#/components/schemas/ItineraryDay"
         public_url:
           type: string
+
+    # ── Catalog: departure-detail schemas (BL-CAT-002) ──────────────────
+    PackagePricing:
+      type: object
+      required:
+        - room_type
+        - list_amount
+        - list_currency
+        - settlement_currency
+      properties:
+        room_type:
+          $ref: "#/components/schemas/RoomType"
+        list_amount:
+          type: integer
+          format: int64
+          description: |
+            Integer IDR amount per person for this room type. Cast from
+            `numeric(18,4)` in the DB to bigint on the wire per Q001.
+          example: 38500000
+        list_currency:
+          type: string
+          example: IDR
+        settlement_currency:
+          type: string
+          enum: [IDR]
+          example: IDR
+
+    VendorReadinessState:
+      type: string
+      enum:
+        - not_started
+        - in_progress
+        - ready
+        - blocked
+
+    VendorReadiness:
+      type: object
+      required:
+        - ticket
+        - hotel
+        - visa
+      properties:
+        ticket:
+          $ref: "#/components/schemas/VendorReadinessState"
+        hotel:
+          $ref: "#/components/schemas/VendorReadinessState"
+        visa:
+          $ref: "#/components/schemas/VendorReadinessState"
+
+    DepartureDetail:
+      type: object
+      required:
+        - id
+        - package_id
+        - departure_date
+        - return_date
+        - total_seats
+        - remaining_seats
+        - status
+        - pricing
+        - vendor_readiness
+      properties:
+        id:
+          type: string
+          example: dep_01JCDF00000000000000000001
+        package_id:
+          type: string
+          example: pkg_01JCDE00000000000000000001
+        departure_date:
+          type: string
+          format: date
+        return_date:
+          type: string
+          format: date
+        total_seats:
+          type: integer
+          minimum: 0
+        remaining_seats:
+          type: integer
+          minimum: 0
+          description: |
+            `total_seats − reserved_seats`, computed at read time. Eventually
+            consistent with concurrent `ReserveSeats` calls.
+        status:
+          $ref: "#/components/schemas/DepartureStatus"
+        pricing:
+          type: array
+          items:
+            $ref: "#/components/schemas/PackagePricing"
+        vendor_readiness:
+          $ref: "#/components/schemas/VendorReadiness"
+
+    GetDepartureResponse:
+      type: object
+      required:
+        - departure
+      properties:
+        departure:
+          $ref: "#/components/schemas/DepartureDetail"
 
     # ── Catalog: package-specific ─────────────────────────────────────
     NextDeparture:

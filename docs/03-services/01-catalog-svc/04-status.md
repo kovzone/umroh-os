@@ -9,7 +9,7 @@
 - [x] OpenAPI spec for public catalog read (list + detail) (BL-CAT-001)
 - [x] CRUD handlers for packages — **read only** (list + active detail); admin write endpoints land in BL-CAT-005..011
 - [ ] CRUD handlers for hotels / airlines / muthawwif — admin CRUD deferred
-- [ ] `GET /v1/package-departures/{id}` with live `remaining_seats` — BL-CAT-002
+- [x] `GET /v1/package-departures/{id}` with live `remaining_seats` — BL-CAT-002
 - [ ] Atomic seat reservation (gRPC `ReserveSeats` / `ReleaseSeats`) — S1-E-03 territory
 - [ ] Bulk import / export — BL-CAT-010 / BL-CAT-011
 - [x] Unit tests (cursor helpers) + integration/e2e (Playwright `02e-catalog-svc-read.spec.ts`)
@@ -17,7 +17,7 @@
 
 ## Current status
 
-**S1-E-02 / BL-CAT-001 merged to `dev`** on 2026-04-22 (PR #38). Public catalog read (list + active detail) is live. Departure-detail with live `remaining_seats` (`BL-CAT-002`) and the B2C integration wrap-up (`BL-CAT-004`) are the next cards under the same task code.
+**S1-E-02 / BL-CAT-001 + BL-CAT-002 both in flight** (branch `feat/s1-e-02-catalog-departures`, 2026-04-22). Public catalog read (list + detail + departure detail) is fully live in dev. B2C integration wrap-up (`BL-CAT-004`) is the next card under the same task code.
 
 ## 2026-04-22 — what landed with BL-CAT-001
 
@@ -33,8 +33,15 @@
 - **Mid-session dev rebase.** Lutfi merged PR #36 (booking wizard) and PR #37 (staff catalog CRUD MVP docs) during the session. Rebased 8 commits onto `origin/dev`; git's 3-way merge auto-resolved both overlapping files (`docs/00-overview/06-feature-to-backlog-mapping.md` — my `in progress` flip coexists with Lutfi's new BL-CAT-014 / BL-FE-CAT-001 rows; `docs/03-services/01-catalog-svc/01-api.md` — my "Current status" header coexists with Lutfi's `public` / `staff only` annotations on the planned-endpoints table). No manual conflict resolution needed.
 - **Security review.** One round, zero findings at confidence ≥ 8. Sub-agent walked SQL injection on all 7 query params + the path param (all bound via pgx, zero string concatenation), draft/archived leakage (top-level predicate unconditional; identical 404 response for all non-active cases), error-envelope leakage (closed set of static Bahasa messages; raw `err.Error()` never reaches response bodies), cursor deserialization (fixed-shape struct, no gadget-chain surface), secrets (none).
 
+## 2026-04-22 — what landed with BL-CAT-002
+
+- **One new endpoint** — `GET /v1/package-departures/{id}`. Returns departure detail with live `remaining_seats` (computed in SQL as `total_seats - reserved_seats`), pricing per room type (ordered cheapest-first), and a stubbed `vendor_readiness` (`not_started` for ticket/hotel/visa). Real readiness wires from visa-svc / logistics-svc in S3-E-02 / S3-E-06.
+- **Hidden-status hiding** — `departed` / `completed` / `cancelled` departures return `404 departure_not_found` (identical shape to unknown-id — no existence oracle). Implemented as an in-query `WHERE status IN ('open', 'closed')` predicate; `pgx.ErrNoRows` maps to `ErrNotFound`.
+- **`writeCatalogErrorFor` refactor** — `mapCatalogError` and `writeCatalogError` were parametrised so the `ErrNotFound` branch emits the correct resource-scoped code (`package_not_found` vs `departure_not_found`). No change to caller behaviour for the package endpoints.
+- **Migration `000010`** — seed one cancelled departure (`dep_01JCDF00000000000000000003`) for e2e 404 coverage. Immutable post-merge; extended as a new migration not an edit to 000009.
+- **e2e coverage** — 3 new cases in `02e-catalog-svc-read.spec.ts`: happy-path 200 (seat math, 3 pricing rows, vendor_readiness shape), cancelled-departure 404, unknown-departure 404. Total now 12 passed.
+
 ## § Next
 
-- `BL-CAT-002` (F2-W3) — `GET /v1/package-departures/{id}` with live `remaining_seats` + `vendor_readiness` summary. Same task code `S1-E-02`; branch `feat/s1-e-02-catalog-departures`. Exec seq 121 on doc 06.
-- `BL-CAT-004` (F2-AC) — B2C browse integration wrap-up + gateway route smoke. Exec seq 123; same task code.
+- `BL-CAT-004` (F2-AC) — B2C browse integration wrap-up + gateway route smoke. Exec seq 123; same task code `S1-E-02`.
 - After S1-E-02 closes: `BL-CAT-003` (atomic `ReserveSeats` / `ReleaseSeats` gRPC) moves to `S1-E-03`, which also covers the booking draft handler and its submit saga.
