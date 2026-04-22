@@ -48,6 +48,8 @@ Examples:
 
 - `BL-IAM-001`
 - `BL-CAT-004`
+- `BL-CAT-014`
+- `BL-FE-CAT-001`
 - `BL-BOOK-007`
 - `BL-PAY-003`
 - `BL-B2C-001`
@@ -115,6 +117,8 @@ Slice **S1** engineering-freeze rows from **05** are listed first (`BL-JNT-001`â
 | 1     | F2-W3       | Departure data includes seat cap + status              | MH-MVP   | 121      | S1    | S1-E-02   | BL-CAT-002     | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Departure detail exposes consistent remaining seats                 |
 | 1     | F2-W6       | Atomic `ReserveSeats` + `ReleaseSeats`                 | MH-MVP   | 122      | S1    | S1-E-03   | BL-CAT-003     | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Last-seat race safe, no oversell                                    |
 | 1     | F2-AC       | Public catalog endpoints for B2C                       | MH-MVP   | 123      | S1    | S1-E-02   | BL-CAT-004     | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | B2C can browse packages without contract errors                     |
+| 1     | F2-W12      | Staff catalog write REST MVP (package + departure; Bearer + permission) | MH-MVP   | 124      | S1    | S1-E-07   | BL-CAT-014     | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001; BL-IAM-001..004 | Mutating catalog routes gated; request/response shapes align with public read models |
+| 1     | F2-W13      | Internal console â€” catalog CRUD MVP (packages + departures)            | MH-MVP   | 125      | S1    | S1-L-06   | BL-FE-CAT-001  | L     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001; BL-IAM-001..004; BL-CAT-014 | Staff can maintain catalog via FE (replaces ad-hoc DB edits for MVP ops) |
 | 1     | F4-W1       | Create draft booking from B2C flow                     | MH-MVP   | 130      | S1    | S1-E-03   | BL-BOOK-001    | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Booking `draft` saved with minimum fields                           |
 | 1     | F4-W2       | Stamp channel attribution (`b2c_self`/`b2b_agent`)     | MH-MVP   | 131      | S1    | S1-E-03   | BL-BOOK-002    | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Booking stores `channel` + `agent_id` when present                  |
 | 1     | F4-W4       | State machine through `pending_payment`/`expired`      | MH-MVP   | 132      | S1    | S1-E-03   | BL-BOOK-003    | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Valid status transitions without skipping states                    |

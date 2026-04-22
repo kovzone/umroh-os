@@ -2,7 +2,7 @@
 slice: S1
 title: Slice S1 — Integration Contract
 status: draft
-last_updated: 2026-04-21
+last_updated: 2026-04-22
 pr_owner: Elda
 reviewer: Elda (solo-exec S0 per § Current operating mode)
 task_codes:
@@ -31,10 +31,11 @@ S1 is the first user-facing slice. The B2C flow: a calon jamaah opens the catalo
 - Draft booking REST endpoint (`POST /v1/bookings`) — `S1-J-02`.
 - `ReserveSeats` / `ReleaseSeats` gRPC (internal, booking→catalog) — `S1-J-03`.
 - S1 booking-state decision paragraph (only `draft` needed in S1; doc completeness per Q006) — `S1-J-04`.
+- Staff **catalog write** REST MVP (create/update package + departure only) — **S1-E-07** / backlog **`BL-CAT-014`**; summarized in **§ Catalog — internal write (MVP)** below (not a new `S1-J-*` freeze card; extends the same § Catalog surface).
 
 **Out of scope for S1 contracts** (deferred to later slices):
 
-- Admin write endpoints on `catalog-svc` (create / update / soft-delete packages).
+- Full **master-data** admin (hotels, airlines, muthawwif CRUD, CSV import, bulk edit) — Phase **6.G** / checklist **S1-E-05** (`BL-CAT-005`–`011`), beyond the narrow package/departure MVP above.
 - Payment/invoice/VA (S2 — `S2-J-01..04`).
 - Fulfillment / finance journal (S3 — `S3-J-*`).
 - Webhooks, events, CRM, dashboards (later slices).
@@ -45,7 +46,7 @@ S1 is the first user-facing slice. The B2C flow: a calon jamaah opens the catalo
 
 *(Landed via `S1-J-01`, 2026-04-20.)*
 
-Public read-only endpoints for B2C catalog browsing. All endpoints are unauthenticated — the catalog is a public surface. Auth'd admin/staff catalog endpoints land in a later slice, not here.
+Public **read** endpoints for B2C catalog browsing: the three `GET` rows in the table below are **unauthenticated**. **Mutating** catalog calls for staff (create/update package and departure) are **in scope** for the same slice file under **§ Catalog — internal write (MVP)** — backlog **`BL-CAT-014`** / implementation **S1-E-07** in **[05](../00-overview/05-slice-engineering-checklist-and-task-codes.md)** — so operations can stop using ad-hoc DB access once shipped.
 
 ### Endpoints
 
@@ -63,7 +64,29 @@ Paths are stable and match `docs/03-services/01-catalog-svc/01-api.md` row-for-r
 
 - **Q001 (currency).** Responses carry `list_amount` (integer), `list_currency` (`IDR` or `USD`), and `settlement_currency` (always `"IDR"` in MVP). Catalog never commits to a payable amount — that lock happens in `payment-svc` at invoice creation with a snapshotted FX rate. Consumers must treat `list_amount` + `list_currency` as display-only.
 - **Q003 (single-language MVP).** All human-readable strings (`name`, `description`, `itinerary` day labels) are returned in Bahasa Indonesia (`id-ID`). No `{lang}` query param, no `translations` array in the response — a future multi-language card will evolve the contract via Bump-versi.
-- **No auth** on any endpoint in this section. `gateway-svc` passes these through without token validation.
+- **No auth** on the three **`GET`** methods in the table above. `gateway-svc` passes these through without token validation.
+
+### Catalog — internal write (MVP)
+
+_Backmap: **`BL-CAT-014`** (`F2-W12`) + console UI **`BL-FE-CAT-001`** (`F2-W13`) in `docs/00-overview/06-feature-to-backlog-mapping.md`. Implementation checklist: **S1-E-07** (API) + **S1-L-06** (FE) in **[05](../00-overview/05-slice-engineering-checklist-and-task-codes.md)**._
+
+**Purpose:** staff with F1 session maintain **packages** and **package departures** through `gateway-svc` + `catalog-svc` instead of direct database edits, while public B2C traffic keeps using **read-only** `GET` only.
+
+**Auth:** `Authorization: Bearer` validated on **`gateway-svc`** for mutating routes; `catalog-svc` (or gateway) enforces permission **`catalog.package.manage`** (wire name must match `iam-svc` / `CheckPermission` registry when registered — treat as stable placeholder until IAM row adds the code).
+
+**Paths (same resource family as `docs/03-services/01-catalog-svc/01-api.md`; mutating verbs staff-only):**
+
+| Method | Path | Auth | Purpose |
+| --- | --- | --- | --- |
+| `POST` | `/v1/packages` | staff | Create package (typically `draft`). |
+| `PATCH` | `/v1/packages/{id}` | staff | Update package fields incl. `status` transitions allowed by MVP policy. |
+| `DELETE` | `/v1/packages/{id}` | staff | Soft-delete / archive (exact semantics follow `catalog-svc` data model). |
+| `POST` | `/v1/packages/{id}/departures` | staff | Create departure under package. |
+| `PATCH` | `/v1/package-departures/{id}` | staff | Update departure (dates, caps, list pricing fields consistent with public detail). |
+
+**MVP limits:** no bulk CSV, no hotel/airline/muthawwif editors here — those remain **S1-E-05** depth. **Audit:** state-changing staff calls SHOULD flow through **`RecordAudit`** (see **§ IAM**) once the permission exists.
+
+**Errors:** reuse catalog error shape; `401`/`403` for missing/invalid token or permission; `422` for validation.
 
 ### `GET /v1/packages`
 
@@ -864,6 +887,9 @@ Planning map for **`apps/core-web`** (and future staff console routes) so S1 UI,
 | `/console/login` _(Inferred.)_ | internal | coming-next | Staff (CS, ops, finance, …) | n/a | F1 access + refresh | F1 — `POST /v1/sessions` (service doc) | Console entry; **not** in `slice-S1` REST. |
 | `/console/bookings/new` _(Inferred.)_ | internal | coming-next | Staff with CS closing duty | `booking.create_on_behalf` (named in § Booking for `channel = cs`) | F1 bearer | § Booking — `POST /v1/bookings` with `channel = cs` | F4 W3 CS closing. **Gap:** internal navigation + which booking-svc read endpoints power the form (`GET/PATCH` draft — see below). |
 | `/console/bookings/{booking_id}` _(Inferred.)_ | internal | coming-next | Same as above | same | F1 bearer | § Booking — draft create only today | Read/edit draft in UI needs **GET/PATCH** contract (gap). |
+| `/console/packages` _(Inferred.)_ | internal | coming-next | Product admin / ops | `catalog.package.manage` | F1 bearer | § Catalog — internal write (MVP) | List + filters; ships with **S1-L-06** / **`BL-FE-CAT-001`**. |
+| `/console/packages/{package_id}` _(Inferred.)_ | internal | coming-next | Same | same | F1 bearer | § Catalog — internal write (MVP) | Edit package + embedded departure list. |
+| `/console/packages/{package_id}/departures/{departure_id}` _(Inferred.)_ | internal | coming-next | Same | same | F1 bearer | § Catalog — internal write (MVP) | Edit single departure. |
 
 ### Contract gaps to close (next Joint / slice rows)
 
@@ -871,6 +897,7 @@ Planning map for **`apps/core-web`** (and future staff console routes) so S1 UI,
 2. **`POST /v1/bookings/{id}/submit`** — F4 + Q006 gate; belongs in a **future** `slice-S1` § (or `slice-S2` boundary) once the Joint card is picked up. Drives `/checkout/{booking_id}` “pay” CTA behavior.
 3. **B2B replica routing** — Freeze host + path + `ref` / `agent_id` propagation in gateway + `core-web` (table above cites partial § Booking rules only).
 4. **Internal console shell** — Base path (`/console/...`), SSR vs SPA, and which routes require `CheckPermission` first (`S1-E-04`) — document when internal UX slice starts (may remain outside `slice-S1` if console is a separate app; if so, duplicate a slim matrix there).
+5. **Staff catalog write** — OpenAPI-level request/response bodies for **§ Catalog — internal write (MVP)** (`POST`/`PATCH`/`DELETE` rows): duplicate or move detail into `docs/03-services/01-catalog-svc/01-api.md` and keep this slice as the auth + permission + MVP boundary summary.
 
 ---
 
@@ -895,6 +922,7 @@ Planning map for **`apps/core-web`** (and future staff console routes) so S1 UI,
 
 ## § Changelog
 
+- **2026-04-22** — Added **§ Catalog — internal write (MVP)** + UI matrix rows for `/console/packages/...` — staff catalog **CRUD** (`BL-CAT-014` / **S1-E-07**) and console UI (`BL-FE-CAT-001` / **S1-L-06**) per **05** / **06**; narrowed prior “admin writes later slice” wording so MVP ops can target Bearer-gated mutating methods on the same `/v1/packages` path family as public `GET`. Full hotel/airline/import depth stays **S1-E-05** / Phase **6.G**.
 - **2026-04-21** — Added `§ IAM` via `S1-E-04` / `BL-IAM-004` — documents `iam.v1.IamService/ValidateToken` + `CheckPermission` + `RecordAudit` (producer-owned wire, promoted into the slice contract now that two consumers exist and `§ Inventory`'s `RecordAudit` reference is load-bearing). Also updated `§ Inventory`'s `ReleaseSeats.reason` footnote to cite the new `§ IAM` anchor rather than a bare "F1 `RecordAudit`". Additive per the Bump-versi rule; no consumer-breaking changes.
 - **2026-04-22** — Added `S1-E-01` engineering approval note under `§ Inventory` (`BL-EGV-001`): reviewed seat concurrency + transaction atomicity requirements for `ReserveSeats` / `ReleaseSeats`; gate approved with implementation deferred to `S1-E-02` / `S1-E-03`.
 - **2026-04-22** — Added `§ S1-L-01 — UI screen inventory` + shipped route shells in `apps/core-web` — closes backlog **BL-LGV-001** / task **S1-L-01** per **05** (contract bullets + components; no Figma).
