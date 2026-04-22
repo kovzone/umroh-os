@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"gateway-svc/adapter/booking_rest_adapter"
+	"gateway-svc/adapter/catalog_grpc_adapter"
 	"gateway-svc/adapter/catalog_rest_adapter"
 	"gateway-svc/adapter/crm_rest_adapter"
 	"gateway-svc/adapter/finance_rest_adapter"
@@ -37,6 +38,14 @@ type IService interface {
 	GetIamSystemDbTxDiagnostic(ctx context.Context, message string) (*iam_rest_adapter.DbTxDiagnosticResult, error)
 
 	GetCatalogSystemLive(ctx context.Context) (*catalog_rest_adapter.LivenessResult, error)
+
+	// Public catalog read (BL-GTW-002 / S1-E-10) — proxies to catalog-svc
+	// gRPC via catalog_grpc_adapter. Mirrors GET /v1/packages,
+	// /v1/packages/{id}, /v1/package-departures/{id}.
+	ListPackages(ctx context.Context, params *catalog_grpc_adapter.ListPackagesParams) (*catalog_grpc_adapter.ListPackagesResult, error)
+	GetPackage(ctx context.Context, params *catalog_grpc_adapter.GetPackageParams) (*catalog_grpc_adapter.PackageDetail, error)
+	GetPackageDeparture(ctx context.Context, params *catalog_grpc_adapter.GetPackageDepartureParams) (*catalog_grpc_adapter.DepartureDetail, error)
+
 	GetBookingSystemLive(ctx context.Context) (*booking_rest_adapter.LivenessResult, error)
 	GetJamaahSystemLive(ctx context.Context) (*jamaah_rest_adapter.LivenessResult, error)
 	GetPaymentSystemLive(ctx context.Context) (*payment_rest_adapter.LivenessResult, error)
@@ -47,11 +56,14 @@ type IService interface {
 	GetCrmSystemLive(ctx context.Context) (*crm_rest_adapter.LivenessResult, error)
 }
 
-// Adapters bundles the REST adapters this service can dispatch through.
+// Adapters bundles the adapters this service can dispatch through.
 // One field per backend; populated at construction time in cmd/start.go.
+// Mixed REST + gRPC during the ADR-0009 transition — each backend
+// graduates to gRPC-only as its BL-REFACTOR-* card lands.
 type Adapters struct {
 	iamRest       *iam_rest_adapter.Adapter
 	catalogRest   *catalog_rest_adapter.Adapter
+	catalogGrpc   *catalog_grpc_adapter.Adapter
 	bookingRest   *booking_rest_adapter.Adapter
 	jamaahRest    *jamaah_rest_adapter.Adapter
 	paymentRest   *payment_rest_adapter.Adapter
@@ -77,6 +89,7 @@ type NewServiceParams struct {
 	AppName       string
 	IamRest       *iam_rest_adapter.Adapter
 	CatalogRest   *catalog_rest_adapter.Adapter
+	CatalogGrpc   *catalog_grpc_adapter.Adapter
 	BookingRest   *booking_rest_adapter.Adapter
 	JamaahRest    *jamaah_rest_adapter.Adapter
 	PaymentRest   *payment_rest_adapter.Adapter
@@ -95,6 +108,7 @@ func NewService(p NewServiceParams) IService {
 		adapters: Adapters{
 			iamRest:       p.IamRest,
 			catalogRest:   p.CatalogRest,
+			catalogGrpc:   p.CatalogGrpc,
 			bookingRest:   p.BookingRest,
 			jamaahRest:    p.JamaahRest,
 			paymentRest:   p.PaymentRest,

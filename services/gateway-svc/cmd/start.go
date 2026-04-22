@@ -7,6 +7,7 @@ import (
 	"os/signal"
 
 	"gateway-svc/adapter/booking_rest_adapter"
+	"gateway-svc/adapter/catalog_grpc_adapter"
 	"gateway-svc/adapter/catalog_rest_adapter"
 	"gateway-svc/adapter/crm_rest_adapter"
 	"gateway-svc/adapter/finance_rest_adapter"
@@ -103,6 +104,32 @@ func start() {
 	}()
 	iamGrpcAdapter := iam_grpc_adapter.NewAdapter(logger, tracer, iamConn)
 
+	// --- Dial catalog-svc gRPC for public catalog read (BL-GTW-002) ---
+	//
+	// Per ADR 0009, gateway's /v1/packages* + /v1/package-departures/{id}
+	// proxy to catalog-svc.CatalogService over gRPC. Same dial + OTel
+	// handler pattern as the iam conn above.
+	catalogConn, err := grpc.NewClient(
+		config.External.CatalogSvc.GrpcTarget,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Dial catalog-svc gRPC").
+			Str("target", config.External.CatalogSvc.GrpcTarget).
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+	defer func() {
+		if err := catalogConn.Close(); err != nil {
+			logger.Error().Err(err).Msg("close catalog gRPC conn")
+		}
+	}()
+	catalogGrpcAdapter := catalog_grpc_adapter.NewAdapter(logger, tracer, catalogConn)
+
 	// --- Init REST adapters (one per backend service) ---
 	// gateway-svc has no DB and no internal store; the service layer dispatches
 	// to these per-backend adapters. As real per-route methods are added on
@@ -131,6 +158,7 @@ func start() {
 		AppName:       config.App.Name,
 		IamRest:       iamAdapter,
 		CatalogRest:   catalogAdapter,
+		CatalogGrpc:   catalogGrpcAdapter,
 		BookingRest:   bookingAdapter,
 		JamaahRest:    jamaahAdapter,
 		PaymentRest:   paymentAdapter,

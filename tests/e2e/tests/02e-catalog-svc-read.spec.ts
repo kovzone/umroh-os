@@ -1,14 +1,21 @@
 import { test, expect } from "@playwright/test";
 import { createApiClient } from "../lib/api-client";
-import { backendServices } from "../lib/services";
+import { gateway } from "../lib/services";
 
-// S1-E-02 / BL-CAT-001 + BL-CAT-002 — catalog-svc public read smoke.
+// S1-E-10 / BL-GTW-002 — catalog public read via gateway-svc.
 //
-// Exercises the § Catalog contract in `docs/contracts/slice-S1.md`:
+// Exercises the § Catalog contract in `docs/contracts/slice-S1.md`
+// through the gateway REST → catalog-svc gRPC path (ADR 0009):
 //
 //   GET /v1/packages              — active-only list + filters + cursor
 //   GET /v1/packages/{id}         — active-only detail with 404 on draft/archived
 //   GET /v1/package-departures/{id} — departure detail with live seats + 404 on hidden/unknown
+//
+// Base URL is gateway-svc:4000. Previously targeted catalog-svc:4002
+// directly; migrated in this card per the user's "e2e always starts
+// from gateway" preference. Response shapes are unchanged — gateway
+// marshals catalog-svc's gRPC responses back into the same snake_case
+// JSON envelope.
 //
 // Depends on the dev fixtures seeded by migrations:
 //   000009_seed_catalog_dev_fixtures — one active, one draft, one archived package
@@ -17,7 +24,7 @@ import { backendServices } from "../lib/services";
 // Reviewer runs `make dev-bootstrap` (or a targeted `make migrate-up`)
 // before this spec.
 
-const catalog = backendServices.find((s) => s.name === "catalog-svc")!;
+const catalog = gateway;
 
 const ACTIVE_ID = "pkg_01JCDE00000000000000000001";
 const DRAFT_ID = "pkg_01JCDE00000000000000000002";
