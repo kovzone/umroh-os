@@ -9,6 +9,11 @@ import (
 )
 
 type Querier interface {
+	// Returns the departure row only if its status is publicly visible
+	// (open or closed). Any other status returns pgx.ErrNoRows which the
+	// service layer maps to apperrors.ErrNotFound → 404 departure_not_found.
+	// Identical 404 shape for unknown-id vs hidden-status — no existence oracle.
+	GetActiveDeparture(ctx context.Context, id string) (GetActiveDepartureRow, error)
 	GetActivePackageByID(ctx context.Context, id string) (GetActivePackageByIDRow, error)
 	GetAirlineByID(ctx context.Context, id string) (CatalogAirline, error)
 	GetDbTxDiagnostic(ctx context.Context, id int64) (Diagnostic, error)
@@ -53,6 +58,10 @@ type Querier interface {
 	ListHotelsForPackage(ctx context.Context, packageID string) ([]ListHotelsForPackageRow, error)
 	// Public-readable departures: open/closed only, upcoming only.
 	ListOpenDeparturesForPackage(ctx context.Context, packageID string) ([]ListOpenDeparturesForPackageRow, error)
+	// Returns all price rows for a departure ordered by list_amount ascending
+	// so the cheapest room type surfaces first. `list_amount` cast to bigint
+	// for wire-integer conformance (whole currency units per § Catalog + Q001).
+	ListPricingForDeparture(ctx context.Context, packageDepartureID string) ([]ListPricingForDepartureRow, error)
 	ReadyCheck(ctx context.Context) (int32, error)
 }
 

@@ -161,3 +161,34 @@ WHERE package_id = $1
   AND status IN ('open', 'closed')
   AND departure_date >= CURRENT_DATE
 ORDER BY departure_date ASC;
+
+-- name: GetActiveDeparture :one
+-- Returns the departure row only if its status is publicly visible
+-- (open or closed). Any other status returns pgx.ErrNoRows which the
+-- service layer maps to apperrors.ErrNotFound → 404 departure_not_found.
+-- Identical 404 shape for unknown-id vs hidden-status — no existence oracle.
+SELECT
+    id,
+    package_id,
+    departure_date,
+    return_date,
+    total_seats,
+    reserved_seats,
+    (total_seats - reserved_seats)::integer AS remaining_seats,
+    status
+FROM catalog.package_departures
+WHERE id = $1
+  AND status IN ('open', 'closed');
+
+-- name: ListPricingForDeparture :many
+-- Returns all price rows for a departure ordered by list_amount ascending
+-- so the cheapest room type surfaces first. `list_amount` cast to bigint
+-- for wire-integer conformance (whole currency units per § Catalog + Q001).
+SELECT
+    room_type,
+    list_amount::bigint AS list_amount,
+    list_currency,
+    settlement_currency
+FROM catalog.package_pricing
+WHERE package_departure_id = $1
+ORDER BY list_amount ASC;
