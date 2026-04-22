@@ -125,6 +125,11 @@ _Backlog alignment:_ rows in `docs/00-overview/06-feature-to-backlog-mapping.md`
 | S1-L-06 | L | Internal console: package + departure CRUD screens (`/console/packages/...`) wired to **S1-E-07** | S1-L-01, S1-E-04, S1-E-07 |
 | S1-L-07 | L | Internal console login page (`/console/login`) integrated to F1 session endpoint | S1-L-01, S1-E-04 |
 | S1-L-08 | L | Internal console shell (`/console`) with full sidemenu | S1-L-01, S1-E-04, S1-L-07 |
+| S1-E-08 | E | **Monitoring migration (ADR 0009)** — register `grpc.health.v1.Health` on every scaffolded service; pilot `/metrics` admin HTTP endpoint on `catalog-svc`; switch `docker-compose.dev.yml` healthchecks to `grpc_health_probe`; Prometheus scrape paths updated | S1-J-01 |
+| S1-E-09 | E | **Gateway auth middleware (ADR 0009 / F1-W7)** — `services/gateway-svc/adapter/iam_grpc_adapter/` + Bearer middleware on gateway; fail-closed 502 on `iam-svc` unreachable; `bearerAuth` security scheme in gateway OpenAPI | S1-J-01, S1-E-08 |
+| S1-E-10 | E | **Gateway catalog adapter + routing** — `catalog.proto` adds `ListPackages`, `GetPackage`, `GetPackageDeparture`; `services/gateway-svc/adapter/catalog_grpc_adapter/`; gateway openapi + proxy service methods; migrate `02e-catalog-svc-read.spec.ts` to `gateway-svc:4000` | S1-J-01, S1-E-09 |
+| S1-E-11 | E | **Catalog REST removal (ADR 0009)** — delete `services/catalog-svc/api/rest_oapi/`; migrate `/system/diagnostics/db-tx` to a `DiagnosticsDbTx` gRPC method; drop `oapi-catalog` make target | S1-E-10 |
+| S1-E-12 | E | **Move iam auth routes to gateway (ADR 0009)** — add `Login`/`RefreshSession`/`Logout`/`GetMe`/`EnrollTotp`/`VerifyTotp`/`ListUsers`/`SuspendUser` RPCs to `iam.proto`; gateway REST + adapter proxies; delete `services/iam-svc/api/rest_oapi/` | S1-E-09 |
 
 ---
 

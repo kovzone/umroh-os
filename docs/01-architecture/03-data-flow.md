@@ -2,6 +2,8 @@
 
 Three flows that touch most services. Use these as the canonical examples when designing new features.
 
+Per ADR 0009: the app ↔ gateway hop is REST; every gateway ↔ backend and backend ↔ backend hop is gRPC. Bearer validation happens once at the gateway via `iam-svc.ValidateToken` before any forwarded gRPC call leaves gateway; backends do not re-validate.
+
 ## Flow 1 — Booking creation & payment (in-process saga — ADR 0006)
 
 ```

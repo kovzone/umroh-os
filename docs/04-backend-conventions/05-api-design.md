@@ -58,9 +58,14 @@ The middleware maps `apperrors` sentinels — never set a status code in a handl
 
 ### Auth
 
-- Public endpoints: explicitly tagged `security: []` in OpenAPI.
-- Authenticated endpoints: bearer token via the `RequireBearerToken` middleware. Token is validated by calling `iam-svc.ValidateToken` via gRPC.
-- Diagnostic endpoints (`/healthz`, `/metrics`): protected by `RequireDiagnosticKey` middleware (shared secret in config).
+Authentication is validated **once, at `gateway-svc`** (per ADR 0009). Backend services do not extract bearer tokens.
+
+- `gateway-svc`'s middleware extracts `Authorization: Bearer`, calls `iam-svc.ValidateToken` via gRPC (through gateway's own `iam_grpc_adapter`), and forwards the validated request to the downstream backend's gRPC method on success. On failure: 401. On `iam-svc` unreachable: 502 fail-closed.
+- Public endpoints: explicitly tagged `security: []` in the gateway OpenAPI spec.
+- Authenticated endpoints: tagged with `bearerAuth` security scheme in the gateway OpenAPI spec.
+- **Backends do NOT re-validate the bearer.** Per-service `RequireBearerToken` is removed. Backends trust that a gRPC call reached them via gateway in MVP; the gateway↔backend trust contract (signed header / mTLS) is scheduled as `BL-GTW-100` for a later slice.
+- `iam-svc.CheckPermission` (authorization) and `iam-svc.RecordAudit` (audit log) still live at the backend's service layer — they are not authentication and they need business context.
+- Diagnostic endpoints on the gateway (`/metrics`, `/livez`, `/readyz`): protected by `RequireDiagnosticKey` middleware (shared secret in config) if exposed publicly; otherwise internal network only.
 
 ### Schema design
 
@@ -100,10 +105,20 @@ Edit the owning service's proto first; regenerate; then implement. For contract 
 
 ### When REST vs gRPC
 
-- **REST:** any external-facing endpoint. The frontend talks REST.
-- **gRPC:** any service-to-service call. Faster, type-safe, streaming-capable.
+Per ADR 0009:
 
-A service can expose both — the template's `iam-svc` does. The REST API serves the frontend; the gRPC API serves other backend services.
+- **REST lives only on `gateway-svc`.** It is the sole external-facing surface. Client apps (browser, mobile, B2B portals) talk REST to gateway and nowhere else.
+- **All downstream services are gRPC-only.** Their `api/rest_oapi/` package is removed. Business and domain calls — both north-south (gateway → backend) and east-west (backend → backend) — are gRPC.
+- `gateway-svc` proxies every client request to a downstream service via a `<svc>_grpc_adapter` that wraps the gRPC client and decodes the request into typed params.
+
+**Admin/observability endpoints** on downstream services are not "REST API" in the sense this rule targets:
+- Liveness / readiness use the standard `grpc.health.v1.Health/Check` protocol. `grpc_health_probe` is the canonical probe binary for docker-compose and Kubernetes.
+- `/metrics` (Prometheus scrape) lives on a minimal admin HTTP endpoint on each backend — single handler, no OpenAPI spec, no business routes. Alternatively, services may push metrics via OTLP to the OTel Collector.
+- `/system/diagnostics/db-tx` (WithTx trace verification) is a gRPC method (`DiagnosticsDbTx`). Gateway proxies the public REST route `/v1/<svc>/system/diagnostics/db-tx` to it.
+
+**Every new client-facing endpoint must include its gateway side in the same card.** A backend gRPC method reachable from a browser requires its gateway REST route + `_grpc_adapter` proxy in the same branch/PR. Half-shipped is not shipped.
+
+**Scaffolding:** new non-gateway services scaffold from `baseline/go-backend-template/demo-grpc-svc/` (gRPC-only). Only `gateway-svc` uses the REST shape (`baseline/go-backend-template/demo-svc/`).
 
 ## Backwards compatibility
 

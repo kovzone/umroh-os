@@ -42,6 +42,71 @@ S1 is the first user-facing slice. The B2C flow: a calon jamaah opens the catalo
 
 ---
 
+## § Gateway
+
+*(Landed 2026-04-22 alongside ADR 0009 adoption — single-point REST surface + single-point auth.)*
+
+### Purpose
+
+`gateway-svc` is the only service that exposes REST to clients (browser, mobile, agent portal, internal console). Downstream services expose gRPC only (per ADR 0009, `docs/04-backend-conventions/05-api-design.md` § "When REST vs gRPC"). Every S1 client request goes through gateway; every backend call the gateway makes goes over gRPC via a `<svc>_grpc_adapter`.
+
+### Routes owned by `gateway-svc` (S1 surface)
+
+| Method | Path                               | Auth   | Proxies to                                                   | Landing card       |
+| ------ | ---------------------------------- | ------ | ------------------------------------------------------------ | ------------------ |
+| `GET`  | `/v1/packages`                     | public | `catalog.v1.CatalogService/ListPackages`                     | `BL-GTW-002` (S1-E-10) |
+| `GET`  | `/v1/packages/{id}`                | public | `catalog.v1.CatalogService/GetPackage`                       | `BL-GTW-002` (S1-E-10) |
+| `GET`  | `/v1/package-departures/{id}`      | public | `catalog.v1.CatalogService/GetPackageDeparture`              | `BL-GTW-002` (S1-E-10) |
+| `POST` | `/v1/packages`                     | staff  | `catalog.v1.CatalogService/CreatePackage` *(added with `S1-E-07`)* | `BL-CAT-014`       |
+| `PATCH`| `/v1/packages/{id}`                | staff  | `catalog.v1.CatalogService/UpdatePackage` *(added with `S1-E-07`)* | `BL-CAT-014`       |
+| `DELETE`| `/v1/packages/{id}`               | staff  | `catalog.v1.CatalogService/DeletePackage` *(added with `S1-E-07`)* | `BL-CAT-014`       |
+| `POST` | `/v1/packages/{id}/departures`     | staff  | `catalog.v1.CatalogService/CreateDeparture` *(added with `S1-E-07`)* | `BL-CAT-014`       |
+| `PATCH`| `/v1/package-departures/{id}`      | staff  | `catalog.v1.CatalogService/UpdateDeparture` *(added with `S1-E-07`)* | `BL-CAT-014`       |
+| `POST` | `/v1/bookings`                     | public *(in S1; auth arrives with F4 later)* | `booking.v1.BookingService/CreateDraftBooking` | `BL-GTW-003` *(deferred; add with booking rollout)* |
+| `POST` | `/v1/sessions`                     | public | `iam.v1.IamService/Login`                                    | `BL-IAM-018` (S1-E-12) |
+| `POST` | `/v1/sessions/refresh`             | public | `iam.v1.IamService/RefreshSession`                           | `BL-IAM-018` (S1-E-12) |
+| `DELETE`| `/v1/sessions`                    | staff  | `iam.v1.IamService/Logout`                                   | `BL-IAM-018` (S1-E-12) |
+| `GET`  | `/v1/me`                           | staff  | `iam.v1.IamService/GetMe`                                    | `BL-IAM-018` (S1-E-12) |
+| `POST` | `/v1/me/2fa/enroll`                | staff  | `iam.v1.IamService/EnrollTotp`                               | `BL-IAM-018` (S1-E-12) |
+| `POST` | `/v1/me/2fa/verify`                | staff  | `iam.v1.IamService/VerifyTotp`                               | `BL-IAM-018` (S1-E-12) |
+| `POST` | `/v1/users/{id}/suspend`           | staff  | `iam.v1.IamService/SuspendUser`                              | `BL-IAM-018` (S1-E-12) |
+
+System probes and observability routes (`GET /system/live`, `GET /system/ready`, `GET /metrics`, `GET /v1/iam/system/diagnostics/db-tx`) continue on gateway as today; backend `/system/diagnostics/db-tx` migrates to a `DiagnosticsDbTx` gRPC method as part of `BL-MON-001` / S1-E-08.
+
+### Authentication flow
+
+Per ADR 0009 and F1-W7:
+
+1. Client sends `Authorization: Bearer <token>` to a gateway route. Public routes (`security: []` in the gateway OpenAPI spec) skip this middleware entirely.
+2. Gateway middleware extracts the bearer; on missing/malformed → 401 immediately.
+3. Middleware calls `iam.v1.IamService/ValidateToken` via gateway's `iam_grpc_adapter`. On OK, identity envelope (`user_id`, `branch_id`, `session_id`, `roles[]`) attaches to the Fiber context.
+4. Route handler forwards to the target backend over gRPC via the appropriate `<svc>_grpc_adapter`; identity fields flow down as request payload fields or gRPC metadata (exact mechanism finalized in `BL-GTW-001` / S1-E-09).
+5. Backends do **not** re-validate the bearer. `iam-svc.CheckPermission` and `iam-svc.RecordAudit` still run at the backend's service layer where business context lives.
+
+Failure modes:
+
+- Bearer missing or malformed → **401** `unauthorized`
+- `ValidateToken` = `Unauthenticated` → **401** `unauthorized`
+- `iam-svc` unreachable / transport error → **502** `auth_unavailable` (fail-closed, never default to allow)
+- Target backend unreachable → **502** `backend_unavailable`
+- Backend returns `PermissionDenied` from `CheckPermission` → **403** `forbidden`
+
+### Error envelope
+
+Reuses the repo-wide shape — handler never sets status codes:
+
+```json
+{ "error": { "code": "unauthorized", "message": "..." } }
+```
+
+See `docs/04-backend-conventions/02-error-handling.md` for the full `apperrors` mapping.
+
+### Deferred: gateway ↔ backend trust contract (`BL-GTW-100`)
+
+Backends trust any inbound gRPC call in MVP. A signed-header or mTLS contract is scheduled as `BL-GTW-100` for a later slice. Until it lands, MVP depends on internal-network isolation as the only authentication guarantee below the gateway.
+
+---
+
 ## § Catalog
 
 *(Landed via `S1-J-01`, 2026-04-20.)*
@@ -58,7 +123,7 @@ Public **read** endpoints for B2C catalog browsing: the three `GET` rows in the 
 | `GET`  | `/v1/package-departures/{id}` | public | Departure detail incl. `remaining_seats`, pricing per room type, vendor-readiness summary. |
 
 
-Paths are stable and match `docs/03-services/01-catalog-svc/01-api.md` row-for-row for the public-read subset. Route prefix `/v1/` is mounted under `catalog-svc`'s REST adapter (port 4002 in dev, proxied by `gateway-svc` at 4000 for public traffic).
+Paths are stable and match `docs/03-services/01-catalog-svc/01-api.md` row-for-row for the public-read subset. Per ADR 0009, the REST routes are mounted on **`gateway-svc`** at port 4000 — which proxies to `catalog-svc`'s **gRPC** methods (`CatalogService/ListPackages`, `GetPackage`, `GetPackageDeparture`) via gateway's `catalog_grpc_adapter`. `catalog-svc` does not expose these as REST (its `api/rest_oapi/` package is removed per `BL-REFACTOR-001` / S1-E-11). Until gateway routing lands via `BL-GTW-002` / S1-E-10, clients continue to hit `catalog-svc:4002` directly; once `S1-E-10` merges, e2e specs move to `gateway-svc:4000`.
 
 ### Conventions honored
 
@@ -72,7 +137,7 @@ _Backmap: **`BL-CAT-014`** (`F2-W12`) + console UI **`BL-FE-CAT-001`** (`F2-W13`
 
 **Purpose:** staff with F1 session maintain **packages** and **package departures** through `gateway-svc` + `catalog-svc` instead of direct database edits, while public B2C traffic keeps using **read-only** `GET` only.
 
-**Auth:** `Authorization: Bearer` validated on **`gateway-svc`** for mutating routes; `catalog-svc` (or gateway) enforces permission **`catalog.package.manage`** (wire name must match `iam-svc` / `CheckPermission` registry when registered — treat as stable placeholder until IAM row adds the code).
+**Auth:** per ADR 0009, `Authorization: Bearer` is validated at **`gateway-svc`** on every authenticated route (not only mutating ones — the single-point-auth rule). Permission **`catalog.package.manage`** is enforced at `catalog-svc`'s service layer via `iam-svc.CheckPermission` gRPC (wire name must match `iam-svc` / `CheckPermission` registry when registered — treat as stable placeholder until IAM row adds the code).
 
 **Paths (same resource family as `docs/03-services/01-catalog-svc/01-api.md`; mutating verbs staff-only):**
 
@@ -922,7 +987,8 @@ Planning map for **`apps/core-web`** (and future staff console routes) so S1 UI,
 
 ## § Changelog
 
-- **2026-04-22** — Added **§ Catalog — internal write (MVP)** + UI matrix rows for `/console/packages/...` — staff catalog **CRUD** (`BL-CAT-014` / **S1-E-07**) and console UI (`BL-FE-CAT-001` / **S1-L-06**) per **05** / **06**; narrowed prior “admin writes later slice” wording so MVP ops can target Bearer-gated mutating methods on the same `/v1/packages` path family as public `GET`. Full hotel/airline/import depth stays **S1-E-05** / Phase **6.G**.
+- **2026-04-22** — Added **§ Gateway** + amended **§ Catalog** / **§ Catalog — internal write (MVP)** for ADR 0009 adoption (REST only on `gateway-svc`; backends gRPC-only; single-point auth at gateway). New cards driving the wire changes: `BL-GTW-001` / **S1-E-09** (gateway auth middleware), `BL-GTW-002` / **S1-E-10** (gateway catalog adapter + routing; e2e migrates to `gateway-svc:4000`), `BL-MON-001` / **S1-E-08** (monitoring migration — gRPC health + admin `/metrics`), `BL-REFACTOR-001` / **S1-E-11** (catalog REST removal), `BL-IAM-018` / **S1-E-12** (iam client-facing REST routes move to gateway). Deferred: `BL-GTW-100` (gateway↔backend trust contract). Additive per the Bump-versi rule — no consumer-breaking change until `S1-E-11` removes catalog-svc's REST package; e2e specs migrate base URL as part of `S1-E-10`.
+- **2026-04-22** — Added **§ Catalog — internal write (MVP)** + UI matrix rows for `/console/packages/...` — staff catalog **CRUD** (`BL-CAT-014` / **S1-E-07**) and console UI (`BL-FE-CAT-001` / **S1-L-06**) per **05** / **06**; narrowed prior "admin writes later slice" wording so MVP ops can target Bearer-gated mutating methods on the same `/v1/packages` path family as public `GET`. Full hotel/airline/import depth stays **S1-E-05** / Phase **6.G**.
 - **2026-04-21** — Added `§ IAM` via `S1-E-04` / `BL-IAM-004` — documents `iam.v1.IamService/ValidateToken` + `CheckPermission` + `RecordAudit` (producer-owned wire, promoted into the slice contract now that two consumers exist and `§ Inventory`'s `RecordAudit` reference is load-bearing). Also updated `§ Inventory`'s `ReleaseSeats.reason` footnote to cite the new `§ IAM` anchor rather than a bare "F1 `RecordAudit`". Additive per the Bump-versi rule; no consumer-breaking changes.
 - **2026-04-22** — Added `S1-E-01` engineering approval note under `§ Inventory` (`BL-EGV-001`): reviewed seat concurrency + transaction atomicity requirements for `ReserveSeats` / `ReleaseSeats`; gate approved with implementation deferred to `S1-E-02` / `S1-E-03`.
 - **2026-04-22** — Added `§ S1-L-01 — UI screen inventory` + shipped route shells in `apps/core-web` — closes backlog **BL-LGV-001** / task **S1-L-01** per **05** (contract bullets + components; no Figma).
