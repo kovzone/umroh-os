@@ -9,7 +9,8 @@
     page.url.pathname === '/' ||
       page.url.pathname === '/packages' ||
       /^\/packages\/[^/]+$/.test(page.url.pathname) ||
-      /^\/booking\/[^/]+$/.test(page.url.pathname)
+      /^\/booking\/[^/]+$/.test(page.url.pathname) ||
+      /^\/console(\/.*)?$/.test(page.url.pathname)
   );
 </script>
 
