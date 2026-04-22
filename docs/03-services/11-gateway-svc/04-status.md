@@ -4,16 +4,19 @@
 
 - [~] Scaffolded as a stateless REST edge proxy (no DB, no gRPC server)
 - [~] Wired into `docker-compose.dev.yml` and `monitoring/prometheus.yml`
-- [ ] First REST adapter: `iam_rest_adapter` + `GET /v1/iam/system/live` proof
-- [ ] REST adapters for the remaining 9 backends (catalog, booking, jamaah, payment, visa, ops, logistics, finance, crm) — added per backend as routing needs each one
-- [ ] Auth middleware (validate token via iam-svc, propagate branch scope) — F1.7 dependency
-- [ ] Per-route forwarding rules (`/v1/<svc>/...` → backend) — added with each adapter
+- [x] First adapter: `iam_rest_adapter` + `GET /v1/iam/system/live` proof *(interim; replaced by `iam_grpc_adapter` in `BL-GTW-001` per ADR 0009)*
+- [ ] **`iam_grpc_adapter`** — gateway's gRPC client to `iam-svc` (replaces the interim REST adapter per ADR 0009) — `BL-GTW-001` / S1-E-09
+- [ ] **Bearer-auth middleware** — extracts `Authorization: Bearer`, calls `iam.v1.IamService/ValidateToken`, fail-closed 502 on iam-svc unreachable — `BL-GTW-001` / S1-E-09
+- [ ] **`catalog_grpc_adapter`** + public REST routes (`GET /v1/packages*`, `GET /v1/package-departures/{id}`); e2e migrates to `gateway-svc:4000` — `BL-GTW-002` / S1-E-10
+- [ ] **Iam client-facing REST** (`/v1/sessions*`, `/v1/me*`, `/v1/users*`) proxied to iam gRPC — `BL-IAM-018` / S1-E-12
+- [ ] Per-backend gRPC adapters for the remaining services (booking, jamaah, payment, visa, ops, logistics, finance, crm) — opened as each consumer slice lands
+- [ ] **Trust contract (gateway↔backend)** — signed header or mTLS, closes the defense-in-depth gap — `BL-GTW-100` (deferred, later slice)
 - [ ] Grafana dashboard `gateway-svc.json` in the `UmrohOS Services` folder
 - [ ] Verified by reviewer in `testing-guide.md`
 
 ## Current status
 
-**Scaffolded** — service lives at `services/gateway-svc/`; REST on `4000`; **no database, no gRPC server**. The decision to use the **adapter pattern over REST** for backend calls (with a future gRPC swap path) was confirmed 2026-04-17.
+**Scaffolded** — service lives at `services/gateway-svc/`; REST on `4000`; **no database, no gRPC server for inbound calls** (gateway is the edge; it is itself only a REST server). Outbound to backends was originally REST-over-adapters; per ADR 0009 (2026-04-22) it transitions to **gRPC-over-adapters** — backends expose gRPC only, gateway carries a `<svc>_grpc_adapter` per backend it calls. The interim `iam_rest_adapter` is retired as `BL-GTW-001` / S1-E-09 lands.
 
 **Scaffold deliverables (this commit only):**
 
@@ -45,20 +48,23 @@ Kept (and reused as-is from iam-svc):
 |------------------|---------|
 | REST (Fiber)     | `4000`  |
 
-## Adapter pattern (REST variant)
+## Adapter pattern (REST in, gRPC out — per ADR 0009)
 
-gateway-svc introduces the **REST adapter** pattern as a first-class shape alongside the baseline's `*_grpc_adapter/`. Each backend service the gateway calls gets its own package under `services/gateway-svc/adapter/<svc>_rest_adapter/`:
+Gateway is the only REST surface in UmrohOS. For each backend it calls, it carries a **gRPC adapter** under `services/gateway-svc/adapter/<svc>_grpc_adapter/`:
 
-- `adapter.go` — `Adapter` struct (logger, tracer, `*http.Client` wrapped with `otelhttp` for trace propagation, `baseURL`); `NewAdapter(logger, tracer, baseURL) *Adapter`.
-- `<topic>.go` — typed methods that call the backend's REST endpoints and decode the response envelope into typed structs.
+- `adapter.go` — `Adapter` struct (logger, tracer, `pb.<Svc>ServiceClient` wrapped with `otelgrpc.NewClientHandler()`); `NewAdapter(logger, tracer, conn) *Adapter`.
+- `<topic>.go` — typed methods that call the backend's gRPC RPCs and translate gRPC status codes to `apperrors` sentinels for consistent Fiber rendering.
+- `pb/<svc>.proto` — local copy of the backend's proto (per ADR 0004).
 
-This commit only scaffolds the gateway shell — the first adapter (`iam_rest_adapter`) and its proxy proof endpoint land in the next commit.
+The original REST-adapter pattern (`services/gateway-svc/adapter/<svc>_rest_adapter/`) was an interim shape used during S0 scaffolding. `iam_rest_adapter` is the only concrete example today; it is replaced by `iam_grpc_adapter` as part of `BL-GTW-001` / S1-E-09 (and deleted as part of `BL-IAM-018` / S1-E-12 when iam's REST package goes away altogether).
 
 ## Next
 
-- Wire `iam_rest_adapter` + `GET /v1/iam/system/live` proxy proof.
+- Land `BL-GTW-001` / S1-E-09 — `iam_grpc_adapter` + Bearer middleware.
+- Land `BL-GTW-002` / S1-E-10 — `catalog_grpc_adapter` + public GET routes; e2e migrates to gateway.
+- Land `BL-IAM-018` / S1-E-12 — iam client-facing REST routes on gateway.
 - Add `grafana/dashboards/gateway-svc.json`.
-- Add the remaining 9 REST adapters as routing needs each one (not at scaffold time).
+- Per-backend gRPC adapters for booking / jamaah / payment / visa / ops / logistics / finance / crm — opened as each consumer slice needs them.
 
 ## 2026-04-21 — S0-J-05 OpenTelemetry baseline fix
 

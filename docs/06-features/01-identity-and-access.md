@@ -67,10 +67,10 @@ Primary personas:
 
 ### W3 — Permission check on an API call
 
-For every authenticated request:
+For every authenticated request (per ADR 0009 — authentication is single-point at gateway; permission checks remain at the backend's service layer):
 
-1. Gateway extracts bearer token and calls `iam-svc.ValidateToken` (gRPC).
-2. Service layer on the target service calls `iam-svc.CheckPermission(user_id, resource, action, scope)`.
+1. Gateway extracts the bearer token and calls `iam-svc.ValidateToken` (gRPC) — see W7 for the full edge-auth flow. On success, gateway forwards to the target backend via gRPC with the validated identity envelope.
+2. Service layer on the target backend calls `iam-svc.CheckPermission(user_id, resource, action, scope)` (gRPC).
 3. If the permission allows the action, the request proceeds. Otherwise 403 is returned (via `apperrors.ErrForbidden`).
 4. The resolution is cached in the target service for a short TTL (e.g. 60s) to avoid hammering `iam-svc`.
 5. Every successful state-changing call emits an audit log entry via `iam-svc.RecordAudit`.
@@ -95,6 +95,26 @@ The scope comes from the user's permission grant and is attached to the authenti
 3. Anomaly alerts (Should Have, module #158) surface unusually bulk operations, off-hours activity, or permission escalations.
 4. Session history (Should Have, module #159) shows per-user active sessions with user-agent and IP.
 
+### W7 — Edge auth at `gateway-svc`
+
+Per ADR 0009 (REST only at gateway; gRPC-only backends; single-point auth). This wire defines how `Authorization: Bearer` is validated exactly once, at the edge, before any backend gRPC call is made.
+
+For every authenticated request arriving at the gateway:
+
+1. Client sends an HTTP request to `gateway-svc` with `Authorization: Bearer <token>`.
+2. Gateway's Fiber middleware extracts the bearer; on missing or malformed header → 401 immediately.
+3. Middleware calls `iam-svc.ValidateToken` (gRPC, via gateway's `iam_grpc_adapter`). Typical latency: single-digit ms on the internal network.
+4. On `ValidateToken` = OK: attach the returned identity envelope (`user_id`, `branch_id`, `session_id`, `roles[]`) to the Fiber context; continue to the route handler.
+5. On `ValidateToken` = Unauthenticated: 401 with apperrors envelope `{error: {code: "unauthorized", message: ...}}`. Never default to allow.
+6. On `iam-svc` unreachable, timeout, or any other transport-level failure: 502 with `auth_unavailable` error code — **fail closed**. The client retries; gateway does not silently trust anything.
+7. Route handler forwards the request to the target backend via the appropriate `<svc>_grpc_adapter`. Backends **do not** re-validate the token (see ADR 0009 rationale and the `BL-GTW-100` trust-contract deferral).
+
+Routes tagged `security: []` in the gateway OpenAPI spec (public GETs — catalog browsing, etc.) skip this middleware entirely. See `docs/contracts/slice-S1.md` § Gateway for the route-by-route auth matrix.
+
+**Scope attached to context:** `branch_id` from the envelope is the default scope filter used by W4. Route handlers pass it down to backend gRPC calls via request fields or gRPC metadata (finalized in `BL-GTW-001` / S1-E-09 implementation).
+
+**Revocation latency (W5 interaction):** `ValidateToken` MUST check the `sessions` table, not only the PASETO signature, so a suspended-or-revoked session fails within the TTL of any inline cache in `iam-svc` (≤60s — matches the W3 permission cache guidance). Gateway does not cache auth results — every request is validated fresh. This keeps W5's 60-second revocation SLA honest.
+
 ## Acceptance criteria
 
 - A user can log in with email + password + TOTP and receive a bearer token.
@@ -105,11 +125,13 @@ The scope comes from the user's permission grant and is attached to the authenti
 - Branch-scoped queries never leak data outside the user's branch.
 - Audit log rows cannot be mutated (enforced at the DB role level or via trigger).
 - All token secrets are loaded from config (env vars in production), never hardcoded.
+- Edge-auth (W7) is the sole bearer-validation point; backends never re-validate. No protected route is reachable without first passing gateway's `iam-svc.ValidateToken` check.
 
 ## Edge cases & error paths
 
 - **Token expired** — API returns 401; client refreshes via refresh token; if refresh also expired, redirect to login.
-- **Gateway cannot reach `iam-svc`** — fail closed (401 with "auth unavailable"). Never default to allow.
+- **Gateway cannot reach `iam-svc`** — fail closed at the edge (502 `auth_unavailable`). Never default to allow. (Per ADR 0009; was 401 pre-2026-04-22 — kept distinct from 401 so clients can distinguish "token bad" from "auth layer down.")
+- **Internal call bypasses gateway** — since MVP does not implement a gateway↔backend trust contract (deferred as `BL-GTW-100`), any caller that can reach a backend's gRPC port directly is trusted. Mitigation in MVP is internal-network isolation (docker-compose network or Kubernetes NetworkPolicy); hardening is tracked in `BL-GTW-100`.
 - **User's role changes mid-session** — cached permissions auto-invalidate within 60s; very-sensitive actions (permission grants, API key rotation) force a fresh permission fetch.
 - **TOTP device lost** — admin-assisted reset: Super Admin clears the `totp_secret` column on the user row; user re-enrolls on next login. Record the reset in audit.
 - **Refresh token replay attempt** — rotation-on-use detects reuse; all of the user's sessions are revoked and a security alert is logged.
@@ -128,9 +150,9 @@ Status transitions:
 
 ## API surface (high-level)
 
-Full REST + gRPC contracts live in `docs/03-services/00-iam-svc/01-api.md`. Summary here:
+Full contracts live in `docs/03-services/00-iam-svc/01-api.md`. Per ADR 0009 all REST routes are hosted by `gateway-svc` and proxied to `iam-svc` over gRPC (delivered by `BL-IAM-018` / S1-E-12). Summary here:
 
-REST (internal console + B2C portal + B2B portal):
+REST routes on `gateway-svc` (internal console + B2C portal + B2B portal):
 - `POST /v1/sessions` — login
 - `POST /v1/sessions/refresh` — rotate
 - `DELETE /v1/sessions` — logout
@@ -140,11 +162,12 @@ REST (internal console + B2C portal + B2B portal):
 - `POST /v1/users/{id}/roles`, `DELETE /v1/users/{id}/roles/{role_id}`
 - `GET /v1/audit-logs`
 
-gRPC (service-to-service):
+gRPC methods on `iam-svc` (service-to-service; also called by gateway to serve the REST routes above):
 - `ValidateToken`
 - `CheckPermission`
 - `GetUser`
 - `RecordAudit`
+- `Login`, `RefreshSession`, `Logout`, `GetMe`, `EnrollTotp`, `VerifyTotp`, `ListUsers`, `SuspendUser`, ... — added by `BL-IAM-018` to serve the gateway REST routes.
 
 ## Dependencies
 
@@ -152,7 +175,7 @@ None. F1 is the root.
 
 ## Backend notes
 
-- Scaffold from `baseline/go-backend-template/demo-svc` — the template includes PASETO token handling in `util/token`. Reuse.
+- Per ADR 0009, `iam-svc` is gRPC-only; its scaffold baseline is `baseline/go-backend-template/demo-grpc-svc`. PASETO token handling (in `util/token`) is reused. The existing `api/rest_oapi/` package from the original `demo-svc` scaffold is removed as part of `BL-IAM-018` / S1-E-12 when client-facing auth REST routes move to `gateway-svc`.
 - Permission matrix is hot-path — benchmark the `CheckPermission` gRPC at ~5ms p95 under load. Cache per-request.
 - Audit log writes are **synchronous and atomic** with the business action they describe (revised 2026-04-21 with `BL-IAM-004`, superseding the earlier fire-and-forget/buffered-channel plan). Two emission paths:
   - **In-process** (a service auditing its own action): emit `q.InsertAuditLog(...)` inside the same `WithTx` closure that performs the state change. Business-success ↔ audit-success are atomic; a failed tx rolls back both the state change and its audit row. This is the reference pattern — see `iam-svc.SuspendUser` in `services/iam-svc/service/admin.go`.
