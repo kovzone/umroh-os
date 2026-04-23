@@ -47,8 +47,9 @@ COPY --from=build-env /app/api/main main
 # Note: config.json is mounted via docker-compose volume
 # This allows for different configs (local vs docker) without rebuilding
 
-# Expose REST (4003) and gRPC (50053)
-EXPOSE 4003 50053
+# Expose gRPC (50053). Per ADR 0009 booking-svc is gRPC-only — REST was removed
+# in BL-REFACTOR-002 / S1-E-13.
+EXPOSE 50053
 
 # Run the executable with 'start' argument
 ENTRYPOINT [ "./main", "start" ]

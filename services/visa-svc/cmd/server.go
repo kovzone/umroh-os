@@ -1,90 +1,22 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"os"
 
 	"visa-svc/api/grpc_api"
 	"visa-svc/api/grpc_api/pb"
-	"visa-svc/api/rest_oapi"
-	"visa-svc/api/rest_oapi/middleware"
-	"visa-svc/util/monitoring"
 
-	"github.com/gofiber/contrib/otelfiber/v2"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/adaptor"
-	"github.com/gofiber/fiber/v2/middleware/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	health_pb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 )
 
-// runRestServer runs the REST server using the OpenAPI-generated routes and handler.
-// visa-svc pilot scaffold exposes only the three standard scaffold endpoints:
-//
-//   - GET /system/live
-//   - GET /system/ready
-//   - GET /system/diagnostics/db-tx
-//
-// Real iam REST routes (user/role/branch/audit + auth login/refresh/logout)
-// land in F1.5–F1.11.
-func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool, serviceName string) {
-	app := fiber.New()
-
-	// CORS
-	corsConfig := cors.Config{
-		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
-	}
-	app.Use(cors.New(corsConfig))
-
-	// OpenTelemetry — start an inbound span for every request so cross-service
-	// traces initiated by an upstream caller (via W3C traceparent) continue in
-	// this process's spans instead of starting a new trace. Span names are
-	// prefixed with the service name so a multi-service trace in Tempo is easy
-	// to scan (e.g. "visa-svc GET /system/diagnostics/db-tx").
-	app.Use(otelfiber.Middleware(
-		otelfiber.WithSpanNameFormatter(func(c *fiber.Ctx) string {
-			return serviceName + " " + c.Method() + " " + c.Route().Path
-		}),
-	))
-
-	if metricsEnabled {
-		app.Use(monitoring.RecoveryMiddleware())
-		app.Use(monitoring.Middleware())
-		app.Get("/metrics", adaptor.HTTPHandler(monitoring.Handler()))
-	}
-
-	app.Use(middleware.ErrorHandler())
-
-	wrapper := rest_oapi.ServerInterfaceWrapper{Handler: api}
-
-	// System routes (probes + WithTx diagnostic)
-	system := app.Group("/system")
-	{
-		system.Get("/live", wrapper.Liveness)
-		system.Get("/ready", wrapper.Readiness)
-		system.Get("/diagnostics/db-tx", wrapper.DbTxDiagnostic)
-	}
-
-	go func() {
-		log.Printf("rest server started successfully 🚀")
-
-		err := app.Listen(fmt.Sprintf(":%d", port))
-		if err != nil {
-			log.Printf("failed to listen at port: %v!\n", port)
-			log.Printf("error: %v\n", err)
-			os.Exit(1)
-		}
-	}()
-}
-
-// runGrpcServer runs the gRPC server exposing the VisaService surface plus the
-// standard gRPC health protocol. Pilot wires a placeholder Healthz RPC;
-// ValidateToken, CheckPermission, GetUser, and RecordAudit land in F1.7.
+// runGrpcServer runs the gRPC server exposing the VisaService surface plus
+// the standard gRPC health protocol. Per ADR 0009 this is visa-svc's only
+// transport — REST was removed in BL-REFACTOR-008 / S1-E-13.
 func runGrpcServer(address string, apiServer *grpc_api.Server) *grpc.Server {
 	grpcServer := grpc.NewServer()
 
@@ -96,8 +28,8 @@ func runGrpcServer(address string, apiServer *grpc_api.Server) *grpc.Server {
 		"visa.v1.VisaService",
 		health_pb.HealthCheckResponse_SERVING,
 	)
-	// Empty service name = whole-server health. Required for grpc_health_probe's default
-	// probe (called from docker-compose healthchecks per ADR 0009 / BL-MON-001).
+	// Empty service name = whole-server health. Required for grpc_health_probe's
+	// default probe (called from docker-compose healthchecks per BL-MON-001).
 	healthServer.SetServingStatus(
 		"",
 		health_pb.HealthCheckResponse_SERVING,

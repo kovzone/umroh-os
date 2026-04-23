@@ -47,8 +47,9 @@ COPY --from=build-env /app/api/main main
 # Note: config.json is mounted via docker-compose volume
 # This allows for different configs (local vs docker) without rebuilding
 
-# Expose REST (4007) and gRPC (50057)
-EXPOSE 4007 50057
+# Expose gRPC (50057). Per ADR 0009 ops-svc is gRPC-only — REST was removed
+# in BL-REFACTOR-006 / S1-E-13.
+EXPOSE 50057
 
 # Run the executable with 'start' argument
 ENTRYPOINT [ "./main", "start" ]

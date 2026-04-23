@@ -12,10 +12,7 @@ func bindEnvironmentVariables() {
 
 	// API config
 
-	viper.BindEnv("api.rest.host", "API_REST_HOST")
-	viper.BindEnv("api.rest.port", "API_REST_PORT")
 	viper.BindEnv("api.grpc.address", "API_GRPC_ADDRESS")
-	viper.BindEnv("api.metrics.enabled", "API_METRICS_ENABLED")
 
 	// Store config
 

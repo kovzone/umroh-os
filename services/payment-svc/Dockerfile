@@ -47,8 +47,9 @@ COPY --from=build-env /app/api/main main
 # Note: config.json is mounted via docker-compose volume
 # This allows for different configs (local vs docker) without rebuilding
 
-# Expose REST (4005) and gRPC (50055)
-EXPOSE 4005 50055
+# Expose gRPC (50055). Per ADR 0009 payment-svc is gRPC-only — REST was removed
+# in BL-REFACTOR-007 / S1-E-13.
+EXPOSE 50055
 
 # Run the executable with 'start' argument
 ENTRYPOINT [ "./main", "start" ]
