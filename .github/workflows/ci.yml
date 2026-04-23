@@ -32,6 +32,7 @@ jobs:
               - 'Makefile'
               - 'migration/**'
               - 'docker-compose.dev.yml'
+              - 'docker-compose.prod.yml'
               - '.github/workflows/ci.yml'
             web:
               - 'apps/core-web/**'

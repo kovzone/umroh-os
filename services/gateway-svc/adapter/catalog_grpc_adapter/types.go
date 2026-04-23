@@ -158,3 +158,85 @@ type GetPackageParams struct {
 type GetPackageDepartureParams struct {
 	ID string
 }
+
+// ---------------------------------------------------------------------------
+// Write quartet input / output types (S1-E-07 / BL-CAT-014).
+// ---------------------------------------------------------------------------
+
+// PricingInputParam is the adapter-level (proto-free) shape for one pricing row.
+type PricingInputParam struct {
+	RoomType           string // "double" | "triple" | "quad"
+	ListAmount         int64
+	ListCurrency       string // "IDR" | "USD"
+	SettlementCurrency string // always "IDR" in MVP
+}
+
+// CreatePackageParams is the adapter input for CreatePackage.
+type CreatePackageParams struct {
+	UserID        string
+	BranchID      string
+	Kind          string
+	Name          string
+	Description   string
+	CoverPhotoURL string
+	Highlights    []string
+	ItineraryID   string
+	AirlineID     string
+	MuthawwifID   string
+	HotelIDs      []string
+	AddonIDs      []string
+	Status        string // "draft" | "active" — defaults to "draft"
+}
+
+// UpdatePackageParams is the adapter input for UpdatePackage.
+type UpdatePackageParams struct {
+	UserID        string
+	BranchID      string
+	ID            string
+	Name          string
+	Description   string
+	CoverPhotoURL string
+	Highlights    []string // nil = no change
+	ItineraryID   string
+	AirlineID     string
+	MuthawwifID   string
+	HotelIDs      []string // nil = no change; non-nil = replace
+	AddonIDs      []string // nil = no change; non-nil = replace
+	Status        string
+}
+
+// DeletePackageParams is the adapter input for DeletePackage.
+type DeletePackageParams struct {
+	UserID   string
+	BranchID string
+	ID       string
+}
+
+// DeletePackageResult is the adapter output for DeletePackage.
+type DeletePackageResult struct {
+	OK bool
+}
+
+// CreateDepartureParams is the adapter input for CreateDeparture.
+type CreateDepartureParams struct {
+	UserID        string
+	BranchID      string
+	PackageID     string
+	DepartureDate string // ISO YYYY-MM-DD
+	ReturnDate    string // ISO YYYY-MM-DD
+	TotalSeats    int32
+	Status        string // "open" | "closed"
+	Pricing       []PricingInputParam
+}
+
+// UpdateDepartureParams is the adapter input for UpdateDeparture.
+type UpdateDepartureParams struct {
+	UserID        string
+	BranchID      string
+	ID            string
+	DepartureDate string // empty = no change
+	ReturnDate    string // empty = no change
+	TotalSeats    int32  // 0 = no change
+	Status        string
+	Pricing       []PricingInputParam // nil = no change; non-nil = replace all
+}

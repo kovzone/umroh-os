@@ -31,11 +31,8 @@
 
 import { test, expect } from "@playwright/test";
 import { createApiClient } from "../lib/api-client";
-import { backendServices } from "../lib/services";
+import { gateway } from "../lib/services";
 import { withPg } from "../lib/pg-client";
-
-const iam = backendServices.find((s) => s.name === "iam-svc");
-if (!iam) throw new Error("iam-svc not in backendServices registry");
 
 const ADMIN_EMAIL = "admin@umrohos.dev";
 const ADMIN_USER_ID = "33333333-3333-3333-3333-333333333333";
@@ -45,8 +42,9 @@ const TARGET_USER_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const SHARED_PASSWORD = "password123";
 
 async function loginAdmin(): Promise<string> {
-  const api = await createApiClient(iam!.baseURL);
-  const res = await api.post("/v1/sessions", {
+  // Migrated in S1-E-12: POST /v1/auth/login on gateway-svc:4000
+  const api = await createApiClient(gateway.baseURL);
+  const res = await api.post("/v1/auth/login", {
     email: ADMIN_EMAIL,
     password: SHARED_PASSWORD,
   });
@@ -99,7 +97,7 @@ test.describe.serial("iam-svc audit emit on suspend (BL-IAM-004)", () => {
   });
 
   test("admin suspends target — audit row lands inside the same tx", async () => {
-    const api = await createApiClient(iam.baseURL, adminAccess);
+    const api = await createApiClient(gateway.baseURL, adminAccess);
     const res = await api.post(`/v1/users/${TARGET_USER_ID}/suspend`);
     expect(res.status()).toBe(200);
 
@@ -136,7 +134,7 @@ test.describe.serial("iam-svc audit emit on suspend (BL-IAM-004)", () => {
   test("re-suspending the already-suspended target still writes a second audit row (every admin action is auditable)", async () => {
     const beforeCount = await countSuspendAudits(TARGET_USER_ID);
 
-    const api = await createApiClient(iam.baseURL, adminAccess);
+    const api = await createApiClient(gateway.baseURL, adminAccess);
     const res = await api.post(`/v1/users/${TARGET_USER_ID}/suspend`);
     expect(res.status()).toBe(200);
 

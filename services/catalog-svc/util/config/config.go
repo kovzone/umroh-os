@@ -6,14 +6,19 @@ import (
 
 // Config holds all configuration for the application.
 //
-// Pilot scaffold scope: app name, REST + gRPC ports, Postgres pool, OTel
-// tracer. Token (auth) config returns with F1.5 when real login/refresh/logout
-// handlers land.
+// S1-E-07 adds `iam` section for the gRPC connection to iam-svc used by
+// staff catalog write endpoint permission gates.
 type Config struct {
 	App        App        `mapstructure:"app"`
 	Api        Api        `mapstructure:"api"`
 	Store      Store      `mapstructure:"store"`
 	OtelTracer OtelTracer `mapstructure:"otel_tracer"`
+	Iam        Iam        `mapstructure:"iam"`
+}
+
+// Iam config — gRPC connection to iam-svc for ValidateToken / CheckPermission.
+type Iam struct {
+	GrpcTarget string `mapstructure:"grpc_target"`
 }
 
 // App config

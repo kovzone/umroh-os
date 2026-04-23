@@ -23,14 +23,12 @@ import (
 )
 
 // runRestServer runs the REST server using the OpenAPI-generated routes and handler.
-// booking-svc pilot scaffold exposes only the three standard scaffold endpoints:
 //
-//   - GET /system/live
-//   - GET /system/ready
-//   - GET /system/diagnostics/db-tx
-//
-// Real iam REST routes (user/role/branch/audit + auth login/refresh/logout)
-// land in F1.5–F1.11.
+// S1 REST surface:
+//   - POST /v1/bookings        — create draft booking (S1-E-03 / BL-BOOK-001..006)
+//   - GET  /system/live        — liveness probe
+//   - GET  /system/ready       — readiness probe
+//   - GET  /system/diagnostics/db-tx — WithTx diagnostic
 func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool, serviceName string) {
 	app := fiber.New()
 
@@ -61,6 +59,9 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool,
 	app.Use(middleware.ErrorHandler())
 
 	wrapper := rest_oapi.ServerInterfaceWrapper{Handler: api}
+
+	// Booking routes (S1-E-03)
+	app.Post("/v1/bookings", wrapper.CreateDraftBooking)
 
 	// System routes (probes + WithTx diagnostic)
 	system := app.Group("/system")

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"booking-svc/adapter/catalog_grpc_adapter"
 	"booking-svc/adapter/iam_grpc_adapter"
 	"booking-svc/store/postgres_store"
 
@@ -12,34 +13,30 @@ import (
 
 // IService is the business-layer interface for booking-svc.
 //
-// Pilot scaffold surfaces only the three standard scaffold endpoints:
-//
-//   - Liveness — process is up
-//   - Readiness — process is up AND the database is reachable
-//   - DbTxDiagnostic — writes + reads inside a WithTx, the canonical reference
-//     for how services should use transactions (per docs/04-backend-conventions)
-//
-// Real iam responsibilities (user/role/branch CRUD, auth login/refresh/logout,
-// permission checks, session lifecycle, audit writes) land in F1.5–F1.11 and
-// are deliberately out of scaffold scope.
+// S1-E-03 adds CreateDraftBooking for BL-BOOK-001..006.
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
 	DbTxDiagnostic(ctx context.Context, params *DbTxDiagnosticParams) (*DbTxDiagnosticResult, error)
+
+	// Booking draft (S1-E-03 / BL-BOOK-001..006)
+	CreateDraftBooking(ctx context.Context, params *CreateDraftBookingParams) (*DraftBookingResult, error)
 }
 
-// IamClient is the slice of iam-svc the booking-svc service layer plans to
-// call once handler-side BL-BKG-* cards land. Defined as an interface (not the
-// concrete *iam_grpc_adapter.Adapter) so tests can inject a testify/mock
-// double without pulling in the gRPC proto types. The adapter satisfies it.
-//
-// Scaffolded with BL-IAM-004; no method on IService consumes it yet. The first
-// caller is S1-E-03 (booking draft create → RecordAudit + CheckPermission for
-// create_on_behalf).
+// IamClient is the slice of iam-svc the booking-svc service layer calls.
+// Defined as an interface so tests can inject a mock.
 type IamClient interface {
 	ValidateToken(ctx context.Context, params *iam_grpc_adapter.ValidateTokenParams) (*iam_grpc_adapter.ValidateTokenResult, error)
 	CheckPermission(ctx context.Context, params *iam_grpc_adapter.CheckPermissionParams) (*iam_grpc_adapter.CheckPermissionResult, error)
 	RecordAudit(ctx context.Context, params *iam_grpc_adapter.RecordAuditParams) (*iam_grpc_adapter.RecordAuditResult, error)
+}
+
+// CatalogClient is the slice of catalog-svc the booking-svc service layer calls.
+// Defined as an interface so tests can inject a mock.
+type CatalogClient interface {
+	GetDeparture(ctx context.Context, departureID string) (*catalog_grpc_adapter.GetDepartureResult, error)
+	ReserveSeats(ctx context.Context, params *catalog_grpc_adapter.ReserveSeatsParams) (*catalog_grpc_adapter.ReserveSeatsResult, error)
+	ReleaseSeats(ctx context.Context, params *catalog_grpc_adapter.ReleaseSeatsParams) (*catalog_grpc_adapter.ReleaseSeatsResult, error)
 }
 
 type Service struct {
@@ -53,9 +50,11 @@ type Service struct {
 	store postgres_store.IStore
 
 	// iamClient is the consumer-side wrapper around iam-svc's gRPC surface.
-	// Held here so future booking handlers can call ValidateToken / CheckPermission
-	// / RecordAudit without another constructor refactor when S1-E-03 lands.
 	iamClient IamClient
+
+	// catalogClient is the consumer-side wrapper around catalog-svc's gRPC surface.
+	// Used by CreateDraftBooking to validate departure and reserve seats.
+	catalogClient CatalogClient
 }
 
 func NewService(
@@ -64,12 +63,14 @@ func NewService(
 	appName string,
 	store postgres_store.IStore,
 	iamClient IamClient,
+	catalogClient CatalogClient,
 ) IService {
 	return &Service{
-		logger:    logger,
-		tracer:    tracer,
-		appName:   appName,
-		store:     store,
-		iamClient: iamClient,
+		logger:        logger,
+		tracer:        tracer,
+		appName:       appName,
+		store:         store,
+		iamClient:     iamClient,
+		catalogClient: catalogClient,
 	}
 }

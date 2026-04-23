@@ -32,5 +32,8 @@
   },
   "iam": {
     "grpc_target": "iam-svc:50051"
+  },
+  "catalog": {
+    "grpc_target": "catalog-svc:50052"
   }
 }

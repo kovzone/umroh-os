@@ -1,0 +1,396 @@
+# Production stack (Nginx on host maps :80→3001, :4000→4001 — see provision-server.sh).
+# Usage: docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+# First-time / upgrades: ./docs/deployment/deploy-prod.sh
+name: umrohos
+
+x-be-depends: &be_dep
+  depends_on:
+    postgres:
+      condition: service_healthy
+    otel-collector:
+      condition: service_started
+
+x-log-driver: &log_driver
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+x-be-common: &be_common
+  restart: unless-stopped
+  env_file: .env.prod
+  <<: *log_driver
+
+services:
+  # ────────────────────────────────────────────────────────────────────
+  # Database
+  # ────────────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-umrohos}
+    volumes:
+      - postgres-prod-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+    mem_limit: 512m
+    networks: [umrohos-network]
+    <<: *log_driver
+
+  # ────────────────────────────────────────────────────────────────────
+  # Observability stack
+  # ────────────────────────────────────────────────────────────────────
+  otel-collector:
+    image: otel/opentelemetry-collector:0.97.0
+    container_name: otel-collector
+    command: ["--config=/etc/otel/otel-config.yaml"]
+    volumes:
+      - ./monitoring/otel-collector-config.prod.yaml:/etc/otel/otel-config.yaml:ro
+    restart: unless-stopped
+    mem_limit: 128m
+    networks: [umrohos-network]
+    <<: *log_driver
+
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+      - --storage.tsdb.retention.time=15d
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-prod-data:/prometheus
+    # Internal only — access via SSH tunnel: ssh -L 9090:localhost:9090 infra@216.176.238.161
+    expose: ["9090"]
+    restart: unless-stopped
+    mem_limit: 256m
+    networks: [umrohos-network]
+    <<: *log_driver
+
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: "http://localhost:3000"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafana-prod-data:/var/lib/grafana
+    # Internal only — access via SSH tunnel: ssh -L 3000:localhost:3000 infra@216.176.238.161
+    expose: ["3000"]
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    restart: unless-stopped
+    mem_limit: 256m
+    networks: [umrohos-network]
+    <<: *log_driver
+
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./monitoring/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki-prod-data:/loki
+    expose: ["3100"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+    mem_limit: 256m
+    networks: [umrohos-network]
+    <<: *log_driver
+
+  tempo:
+    image: grafana/tempo:2.3.0
+    container_name: tempo
+    command: -config.file=/etc/tempo/tempo-config.yaml
+    volumes:
+      - ./monitoring/tempo-config.yaml:/etc/tempo/tempo-config.yaml:ro
+      - tempo-prod-data:/var/tempo
+    expose: ["3200"]
+    restart: unless-stopped
+    mem_limit: 256m
+    networks: [umrohos-network]
+    <<: *log_driver
+
+  fluent-bit:
+    image: fluent/fluent-bit:3.2
+    container_name: fluent-bit
+    volumes:
+      - ./monitoring/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./monitoring/fluent-bit-parsers.conf:/fluent-bit/etc/parsers.conf:ro
+    expose: ["24224"]
+    depends_on:
+      loki:
+        condition: service_healthy
+    restart: unless-stopped
+    mem_limit: 128m
+    networks: [umrohos-network]
+    <<: *log_driver
+
+  # ────────────────────────────────────────────────────────────────────
+  # Migration (run once via --profile tooling)
+  # docker compose -f docker-compose.prod.yml --env-file .env.prod --profile tooling run --rm migrate
+  # ────────────────────────────────────────────────────────────────────
+  migrate:
+    image: migrate/migrate:v4.18.0
+    container_name: umrohos-migrate
+    profiles: [tooling]
+    env_file: .env.prod
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    volumes:
+      - ./migration:/migrations:ro
+    command: ["-path", "/migrations", "-database", "${DATABASE_URL}", "up"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [umrohos-network]
+    restart: "no"
+
+  # ────────────────────────────────────────────────────────────────────
+  # Backend services (gRPC only, internal network)
+  # ────────────────────────────────────────────────────────────────────
+  iam-svc:
+    build: {context: ., dockerfile: services/iam-svc/Dockerfile}
+    image: iam-svc:prod
+    container_name: iam-svc
+    volumes: [./services/iam-svc/config.json.sample:/app/config.json:ro]
+    <<: [*be_dep, *be_common]
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50051"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    mem_limit: 256m
+    networks: [umrohos-network]
+
+  catalog-svc:
+    build: {context: ., dockerfile: services/catalog-svc/Dockerfile}
+    image: catalog-svc:prod
+    container_name: catalog-svc
+    volumes: [./services/catalog-svc/config.json.sample:/app/config.json:ro]
+    <<: [*be_dep, *be_common]
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50052"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    mem_limit: 256m
+    networks: [umrohos-network]
+
+  booking-svc:
+    build: {context: ., dockerfile: services/booking-svc/Dockerfile}
+    image: booking-svc:prod
+    container_name: booking-svc
+    volumes: [./services/booking-svc/config.json.sample:/app/config.json:ro]
+    <<: [*be_dep, *be_common]
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50053"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    mem_limit: 256m
+    networks: [umrohos-network]
+
+  jamaah-svc:
+    build: {context: ., dockerfile: services/jamaah-svc/Dockerfile}
+    image: jamaah-svc:prod
+    container_name: jamaah-svc
+    volumes: [./services/jamaah-svc/config.json.sample:/app/config.json:ro]
+    <<: [*be_dep, *be_common]
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50054"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    mem_limit: 256m
+    networks: [umrohos-network]
+
+  payment-svc:
+    build: {context: ., dockerfile: services/payment-svc/Dockerfile}
+    image: payment-svc:prod
+    container_name: payment-svc
+    volumes: [./services/payment-svc/config.json.sample:/app/config.json:ro]
+    <<: [*be_dep, *be_common]
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50055"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    mem_limit: 256m
+    networks: [umrohos-network]
+
+  visa-svc:
+    build: {context: ., dockerfile: services/visa-svc/Dockerfile}
+    image: visa-svc:prod
+    container_name: visa-svc
+    volumes: [./services/visa-svc/config.json.sample:/app/config.json:ro]
+    <<: [*be_dep, *be_common]
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50056"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    mem_limit: 256m
+    networks: [umrohos-network]
+
+  ops-svc:
+    build: {context: ., dockerfile: services/ops-svc/Dockerfile}
+    image: ops-svc:prod
+    container_name: ops-svc
+    volumes: [./services/ops-svc/config.json.sample:/app/config.json:ro]
+    <<: [*be_dep, *be_common]
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50057"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    mem_limit: 256m
+    networks: [umrohos-network]
+
+  logistics-svc:
+    build: {context: ., dockerfile: services/logistics-svc/Dockerfile}
+    image: logistics-svc:prod
+    container_name: logistics-svc
+    volumes: [./services/logistics-svc/config.json.sample:/app/config.json:ro]
+    <<: [*be_dep, *be_common]
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50058"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    mem_limit: 256m
+    networks: [umrohos-network]
+
+  finance-svc:
+    build: {context: ., dockerfile: services/finance-svc/Dockerfile}
+    image: finance-svc:prod
+    container_name: finance-svc
+    volumes: [./services/finance-svc/config.json.sample:/app/config.json:ro]
+    <<: [*be_dep, *be_common]
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50059"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    mem_limit: 256m
+    networks: [umrohos-network]
+
+  crm-svc:
+    build: {context: ., dockerfile: services/crm-svc/Dockerfile}
+    image: crm-svc:prod
+    container_name: crm-svc
+    volumes: [./services/crm-svc/config.json.sample:/app/config.json:ro]
+    <<: [*be_dep, *be_common]
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50060"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    mem_limit: 256m
+    networks: [umrohos-network]
+
+  # ────────────────────────────────────────────────────────────────────
+  # API Gateway — expose port 4001 to host (Nginx proxies :4000 → :4001)
+  # ────────────────────────────────────────────────────────────────────
+  gateway-svc:
+    build: {context: ., dockerfile: services/gateway-svc/Dockerfile}
+    image: gateway-svc:prod
+    container_name: gateway-svc
+    volumes: [./services/gateway-svc/config.json.sample:/app/config.json:ro]
+    ports: ["4001:4000"]
+    depends_on:
+      otel-collector: {condition: service_started}
+      iam-svc: {condition: service_healthy}
+      catalog-svc: {condition: service_healthy}
+      booking-svc: {condition: service_healthy}
+      jamaah-svc: {condition: service_healthy}
+      payment-svc: {condition: service_healthy}
+      visa-svc: {condition: service_healthy}
+      ops-svc: {condition: service_healthy}
+      logistics-svc: {condition: service_healthy}
+      finance-svc: {condition: service_healthy}
+      crm-svc: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4000/system/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+    mem_limit: 512m
+    env_file: .env.prod
+    networks: [umrohos-network]
+    <<: *log_driver
+
+  # ────────────────────────────────────────────────────────────────────
+  # Frontend — expose port 3001 to host (Nginx proxies :80 → :3001)
+  # ────────────────────────────────────────────────────────────────────
+  core-web:
+    build:
+      context: .
+      dockerfile: apps/core-web/Dockerfile
+      target: prod
+      args:
+        VITE_GATEWAY_URL: ${VITE_PUBLIC_GATEWAY_URL}
+        VITE_CATALOG_API_BASE_URL: ${VITE_PUBLIC_GATEWAY_URL}
+        VITE_BOOKING_API_BASE_URL: ${VITE_PUBLIC_GATEWAY_URL}
+        VITE_USE_CATALOG_MOCK: "false"
+        VITE_USE_BOOKING_MOCK: "false"
+    image: core-web:prod
+    container_name: core-web
+    ports: ["3001:3000"]
+    environment:
+      APP_NAME: core-web
+      IAM_API_BASE_URL: http://gateway-svc:4000
+    depends_on:
+      gateway-svc: {condition: service_healthy}
+    restart: unless-stopped
+    mem_limit: 256m
+    env_file: .env.prod
+    networks: [umrohos-network]
+    <<: *log_driver
+
+networks:
+  umrohos-network:
+    name: umrohos-prod
+    driver: bridge
+
+volumes:
+  postgres-prod-data:
+  prometheus-prod-data:
+  grafana-prod-data:
+  loki-prod-data:
+  tempo-prod-data:

@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"time"
 
+	"booking-svc/adapter/catalog_grpc_adapter"
 	"booking-svc/adapter/iam_grpc_adapter"
 	"booking-svc/api/grpc_api"
 	"booking-svc/api/rest_oapi"
@@ -123,8 +124,34 @@ func start() {
 	}()
 	iamAdapter := iam_grpc_adapter.NewAdapter(logger, tracer, iamConn)
 
+	// --- Dial catalog-svc gRPC (S1-E-03 / BL-BOOK-004) ---
+	//
+	// Used by CreateDraftBooking to validate departures (GetPackageDeparture) and
+	// reserve seats atomically (ReserveSeats). Traffic stays inside the
+	// docker-compose network — insecure is acceptable until gateway mTLS lands.
+	catalogConn, err := grpc.NewClient(
+		config.Catalog.GrpcTarget,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Dial catalog-svc gRPC").
+			Str("target", config.Catalog.GrpcTarget).
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+	defer func() {
+		if err := catalogConn.Close(); err != nil {
+			logger.Error().Err(err).Msg("close catalog gRPC conn")
+		}
+	}()
+	catalogAdapter := catalog_grpc_adapter.NewAdapter(logger, tracer, catalogConn)
+
 	// --- Init service layer ---
-	svc := service.NewService(logger, tracer, config.App.Name, store, iamAdapter)
+	svc := service.NewService(logger, tracer, config.App.Name, store, iamAdapter, catalogAdapter)
 
 	// --- Init API layers ---
 	restServer := rest_oapi.NewServer(logger, tracer, svc)

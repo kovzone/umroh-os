@@ -139,6 +139,9 @@ type PackageDetail struct {
 	Description   string             `json:"description"`
 	Highlights    []string           `json:"highlights"`
 	CoverPhotoUrl string             `json:"cover_photo_url"`
+	// Status is populated for staff write responses; empty for public read
+	// (public read only surfaces active packages so status is implicit).
+	Status        string             `json:"status,omitempty"`
 	Itinerary     *Itinerary         `json:"itinerary,omitempty"`
 	Airline       *AirlineRef        `json:"airline,omitempty"`
 	Muthawwif     *MuthawwifRef      `json:"muthawwif,omitempty"`

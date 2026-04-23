@@ -29,5 +29,8 @@
   "otel_tracer": {
     "name": "catalog-svc-tracer",
     "endpoint": "otel-collector:4317"
+  },
+  "iam": {
+    "grpc_target": "iam-svc:50051"
   }
 }

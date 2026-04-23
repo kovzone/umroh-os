@@ -1,18 +1,21 @@
 openapi: 3.0.3
 info:
   title: catalog-svc API
-  version: 0.2.0
+  version: 0.3.0
   description: |
     Product catalog + master data endpoints for UmrohOS (F2).
 
-    Current scope (S1-E-02 / BL-CAT-001 + BL-CAT-002):
+    Current scope (S1-E-02 / BL-CAT-001 + BL-CAT-002 + S1-E-07 / BL-CAT-014):
       - System probes: `/system/live`, `/system/ready`, `/system/diagnostics/db-tx`
       - Public catalog read: `GET /v1/packages` (list), `GET /v1/packages/{id}` (detail)
       - Public departure read: `GET /v1/package-departures/{id}` (departure detail with live seat math)
+      - Staff catalog write (Bearer + catalog_manager/admin permission):
+          `POST /v1/packages`, `PUT /v1/packages/{id}`,
+          `POST /v1/packages/{id}/departures`, `PUT /v1/package-departures/{id}`
 
-    All `/v1/packages*` and `/v1/package-departures*` endpoints are **public** —
-    no bearer required. Admin write endpoints (`POST`/`PATCH`/`DELETE`) and bulk
-    import/export land in later slice cards (`S1-E-05`).
+    All `/v1/packages*` and `/v1/package-departures*` GET endpoints are **public** —
+    no bearer required. Mutating routes (POST/PUT) require `Authorization: Bearer` and
+    the `catalog.package.manage` permission enforced at the service layer via iam-svc.
 
     Wire shapes, ULID prefixes (`pkg_`, `dep_`, `itn_`, `htl_`, `arl_`,
     `mtw_`, `addon_`), Q001 currency handling (`list_currency`, `settlement_
@@ -91,6 +94,55 @@ paths:
 
   # ── Public catalog (§ Catalog) ────────────────────────────────────────
   /v1/packages:
+    post:
+      tags:
+        - Packages
+        - Staff
+      summary: Create package (staff only)
+      description: |
+        Staff-only endpoint. Requires `Authorization: Bearer` with a valid PASETO/JWT.
+        Permission `catalog.package.manage` is enforced server-side via iam-svc.CheckPermission.
+        New packages default to `status = draft` unless `status = active` is explicitly supplied.
+      operationId: createPackage
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePackageRequest"
+      responses:
+        "201":
+          description: Package created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffPackageResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient permission (`catalog.package.manage` not held)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     get:
       tags:
         - Packages
@@ -183,6 +235,68 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 
   /v1/packages/{id}:
+    put:
+      tags:
+        - Packages
+        - Staff
+      summary: Update package (staff only)
+      description: |
+        Staff-only endpoint. Partial update — only supplied fields are changed.
+        Requires `Authorization: Bearer` and `catalog.package.manage` permission.
+        `status` transitions: draft→active, active→draft, active→archived are allowed.
+      operationId: updatePackage
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Package ULID, `pkg_`-prefixed.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePackageRequest"
+      responses:
+        "200":
+          description: Package updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffPackageResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient permission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Package not found (`package_not_found`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     get:
       tags:
         - Packages
@@ -228,7 +342,134 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/packages/{id}/departures:
+    post:
+      tags:
+        - Packages
+        - Staff
+      summary: Add departure to package (staff only)
+      description: |
+        Staff-only endpoint. Creates a new departure under an existing package.
+        Requires `Authorization: Bearer` and `catalog.package.manage` permission.
+        The package must exist (any non-deleted status).
+      operationId: createDeparture
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Package ULID (`pkg_`-prefixed) to attach departure to.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDepartureRequest"
+      responses:
+        "201":
+          description: Departure created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffDepartureResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient permission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Package not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/package-departures/{id}:
+    put:
+      tags:
+        - Packages
+        - Staff
+      summary: Update departure (staff only)
+      description: |
+        Staff-only endpoint. Partial update — only supplied fields are changed.
+        Requires `Authorization: Bearer` and `catalog.package.manage` permission.
+        `status` transitions allowed: open↔closed, open/closed→cancelled.
+        If `pricing` is provided it replaces all pricing rows atomically.
+      operationId: updateDeparture
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Departure ULID, `dep_`-prefixed.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDepartureRequest"
+      responses:
+        "200":
+          description: Departure updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffDepartureResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Insufficient permission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Departure not found (`departure_not_found`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     get:
       tags:
         - Packages
@@ -790,3 +1031,269 @@ components:
       properties:
         package:
           $ref: "#/components/schemas/PackageDetail"
+
+    # ── Staff catalog write schemas (S1-E-07 / BL-CAT-014) ───────────────
+
+    PricingInput:
+      type: object
+      required:
+        - room_type
+        - list_amount
+      properties:
+        room_type:
+          $ref: "#/components/schemas/RoomType"
+        list_amount:
+          type: integer
+          format: int64
+          minimum: 0
+          example: 38500000
+        list_currency:
+          type: string
+          default: "IDR"
+          example: IDR
+        settlement_currency:
+          type: string
+          default: "IDR"
+          enum: [IDR]
+          example: IDR
+
+    # Staff package detail — same fields as public PackageDetail but
+    # also surfaces draft/archived status so staff can see own work.
+    StaffPackageDetail:
+      type: object
+      required:
+        - id
+        - kind
+        - name
+        - description
+        - highlights
+        - cover_photo_url
+        - hotels
+        - add_ons
+        - departures
+        - status
+      properties:
+        id:
+          type: string
+          example: pkg_01JCDE00000000000000000000
+        kind:
+          $ref: "#/components/schemas/PackageKind"
+        name:
+          type: string
+        description:
+          type: string
+        highlights:
+          type: array
+          items:
+            type: string
+        cover_photo_url:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, archived]
+        itinerary:
+          allOf:
+            - $ref: "#/components/schemas/Itinerary"
+          nullable: true
+        hotels:
+          type: array
+          items:
+            $ref: "#/components/schemas/HotelRef"
+        airline:
+          allOf:
+            - $ref: "#/components/schemas/AirlineRef"
+          nullable: true
+        muthawwif:
+          allOf:
+            - $ref: "#/components/schemas/MuthawwifRef"
+          nullable: true
+        add_ons:
+          type: array
+          items:
+            $ref: "#/components/schemas/AddonRef"
+        departures:
+          type: array
+          items:
+            $ref: "#/components/schemas/DepartureSummary"
+
+    StaffPackageResponse:
+      type: object
+      required:
+        - package
+      properties:
+        package:
+          $ref: "#/components/schemas/StaffPackageDetail"
+
+    # Staff departure detail — same as public DepartureDetail but surfaces
+    # all status values (including departed/completed/cancelled).
+    StaffDepartureDetail:
+      type: object
+      required:
+        - id
+        - package_id
+        - departure_date
+        - return_date
+        - total_seats
+        - remaining_seats
+        - status
+        - pricing
+        - vendor_readiness
+      properties:
+        id:
+          type: string
+          example: dep_01JCDF00000000000000000001
+        package_id:
+          type: string
+          example: pkg_01JCDE00000000000000000001
+        departure_date:
+          type: string
+          format: date
+        return_date:
+          type: string
+          format: date
+        total_seats:
+          type: integer
+          minimum: 0
+        remaining_seats:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum: [open, closed, departed, completed, cancelled]
+        pricing:
+          type: array
+          items:
+            $ref: "#/components/schemas/PackagePricing"
+        vendor_readiness:
+          $ref: "#/components/schemas/VendorReadiness"
+
+    StaffDepartureResponse:
+      type: object
+      required:
+        - departure
+      properties:
+        departure:
+          $ref: "#/components/schemas/StaffDepartureDetail"
+
+    CreatePackageRequest:
+      type: object
+      required:
+        - kind
+        - name
+        - description
+        - cover_photo_url
+      properties:
+        kind:
+          $ref: "#/components/schemas/PackageKind"
+        name:
+          type: string
+        description:
+          type: string
+        cover_photo_url:
+          type: string
+        highlights:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [draft, active]
+          default: draft
+        itinerary_id:
+          type: string
+        airline_id:
+          type: string
+        muthawwif_id:
+          type: string
+        hotel_ids:
+          type: array
+          items:
+            type: string
+        addon_ids:
+          type: array
+          items:
+            type: string
+
+    UpdatePackageRequest:
+      type: object
+      description: All fields optional — only supplied fields are changed.
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        cover_photo_url:
+          type: string
+        highlights:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [draft, active, archived]
+        itinerary_id:
+          type: string
+        airline_id:
+          type: string
+        muthawwif_id:
+          type: string
+        hotel_ids:
+          type: array
+          items:
+            type: string
+        addon_ids:
+          type: array
+          items:
+            type: string
+
+    CreateDepartureRequest:
+      type: object
+      required:
+        - departure_date
+        - return_date
+        - total_seats
+      properties:
+        departure_date:
+          type: string
+          format: date
+        return_date:
+          type: string
+          format: date
+        total_seats:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum: [open, closed]
+          default: open
+        pricing:
+          type: array
+          items:
+            $ref: "#/components/schemas/PricingInput"
+
+    UpdateDepartureRequest:
+      type: object
+      description: All fields optional — only supplied fields are changed. If `pricing` is present it replaces all pricing rows.
+      properties:
+        departure_date:
+          type: string
+          format: date
+        return_date:
+          type: string
+          format: date
+        total_seats:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum: [open, closed, cancelled]
+        pricing:
+          type: array
+          items:
+            $ref: "#/components/schemas/PricingInput"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: PASETO

@@ -7,14 +7,17 @@ import (
 	"os/signal"
 	"time"
 
+	"catalog-svc/adapter/iam_grpc_adapter"
 	"catalog-svc/api/grpc_api"
-	"catalog-svc/api/rest_oapi"
 	"catalog-svc/service"
 	"catalog-svc/store/postgres_store"
 	"catalog-svc/util/config"
 	"catalog-svc/util/logging"
 	"catalog-svc/util/monitoring"
 	"catalog-svc/util/tracing"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func start() {
@@ -90,15 +93,42 @@ func start() {
 		}, 10*time.Second)
 	}
 
+	// --- Dial iam-svc gRPC (S1-E-07 / BL-CAT-014) ---
+	//
+	// catalog-svc needs to call iam-svc to ValidateToken + CheckPermission for
+	// every staff catalog write RPC. Traffic stays inside the docker-compose
+	// network — insecure credentials are fine for the pilot.
+	iamConn, err := grpc.NewClient(
+		config.Iam.GrpcTarget,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Dial iam-svc gRPC").
+			Str("target", config.Iam.GrpcTarget).
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+	defer func() {
+		if err := iamConn.Close(); err != nil {
+			logger.Error().Err(err).Msg("close iam gRPC conn")
+		}
+	}()
+	iamAdapter := iam_grpc_adapter.NewAdapter(logger, tracer, iamConn)
+
 	// --- Init service layer ---
 	svc := service.NewService(logger, tracer, config.App.Name, store)
 
 	// --- Init API layers ---
-	restServer := rest_oapi.NewServer(logger, tracer, svc)
-	grpcServer := grpc_api.NewServer(logger, tracer, svc)
+	// Per ADR 0009 / BL-REFACTOR-001 (S1-E-11), catalog-svc is gRPC-only.
+	// The REST server has been retired; all external reads go through gateway-svc.
+	// The iamAdapter is passed to the gRPC server so catalog write RPCs can gate
+	// on catalog.package.manage permission (S1-E-07 / BL-CAT-014).
+	grpcServer := grpc_api.NewServer(logger, tracer, svc, iamAdapter)
 
-	// --- Run servers ---
-	runRestServer(config.Api.Rest.Port, restServer, config.Api.Metrics.Enabled, config.OtelTracer.Name)
+	// --- Run server (gRPC only) ---
 	runGrpcServer(config.Api.Grpc.Address, grpcServer)
 
 	// --- Wait for signal ---

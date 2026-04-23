@@ -22,6 +22,15 @@ const (
 	IamService_ValidateToken_FullMethodName   = "/pb.IamService/ValidateToken"
 	IamService_CheckPermission_FullMethodName = "/pb.IamService/CheckPermission"
 	IamService_RecordAudit_FullMethodName     = "/pb.IamService/RecordAudit"
+
+	// Auth RPCs (BL-IAM-018 / S1-E-12)
+	IamService_Login_FullMethodName          = "/pb.IamService/Login"
+	IamService_RefreshSession_FullMethodName = "/pb.IamService/RefreshSession"
+	IamService_Logout_FullMethodName         = "/pb.IamService/Logout"
+	IamService_GetMe_FullMethodName          = "/pb.IamService/GetMe"
+	IamService_EnrollTOTP_FullMethodName     = "/pb.IamService/EnrollTOTP"
+	IamService_VerifyTOTP_FullMethodName     = "/pb.IamService/VerifyTOTP"
+	IamService_SuspendUser_FullMethodName    = "/pb.IamService/SuspendUser"
 )
 
 // IamServiceClient is the client API for IamService service.
@@ -31,6 +40,15 @@ type IamServiceClient interface {
 	ValidateToken(ctx context.Context, in *ValidateTokenRequest, opts ...grpc.CallOption) (*ValidateTokenResponse, error)
 	CheckPermission(ctx context.Context, in *CheckPermissionRequest, opts ...grpc.CallOption) (*CheckPermissionResponse, error)
 	RecordAudit(ctx context.Context, in *RecordAuditRequest, opts ...grpc.CallOption) (*RecordAuditResponse, error)
+
+	// Auth RPCs (BL-IAM-018 / S1-E-12)
+	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
+	RefreshSession(ctx context.Context, in *RefreshSessionRequest, opts ...grpc.CallOption) (*RefreshSessionResponse, error)
+	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error)
+	GetMe(ctx context.Context, in *GetMeRequest, opts ...grpc.CallOption) (*GetMeResponse, error)
+	EnrollTOTP(ctx context.Context, in *EnrollTOTPRequest, opts ...grpc.CallOption) (*EnrollTOTPResponse, error)
+	VerifyTOTP(ctx context.Context, in *VerifyTOTPRequest, opts ...grpc.CallOption) (*VerifyTOTPResponse, error)
+	SuspendUser(ctx context.Context, in *SuspendUserRequest, opts ...grpc.CallOption) (*SuspendUserResponse, error)
 }
 
 type iamServiceClient struct {
@@ -65,6 +83,78 @@ func (c *iamServiceClient) RecordAudit(ctx context.Context, in *RecordAuditReque
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RecordAuditResponse)
 	err := c.cc.Invoke(ctx, IamService_RecordAudit_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Auth RPC client implementations (BL-IAM-018 / S1-E-12)
+
+func (c *iamServiceClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LoginResponse)
+	err := c.cc.Invoke(ctx, IamService_Login_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *iamServiceClient) RefreshSession(ctx context.Context, in *RefreshSessionRequest, opts ...grpc.CallOption) (*RefreshSessionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RefreshSessionResponse)
+	err := c.cc.Invoke(ctx, IamService_RefreshSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *iamServiceClient) Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LogoutResponse)
+	err := c.cc.Invoke(ctx, IamService_Logout_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *iamServiceClient) GetMe(ctx context.Context, in *GetMeRequest, opts ...grpc.CallOption) (*GetMeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMeResponse)
+	err := c.cc.Invoke(ctx, IamService_GetMe_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *iamServiceClient) EnrollTOTP(ctx context.Context, in *EnrollTOTPRequest, opts ...grpc.CallOption) (*EnrollTOTPResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EnrollTOTPResponse)
+	err := c.cc.Invoke(ctx, IamService_EnrollTOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *iamServiceClient) VerifyTOTP(ctx context.Context, in *VerifyTOTPRequest, opts ...grpc.CallOption) (*VerifyTOTPResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VerifyTOTPResponse)
+	err := c.cc.Invoke(ctx, IamService_VerifyTOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *iamServiceClient) SuspendUser(ctx context.Context, in *SuspendUserRequest, opts ...grpc.CallOption) (*SuspendUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SuspendUserResponse)
+	err := c.cc.Invoke(ctx, IamService_SuspendUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}

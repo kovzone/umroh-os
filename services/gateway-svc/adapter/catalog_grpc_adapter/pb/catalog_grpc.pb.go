@@ -3,6 +3,11 @@
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v6.32.1
 // source: catalog.proto
+//
+// Hand-extended in S1-E-07 / BL-CAT-014: write quartet (CreatePackage,
+// UpdatePackage, DeletePackage, CreateDeparture, UpdateDeparture) added to
+// CatalogServiceClient interface and catalogServiceClient. The gateway uses
+// this client to forward write requests to catalog-svc over gRPC.
 
 package pb
 
@@ -19,10 +24,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CatalogService_Healthz_FullMethodName             = "/pb.CatalogService/Healthz"
-	CatalogService_ListPackages_FullMethodName        = "/pb.CatalogService/ListPackages"
-	CatalogService_GetPackage_FullMethodName          = "/pb.CatalogService/GetPackage"
-	CatalogService_GetPackageDeparture_FullMethodName = "/pb.CatalogService/GetPackageDeparture"
+	CatalogService_Healthz_FullMethodName              = "/pb.CatalogService/Healthz"
+	CatalogService_ListPackages_FullMethodName         = "/pb.CatalogService/ListPackages"
+	CatalogService_GetPackage_FullMethodName           = "/pb.CatalogService/GetPackage"
+	CatalogService_GetPackageDeparture_FullMethodName  = "/pb.CatalogService/GetPackageDeparture"
+	// Write quartet (S1-E-07 / BL-CAT-014) — hand-extended.
+	CatalogService_CreatePackage_FullMethodName   = "/pb.CatalogService/CreatePackage"
+	CatalogService_UpdatePackage_FullMethodName   = "/pb.CatalogService/UpdatePackage"
+	CatalogService_DeletePackage_FullMethodName   = "/pb.CatalogService/DeletePackage"
+	CatalogService_CreateDeparture_FullMethodName = "/pb.CatalogService/CreateDeparture"
+	CatalogService_UpdateDeparture_FullMethodName = "/pb.CatalogService/UpdateDeparture"
 )
 
 // CatalogServiceClient is the client API for CatalogService service.
@@ -60,6 +71,12 @@ type CatalogServiceClient interface {
 	// Returns NOT_FOUND for departed/completed/cancelled/unknown.
 	// Mirrors GET /v1/package-departures/{id}.
 	GetPackageDeparture(ctx context.Context, in *GetPackageDepartureRequest, opts ...grpc.CallOption) (*GetPackageDepartureResponse, error)
+	// Staff write quartet (S1-E-07 / BL-CAT-014) — hand-extended.
+	CreatePackage(ctx context.Context, in *CreatePackageRequest, opts ...grpc.CallOption) (*CreatePackageResponse, error)
+	UpdatePackage(ctx context.Context, in *UpdatePackageRequest, opts ...grpc.CallOption) (*UpdatePackageResponse, error)
+	DeletePackage(ctx context.Context, in *DeletePackageRequest, opts ...grpc.CallOption) (*DeletePackageResponse, error)
+	CreateDeparture(ctx context.Context, in *CreateDepartureRequest, opts ...grpc.CallOption) (*CreateDepartureResponse, error)
+	UpdateDeparture(ctx context.Context, in *UpdateDepartureRequest, opts ...grpc.CallOption) (*UpdateDepartureResponse, error)
 }
 
 type catalogServiceClient struct {
@@ -104,6 +121,58 @@ func (c *catalogServiceClient) GetPackageDeparture(ctx context.Context, in *GetP
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetPackageDepartureResponse)
 	err := c.cc.Invoke(ctx, CatalogService_GetPackageDeparture_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Write quartet client implementations (S1-E-07 / BL-CAT-014 — hand-extended).
+
+func (c *catalogServiceClient) CreatePackage(ctx context.Context, in *CreatePackageRequest, opts ...grpc.CallOption) (*CreatePackageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreatePackageResponse)
+	err := c.cc.Invoke(ctx, CatalogService_CreatePackage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogServiceClient) UpdatePackage(ctx context.Context, in *UpdatePackageRequest, opts ...grpc.CallOption) (*UpdatePackageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdatePackageResponse)
+	err := c.cc.Invoke(ctx, CatalogService_UpdatePackage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogServiceClient) DeletePackage(ctx context.Context, in *DeletePackageRequest, opts ...grpc.CallOption) (*DeletePackageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeletePackageResponse)
+	err := c.cc.Invoke(ctx, CatalogService_DeletePackage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogServiceClient) CreateDeparture(ctx context.Context, in *CreateDepartureRequest, opts ...grpc.CallOption) (*CreateDepartureResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateDepartureResponse)
+	err := c.cc.Invoke(ctx, CatalogService_CreateDeparture_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogServiceClient) UpdateDeparture(ctx context.Context, in *UpdateDepartureRequest, opts ...grpc.CallOption) (*UpdateDepartureResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateDepartureResponse)
+	err := c.cc.Invoke(ctx, CatalogService_UpdateDeparture_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}

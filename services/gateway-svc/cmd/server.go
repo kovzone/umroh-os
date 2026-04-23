@@ -16,14 +16,28 @@ import (
 )
 
 // runRestServer runs the REST server using the OpenAPI-generated routes and handler.
-// gateway-svc scaffold exposes 12 endpoints:
 //
-//   - GET /system/live, /system/ready (own probes)
-//   - GET /v1/<svc>/system/live for each of the 10 backends (proxies via REST adapters)
+// Route topology (per ADR 0009 / BL-GTW-001):
 //
-// Real per-route proxies (auth, packages, bookings, ...) land alongside each
-// backend's first feature work.
-func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool, serviceName string) {
+//   - /system/live, /system/ready      — public (own probes)
+//   - /v1/<svc>/system/live            — public probe proxies (remaining REST backends)
+//   - /v1/packages*, /v1/package-departures/* — public catalog read (security: [])
+//   - /v1/auth/*                       — IAM auth routes (Login/Refresh public; Logout bearer)
+//   - /v1/me, /v1/me/2fa/*             — bearer-auth IAM user routes
+//   - /v1/users/:id/suspend            — bearer + permission (super_admin)
+//   - POST /v1/packages                — staff create package (bearer + catalog.package.manage)
+//   - PUT /v1/packages/:id             — staff update package (bearer + catalog.package.manage)
+//   - DELETE /v1/packages/:id          — staff delete package (bearer + catalog.package.manage)
+//   - POST /v1/packages/:id/departures — staff create departure (bearer + catalog.package.manage)
+//   - PUT /v1/departures/:id           — staff update departure (bearer + catalog.package.manage)
+//
+// S1-E-11: /v1/catalog/system/live removed (catalog-svc is gRPC-only).
+// S1-E-12: /v1/iam/system/live + /v1/iam/system/diagnostics/db-tx removed (iam-svc is gRPC-only).
+//          IAM client-facing auth routes moved here from iam-svc REST.
+//
+// iamValidator is the *iam_grpc_adapter.Adapter produced in start.go; it is
+// passed as the interface type so unit tests can substitute a stub.
+func runRestServer(port int, api rest_oapi.ServerInterface, iamValidator middleware.IamValidator, metricsEnabled bool, serviceName string) {
 	app := fiber.New()
 
 	// CORS — gateway is the edge, accept cross-origin from any browser client.
@@ -56,6 +70,8 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool,
 
 	wrapper := rest_oapi.ServerInterfaceWrapper{Handler: api}
 
+	// ── Public routes ────────────────────────────────────────────────────────
+
 	// System routes (own probes only — gateway has no DB so no /diagnostics/db-tx).
 	system := app.Group("/system")
 	{
@@ -67,9 +83,8 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool,
 	v1 := app.Group("/v1")
 	{
 		// System-probe proxies (REST adapters; retire with each BL-REFACTOR-* card).
-		v1.Get("/iam/system/live", wrapper.GetIamSystemLive)
-		v1.Get("/iam/system/diagnostics/db-tx", wrapper.GetIamSystemDbTxDiagnostic)
-		v1.Get("/catalog/system/live", wrapper.GetCatalogSystemLive)
+		// Note: /v1/catalog/system/live removed in S1-E-11 (catalog-svc is gRPC-only).
+		// Note: /v1/iam/system/live removed in S1-E-12 (iam-svc is gRPC-only).
 		v1.Get("/booking/system/live", wrapper.GetBookingSystemLive)
 		v1.Get("/jamaah/system/live", wrapper.GetJamaahSystemLive)
 		v1.Get("/payment/system/live", wrapper.GetPaymentSystemLive)
@@ -80,13 +95,51 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool,
 		v1.Get("/crm/system/live", wrapper.GetCrmSystemLive)
 
 		// Public catalog read (BL-GTW-002 / S1-E-10) — gRPC adapter.
+		// security: [] in openapi.yaml — no bearer required.
 		v1.Get("/packages", wrapper.ListPackages)
 		v1.Get("/packages/:id", wrapper.GetPackageById)
 		v1.Get("/package-departures/:id", wrapper.GetPackageDepartureById)
 	}
 
+	// IAM auth public routes (BL-IAM-018 / S1-E-12) — no bearer required.
+	// Login + refresh are public; they issue / rotate the bearer.
+	auth := v1.Group("/auth")
+	{
+		auth.Post("/login", wrapper.Login)
+		auth.Post("/refresh", wrapper.RefreshSession)
+	}
+
+	// ── Protected routes (BL-GTW-001 / S1-E-09) ─────────────────────────────
+	//
+	// Every route in this group requires a valid Bearer token. The
+	// RequireBearerToken middleware calls iam-svc.ValidateToken (gRPC) and
+	// injects *middleware.Identity into c.Locals(middleware.IdentityKey) for
+	// downstream handlers to consume. Failure modes per F1-W7:
+	//
+	//   - Missing / malformed Authorization header → 401 UNAUTHORIZED
+	//   - iam-svc rejects (expired, revoked)       → 401 UNAUTHORIZED
+	//   - iam-svc unreachable / timeout             → 502 SERVICE_UNAVAILABLE
+	v1Protected := app.Group("/v1", middleware.RequireBearerToken(iamValidator))
+	{
+		// IAM auth bearer routes (BL-IAM-018 / S1-E-12).
+		v1Protected.Delete("/auth/logout", wrapper.Logout)
+		v1Protected.Get("/me", wrapper.GetMe)
+		v1Protected.Post("/me/2fa/enroll", wrapper.EnrollTOTP)
+		v1Protected.Post("/me/2fa/verify", wrapper.VerifyTOTP)
+		v1Protected.Post("/users/:id/suspend", wrapper.SuspendUser)
+
+		// Staff catalog write routes (BL-CAT-014 / S1-E-07).
+		// All require bearer + catalog.package.manage permission.
+		// Response shapes align with public read models (PackageDetail, DepartureDetail).
+		v1Protected.Post("/packages", wrapper.CreatePackage)
+		v1Protected.Put("/packages/:id", wrapper.UpdatePackageById)
+		v1Protected.Delete("/packages/:id", wrapper.DeletePackageById)
+		v1Protected.Post("/packages/:id/departures", wrapper.CreateDeparture)
+		v1Protected.Put("/departures/:id", wrapper.UpdateDepartureById)
+	}
+
 	go func() {
-		log.Printf("rest server started successfully 🚀")
+		log.Printf("rest server started successfully on :%d", port)
 
 		err := app.Listen(fmt.Sprintf(":%d", port))
 		if err != nil {

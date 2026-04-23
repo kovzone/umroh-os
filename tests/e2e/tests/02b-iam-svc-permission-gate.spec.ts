@@ -1,9 +1,10 @@
-// iam-svc permission-gate end-to-end (BL-IAM-002).
+// IAM permission-gate end-to-end (BL-IAM-002 / BL-IAM-018).
 //
+// Migrated in S1-E-12 from iam-svc:4001 → gateway-svc:4000 for auth routes.
 // Proves the "finance routes denied for non-finance roles" F1 acceptance
 // across the two new iam-svc gRPC hops and the finance-svc consumer surface:
 //
-//   1. finance@umrohos.dev logs in (iam-svc REST) → GET /v1/finance/ping
+//   1. finance@umrohos.dev logs in (gateway POST /v1/auth/login) → GET /v1/finance/ping
 //      (finance-svc REST) calls iam-svc.ValidateToken + CheckPermission over
 //      gRPC and returns 200.
 //   2. cs@umrohos.dev logs in → same call → 403 FORBIDDEN (no grant).
@@ -13,14 +14,11 @@
 // Prereqs (make dev-bootstrap handles all three):
 //   1. docker compose dev stack up
 //   2. migrations 000004 + 000005 applied (fixture users/roles/permission)
-//   3. iam-svc on :4001, finance-svc on :4009
+//   3. gateway-svc on :4000, finance-svc on :4009
 
 import { test, expect } from "@playwright/test";
 import { createApiClient } from "../lib/api-client";
-import { backendServices } from "../lib/services";
-
-const iam = backendServices.find((s) => s.name === "iam-svc");
-if (!iam) throw new Error("iam-svc not in backendServices registry");
+import { gateway, backendServices } from "../lib/services";
 
 const finance = backendServices.find((s) => s.name === "finance-svc");
 if (!finance) throw new Error("finance-svc not in backendServices registry");
@@ -31,8 +29,8 @@ const CS_EMAIL = "cs@umrohos.dev";
 const SHARED_PASSWORD = "password123";
 
 async function login(email: string): Promise<string> {
-  const api = await createApiClient(iam!.baseURL);
-  const res = await api.post("/v1/sessions", {
+  const api = await createApiClient(gateway.baseURL);
+  const res = await api.post("/v1/auth/login", {
     email,
     password: SHARED_PASSWORD,
   });

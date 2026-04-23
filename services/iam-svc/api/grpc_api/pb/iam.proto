@@ -14,7 +14,15 @@ option go_package="./pb";
 // service record one append-only row in iam.audit_logs:
 //   - RecordAudit — insert one row into iam.audit_logs for a state-changing action
 //
-// GetUser remains planned (S1-E-06) — not part of this contract yet.
+// BL-IAM-018 / S1-E-12 adds the client-facing auth RPCs so the gateway can proxy
+// all IAM REST routes to iam-svc over gRPC (ADR 0009 — iam-svc becomes gRPC-only):
+//   - Login           — POST /v1/sessions
+//   - RefreshSession  — POST /v1/sessions/refresh
+//   - Logout          — DELETE /v1/sessions (bearer; session_id from token claims)
+//   - GetMe           — GET /v1/me (bearer)
+//   - EnrollTOTP      — POST /v1/me/2fa/enroll (bearer)
+//   - VerifyTOTP      — POST /v1/me/2fa/verify (bearer)
+//   - SuspendUser     — POST /v1/users/{id}/suspend (bearer + super_admin)
 service IamService {
   // Healthz returns ok=true if the service process is alive.
   // Placeholder for the pilot; real health checks go through gRPC health protocol.
@@ -45,6 +53,38 @@ service IamService {
   // Returns InvalidArgument when resource / action are empty, or when user_id /
   // branch_id are set but not valid UUIDs.
   rpc RecordAudit(RecordAuditRequest) returns (RecordAuditResponse) {}
+
+  // ── Client-facing auth RPCs (BL-IAM-018 / S1-E-12) ──────────────────────
+  // These mirror the former iam-svc REST surface. gateway-svc proxies each
+  // REST route to the corresponding RPC so iam-svc becomes pure gRPC per ADR 0009.
+
+  // Login exchanges email + password for a PASETO access + opaque refresh token pair.
+  // Public — no bearer required.
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+
+  // RefreshSession rotates the refresh token and issues a new access + refresh pair.
+  // Replay detection: a presented-but-revoked token triggers full-session revocation.
+  // Public — no bearer required.
+  rpc RefreshSession(RefreshSessionRequest) returns (RefreshSessionResponse) {}
+
+  // Logout revokes the session row identified by the session_id claim in the bearer.
+  // Idempotent. Requires a validated session_id from the caller (gateway validates
+  // the bearer first via ValidateToken and passes the session_id here).
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {}
+
+  // GetMe returns the current user's profile from the user_id claim.
+  rpc GetMe(GetMeRequest) returns (GetMeResponse) {}
+
+  // EnrollTOTP generates a fresh TOTP secret + otpauth URL for the user.
+  // Returns AlreadyExists if the user has a verified TOTP secret.
+  rpc EnrollTOTP(EnrollTOTPRequest) returns (EnrollTOTPResponse) {}
+
+  // VerifyTOTP validates a TOTP code and stamps users.totp_verified_at.
+  rpc VerifyTOTP(VerifyTOTPRequest) returns (VerifyTOTPResponse) {}
+
+  // SuspendUser flips the target user's status to suspended and revokes all sessions.
+  // Requires the actor_user_id to hold iam.users/suspend/global permission.
+  rpc SuspendUser(SuspendUserRequest) returns (SuspendUserResponse) {}
 }
 
 message HealthzRequest {}
@@ -124,4 +164,121 @@ message RecordAuditResponse {
 
   // Insertion timestamp as Unix seconds UTC (matches ValidateToken convention).
   int64 created_at_unix = 2;
+}
+
+// -----------------------------------------------------------------------------
+// Shared IAM types (BL-IAM-018 / S1-E-12)
+// -----------------------------------------------------------------------------
+
+// UserProfile is the public user shape returned by Login, GetMe, SuspendUser.
+// Mirrors the OpenAPI UserProfile schema from iam-svc's former REST surface.
+message UserProfile {
+  string user_id   = 1; // UUID string
+  string email     = 2;
+  string name      = 3;
+  string branch_id = 4; // UUID string; empty when branch-less (super_admin seed)
+  string status    = 5; // "active" | "suspended" | "pending"
+}
+
+// -----------------------------------------------------------------------------
+// Login (POST /v1/sessions)
+// -----------------------------------------------------------------------------
+
+message LoginRequest {
+  string email     = 1; // required
+  string password  = 2; // required; plaintext — bcrypt compared server-side
+  string totp_code = 3; // optional; six-digit TOTP code
+  string user_agent = 4; // HTTP User-Agent — forwarded by gateway
+  string ip        = 5; // client IP literal — forwarded by gateway
+}
+
+message LoginResponse {
+  string access_token       = 1; // PASETO v2 local
+  string refresh_token      = 2; // opaque hex; 32-byte random
+  int64  access_expires_at  = 3; // Unix seconds UTC
+  int64  refresh_expires_at = 4; // Unix seconds UTC
+  UserProfile user          = 5;
+}
+
+// -----------------------------------------------------------------------------
+// RefreshSession (POST /v1/sessions/refresh)
+// -----------------------------------------------------------------------------
+
+message RefreshSessionRequest {
+  string refresh_token = 1; // required
+  string user_agent    = 2; // forwarded by gateway
+  string ip            = 3; // client IP literal
+}
+
+message RefreshSessionResponse {
+  string access_token       = 1;
+  string refresh_token      = 2;
+  int64  access_expires_at  = 3;
+  int64  refresh_expires_at = 4;
+}
+
+// -----------------------------------------------------------------------------
+// Logout (DELETE /v1/sessions)
+// -----------------------------------------------------------------------------
+
+message LogoutRequest {
+  // session_id extracted from the validated bearer token by gateway.
+  string session_id = 1; // UUID string; required
+}
+
+message LogoutResponse {
+  bool ok = 1; // always true on success
+}
+
+// -----------------------------------------------------------------------------
+// GetMe (GET /v1/me)
+// -----------------------------------------------------------------------------
+
+message GetMeRequest {
+  string user_id = 1; // UUID string from the validated bearer token; required
+}
+
+message GetMeResponse {
+  UserProfile user         = 1;
+  bool        totp_enrolled = 2; // true once EnrollTOTP has been called at least once
+  bool        totp_verified = 3; // true once VerifyTOTP has succeeded
+}
+
+// -----------------------------------------------------------------------------
+// EnrollTOTP (POST /v1/me/2fa/enroll)
+// -----------------------------------------------------------------------------
+
+message EnrollTOTPRequest {
+  string user_id = 1; // UUID string; required
+}
+
+message EnrollTOTPResponse {
+  string secret      = 1; // plaintext base32; shown exactly once
+  string otpauth_url = 2; // otpauth:// URL — render as QR code
+}
+
+// -----------------------------------------------------------------------------
+// VerifyTOTP (POST /v1/me/2fa/verify)
+// -----------------------------------------------------------------------------
+
+message VerifyTOTPRequest {
+  string user_id = 1; // UUID string; required
+  string code    = 2; // six-digit TOTP code; required
+}
+
+message VerifyTOTPResponse {
+  int64 verified_at_unix = 1; // Unix seconds UTC
+}
+
+// -----------------------------------------------------------------------------
+// SuspendUser (POST /v1/users/{id}/suspend)
+// -----------------------------------------------------------------------------
+
+message SuspendUserRequest {
+  string actor_user_id  = 1; // UUID string; caller that holds the permission
+  string target_user_id = 2; // UUID string; user to suspend
+}
+
+message SuspendUserResponse {
+  UserProfile user = 1; // post-suspend profile of the target
 }

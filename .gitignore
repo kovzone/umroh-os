@@ -28,3 +28,7 @@ prompts/
 
 # local scripts (keep out of repository)
 scripts/
+
+# Production secrets — NEVER commit the real env file
+.env.prod
+*.env.prod

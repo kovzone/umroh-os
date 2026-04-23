@@ -63,6 +63,36 @@ type Querier interface {
 	// for wire-integer conformance (whole currency units per § Catalog + Q001).
 	ListPricingForDeparture(ctx context.Context, packageDepartureID string) ([]ListPricingForDepartureRow, error)
 	ReadyCheck(ctx context.Context) (int32, error)
+
+	// ---- S1-E-07 / BL-CAT-014 — staff write queries ----
+
+	// Package CRUD
+	InsertPackage(ctx context.Context, arg InsertPackageParams) (InsertPackageRow, error)
+	UpdatePackageFields(ctx context.Context, arg UpdatePackageFieldsParams) (UpdatePackageFieldsRow, error)
+	SoftDeletePackage(ctx context.Context, id string) (SoftDeletePackageRow, error)
+	GetPackageByIDForStaff(ctx context.Context, id string) (GetPackageByIDForStaffRow, error)
+
+	// Package associations
+	DeletePackageHotels(ctx context.Context, packageID string) error
+	InsertPackageHotel(ctx context.Context, arg InsertPackageHotelParams) error
+	DeletePackageAddons(ctx context.Context, packageID string) error
+	InsertPackageAddon(ctx context.Context, arg InsertPackageAddonParams) error
+
+	// Departure CRUD
+	InsertDeparture(ctx context.Context, arg InsertDepartureParams) (InsertDepartureRow, error)
+	UpdateDepartureFields(ctx context.Context, arg UpdateDepartureFieldsParams) (UpdateDepartureFieldsRow, error)
+	GetDepartureByIDForStaff(ctx context.Context, id string) (GetDepartureByIDForStaffRow, error)
+
+	// Departure pricing
+	DeleteDeparturePricing(ctx context.Context, packageDepartureID string) error
+	InsertDeparturePricing(ctx context.Context, arg InsertDeparturePricingParams) (InsertDeparturePricingRow, error)
+
+	// Seat inventory (§ Inventory / S1-J-03)
+	ReserveSeatsAtomic(ctx context.Context, arg ReserveSeatsAtomicParams) (ReserveSeatsAtomicRow, error)
+	InsertSeatReservation(ctx context.Context, arg InsertSeatReservationParams) (SeatReservationRow, error)
+	GetSeatReservation(ctx context.Context, reservationID string) (SeatReservationRow, error)
+	ReleaseSeatsAtomic(ctx context.Context, arg ReleaseSeatsAtomicParams) (ReleaseSeatsAtomicRow, error)
+	MarkReservationReleased(ctx context.Context, reservationID string) (SeatReservationRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

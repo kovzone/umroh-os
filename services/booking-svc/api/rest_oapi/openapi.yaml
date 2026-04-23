@@ -1,21 +1,96 @@
 openapi: 3.0.3
 info:
   title: booking-svc API
-  version: 0.1.0
+  version: 0.2.0
   description: |
-    System endpoints for booking-svc (Identity, Access, Audit).
+    Booking service REST API.
 
-    Pilot scaffold — exposes only the three standard scaffold endpoints:
+    S1-E-03 adds POST /v1/bookings for draft booking creation (BL-BOOK-001..006).
+
+    System scaffold endpoints are also exposed:
     /system/live, /system/ready, /system/diagnostics/db-tx.
-
-    Real auth endpoints (login, refresh, logout, /me) and user/role/branch/audit
-    endpoints land in F1.5–F1.11.
 
 servers:
   - url: /
     description: Base path (prefixed by gateway as needed)
 
+security:
+  - bearerAuth: []
+
 paths:
+  /v1/bookings:
+    post:
+      tags:
+        - Bookings
+      summary: Create draft booking
+      description: |
+        Creates a draft booking (BL-BOOK-001..006).
+
+        - BL-BOOK-001: Draft booking persisted with minimum required fields.
+        - BL-BOOK-002: Channel attribution (b2c_self / b2b_agent / cs) and agent_id stamped.
+        - BL-BOOK-003: Only 'draft' status created here; state machine enforced at transition.
+        - BL-BOOK-004: Hard fail if departure not found, package mismatch, or insufficient seats.
+        - BL-BOOK-005: Document gate (KTP + passport) validated per pilgrim; DRAFT assumption
+                       per Q006 — warnings advisory, not blocking in S1.
+        - BL-BOOK-006: Mahram validation result stored; non-blocking.
+
+        Supports idempotency via Idempotency-Key header. Same key + same body = replay.
+        Same key + different body = 409 Conflict.
+      operationId: createDraftBooking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema:
+            type: string
+            maxLength: 128
+          description: Client-supplied idempotency key (UUID or similar). Optional.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBookingRequest"
+      responses:
+        "201":
+          description: Draft booking created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateBookingResponse"
+        "200":
+          description: Idempotency replay — same booking returned unchanged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateBookingResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Conflict — insufficient seats or idempotency key reused with different body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /system/live:
     get:
       tags:
@@ -78,7 +153,262 @@ paths:
                 $ref: "#/components/schemas/DbTxDiagnosticResponse"
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: PASETO
+
   schemas:
+    # ---------------------------------------------------------------------------
+    # Booking schemas (S1-E-03)
+    # ---------------------------------------------------------------------------
+
+    PilgrimInput:
+      type: object
+      required:
+        - full_name
+        - domicile
+      properties:
+        full_name:
+          type: string
+          example: "Ahmad Syaifullah"
+        email:
+          type: string
+          format: email
+          example: "ahmad@email.com"
+        whatsapp:
+          type: string
+          example: "081234567890"
+        domicile:
+          type: string
+          example: "Jakarta Selatan"
+        is_lead:
+          type: boolean
+          description: True if this pilgrim is the lead/contact person for the booking.
+          example: true
+        has_ktp:
+          type: boolean
+          description: Whether KTP document has been uploaded (BL-BOOK-005 DRAFT).
+          example: true
+        has_passport:
+          type: boolean
+          description: Whether passport document has been uploaded (BL-BOOK-005 DRAFT).
+          example: false
+
+    AddonInput:
+      type: object
+      required:
+        - addon_id
+        - addon_name
+      properties:
+        addon_id:
+          type: string
+          example: "addon_123"
+        addon_name:
+          type: string
+          example: "Kamar Upgrade"
+        list_amount:
+          type: integer
+          format: int64
+          example: 2500000
+        list_currency:
+          type: string
+          example: "IDR"
+        settlement_currency:
+          type: string
+          example: "IDR"
+
+    MahramInput:
+      type: object
+      properties:
+        mahram_warning:
+          type: string
+          description: |
+            Advisory warning from mahram validation (BL-BOOK-006).
+            Non-blocking — stored for reference; does not prevent booking creation.
+          example: "Perempuan tanpa mahram terdeteksi"
+
+    CreateBookingRequest:
+      type: object
+      required:
+        - channel
+        - package_id
+        - departure_id
+        - room_type
+        - lead_full_name
+        - lead_whatsapp
+        - lead_domicile
+        - list_amount
+      properties:
+        channel:
+          type: string
+          enum: [b2c_self, b2b_agent, cs]
+          example: "b2c_self"
+        agent_id:
+          type: string
+          description: Required when channel = b2b_agent.
+          example: "agent_01HXYZ"
+        staff_user_id:
+          type: string
+          description: Required when channel = cs.
+          example: "usr_01HXYZ"
+        package_id:
+          type: string
+          example: "pkg_01HXYZ"
+        departure_id:
+          type: string
+          example: "dep_01HXYZ"
+        room_type:
+          type: string
+          example: "quad"
+        lead_full_name:
+          type: string
+          example: "Ahmad Syaifullah"
+        lead_email:
+          type: string
+          format: email
+          example: "ahmad@email.com"
+        lead_whatsapp:
+          type: string
+          example: "081234567890"
+        lead_domicile:
+          type: string
+          example: "Jakarta Selatan"
+        pilgrims:
+          type: array
+          items:
+            $ref: "#/components/schemas/PilgrimInput"
+          description: All pilgrims including the lead. If empty, a single-pilgrim booking is assumed.
+        addons:
+          type: array
+          items:
+            $ref: "#/components/schemas/AddonInput"
+        list_amount:
+          type: integer
+          format: int64
+          description: Total listed price in the smallest currency unit (e.g. cents/sen).
+          example: 25000000
+        list_currency:
+          type: string
+          default: "IDR"
+          example: "IDR"
+        settlement_currency:
+          type: string
+          default: "IDR"
+          description: Q001 — always IDR for S1.
+          example: "IDR"
+        notes:
+          type: string
+          example: "Kamar khusus untuk lansia"
+        mahram:
+          $ref: "#/components/schemas/MahramInput"
+
+    BookingItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "bkgitem_01HXYZ"
+        full_name:
+          type: string
+          example: "Ahmad Syaifullah"
+        is_lead:
+          type: boolean
+          example: true
+        document_warning:
+          type: string
+          description: Advisory warning if required documents are missing (BL-BOOK-005 DRAFT).
+          example: "paspor diperlukan"
+
+    BookingData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "bkg_01HXYZ"
+        status:
+          type: string
+          example: "draft"
+        channel:
+          type: string
+          example: "b2c_self"
+        package_id:
+          type: string
+          example: "pkg_01HXYZ"
+        departure_id:
+          type: string
+          example: "dep_01HXYZ"
+        room_type:
+          type: string
+          example: "quad"
+        agent_id:
+          type: string
+          example: ""
+        staff_user_id:
+          type: string
+          example: ""
+        lead_full_name:
+          type: string
+          example: "Ahmad Syaifullah"
+        lead_email:
+          type: string
+          example: "ahmad@email.com"
+        lead_whatsapp:
+          type: string
+          example: "081234567890"
+        lead_domicile:
+          type: string
+          example: "Jakarta Selatan"
+        list_amount:
+          type: integer
+          format: int64
+          example: 25000000
+        list_currency:
+          type: string
+          example: "IDR"
+        settlement_currency:
+          type: string
+          example: "IDR"
+        notes:
+          type: string
+          example: "Kamar khusus untuk lansia"
+        idempotency_key:
+          type: string
+          example: "client-uuid-123"
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-04-23T08:00:00Z"
+        expires_at:
+          type: string
+          format: date-time
+          example: "2026-04-23T08:30:00Z"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingItemResponse"
+        mahram_warning:
+          type: string
+          description: Advisory mahram warning (BL-BOOK-006). Empty = no issue.
+          example: ""
+        replayed:
+          type: boolean
+          description: True when this response is an idempotency replay of an existing booking.
+          example: false
+
+    CreateBookingResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/BookingData"
+
+    # ---------------------------------------------------------------------------
+    # System schemas
+    # ---------------------------------------------------------------------------
+
     LiveResponse:
       type: object
       required:

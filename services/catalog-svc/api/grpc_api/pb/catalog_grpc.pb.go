@@ -3,6 +3,12 @@
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v6.32.1
 // source: catalog.proto
+//
+// Hand-extended in S1-E-07 / BL-CAT-014: write quartet (CreatePackage,
+// UpdatePackage, DeletePackage, CreateDeparture, UpdateDeparture) and
+// inventory duo (ReserveSeats, ReleaseSeats) added to the interfaces and
+// service descriptor. Run `make genpb` to regenerate cleanly from catalog.proto
+// once protoc is available in the build environment.
 
 package pb
 
@@ -19,10 +25,19 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CatalogService_Healthz_FullMethodName             = "/pb.CatalogService/Healthz"
-	CatalogService_ListPackages_FullMethodName        = "/pb.CatalogService/ListPackages"
-	CatalogService_GetPackage_FullMethodName          = "/pb.CatalogService/GetPackage"
-	CatalogService_GetPackageDeparture_FullMethodName = "/pb.CatalogService/GetPackageDeparture"
+	CatalogService_Healthz_FullMethodName              = "/pb.CatalogService/Healthz"
+	CatalogService_ListPackages_FullMethodName         = "/pb.CatalogService/ListPackages"
+	CatalogService_GetPackage_FullMethodName           = "/pb.CatalogService/GetPackage"
+	CatalogService_GetPackageDeparture_FullMethodName  = "/pb.CatalogService/GetPackageDeparture"
+	// Write quartet (S1-E-07 / BL-CAT-014) — hand-extended.
+	CatalogService_CreatePackage_FullMethodName   = "/pb.CatalogService/CreatePackage"
+	CatalogService_UpdatePackage_FullMethodName   = "/pb.CatalogService/UpdatePackage"
+	CatalogService_DeletePackage_FullMethodName   = "/pb.CatalogService/DeletePackage"
+	CatalogService_CreateDeparture_FullMethodName = "/pb.CatalogService/CreateDeparture"
+	CatalogService_UpdateDeparture_FullMethodName = "/pb.CatalogService/UpdateDeparture"
+	// Inventory duo (S1-J-03) — hand-extended.
+	CatalogService_ReserveSeats_FullMethodName = "/pb.CatalogService/ReserveSeats"
+	CatalogService_ReleaseSeats_FullMethodName = "/pb.CatalogService/ReleaseSeats"
 )
 
 // CatalogServiceClient is the client API for CatalogService service.
@@ -60,6 +75,15 @@ type CatalogServiceClient interface {
 	// Returns NOT_FOUND for departed/completed/cancelled/unknown.
 	// Mirrors GET /v1/package-departures/{id}.
 	GetPackageDeparture(ctx context.Context, in *GetPackageDepartureRequest, opts ...grpc.CallOption) (*GetPackageDepartureResponse, error)
+	// Staff write quartet (S1-E-07 / BL-CAT-014) — hand-extended.
+	CreatePackage(ctx context.Context, in *CreatePackageRequest, opts ...grpc.CallOption) (*CreatePackageResponse, error)
+	UpdatePackage(ctx context.Context, in *UpdatePackageRequest, opts ...grpc.CallOption) (*UpdatePackageResponse, error)
+	DeletePackage(ctx context.Context, in *DeletePackageRequest, opts ...grpc.CallOption) (*DeletePackageResponse, error)
+	CreateDeparture(ctx context.Context, in *CreateDepartureRequest, opts ...grpc.CallOption) (*CreateDepartureResponse, error)
+	UpdateDeparture(ctx context.Context, in *UpdateDepartureRequest, opts ...grpc.CallOption) (*UpdateDepartureResponse, error)
+	// Inventory duo (S1-J-03) — hand-extended.
+	ReserveSeats(ctx context.Context, in *ReserveSeatsRequest, opts ...grpc.CallOption) (*ReserveSeatsResponse, error)
+	ReleaseSeats(ctx context.Context, in *ReleaseSeatsRequest, opts ...grpc.CallOption) (*ReleaseSeatsResponse, error)
 }
 
 type catalogServiceClient struct {
@@ -110,6 +134,78 @@ func (c *catalogServiceClient) GetPackageDeparture(ctx context.Context, in *GetP
 	return out, nil
 }
 
+// Write quartet client implementations (S1-E-07 / BL-CAT-014 — hand-extended).
+
+func (c *catalogServiceClient) CreatePackage(ctx context.Context, in *CreatePackageRequest, opts ...grpc.CallOption) (*CreatePackageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreatePackageResponse)
+	err := c.cc.Invoke(ctx, CatalogService_CreatePackage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogServiceClient) UpdatePackage(ctx context.Context, in *UpdatePackageRequest, opts ...grpc.CallOption) (*UpdatePackageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdatePackageResponse)
+	err := c.cc.Invoke(ctx, CatalogService_UpdatePackage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogServiceClient) DeletePackage(ctx context.Context, in *DeletePackageRequest, opts ...grpc.CallOption) (*DeletePackageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeletePackageResponse)
+	err := c.cc.Invoke(ctx, CatalogService_DeletePackage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogServiceClient) CreateDeparture(ctx context.Context, in *CreateDepartureRequest, opts ...grpc.CallOption) (*CreateDepartureResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateDepartureResponse)
+	err := c.cc.Invoke(ctx, CatalogService_CreateDeparture_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogServiceClient) UpdateDeparture(ctx context.Context, in *UpdateDepartureRequest, opts ...grpc.CallOption) (*UpdateDepartureResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateDepartureResponse)
+	err := c.cc.Invoke(ctx, CatalogService_UpdateDeparture_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogServiceClient) ReserveSeats(ctx context.Context, in *ReserveSeatsRequest, opts ...grpc.CallOption) (*ReserveSeatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReserveSeatsResponse)
+	err := c.cc.Invoke(ctx, CatalogService_ReserveSeats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *catalogServiceClient) ReleaseSeats(ctx context.Context, in *ReleaseSeatsRequest, opts ...grpc.CallOption) (*ReleaseSeatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReleaseSeatsResponse)
+	err := c.cc.Invoke(ctx, CatalogService_ReleaseSeats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CatalogServiceServer is the server API for CatalogService service.
 // All implementations must embed UnimplementedCatalogServiceServer
 // for forward compatibility.
@@ -145,6 +241,15 @@ type CatalogServiceServer interface {
 	// Returns NOT_FOUND for departed/completed/cancelled/unknown.
 	// Mirrors GET /v1/package-departures/{id}.
 	GetPackageDeparture(context.Context, *GetPackageDepartureRequest) (*GetPackageDepartureResponse, error)
+	// Staff write quartet (S1-E-07 / BL-CAT-014) — hand-extended.
+	CreatePackage(context.Context, *CreatePackageRequest) (*CreatePackageResponse, error)
+	UpdatePackage(context.Context, *UpdatePackageRequest) (*UpdatePackageResponse, error)
+	DeletePackage(context.Context, *DeletePackageRequest) (*DeletePackageResponse, error)
+	CreateDeparture(context.Context, *CreateDepartureRequest) (*CreateDepartureResponse, error)
+	UpdateDeparture(context.Context, *UpdateDepartureRequest) (*UpdateDepartureResponse, error)
+	// Inventory duo (S1-J-03) — hand-extended.
+	ReserveSeats(context.Context, *ReserveSeatsRequest) (*ReserveSeatsResponse, error)
+	ReleaseSeats(context.Context, *ReleaseSeatsRequest) (*ReleaseSeatsResponse, error)
 	mustEmbedUnimplementedCatalogServiceServer()
 }
 
@@ -166,6 +271,27 @@ func (UnimplementedCatalogServiceServer) GetPackage(context.Context, *GetPackage
 }
 func (UnimplementedCatalogServiceServer) GetPackageDeparture(context.Context, *GetPackageDepartureRequest) (*GetPackageDepartureResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPackageDeparture not implemented")
+}
+func (UnimplementedCatalogServiceServer) CreatePackage(context.Context, *CreatePackageRequest) (*CreatePackageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreatePackage not implemented")
+}
+func (UnimplementedCatalogServiceServer) UpdatePackage(context.Context, *UpdatePackageRequest) (*UpdatePackageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdatePackage not implemented")
+}
+func (UnimplementedCatalogServiceServer) DeletePackage(context.Context, *DeletePackageRequest) (*DeletePackageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeletePackage not implemented")
+}
+func (UnimplementedCatalogServiceServer) CreateDeparture(context.Context, *CreateDepartureRequest) (*CreateDepartureResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateDeparture not implemented")
+}
+func (UnimplementedCatalogServiceServer) UpdateDeparture(context.Context, *UpdateDepartureRequest) (*UpdateDepartureResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateDeparture not implemented")
+}
+func (UnimplementedCatalogServiceServer) ReserveSeats(context.Context, *ReserveSeatsRequest) (*ReserveSeatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReserveSeats not implemented")
+}
+func (UnimplementedCatalogServiceServer) ReleaseSeats(context.Context, *ReleaseSeatsRequest) (*ReleaseSeatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReleaseSeats not implemented")
 }
 func (UnimplementedCatalogServiceServer) mustEmbedUnimplementedCatalogServiceServer() {}
 func (UnimplementedCatalogServiceServer) testEmbeddedByValue()                        {}
@@ -260,9 +386,115 @@ func _CatalogService_GetPackageDeparture_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CatalogService_CreatePackage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreatePackageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).CreatePackage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: CatalogService_CreatePackage_FullMethodName}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).CreatePackage(ctx, req.(*CreatePackageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CatalogService_UpdatePackage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdatePackageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).UpdatePackage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: CatalogService_UpdatePackage_FullMethodName}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).UpdatePackage(ctx, req.(*UpdatePackageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CatalogService_DeletePackage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeletePackageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).DeletePackage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: CatalogService_DeletePackage_FullMethodName}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).DeletePackage(ctx, req.(*DeletePackageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CatalogService_CreateDeparture_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateDepartureRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).CreateDeparture(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: CatalogService_CreateDeparture_FullMethodName}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).CreateDeparture(ctx, req.(*CreateDepartureRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CatalogService_UpdateDeparture_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateDepartureRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).UpdateDeparture(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: CatalogService_UpdateDeparture_FullMethodName}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).UpdateDeparture(ctx, req.(*UpdateDepartureRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CatalogService_ReserveSeats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReserveSeatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).ReserveSeats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: CatalogService_ReserveSeats_FullMethodName}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).ReserveSeats(ctx, req.(*ReserveSeatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CatalogService_ReleaseSeats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReleaseSeatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).ReleaseSeats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: CatalogService_ReleaseSeats_FullMethodName}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).ReleaseSeats(ctx, req.(*ReleaseSeatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CatalogService_ServiceDesc is the grpc.ServiceDesc for CatalogService service.
 // It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
+// and not to be introspected or modified (even as a copy).
+// Hand-extended in S1-E-07 to include the write quartet and inventory duo.
 var CatalogService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "pb.CatalogService",
 	HandlerType: (*CatalogServiceServer)(nil),
@@ -282,6 +514,34 @@ var CatalogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPackageDeparture",
 			Handler:    _CatalogService_GetPackageDeparture_Handler,
+		},
+		{
+			MethodName: "CreatePackage",
+			Handler:    _CatalogService_CreatePackage_Handler,
+		},
+		{
+			MethodName: "UpdatePackage",
+			Handler:    _CatalogService_UpdatePackage_Handler,
+		},
+		{
+			MethodName: "DeletePackage",
+			Handler:    _CatalogService_DeletePackage_Handler,
+		},
+		{
+			MethodName: "CreateDeparture",
+			Handler:    _CatalogService_CreateDeparture_Handler,
+		},
+		{
+			MethodName: "UpdateDeparture",
+			Handler:    _CatalogService_UpdateDeparture_Handler,
+		},
+		{
+			MethodName: "ReserveSeats",
+			Handler:    _CatalogService_ReserveSeats_Handler,
+		},
+		{
+			MethodName: "ReleaseSeats",
+			Handler:    _CatalogService_ReleaseSeats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"iam-svc/api/grpc_api"
-	"iam-svc/api/rest_oapi"
 	"iam-svc/service"
 	"iam-svc/store/postgres_store"
 	"iam-svc/util/config"
@@ -127,11 +126,11 @@ func start() {
 	)
 
 	// --- Init API layers ---
-	restServer := rest_oapi.NewServer(logger, tracer, svc)
+	// Per ADR 0009 / BL-IAM-018 (S1-E-12): iam-svc is gRPC-only.
+	// REST surface removed; gateway-svc proxies all client-facing auth routes.
 	grpcServer := grpc_api.NewServer(logger, tracer, svc)
 
 	// --- Run servers ---
-	runRestServer(config.Api.Rest.Port, restServer, tokenMaker, config.Api.Metrics.Enabled, config.OtelTracer.Name)
 	runGrpcServer(config.Api.Grpc.Address, grpcServer)
 
 	// --- Wait for signal ---

@@ -1,0 +1,128 @@
+# Production CD pipeline — triggered on push to main (path-filtered) or manual dispatch.
+#
+# Required GitHub repository secrets:
+#   PROD_SSH_KEY  — private SSH key for infra@216.176.238.161 (PEM / OpenSSH format)
+#   PROD_HOST     — production server IP (216.176.238.161)
+#
+# Server prerequisites (one-time, see docs/deployment/runbook.md):
+#   - SSH access: infra@PROD_HOST with key matching PROD_SSH_KEY
+#   - Repo cloned to /home/infra/umrohos
+#   - /home/infra/umrohos/.env.prod populated from env.prod.sample (repo root)
+
+name: Deploy production
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "services/**"
+      - "apps/core-web/**"
+      - "migration/**"
+      - "docker-compose.prod.yml"
+      - "monitoring/**"
+      - "docs/deployment/**"
+
+concurrency:
+  group: deploy-prod-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to production via SSH
+        id: deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: infra
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /home/infra/umrohos
+
+            # Guard: .env.prod must exist before deploy
+            if [ ! -f .env.prod ]; then
+              echo "error: /home/infra/umrohos/.env.prod missing" >&2
+              echo "Copy env.prod.sample to .env.prod and fill secrets." >&2
+              exit 1
+            fi
+
+            # Allow git to trust the directory (Docker host may differ from clone user)
+            git config --global --add safe.directory /home/infra/umrohos
+
+            echo "==> Pulling latest code..."
+            git fetch origin
+            git checkout main
+            git pull origin main
+
+            echo "==> Building changed images (parallel)..."
+            docker compose -f docker-compose.prod.yml --env-file .env.prod \
+              build --parallel
+
+            echo "==> Starting postgres + otel-collector..."
+            docker compose -f docker-compose.prod.yml --env-file .env.prod \
+              up -d postgres otel-collector
+
+            echo "==> Waiting for postgres to be ready..."
+            for i in $(seq 1 30); do
+              if docker compose -f docker-compose.prod.yml --env-file .env.prod \
+                   exec -T postgres pg_isready -U "${POSTGRES_USER:-postgres}" \
+                   -d "${POSTGRES_DB:-umrohos}" 2>/dev/null; then
+                break
+              fi
+              echo "  postgres not ready yet (attempt ${i}/30)..."
+              sleep 3
+            done
+
+            echo "==> Running database migrations..."
+            docker compose -f docker-compose.prod.yml --env-file .env.prod \
+              --profile tooling run --rm migrate
+
+            echo "==> Starting full application stack..."
+            docker compose -f docker-compose.prod.yml --env-file .env.prod \
+              up -d
+
+            echo "==> Waiting for gateway-svc to become healthy..."
+            for i in $(seq 1 20); do
+              if curl -sf http://localhost:4001/system/live > /dev/null 2>&1; then
+                echo "  gateway-svc is up."
+                break
+              fi
+              echo "  gateway-svc not ready yet (attempt ${i}/20)..."
+              sleep 5
+              if [ "$i" -eq 20 ]; then
+                echo "error: gateway-svc health check timed out" >&2
+                docker compose -f docker-compose.prod.yml --env-file .env.prod ps
+                exit 1
+              fi
+            done
+
+            echo "==> Stack status:"
+            docker compose -f docker-compose.prod.yml --env-file .env.prod ps
+
+      - name: Health check — gateway livez
+        run: |
+          echo "Remote health check passed during deploy step."
+          echo "Deploy succeeded: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+
+      - name: Notify success
+        if: success()
+        run: |
+          echo "::notice title=Deploy Succeeded::Production deploy completed at $(date -u '+%Y-%m-%dT%H:%M:%SZ') — commit ${{ github.sha }}"
+
+      - name: Notify failure
+        if: failure()
+        run: |
+          echo "::error title=Deploy Failed::Production deploy FAILED at $(date -u '+%Y-%m-%dT%H:%M:%SZ') — commit ${{ github.sha }}"
+          echo "Check the 'Deploy to production via SSH' step above for the remote error."
+          echo ""
+          echo "Rollback: SSH into the server and run:"
+          echo "  cd /home/infra/umrohos"
+          echo "  git checkout <previous-sha>"
+          echo "  docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build"

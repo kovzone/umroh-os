@@ -23,6 +23,12 @@ RUN go mod download
 # Compile all Go files in cmd directory into a single binary named 'main'
 RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/*.go
 
+# Download grpc_health_probe in build stage (golang:alpine already has wget)
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.28
+RUN wget -qO /bin/grpc_health_probe \
+    https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 && \
+    chmod +x /bin/grpc_health_probe
+
 # Stage 2: Production environment
 # Using minimal alpine image for the final container
 FROM alpine:latest
@@ -31,18 +37,13 @@ FROM alpine:latest
 RUN apk update && apk upgrade && \
      apk add --no-cache bash git openssh wget
 
-# Install grpc_health_probe for docker-compose gRPC healthcheck (ADR 0009 / BL-MON-001).
-# grpc_health_probe calls grpc.health.v1.Health/Check against the service's gRPC port.
-ARG GRPC_HEALTH_PROBE_VERSION=v0.4.24
-RUN wget -qO /bin/grpc_health_probe \
-    https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 && \
-    chmod +x /bin/grpc_health_probe
-
 # Set the working directory for the application
 WORKDIR /app
 
 # Copy only necessary artifacts from the build stage
 COPY --from=build-env /app/api/main main
+# Copy grpc_health_probe for docker-compose gRPC healthcheck (ADR 0009 / BL-MON-001).
+COPY --from=build-env /bin/grpc_health_probe /bin/grpc_health_probe
 
 # Note: config.json is mounted via docker-compose volume
 # This allows for different configs (local vs docker) without rebuilding

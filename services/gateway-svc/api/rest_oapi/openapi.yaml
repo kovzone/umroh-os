@@ -102,19 +102,200 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
 
-  /v1/catalog/system/live:
-    get:
-      tags: [Proxy / catalog]
-      summary: Proxy catalog-svc liveness
-      operationId: getCatalogSystemLive
+  # /v1/catalog/system/live removed in S1-E-11: catalog-svc is now gRPC-only.
+  # /v1/iam/system/live removed in S1-E-12: iam-svc is now gRPC-only.
+  # IAM client-facing auth routes below replace the former iam-svc REST surface.
+
+  # ── IAM Auth routes (BL-IAM-018 / S1-E-12) ─────────────────────────────
+  # gateway-svc proxies these to iam-svc via iam_grpc_adapter per ADR 0009.
+  # Request/response shapes mirror iam-svc's former REST surface exactly so
+  # existing clients (web app, mobile) do not need to change.
+
+  /v1/auth/login:
+    post:
+      tags: [IAM / Auth]
+      summary: Login — exchange credentials for an access + refresh token pair
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
       responses:
         "200":
-          description: Upstream OK
+          description: Login successful
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/LiveResponse" }
-        "502":
-          description: Upstream call failed
+              schema: { $ref: "#/components/schemas/LoginResponse" }
+        "400":
+          description: Malformed request body
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Account suspended or pending activation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/auth/refresh:
+    post:
+      tags: [IAM / Auth]
+      summary: Rotate refresh token — issue a new access + refresh pair
+      operationId: refreshSession
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RefreshSessionRequest" }
+      responses:
+        "200":
+          description: New token pair issued
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RefreshSessionResponse" }
+        "400":
+          description: Malformed request body
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Refresh token unknown, expired, or revoked (replay)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/auth/logout:
+    delete:
+      tags: [IAM / Auth]
+      summary: Logout — revoke the current session row
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Session revoked
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/me:
+    get:
+      tags: [IAM / Me]
+      summary: Current user profile
+      operationId: getMe
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profile returned
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GetMeResponse" }
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/me/2fa/enroll:
+    post:
+      tags: [IAM / Me]
+      summary: Begin TOTP enrollment
+      operationId: enrollTOTP
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Enrollment started
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EnrollTOTPResponse" }
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "409":
+          description: TOTP already verified for this user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/me/2fa/verify:
+    post:
+      tags: [IAM / Me]
+      summary: Verify TOTP code and mark enrollment complete
+      operationId: verifyTOTP
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VerifyTOTPRequest" }
+      responses:
+        "200":
+          description: Verification successful
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VerifyTOTPResponse" }
+        "400":
+          description: Malformed request body
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Invalid TOTP code or missing/invalid bearer token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/users/{id}/suspend:
+    post:
+      tags: [IAM / Admin]
+      summary: Suspend a user and revoke every active session
+      operationId: suspendUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+          description: Target user UUID.
+      responses:
+        "200":
+          description: User suspended
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SuspendUserResponse" }
+        "400":
+          description: Malformed user id OR self-suspend
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Bearer's user lacks iam.users/suspend/global permission
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Target user not found
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
@@ -247,6 +428,221 @@ paths:
               schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
         "502":
           description: catalog-svc unreachable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+
+  # ---------------------------------------------------------------------------
+  # Staff catalog write routes (BL-CAT-014 / S1-E-07)
+  # All require Bearer token + catalog.package.manage permission.
+  # Response shapes are the same read models (PackageDetail, DepartureDetail)
+  # so the frontend can reuse its existing display components.
+  # ---------------------------------------------------------------------------
+
+  /v1/packages/create:
+    # POST /v1/packages is handled inline under /v1/packages above, but since
+    # oapi-codegen merges methods on the same path, we declare it here as a
+    # separate path alias so it appears in the spec for documentation purposes.
+    # The actual route registration is done manually in cmd/server.go.
+    post:
+      tags: [Catalog-Staff]
+      summary: Create a catalog package (draft)
+      operationId: createPackage
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreatePackageBody" }
+      responses:
+        "201":
+          description: Package created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GetPackageResponse" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "403":
+          description: Missing catalog.package.manage permission
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+
+  /v1/packages/{id}/update:
+    put:
+      tags: [Catalog-Staff]
+      summary: Update a catalog package (partial)
+      operationId: updatePackageById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdatePackageBody" }
+      responses:
+        "200":
+          description: Package updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GetPackageResponse" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "403":
+          description: Missing catalog.package.manage permission
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "404":
+          description: Package not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+
+  /v1/packages/{id}/delete:
+    delete:
+      tags: [Catalog-Staff]
+      summary: Soft-delete a catalog package (archive)
+      operationId: deletePackageById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Package archived
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "403":
+          description: Missing catalog.package.manage permission
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "404":
+          description: Package not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+
+  /v1/packages/{id}/departures/create:
+    post:
+      tags: [Catalog-Staff]
+      summary: Create a departure under a package
+      operationId: createDeparture
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Package ULID
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateDepartureBody" }
+      responses:
+        "201":
+          description: Departure created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GetDepartureResponse" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "403":
+          description: Missing catalog.package.manage permission
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "404":
+          description: Package not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+
+  /v1/departures/{id}:
+    put:
+      tags: [Catalog-Staff]
+      summary: Update a departure (partial)
+      operationId: updateDepartureById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Departure ULID
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateDepartureBody" }
+      responses:
+        "200":
+          description: Departure updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GetDepartureResponse" }
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "403":
+          description: Missing catalog.package.manage permission
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
+        "404":
+          description: Departure not found
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
@@ -724,3 +1120,170 @@ components:
       required: [package]
       properties:
         package: { $ref: "#/components/schemas/PackageDetail" }
+
+    # ── IAM auth schemas (BL-IAM-018 / S1-E-12) ─────────────────────────
+    # All auth routes proxied from iam-svc REST → gateway REST → iam-svc gRPC.
+
+    UserProfile:
+      type: object
+      required: [user_id, email, name, branch_id, status]
+      properties:
+        user_id:    { type: string, format: uuid }
+        email:      { type: string, format: email }
+        name:       { type: string }
+        branch_id:  { type: string, format: uuid }
+        status:
+          type: string
+          enum: [active, suspended, pending]
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:     { type: string, format: email }
+        password:  { type: string }
+        totp_code: { type: string, description: "6-digit TOTP code; required only when TOTP is enrolled and verified." }
+
+    LoginResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [access_token, refresh_token, access_expires_at, refresh_expires_at, user]
+          properties:
+            access_token:       { type: string }
+            refresh_token:      { type: string }
+            access_expires_at:  { type: string, format: date-time }
+            refresh_expires_at: { type: string, format: date-time }
+            user: { $ref: "#/components/schemas/UserProfile" }
+
+    RefreshSessionRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token: { type: string }
+
+    RefreshSessionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [access_token, refresh_token, access_expires_at, refresh_expires_at]
+          properties:
+            access_token:       { type: string }
+            refresh_token:      { type: string }
+            access_expires_at:  { type: string, format: date-time }
+            refresh_expires_at: { type: string, format: date-time }
+
+    GetMeResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [user, totp_enrolled, totp_verified]
+          properties:
+            user: { $ref: "#/components/schemas/UserProfile" }
+            totp_enrolled: { type: boolean }
+            totp_verified: { type: boolean }
+
+    EnrollTOTPResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [secret, otpauth_url]
+          properties:
+            secret:      { type: string, description: "Base32 TOTP secret — display to user once." }
+            otpauth_url: { type: string, description: "otpauth:// URI for QR-code generation." }
+
+    VerifyTOTPRequest:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string, description: "6-digit TOTP code from the authenticator app." }
+
+    VerifyTOTPResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [verified_at]
+          properties:
+            verified_at: { type: string, format: date-time }
+
+    SuspendUserResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [user]
+          properties:
+            user: { $ref: "#/components/schemas/UserProfile" }
+
+    # ---------------------------------------------------------------------------
+    # Staff catalog write schemas (BL-CAT-014 / S1-E-07)
+    # ---------------------------------------------------------------------------
+
+    PricingInputBody:
+      type: object
+      required: [room_type, list_amount, list_currency, settlement_currency]
+      properties:
+        room_type:           { type: string, enum: [double, triple, quad] }
+        list_amount:         { type: integer, format: int64, minimum: 1 }
+        list_currency:       { type: string, enum: [IDR, USD] }
+        settlement_currency: { type: string, enum: [IDR], default: IDR }
+
+    CreatePackageBody:
+      type: object
+      required: [kind, name]
+      properties:
+        kind:            { $ref: "#/components/schemas/PackageKind" }
+        name:            { type: string, maxLength: 200 }
+        description:     { type: string }
+        cover_photo_url: { type: string }
+        highlights:      { type: array, items: { type: string } }
+        itinerary_id:    { type: string }
+        airline_id:      { type: string }
+        muthawwif_id:    { type: string }
+        hotel_ids:       { type: array, items: { type: string } }
+        addon_ids:       { type: array, items: { type: string } }
+        status:          { type: string, enum: [draft, active], default: draft }
+
+    UpdatePackageBody:
+      type: object
+      properties:
+        name:            { type: string, maxLength: 200 }
+        description:     { type: string }
+        cover_photo_url: { type: string }
+        highlights:      { type: array, items: { type: string } }
+        itinerary_id:    { type: string }
+        airline_id:      { type: string }
+        muthawwif_id:    { type: string }
+        hotel_ids:       { type: array, items: { type: string } }
+        addon_ids:       { type: array, items: { type: string } }
+        status:          { type: string, enum: [draft, active, archived] }
+
+    CreateDepartureBody:
+      type: object
+      required: [departure_date, return_date, total_seats]
+      properties:
+        departure_date: { type: string, format: date, description: "ISO YYYY-MM-DD" }
+        return_date:    { type: string, format: date, description: "ISO YYYY-MM-DD" }
+        total_seats:    { type: integer, minimum: 1 }
+        status:         { type: string, enum: [open, closed], default: open }
+        pricing:        { type: array, items: { $ref: "#/components/schemas/PricingInputBody" } }
+
+    UpdateDepartureBody:
+      type: object
+      properties:
+        departure_date: { type: string, format: date }
+        return_date:    { type: string, format: date }
+        total_seats:    { type: integer, minimum: 0, description: "0 = leave unchanged" }
+        status:         { type: string, enum: [open, closed, cancelled] }
+        pricing:        { type: array, items: { $ref: "#/components/schemas/PricingInputBody" } }

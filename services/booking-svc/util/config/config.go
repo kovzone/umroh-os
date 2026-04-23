@@ -6,15 +6,20 @@ import (
 
 // Config holds all configuration for the application.
 //
-// Pilot scaffold scope: app name, REST + gRPC ports, Postgres pool, OTel
-// tracer. Token (auth) config returns with F1.5 when real login/refresh/logout
-// handlers land.
+// S1-E-03 adds `catalog` section for the gRPC connection to catalog-svc
+// used by draft booking creation (ReserveSeats / GetDeparture calls).
 type Config struct {
 	App        App        `mapstructure:"app"`
 	Api        Api        `mapstructure:"api"`
 	Store      Store      `mapstructure:"store"`
 	OtelTracer OtelTracer `mapstructure:"otel_tracer"`
 	Iam        Iam        `mapstructure:"iam"`
+	Catalog    Catalog    `mapstructure:"catalog"`
+}
+
+// Catalog config — gRPC connection to catalog-svc for ReserveSeats / GetDeparture.
+type Catalog struct {
+	GrpcTarget string `mapstructure:"grpc_target"`
 }
 
 // Iam config — how booking-svc reaches iam-svc's internal gRPC surface.

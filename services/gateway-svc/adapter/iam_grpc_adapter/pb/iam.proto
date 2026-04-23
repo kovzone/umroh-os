@@ -22,6 +22,15 @@ service IamService {
   rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse) {}
   rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse) {}
   rpc RecordAudit(RecordAuditRequest) returns (RecordAuditResponse) {}
+
+  // Auth RPCs (BL-IAM-018 / S1-E-12) — gateway proxies all former iam-svc REST routes.
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+  rpc RefreshSession(RefreshSessionRequest) returns (RefreshSessionResponse) {}
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {}
+  rpc GetMe(GetMeRequest) returns (GetMeResponse) {}
+  rpc EnrollTOTP(EnrollTOTPRequest) returns (EnrollTOTPResponse) {}
+  rpc VerifyTOTP(VerifyTOTPRequest) returns (VerifyTOTPResponse) {}
+  rpc SuspendUser(SuspendUserRequest) returns (SuspendUserResponse) {}
 }
 
 message ValidateTokenRequest {
@@ -61,4 +70,88 @@ message RecordAuditRequest {
 message RecordAuditResponse {
   string audit_log_id = 1;
   int64 created_at_unix = 2;
+}
+
+// ── Auth RPC messages (BL-IAM-018 / S1-E-12) ─────────────────────────────
+
+message UserProfile {
+  string user_id   = 1;
+  string email     = 2;
+  string name      = 3;
+  string branch_id = 4;
+  string status    = 5; // "active" | "suspended" | "pending"
+}
+
+message LoginRequest {
+  string email      = 1;
+  string password   = 2;
+  string totp_code  = 3;
+  string user_agent = 4;
+  string ip         = 5;
+}
+
+message LoginResponse {
+  string access_token       = 1;
+  string refresh_token      = 2;
+  int64  access_expires_at  = 3;
+  int64  refresh_expires_at = 4;
+  UserProfile user          = 5;
+}
+
+message RefreshSessionRequest {
+  string refresh_token = 1;
+  string user_agent    = 2;
+  string ip            = 3;
+}
+
+message RefreshSessionResponse {
+  string access_token       = 1;
+  string refresh_token      = 2;
+  int64  access_expires_at  = 3;
+  int64  refresh_expires_at = 4;
+}
+
+message LogoutRequest {
+  string session_id = 1;
+}
+
+message LogoutResponse {
+  bool ok = 1;
+}
+
+message GetMeRequest {
+  string user_id = 1;
+}
+
+message GetMeResponse {
+  UserProfile user          = 1;
+  bool        totp_enrolled = 2;
+  bool        totp_verified = 3;
+}
+
+message EnrollTOTPRequest {
+  string user_id = 1;
+}
+
+message EnrollTOTPResponse {
+  string secret      = 1;
+  string otpauth_url = 2;
+}
+
+message VerifyTOTPRequest {
+  string user_id = 1;
+  string code    = 2;
+}
+
+message VerifyTOTPResponse {
+  int64 verified_at_unix = 1;
+}
+
+message SuspendUserRequest {
+  string actor_user_id  = 1;
+  string target_user_id = 2;
+}
+
+message SuspendUserResponse {
+  UserProfile user = 1;
 }

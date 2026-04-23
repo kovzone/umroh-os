@@ -369,12 +369,123 @@ type ServerInterface interface {
 	// Get active package-departure detail
 	// (GET /v1/package-departures/{id})
 	GetPackageDepartureById(c *fiber.Ctx, id string) error
+	// Update departure (staff only)
+	// (PUT /v1/package-departures/{id})
+	UpdateDeparture(c *fiber.Ctx, id string) error
 	// List active packages
 	// (GET /v1/packages)
 	ListPackages(c *fiber.Ctx, params ListPackagesParams) error
+	// Create package (staff only)
+	// (POST /v1/packages)
+	CreatePackage(c *fiber.Ctx) error
 	// Get active package detail
 	// (GET /v1/packages/{id})
 	GetPackageById(c *fiber.Ctx, id string) error
+	// Update package (staff only)
+	// (PUT /v1/packages/{id})
+	UpdatePackage(c *fiber.Ctx, id string) error
+	// Add departure to package (staff only)
+	// (POST /v1/packages/{id}/departures)
+	CreateDeparture(c *fiber.Ctx, packageId string) error
+}
+
+// ── Staff write request/response types (S1-E-07 / BL-CAT-014) ──────────────
+// These are hand-authored to match the OpenAPI spec additions. Run
+// `make generate-oapi` after updating openapi.yaml to regenerate api.gen.go.
+
+// PricingInputBody is the JSON shape for one room-type price row.
+type PricingInputBody struct {
+	RoomType           RoomType `json:"room_type"`
+	ListAmount         int64    `json:"list_amount"`
+	ListCurrency       string   `json:"list_currency,omitempty"`
+	SettlementCurrency string   `json:"settlement_currency,omitempty"`
+}
+
+// CreatePackageRequestBody is the JSON body for POST /v1/packages.
+type CreatePackageRequestBody struct {
+	Kind          PackageKind  `json:"kind"`
+	Name          string       `json:"name"`
+	Description   string       `json:"description"`
+	CoverPhotoUrl string       `json:"cover_photo_url"`
+	Highlights    []string     `json:"highlights,omitempty"`
+	Status        string       `json:"status,omitempty"`
+	ItineraryID   string       `json:"itinerary_id,omitempty"`
+	AirlineID     string       `json:"airline_id,omitempty"`
+	MuthawwifID   string       `json:"muthawwif_id,omitempty"`
+	HotelIDs      []string     `json:"hotel_ids,omitempty"`
+	AddonIDs      []string     `json:"addon_ids,omitempty"`
+}
+
+// UpdatePackageRequestBody is the JSON body for PUT /v1/packages/{id}.
+type UpdatePackageRequestBody struct {
+	Name          string            `json:"name,omitempty"`
+	Description   string            `json:"description,omitempty"`
+	CoverPhotoUrl string            `json:"cover_photo_url,omitempty"`
+	Highlights    []string          `json:"highlights,omitempty"`
+	Status        string            `json:"status,omitempty"`
+	ItineraryID   string            `json:"itinerary_id,omitempty"`
+	AirlineID     string            `json:"airline_id,omitempty"`
+	MuthawwifID   string            `json:"muthawwif_id,omitempty"`
+	HotelIDs      []string          `json:"hotel_ids,omitempty"`
+	AddonIDs      []string          `json:"addon_ids,omitempty"`
+}
+
+// CreateDepartureRequestBody is the JSON body for POST /v1/packages/{id}/departures.
+type CreateDepartureRequestBody struct {
+	DepartureDate string             `json:"departure_date"`
+	ReturnDate    string             `json:"return_date"`
+	TotalSeats    int                `json:"total_seats"`
+	Status        string             `json:"status,omitempty"`
+	Pricing       []PricingInputBody `json:"pricing,omitempty"`
+}
+
+// UpdateDepartureRequestBody is the JSON body for PUT /v1/package-departures/{id}.
+type UpdateDepartureRequestBody struct {
+	DepartureDate string             `json:"departure_date,omitempty"`
+	ReturnDate    string             `json:"return_date,omitempty"`
+	TotalSeats    int                `json:"total_seats,omitempty"`
+	Status        string             `json:"status,omitempty"`
+	Pricing       []PricingInputBody `json:"pricing,omitempty"`
+}
+
+// StaffPackageDetail mirrors PackageDetail but also surfaces status (draft/archived).
+type StaffPackageDetail struct {
+	Id            string             `json:"id"`
+	Kind          PackageKind        `json:"kind"`
+	Name          string             `json:"name"`
+	Description   string             `json:"description"`
+	Highlights    []string           `json:"highlights"`
+	CoverPhotoUrl string             `json:"cover_photo_url"`
+	Status        string             `json:"status"`
+	Itinerary     *Itinerary         `json:"itinerary,omitempty"`
+	Hotels        []HotelRef         `json:"hotels"`
+	Airline       *AirlineRef        `json:"airline,omitempty"`
+	Muthawwif     *MuthawwifRef      `json:"muthawwif,omitempty"`
+	AddOns        []AddonRef         `json:"add_ons"`
+	Departures    []DepartureSummary `json:"departures"`
+}
+
+// StaffPackageResponse is the envelope for staff package write responses.
+type StaffPackageResponse struct {
+	Package StaffPackageDetail `json:"package"`
+}
+
+// StaffDepartureDetail mirrors DepartureDetail but surfaces all status values.
+type StaffDepartureDetail struct {
+	Id             string           `json:"id"`
+	PackageId      string           `json:"package_id"`
+	DepartureDate  string           `json:"departure_date"`
+	ReturnDate     string           `json:"return_date"`
+	TotalSeats     int              `json:"total_seats"`
+	RemainingSeats int              `json:"remaining_seats"`
+	Status         string           `json:"status"`
+	Pricing        []PackagePricing `json:"pricing"`
+	VendorReadiness VendorReadiness `json:"vendor_readiness"`
+}
+
+// StaffDepartureResponse is the envelope for staff departure write responses.
+type StaffDepartureResponse struct {
+	Departure StaffDepartureDetail `json:"departure"`
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -518,6 +629,44 @@ func (siw *ServerInterfaceWrapper) GetPackageById(c *fiber.Ctx) error {
 	return siw.Handler.GetPackageById(c, id)
 }
 
+// CreatePackage operation middleware
+func (siw *ServerInterfaceWrapper) CreatePackage(c *fiber.Ctx) error {
+	return siw.Handler.CreatePackage(c)
+}
+
+// UpdatePackage operation middleware
+func (siw *ServerInterfaceWrapper) UpdatePackage(c *fiber.Ctx) error {
+	var err error
+	var id string
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.UpdatePackage(c, id)
+}
+
+// CreateDeparture operation middleware
+func (siw *ServerInterfaceWrapper) CreateDeparture(c *fiber.Ctx) error {
+	var err error
+	var packageId string
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &packageId, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.CreateDeparture(c, packageId)
+}
+
+// UpdateDeparture operation middleware
+func (siw *ServerInterfaceWrapper) UpdateDeparture(c *fiber.Ctx) error {
+	var err error
+	var id string
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.UpdateDeparture(c, id)
+}
+
 // FiberServerOptions provides options for the Fiber server.
 type FiberServerOptions struct {
 	BaseURL     string
@@ -546,10 +695,14 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 	router.Get(options.BaseURL+"/system/ready", wrapper.Readiness)
 
 	router.Get(options.BaseURL+"/v1/package-departures/:id", wrapper.GetPackageDepartureById)
+	router.Put(options.BaseURL+"/v1/package-departures/:id", wrapper.UpdateDeparture)
 
 	router.Get(options.BaseURL+"/v1/packages", wrapper.ListPackages)
+	router.Post(options.BaseURL+"/v1/packages", wrapper.CreatePackage)
 
 	router.Get(options.BaseURL+"/v1/packages/:id", wrapper.GetPackageById)
+	router.Put(options.BaseURL+"/v1/packages/:id", wrapper.UpdatePackage)
+	router.Post(options.BaseURL+"/v1/packages/:id/departures", wrapper.CreateDeparture)
 
 }
 

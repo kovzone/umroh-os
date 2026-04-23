@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package="./pb";
+
+// Narrow stub of catalog-svc's CatalogService — booking-svc only calls the
+// two Inventory RPCs (ReserveSeats + ReleaseSeats) per the consumer-stub rule
+// in slice-S1.md § IAM: "consumer services must NOT import the producer's pb
+// package directly — each consumer keeps its own vendored stub containing only
+// the RPCs it calls."
+//
+// Kept in sync by hand with services/catalog-svc/api/grpc_api/pb/catalog.proto.
+// Wire names must match exactly.
+
+service CatalogService {
+  // ReserveSeats — atomic seat reservation per § Inventory contract.
+  rpc ReserveSeats(ReserveSeatsRequest) returns (ReserveSeatsResponse) {}
+
+  // ReleaseSeats — reverses a prior ReserveSeats; idempotent via reservation_id.
+  rpc ReleaseSeats(ReleaseSeatsRequest) returns (ReleaseSeatsResponse) {}
+
+  // GetPackageDeparture — used by booking-svc to validate departure exists
+  // and is open before creating a draft.
+  rpc GetPackageDeparture(GetPackageDepartureRequest) returns (GetPackageDepartureResponse) {}
+}
+
+// --- ReserveSeats ---
+
+message ReserveSeatsRequest {
+  string reservation_id        = 1;
+  string departure_id          = 2;
+  int32  seats                 = 3;
+  int32  idempotency_ttl_hours = 4;
+}
+
+message Reservation {
+  string reservation_id = 1;
+  string departure_id   = 2;
+  int32  seats          = 3;
+  string reserved_at    = 4;
+  string expires_at     = 5;
+}
+
+message ReserveSeatsResponse {
+  Reservation reservation  = 1;
+  int32        remaining_seats = 2;
+  bool         replayed    = 3;
+}
+
+// --- ReleaseSeats ---
+
+message ReleaseSeatsRequest {
+  string reservation_id = 1;
+  int32  seats          = 2;
+  string reason         = 3;
+}
+
+message Released {
+  string reservation_id  = 1;
+  string departure_id    = 2;
+  int32  seats_released  = 3;
+  string released_at     = 4;
+}
+
+message ReleaseSeatsResponse {
+  Released released        = 1;
+  int32    remaining_seats = 2;
+  bool     replayed        = 3;
+}
+
+// --- GetPackageDeparture (narrow: only fields booking-svc needs) ---
+
+message GetPackageDepartureRequest {
+  string id = 1;
+}
+
+message DepartureDetail {
+  string id               = 1;
+  string package_id       = 2;
+  string departure_date   = 3;
+  string return_date      = 4;
+  int32  total_seats      = 5;
+  int32  remaining_seats  = 6;
+  string status           = 7;
+}
+
+message GetPackageDepartureResponse {
+  DepartureDetail departure = 1;
+}

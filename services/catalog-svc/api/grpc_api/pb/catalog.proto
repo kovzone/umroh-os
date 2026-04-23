@@ -18,6 +18,12 @@ option go_package="./pb";
 // Catalog-svc's REST handlers still exist and call the same service-layer
 // methods as these gRPC handlers; G7 (BL-REFACTOR-001) removes the REST
 // side once gateway is proven end-to-end.
+//
+// S1-E-07 / BL-CAT-014 adds the staff write quartet:
+// CreatePackage, UpdatePackage, CreateDeparture, UpdateDeparture.
+// Callers (gateway-svc) must have verified Bearer + catalog.package.manage
+// permission before forwarding; catalog-svc enforces the permission check
+// via iam-svc.CheckPermission on every mutating call.
 service CatalogService {
   // Healthz — pilot placeholder. Retained for reflection-based probing
   // that predates the standard grpc.health.v1.Health protocol added in
@@ -38,6 +44,35 @@ service CatalogService {
   // Returns NOT_FOUND for departed/completed/cancelled/unknown.
   // Mirrors GET /v1/package-departures/{id}.
   rpc GetPackageDeparture(GetPackageDepartureRequest) returns (GetPackageDepartureResponse) {}
+
+  // ---- Staff write quartet (S1-E-07 / BL-CAT-014) ----
+
+  // CreatePackage — staff-only. Creates a new catalog package (defaults
+  // to status="draft"). Requires user_id + permission catalog.package.manage
+  // in the request; catalog-svc calls CheckPermission before proceeding.
+  rpc CreatePackage(CreatePackageRequest) returns (CreatePackageResponse) {}
+
+  // UpdatePackage — staff-only. Partial-update: only non-empty fields
+  // are applied. Includes status transitions (draft→active, active→archived).
+  rpc UpdatePackage(UpdatePackageRequest) returns (UpdatePackageResponse) {}
+
+  // DeletePackage — staff-only. Soft-delete / archive a package.
+  // Sets deleted_at and status=archived atomically.
+  rpc DeletePackage(DeletePackageRequest) returns (DeletePackageResponse) {}
+
+  // CreateDeparture — staff-only. Creates a new departure under a package.
+  rpc CreateDeparture(CreateDepartureRequest) returns (CreateDepartureResponse) {}
+
+  // UpdateDeparture — staff-only. Partial-update departure fields.
+  rpc UpdateDeparture(UpdateDepartureRequest) returns (UpdateDepartureResponse) {}
+
+  // ReserveSeats — internal (booking-svc only). Atomic seat reservation
+  // per § Inventory contract. Idempotent via reservation_id.
+  rpc ReserveSeats(ReserveSeatsRequest) returns (ReserveSeatsResponse) {}
+
+  // ReleaseSeats — internal (booking-svc / payment-svc). Reverses a
+  // prior ReserveSeats, idempotent via reservation_id.
+  rpc ReleaseSeats(ReleaseSeatsRequest) returns (ReleaseSeatsResponse) {}
 }
 
 // -----------------------------------------------------------------------------
@@ -220,4 +255,188 @@ message DepartureDetail {
 
 message GetPackageDepartureResponse {
   DepartureDetail departure = 1;
+}
+
+// -----------------------------------------------------------------------------
+// CreatePackage (S1-E-07 / BL-CAT-014)
+// -----------------------------------------------------------------------------
+
+// PricingInput is the staff-side input for one room-type price row on a
+// departure. Used in CreateDeparture and UpdateDeparture.
+message PricingInput {
+  string room_type   = 1; // "double" | "triple" | "quad" — required
+  int64  list_amount = 2; // whole currency units — required, must be > 0
+  string list_currency        = 3; // "IDR" | "USD" — required
+  string settlement_currency  = 4; // always "IDR" in MVP
+}
+
+message CreatePackageRequest {
+  // Identity of the calling staff user. gateway-svc populates this from the
+  // validated token claims. catalog-svc calls iam-svc.CheckPermission with
+  // resource="catalog_package", action="manage", scope="global".
+  string user_id   = 1; // UUID — required
+  string branch_id = 2; // UUID — optional (for audit)
+
+  // Package fields — all required for create.
+  string kind          = 3; // catalog.package_kind enum value
+  string name          = 4; // non-empty, ≤ 200 chars
+  string description   = 5; // may be empty at draft stage
+  string cover_photo_url = 6;
+  repeated string highlights = 7;
+
+  // Optional master-data references. Empty string = no reference.
+  string itinerary_id  = 8;
+  string airline_id    = 9;
+  string muthawwif_id  = 10;
+
+  // Associations — IDs of existing hotel / add-on rows to link.
+  repeated string hotel_ids = 11;
+  repeated string addon_ids = 12;
+
+  // Status on create: "draft" (default) or "active". Other values are rejected.
+  string status = 13; // defaults to "draft" when empty
+}
+
+message CreatePackageResponse {
+  PackageDetail package = 1;
+}
+
+// -----------------------------------------------------------------------------
+// UpdatePackage (S1-E-07 / BL-CAT-014)
+// -----------------------------------------------------------------------------
+
+message UpdatePackageRequest {
+  // Identity of the calling staff user.
+  string user_id   = 1; // UUID — required
+  string branch_id = 2; // UUID — optional
+
+  string id = 3; // package ULID — required
+
+  // Optional update fields. Empty / zero value = "leave as is".
+  string name          = 4;
+  string description   = 5;
+  string cover_photo_url = 6;
+  repeated string highlights = 7;
+  string itinerary_id  = 8;
+  string airline_id    = 9;
+  string muthawwif_id  = 10;
+
+  // When non-empty, replaces the hotel / addon associations fully.
+  // Empty slice = "leave as is" (not "clear all").
+  repeated string hotel_ids = 11;
+  repeated string addon_ids = 12;
+
+  // Status transition: "draft" → "active", "active" → "archived".
+  // Validated by service layer; empty = no transition.
+  string status = 13;
+}
+
+message UpdatePackageResponse {
+  PackageDetail package = 1;
+}
+
+// -----------------------------------------------------------------------------
+// DeletePackage (S1-E-07 / BL-CAT-014)
+// -----------------------------------------------------------------------------
+
+message DeletePackageRequest {
+  string user_id   = 1; // UUID — required
+  string branch_id = 2; // UUID — optional
+  string id        = 3; // package ULID — required
+}
+
+message DeletePackageResponse {
+  bool ok = 1;
+}
+
+// -----------------------------------------------------------------------------
+// CreateDeparture (S1-E-07 / BL-CAT-014)
+// -----------------------------------------------------------------------------
+
+message CreateDepartureRequest {
+  string user_id   = 1; // UUID — required
+  string branch_id = 2; // UUID — optional
+
+  string package_id      = 3; // ULID — required; must reference an existing package
+  string departure_date  = 4; // ISO YYYY-MM-DD — required
+  string return_date     = 5; // ISO YYYY-MM-DD — required; must be >= departure_date
+  int32  total_seats     = 6; // required; must be > 0
+  string status          = 7; // "open" | "closed" — defaults to "open"
+
+  // Initial pricing rows. Recommended to include all room types at create time.
+  repeated PricingInput pricing = 8;
+}
+
+message CreateDepartureResponse {
+  DepartureDetail departure = 1;
+}
+
+// -----------------------------------------------------------------------------
+// UpdateDeparture (S1-E-07 / BL-CAT-014)
+// -----------------------------------------------------------------------------
+
+message UpdateDepartureRequest {
+  string user_id   = 1; // UUID — required
+  string branch_id = 2; // UUID — optional
+  string id        = 3; // departure ULID — required
+
+  // Optional update fields. Empty / zero value = "leave as is".
+  string departure_date = 4;
+  string return_date    = 5;
+  int32  total_seats    = 6; // 0 = leave as is
+
+  // Status transition. Valid set: open→closed, closed→open, any→cancelled.
+  // departed / completed transitions are system-driven; rejected here.
+  string status = 7;
+
+  // When non-empty, fully replaces the pricing rows for this departure.
+  repeated PricingInput pricing = 8;
+}
+
+message UpdateDepartureResponse {
+  DepartureDetail departure = 1;
+}
+
+// -----------------------------------------------------------------------------
+// ReserveSeats / ReleaseSeats (§ Inventory, S1-J-03)
+// -----------------------------------------------------------------------------
+
+message ReserveSeatsRequest {
+  string reservation_id        = 1; // ULID — caller-supplied, idempotency key
+  string departure_id          = 2; // ULID
+  int32  seats                 = 3; // must be >= 1
+  int32  idempotency_ttl_hours = 4; // 0 = default 24; clamped [1, 168]
+}
+
+message Reservation {
+  string reservation_id = 1;
+  string departure_id   = 2;
+  int32  seats          = 3;
+  string reserved_at    = 4; // RFC 3339
+  string expires_at     = 5; // RFC 3339
+}
+
+message ReserveSeatsResponse {
+  Reservation reservation  = 1;
+  int32        remaining_seats = 2;
+  bool         replayed    = 3;
+}
+
+message ReleaseSeatsRequest {
+  string reservation_id = 1; // ULID — must reference a prior ReserveSeats
+  int32  seats          = 2; // 0 = full release (original amount)
+  string reason         = 3; // free-form audit note ≤ 256 chars
+}
+
+message Released {
+  string reservation_id  = 1;
+  string departure_id    = 2;
+  int32  seats_released  = 3;
+  string released_at     = 4; // RFC 3339
+}
+
+message ReleaseSeatsResponse {
+  Released released        = 1;
+  int32    remaining_seats = 2;
+  bool     replayed        = 3;
 }
