@@ -1,17 +1,16 @@
 // paid_fanout.go — FanOutBookingPaid service-layer implementation.
 //
-// S3-E-02 / S3-E-03 / ADR-0006.
+// S3-E-02 / S3-E-03 / S4-E-02 / ADR-0006.
 //
 // Called from the MarkBookingPaid gRPC handler after a booking transitions to
 // paid_in_full. Fans out to:
-//   - logistics-svc.OnBookingPaid  → creates fulfillment_task (S3-E-02)
-//   - finance-svc.OnPaymentReceived → posts double-entry journal (S3-E-03)
+//   - logistics-svc.OnBookingPaid      → creates fulfillment_task (S3-E-02)
+//   - finance-svc.OnPaymentReceived    → posts double-entry journal (S3-E-03)
+//   - crm-svc.OnBookingPaidInFull      → updates lead to 'converted' (S4-E-02)
 //
-// IMPORTANT (ADR-0006 / §S3-J-01): Both calls are SYNCHRONOUS within the same
-// goroutine that handles MarkBookingPaid. booking-svc does NOT fork goroutines
-// for these calls. Failure in either downstream call must be surfaced back to
-// the caller so the webhook pipeline can return 500 (causing gateway retry).
-// Both downstream services are idempotent, so retries are safe.
+// IMPORTANT (ADR-0006 / §S3-J-01): logistics + finance calls are SYNCHRONOUS.
+// The CRM call is BEST-EFFORT: failure is logged but does not propagate.
+// Both logistics and finance are idempotent, so retries are safe.
 
 package service
 
@@ -19,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"booking-svc/adapter/crm_grpc_adapter"
 	"booking-svc/adapter/finance_grpc_adapter"
 	"booking-svc/adapter/logistics_grpc_adapter"
 	"booking-svc/util/logging"
@@ -30,6 +30,7 @@ import (
 // FanOutBookingPaidParams holds the inputs for the fan-out.
 // Amount is int64 (integer IDR) per §S3-J-03 contract.
 // JamaahIDs is required for the logistics fan-out per §S3-J-02 contract.
+// LeadID is optional; used by the CRM fan-out to update lead status (S4-E-02).
 type FanOutBookingPaidParams struct {
 	BookingID   string
 	DepartureID string
@@ -37,6 +38,8 @@ type FanOutBookingPaidParams struct {
 	InvoiceID   string
 	Amount      int64  // integer IDR
 	ReceivedAt  string // RFC3339; empty = server time
+	LeadID      string // optional; CRM lead attribution (S4-E-02)
+	PaidAt      string // RFC3339; empty = server time
 }
 
 // FanOutBookingPaidResult holds the combined result of both fan-out calls.
@@ -157,6 +160,48 @@ func (svc *Service) FanOutBookingPaid(ctx context.Context, params *FanOutBooking
 		logger.Warn().
 			Str("op", op).
 			Msg("financeClient is nil — skipping finance fan-out (service not configured)")
+	}
+
+	// --- crm-svc.OnBookingPaidInFull (best-effort, S4-E-02) ---
+	//
+	// CRM enrichment is NOT synchronous and NOT fatal. A failure here must
+	// NOT cause the booking paid response to fail. Log + continue.
+	if svc.crmClient != nil {
+		crmCtx, crmSpan := svc.tracer.Start(ctx, op+".crm")
+		crmSpan.SetAttributes(
+			attribute.String("booking_id", params.BookingID),
+			attribute.String("lead_id", params.LeadID),
+		)
+
+		crmResult, crmErr := svc.crmClient.OnBookingPaidInFull(crmCtx, &crm_grpc_adapter.OnBookingPaidInFullParams{
+			BookingID: params.BookingID,
+			LeadID:    params.LeadID,
+			PaidAt:    params.PaidAt,
+		})
+		if crmErr != nil {
+			// Best-effort: log but do NOT return error.
+			crmSpan.RecordError(crmErr)
+			crmSpan.SetStatus(otelCodes.Error, crmErr.Error())
+			crmSpan.End()
+			logger.Warn().
+				Err(crmErr).
+				Str("op", op+".crm").
+				Str("booking_id", params.BookingID).
+				Msg("crm-svc.OnBookingPaidInFull failed (best-effort, ignored)")
+		} else {
+			logger.Info().
+				Str("op", op+".crm").
+				Str("booking_id", params.BookingID).
+				Bool("updated", crmResult.Updated).
+				Str("lead_id", crmResult.LeadID).
+				Msg("crm-svc.OnBookingPaidInFull succeeded")
+			crmSpan.SetStatus(otelCodes.Ok, "success")
+			crmSpan.End()
+		}
+	} else {
+		logger.Warn().
+			Str("op", op).
+			Msg("crmClient is nil — skipping CRM paid fan-out (service not configured)")
 	}
 
 	span.SetStatus(otelCodes.Ok, "fan-out complete")

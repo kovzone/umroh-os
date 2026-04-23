@@ -7,6 +7,7 @@ import (
 	"os/signal"
 
 	"booking-svc/adapter/catalog_grpc_adapter"
+	"booking-svc/adapter/crm_grpc_adapter"
 	"booking-svc/adapter/finance_grpc_adapter"
 	"booking-svc/adapter/iam_grpc_adapter"
 	"booking-svc/adapter/logistics_grpc_adapter"
@@ -227,8 +228,50 @@ func start() {
 	}()
 	financeAdapter := finance_grpc_adapter.NewAdapter(logger, tracer, financeConn)
 
+	// --- Dial crm-svc gRPC (S4-E-02) ---
+	//
+	// Used by CreateDraftBooking and MarkBookingPaid to notify crm-svc of lead
+	// lifecycle events. CRM calls are best-effort: failure does not block booking
+	// operations. An empty crm.grpc_target in config disables the dial and the
+	// service will log a warning that crmClient is nil.
+	var crmAdapter *crm_grpc_adapter.Adapter
+	if config.Crm.GrpcTarget != "" {
+		crmConn, err := grpc.NewClient(
+			config.Crm.GrpcTarget,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+		)
+		if err != nil {
+			logger.Error().
+				Str("op", op).
+				Str("scope", "Dial crm-svc gRPC").
+				Str("target", config.Crm.GrpcTarget).
+				Err(err).
+				Msg("")
+			os.Exit(1)
+		}
+		defer func() {
+			if err := crmConn.Close(); err != nil {
+				logger.Error().Err(err).Msg("close crm gRPC conn")
+			}
+		}()
+		crmAdapter = crm_grpc_adapter.NewAdapter(logger, tracer, crmConn)
+	} else {
+		logger.Warn().
+			Str("op", op).
+			Msg("crm.grpc_target not configured — CRM fan-out disabled")
+	}
+
 	// --- Init service layer ---
-	svc := service.NewService(logger, tracer, config.App.Name, store, iamAdapter, catalogAdapter, logisticsAdapter, financeAdapter)
+	// Note: crmAdapter may be nil (when crm.grpc_target is not configured).
+	// Passing a typed nil (*crm_grpc_adapter.Adapter) as the CrmClient interface
+	// would produce a non-nil interface value, causing panics on nil dereference.
+	// We use an explicit interface nil when the adapter is unset.
+	var crmClient service.CrmClient
+	if crmAdapter != nil {
+		crmClient = crmAdapter
+	}
+	svc := service.NewService(logger, tracer, config.App.Name, store, iamAdapter, catalogAdapter, logisticsAdapter, financeAdapter, crmClient)
 
 	// --- Init API layer (gRPC only per ADR 0009) ---
 	grpcServer := grpc_api.NewServer(logger, tracer, svc)

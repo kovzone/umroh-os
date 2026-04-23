@@ -5,6 +5,7 @@ import (
 
 	"gateway-svc/adapter/booking_grpc_adapter"
 	"gateway-svc/adapter/catalog_grpc_adapter"
+	"gateway-svc/adapter/crm_grpc_adapter"
 	"gateway-svc/adapter/finance_rest_adapter"
 	"gateway-svc/adapter/iam_grpc_adapter"
 	"gateway-svc/adapter/iam_rest_adapter"
@@ -70,6 +71,16 @@ type IService interface {
 	// Booking draft (BL-BOOK-001..006 / S1-E-03 / BL-GTW-003) — proxied via
 	// booking_grpc_adapter. Public in S1 (auth arrives with F4).
 	CreateDraftBooking(ctx context.Context, params *booking_grpc_adapter.CreateDraftBookingParams) (*booking_grpc_adapter.CreateDraftBookingResult, error)
+
+	// CRM lead management (S4-E-02 / BL-CRM-001..003) — proxied via crm_grpc_adapter.
+	// POST /v1/leads — public (lead capture from landing pages, B2C forms).
+	CreateLead(ctx context.Context, params *crm_grpc_adapter.CreateLeadParams) (*crm_grpc_adapter.LeadResult, error)
+	// GET /v1/leads — bearer (cs/admin only).
+	ListLeads(ctx context.Context, params *crm_grpc_adapter.ListLeadsParams) (*crm_grpc_adapter.ListLeadsResult, error)
+	// GET /v1/leads/:id — bearer.
+	GetLead(ctx context.Context, id string) (*crm_grpc_adapter.LeadResult, error)
+	// PUT /v1/leads/:id — bearer.
+	UpdateLead(ctx context.Context, params *crm_grpc_adapter.UpdateLeadParams) (*crm_grpc_adapter.LeadResult, error)
 }
 
 // Adapters bundles the adapters this service can dispatch through.
@@ -82,6 +93,7 @@ type Adapters struct {
 	catalogGrpc *catalog_grpc_adapter.Adapter
 	financeRest *finance_rest_adapter.Adapter
 	bookingGrpc *booking_grpc_adapter.Adapter
+	crmGrpc     *crm_grpc_adapter.Adapter
 }
 
 type Service struct {
@@ -102,6 +114,7 @@ type NewServiceParams struct {
 	CatalogGrpc *catalog_grpc_adapter.Adapter
 	FinanceRest *finance_rest_adapter.Adapter
 	BookingGrpc *booking_grpc_adapter.Adapter
+	CrmGrpc     *crm_grpc_adapter.Adapter
 }
 
 func NewService(p NewServiceParams) IService {
@@ -115,6 +128,7 @@ func NewService(p NewServiceParams) IService {
 			catalogGrpc: p.CatalogGrpc,
 			financeRest: p.FinanceRest,
 			bookingGrpc: p.BookingGrpc,
+			crmGrpc:     p.CrmGrpc,
 		},
 	}
 }

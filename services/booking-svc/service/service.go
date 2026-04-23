@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"booking-svc/adapter/catalog_grpc_adapter"
+	"booking-svc/adapter/crm_grpc_adapter"
 	"booking-svc/adapter/finance_grpc_adapter"
 	"booking-svc/adapter/iam_grpc_adapter"
 	"booking-svc/adapter/logistics_grpc_adapter"
@@ -17,6 +18,7 @@ import (
 //
 // S1-E-03 adds CreateDraftBooking for BL-BOOK-001..006.
 // S3 adds FanOutBookingPaid for the logistics + finance callback chain.
+// S4-E-02 adds FanOutBookingCreated for the CRM callback (best-effort).
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
@@ -61,6 +63,14 @@ type FinanceClient interface {
 	OnPaymentReceived(ctx context.Context, params *finance_grpc_adapter.OnPaymentReceivedParams) (*finance_grpc_adapter.OnPaymentReceivedResult, error)
 }
 
+// CrmClient is the slice of crm-svc the booking-svc service layer calls (S4-E-02).
+// Defined as an interface so tests can inject a mock.
+// CRM calls are best-effort: failure does not block booking operations.
+type CrmClient interface {
+	OnBookingCreated(ctx context.Context, params *crm_grpc_adapter.OnBookingCreatedParams) (*crm_grpc_adapter.OnBookingCreatedResult, error)
+	OnBookingPaidInFull(ctx context.Context, params *crm_grpc_adapter.OnBookingPaidInFullParams) (*crm_grpc_adapter.OnBookingPaidInFullResult, error)
+}
+
 type Service struct {
 	logger *zerolog.Logger
 	tracer trace.Tracer
@@ -85,6 +95,11 @@ type Service struct {
 	// financeClient is the consumer-side wrapper around finance-svc's gRPC surface.
 	// Used by MarkBookingPaid to post journal entries (S3-E-03).
 	financeClient FinanceClient
+
+	// crmClient is the consumer-side wrapper around crm-svc's gRPC surface (S4-E-02).
+	// Used by CreateDraftBooking and MarkBookingPaid for lead lifecycle updates.
+	// Best-effort: nil is acceptable; calls are skipped when nil.
+	crmClient CrmClient
 }
 
 func NewService(
@@ -96,6 +111,7 @@ func NewService(
 	catalogClient CatalogClient,
 	logisticsClient LogisticsClient,
 	financeClient FinanceClient,
+	crmClient CrmClient,
 ) IService {
 	return &Service{
 		logger:          logger,
@@ -106,5 +122,6 @@ func NewService(
 		catalogClient:   catalogClient,
 		logisticsClient: logisticsClient,
 		financeClient:   financeClient,
+		crmClient:       crmClient,
 	}
 }

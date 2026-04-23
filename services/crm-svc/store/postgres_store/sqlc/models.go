@@ -14,3 +14,26 @@ type Diagnostic struct {
 	Message   string             `json:"message"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
+
+// Lead maps to crm.leads (S4-E-02).
+// Hand-written: regenerate with sqlc after migration 000014 is applied.
+type Lead struct {
+	ID                  pgtype.UUID        `json:"id"`
+	Source              string             `json:"source"`
+	UtmSource           pgtype.Text        `json:"utm_source"`
+	UtmMedium           pgtype.Text        `json:"utm_medium"`
+	UtmCampaign         pgtype.Text        `json:"utm_campaign"`
+	UtmContent          pgtype.Text        `json:"utm_content"`
+	UtmTerm             pgtype.Text        `json:"utm_term"`
+	Name                string             `json:"name"`
+	Phone               string             `json:"phone"`
+	Email               pgtype.Text        `json:"email"`
+	InterestPackageID   pgtype.UUID        `json:"interest_package_id"`
+	InterestDepartureID pgtype.UUID        `json:"interest_departure_id"`
+	Status              string             `json:"status"`
+	AssignedCsID        pgtype.UUID        `json:"assigned_cs_id"`
+	Notes               pgtype.Text        `json:"notes"`
+	BookingID           pgtype.Text        `json:"booking_id"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `json:"updated_at"`
+}

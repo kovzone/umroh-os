@@ -3,6 +3,11 @@
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v6.32.1
 // source: crm.proto
+//
+// S4-E-02: Extended with CreateLead, GetLead, UpdateLead, ListLeads,
+// OnBookingCreated, OnBookingPaidInFull RPCs.
+// New methods are defined in crm_messages.go (hand-written).
+// Run `make genpb` and delete crm_messages.go to regenerate fully.
 
 package pb
 
@@ -19,25 +24,24 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CrmService_Healthz_FullMethodName = "/pb.CrmService/Healthz"
+	CrmService_Healthz_FullMethodName            = "/pb.CrmService/Healthz"
+	CrmService_CreateLead_FullMethodName         = "/pb.CrmService/CreateLead"
+	CrmService_GetLead_FullMethodName            = "/pb.CrmService/GetLead"
+	CrmService_UpdateLead_FullMethodName         = "/pb.CrmService/UpdateLead"
+	CrmService_ListLeads_FullMethodName          = "/pb.CrmService/ListLeads"
+	CrmService_OnBookingCreated_FullMethodName   = "/pb.CrmService/OnBookingCreated"
+	CrmService_OnBookingPaidInFull_FullMethodName = "/pb.CrmService/OnBookingPaidInFull"
 )
 
 // CrmServiceClient is the client API for CrmService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-//
-// CrmService — internal gRPC surface for Identity, Access, Audit.
-//
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
 type CrmServiceClient interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
 	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
+	CreateLead(ctx context.Context, in *CreateLeadRequest, opts ...grpc.CallOption) (*LeadResponse, error)
+	GetLead(ctx context.Context, in *GetLeadRequest, opts ...grpc.CallOption) (*LeadResponse, error)
+	UpdateLead(ctx context.Context, in *UpdateLeadRequest, opts ...grpc.CallOption) (*LeadResponse, error)
+	ListLeads(ctx context.Context, in *ListLeadsRequest, opts ...grpc.CallOption) (*ListLeadsResponse, error)
+	OnBookingCreated(ctx context.Context, in *OnBookingCreatedRequest, opts ...grpc.CallOption) (*OnBookingCreatedResponse, error)
+	OnBookingPaidInFull(ctx context.Context, in *OnBookingPaidInFullRequest, opts ...grpc.CallOption) (*OnBookingPaidInFullResponse, error)
 }
 
 type crmServiceClient struct {
@@ -58,50 +62,113 @@ func (c *crmServiceClient) Healthz(ctx context.Context, in *HealthzRequest, opts
 	return out, nil
 }
 
+func (c *crmServiceClient) CreateLead(ctx context.Context, in *CreateLeadRequest, opts ...grpc.CallOption) (*LeadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LeadResponse)
+	err := c.cc.Invoke(ctx, CrmService_CreateLead_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *crmServiceClient) GetLead(ctx context.Context, in *GetLeadRequest, opts ...grpc.CallOption) (*LeadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LeadResponse)
+	err := c.cc.Invoke(ctx, CrmService_GetLead_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *crmServiceClient) UpdateLead(ctx context.Context, in *UpdateLeadRequest, opts ...grpc.CallOption) (*LeadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LeadResponse)
+	err := c.cc.Invoke(ctx, CrmService_UpdateLead_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *crmServiceClient) ListLeads(ctx context.Context, in *ListLeadsRequest, opts ...grpc.CallOption) (*ListLeadsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListLeadsResponse)
+	err := c.cc.Invoke(ctx, CrmService_ListLeads_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *crmServiceClient) OnBookingCreated(ctx context.Context, in *OnBookingCreatedRequest, opts ...grpc.CallOption) (*OnBookingCreatedResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(OnBookingCreatedResponse)
+	err := c.cc.Invoke(ctx, CrmService_OnBookingCreated_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *crmServiceClient) OnBookingPaidInFull(ctx context.Context, in *OnBookingPaidInFullRequest, opts ...grpc.CallOption) (*OnBookingPaidInFullResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(OnBookingPaidInFullResponse)
+	err := c.cc.Invoke(ctx, CrmService_OnBookingPaidInFull_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CrmServiceServer is the server API for CrmService service.
 // All implementations must embed UnimplementedCrmServiceServer
 // for forward compatibility.
-//
-// CrmService — internal gRPC surface for Identity, Access, Audit.
-//
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
 type CrmServiceServer interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
 	Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error)
+	CreateLead(context.Context, *CreateLeadRequest) (*LeadResponse, error)
+	GetLead(context.Context, *GetLeadRequest) (*LeadResponse, error)
+	UpdateLead(context.Context, *UpdateLeadRequest) (*LeadResponse, error)
+	ListLeads(context.Context, *ListLeadsRequest) (*ListLeadsResponse, error)
+	OnBookingCreated(context.Context, *OnBookingCreatedRequest) (*OnBookingCreatedResponse, error)
+	OnBookingPaidInFull(context.Context, *OnBookingPaidInFullRequest) (*OnBookingPaidInFullResponse, error)
 	mustEmbedUnimplementedCrmServiceServer()
 }
 
-// UnimplementedCrmServiceServer must be embedded to have
-// forward compatible implementations.
-//
-// NOTE: this should be embedded by value instead of pointer to avoid a nil
-// pointer dereference when methods are called.
+// UnimplementedCrmServiceServer must be embedded to have forward compatible implementations.
 type UnimplementedCrmServiceServer struct{}
 
 func (UnimplementedCrmServiceServer) Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Healthz not implemented")
 }
+func (UnimplementedCrmServiceServer) CreateLead(context.Context, *CreateLeadRequest) (*LeadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateLead not implemented")
+}
+func (UnimplementedCrmServiceServer) GetLead(context.Context, *GetLeadRequest) (*LeadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLead not implemented")
+}
+func (UnimplementedCrmServiceServer) UpdateLead(context.Context, *UpdateLeadRequest) (*LeadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateLead not implemented")
+}
+func (UnimplementedCrmServiceServer) ListLeads(context.Context, *ListLeadsRequest) (*ListLeadsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListLeads not implemented")
+}
+func (UnimplementedCrmServiceServer) OnBookingCreated(context.Context, *OnBookingCreatedRequest) (*OnBookingCreatedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method OnBookingCreated not implemented")
+}
+func (UnimplementedCrmServiceServer) OnBookingPaidInFull(context.Context, *OnBookingPaidInFullRequest) (*OnBookingPaidInFullResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method OnBookingPaidInFull not implemented")
+}
 func (UnimplementedCrmServiceServer) mustEmbedUnimplementedCrmServiceServer() {}
 func (UnimplementedCrmServiceServer) testEmbeddedByValue()                    {}
 
 // UnsafeCrmServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to CrmServiceServer will
-// result in compilation errors.
 type UnsafeCrmServiceServer interface {
 	mustEmbedUnimplementedCrmServiceServer()
 }
 
 func RegisterCrmServiceServer(s grpc.ServiceRegistrar, srv CrmServiceServer) {
-	// If the following call pancis, it indicates UnimplementedCrmServiceServer was
-	// embedded by pointer and is nil.  This will cause panics if an
-	// unimplemented method is ever invoked, so we test this at initialization
-	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
@@ -116,19 +183,104 @@ func _CrmService_Healthz_Handler(srv interface{}, ctx context.Context, dec func(
 	if interceptor == nil {
 		return srv.(CrmServiceServer).Healthz(ctx, in)
 	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CrmService_Healthz_FullMethodName,
-	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: CrmService_Healthz_FullMethodName}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CrmServiceServer).Healthz(ctx, req.(*HealthzRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CrmService_CreateLead_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateLeadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CrmServiceServer).CreateLead(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: CrmService_CreateLead_FullMethodName}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CrmServiceServer).CreateLead(ctx, req.(*CreateLeadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CrmService_GetLead_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLeadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CrmServiceServer).GetLead(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: CrmService_GetLead_FullMethodName}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CrmServiceServer).GetLead(ctx, req.(*GetLeadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CrmService_UpdateLead_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateLeadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CrmServiceServer).UpdateLead(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: CrmService_UpdateLead_FullMethodName}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CrmServiceServer).UpdateLead(ctx, req.(*UpdateLeadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CrmService_ListLeads_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListLeadsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CrmServiceServer).ListLeads(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: CrmService_ListLeads_FullMethodName}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CrmServiceServer).ListLeads(ctx, req.(*ListLeadsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CrmService_OnBookingCreated_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OnBookingCreatedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CrmServiceServer).OnBookingCreated(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: CrmService_OnBookingCreated_FullMethodName}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CrmServiceServer).OnBookingCreated(ctx, req.(*OnBookingCreatedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CrmService_OnBookingPaidInFull_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OnBookingPaidInFullRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CrmServiceServer).OnBookingPaidInFull(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: CrmService_OnBookingPaidInFull_FullMethodName}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CrmServiceServer).OnBookingPaidInFull(ctx, req.(*OnBookingPaidInFullRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CrmService_ServiceDesc is the grpc.ServiceDesc for CrmService service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
 var CrmService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "pb.CrmService",
 	HandlerType: (*CrmServiceServer)(nil),
@@ -136,6 +288,30 @@ var CrmService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Healthz",
 			Handler:    _CrmService_Healthz_Handler,
+		},
+		{
+			MethodName: "CreateLead",
+			Handler:    _CrmService_CreateLead_Handler,
+		},
+		{
+			MethodName: "GetLead",
+			Handler:    _CrmService_GetLead_Handler,
+		},
+		{
+			MethodName: "UpdateLead",
+			Handler:    _CrmService_UpdateLead_Handler,
+		},
+		{
+			MethodName: "ListLeads",
+			Handler:    _CrmService_ListLeads_Handler,
+		},
+		{
+			MethodName: "OnBookingCreated",
+			Handler:    _CrmService_OnBookingCreated_Handler,
+		},
+		{
+			MethodName: "OnBookingPaidInFull",
+			Handler:    _CrmService_OnBookingPaidInFull_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

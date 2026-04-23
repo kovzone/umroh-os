@@ -414,6 +414,21 @@ func (s *Service) CreateDraftBooking(ctx context.Context, params *CreateDraftBoo
 		MahramWarning:      mahramWarning,
 		Replayed:           false,
 	}
+
+	// --- S4-E-02: CRM fan-out (best-effort, non-blocking) ---
+	// Notify crm-svc that a booking was created. If a lead_id is embedded in
+	// the notes or passed from the caller context it can be passed here.
+	// For now we pass empty lead_id — attribution is established when the
+	// gateway embeds lead context in a later slice.
+	s.FanOutBookingCreated(ctx, &FanOutBookingCreatedParams{
+		BookingID:   bookingID,
+		LeadID:      "", // populated in a later slice (F4/F10 attribution)
+		PackageID:   params.PackageID,
+		DepartureID: params.DepartureID,
+		JamaahCount: int32(numPilgrims),
+		CreatedAt:   tsToISO(booking.CreatedAt),
+	})
+
 	return result, nil
 }
 

@@ -6,12 +6,23 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
 	GetDbTxDiagnostic(ctx context.Context, id int64) (Diagnostic, error)
 	InsertDbTxDiagnostic(ctx context.Context, arg InsertDbTxDiagnosticParams) (Diagnostic, error)
 	ReadyCheck(ctx context.Context) (int32, error)
+
+	// S4-E-02 — crm.leads queries (hand-written; regenerate with sqlc after migration 000014)
+	InsertLead(ctx context.Context, arg InsertLeadParams) (Lead, error)
+	GetLeadByID(ctx context.Context, id pgtype.UUID) (Lead, error)
+	GetLeadByBookingID(ctx context.Context, bookingID pgtype.Text) (Lead, error)
+	UpdateLeadStatus(ctx context.Context, arg UpdateLeadStatusParams) (Lead, error)
+	ListLeads(ctx context.Context, arg ListLeadsParams) ([]Lead, error)
+	CountLeads(ctx context.Context, arg CountLeadsParams) (int64, error)
+	GetLeastLoadedCS(ctx context.Context) (pgtype.UUID, error)
 }
 
 var _ Querier = (*Queries)(nil)

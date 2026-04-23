@@ -13,6 +13,7 @@ import (
 // used by draft booking creation (ReserveSeats / GetDeparture calls).
 // S3-E-02 adds `logistics` section for the OnBookingPaid fan-out.
 // S3-E-03 adds `finance` section for the OnPaymentReceived fan-out.
+// S4-E-02 adds `crm` section for the CRM lead lifecycle fan-out.
 type Config struct {
 	App        App        `mapstructure:"app"`
 	Api        Api        `mapstructure:"api"`
@@ -22,6 +23,7 @@ type Config struct {
 	Catalog    Catalog    `mapstructure:"catalog"`
 	Logistics  Logistics  `mapstructure:"logistics"`
 	Finance    Finance    `mapstructure:"finance"`
+	Crm        Crm        `mapstructure:"crm"`
 }
 
 // Catalog config — gRPC connection to catalog-svc for ReserveSeats / GetDeparture.
@@ -36,6 +38,12 @@ type Logistics struct {
 
 // Finance config — gRPC connection to finance-svc for OnPaymentReceived fan-out (S3-E-03).
 type Finance struct {
+	GrpcTarget string `mapstructure:"grpc_target"`
+}
+
+// Crm config — gRPC connection to crm-svc for lead lifecycle events (S4-E-02).
+// Optional: empty GrpcTarget disables the dial; CRM fan-out is skipped.
+type Crm struct {
 	GrpcTarget string `mapstructure:"grpc_target"`
 }
 

@@ -435,6 +435,16 @@ type ServerInterface interface {
 	// POST /v1/bookings — no auth required in S1 (auth arrives with F4).
 	// Hand-edited here since oapi-codegen is not available in the environment.
 	CreateDraftBooking(c *fiber.Ctx) error
+
+	// CRM lead management (S4-E-02 / BL-CRM-001..003).
+	// POST /v1/leads — public (lead capture form).
+	CreateLead(c *fiber.Ctx) error
+	// GET /v1/leads — bearer (cs/admin).
+	ListLeads(c *fiber.Ctx) error
+	// GET /v1/leads/:id — bearer.
+	GetLeadByID(c *fiber.Ctx, id string) error
+	// PUT /v1/leads/:id — bearer.
+	UpdateLeadByID(c *fiber.Ctx, id string) error
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -686,6 +696,40 @@ func (siw *ServerInterfaceWrapper) UpdateDepartureById(c *fiber.Ctx) error {
 // Hand-added in S1-E-03 / BL-GTW-003.
 func (siw *ServerInterfaceWrapper) CreateDraftBooking(c *fiber.Ctx) error {
 	return siw.Handler.CreateDraftBooking(c)
+}
+
+// CreateLead operation middleware — POST /v1/leads (public).
+// Hand-added in S4-E-02 / BL-CRM-001.
+func (siw *ServerInterfaceWrapper) CreateLead(c *fiber.Ctx) error {
+	return siw.Handler.CreateLead(c)
+}
+
+// ListLeads operation middleware — GET /v1/leads (bearer).
+// Hand-added in S4-E-02 / BL-CRM-002.
+func (siw *ServerInterfaceWrapper) ListLeads(c *fiber.Ctx) error {
+	return siw.Handler.ListLeads(c)
+}
+
+// GetLeadByID operation middleware — GET /v1/leads/:id (bearer).
+// Hand-added in S4-E-02 / BL-CRM-002.
+func (siw *ServerInterfaceWrapper) GetLeadByID(c *fiber.Ctx) error {
+	var id string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.GetLeadByID(c, id)
+}
+
+// UpdateLeadByID operation middleware — PUT /v1/leads/:id (bearer).
+// Hand-added in S4-E-02 / BL-CRM-003.
+func (siw *ServerInterfaceWrapper) UpdateLeadByID(c *fiber.Ctx) error {
+	var id string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.UpdateLeadByID(c, id)
 }
 
 // FiberServerOptions provides options for the Fiber server.
@@ -1274,5 +1318,21 @@ func (sh *strictHandler) UpdateDepartureById(ctx *fiber.Ctx, id string) error {
 }
 
 func (sh *strictHandler) CreateDraftBooking(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) CreateLead(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) ListLeads(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) GetLeadByID(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) UpdateLeadByID(ctx *fiber.Ctx, id string) error {
 	return fiber.ErrNotImplemented
 }

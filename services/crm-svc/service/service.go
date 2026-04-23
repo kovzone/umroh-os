@@ -11,20 +11,24 @@ import (
 
 // IService is the business-layer interface for crm-svc.
 //
-// Pilot scaffold surfaces only the three standard scaffold endpoints:
+// Scaffold methods:
+//   - Liveness / Readiness / DbTxDiagnostic
 //
-//   - Liveness — process is up
-//   - Readiness — process is up AND the database is reachable
-//   - DbTxDiagnostic — writes + reads inside a WithTx, the canonical reference
-//     for how services should use transactions (per docs/04-backend-conventions)
-//
-// Real iam responsibilities (user/role/branch CRUD, auth login/refresh/logout,
-// permission checks, session lifecycle, audit writes) land in F1.5–F1.11 and
-// are deliberately out of scaffold scope.
+// S4-E-02 adds CRM lead management:
+//   - CreateLead, GetLead, UpdateLead, ListLeads
+//   - OnBookingCreated, OnBookingPaidInFull (event callbacks)
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
 	DbTxDiagnostic(ctx context.Context, params *DbTxDiagnosticParams) (*DbTxDiagnosticResult, error)
+
+	// S4-E-02 — CRM lead management (BL-CRM-001..003)
+	CreateLead(ctx context.Context, params *CreateLeadParams) (*LeadResult, error)
+	GetLead(ctx context.Context, params *GetLeadParams) (*LeadResult, error)
+	UpdateLead(ctx context.Context, params *UpdateLeadParams) (*LeadResult, error)
+	ListLeads(ctx context.Context, params *ListLeadsParams) (*ListLeadsResult, error)
+	OnBookingCreated(ctx context.Context, params *OnBookingCreatedParams) (*OnBookingCreatedResult, error)
+	OnBookingPaidInFull(ctx context.Context, params *OnBookingPaidInFullParams) (*OnBookingPaidInFullResult, error)
 }
 
 type Service struct {

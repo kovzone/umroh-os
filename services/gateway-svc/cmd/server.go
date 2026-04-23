@@ -35,6 +35,7 @@ import (
 // S1-E-12: /v1/iam/system/live + /v1/iam/system/diagnostics/db-tx removed (iam-svc is gRPC-only).
 //          IAM client-facing auth routes moved here from iam-svc REST.
 // S1-E-03: POST /v1/bookings added (public in S1; proxied to booking-svc gRPC).
+// S4-E-02: POST /v1/leads (public), GET+PUT /v1/leads[/:id] (bearer) added.
 //
 // iamValidator is the *iam_grpc_adapter.Adapter produced in start.go; it is
 // passed as the interface type so unit tests can substitute a stub.
@@ -99,6 +100,10 @@ func runRestServer(port int, api rest_oapi.ServerInterface, iamValidator middlew
 		// Booking draft (BL-GTW-003 / S1-E-03) — public in S1; auth arrives with F4.
 		// Proxied to booking-svc.BookingService/CreateDraftBooking via gRPC.
 		v1.Post("/bookings", wrapper.CreateDraftBooking)
+
+		// CRM lead capture (S4-E-02 / BL-CRM-001) — public.
+		// POST /v1/leads — submitting a lead from a landing page or B2C form.
+		v1.Post("/leads", wrapper.CreateLead)
 	}
 
 	// IAM auth public routes (BL-IAM-018 / S1-E-12) — no bearer required.
@@ -136,6 +141,14 @@ func runRestServer(port int, api rest_oapi.ServerInterface, iamValidator middlew
 		v1Protected.Delete("/packages/:id", wrapper.DeletePackageById)
 		v1Protected.Post("/packages/:id/departures", wrapper.CreateDeparture)
 		v1Protected.Put("/departures/:id", wrapper.UpdateDepartureById)
+
+		// CRM lead management (S4-E-02 / BL-CRM-002..003) — bearer required.
+		// GET  /v1/leads     — list leads (cs/admin)
+		// GET  /v1/leads/:id — get single lead
+		// PUT  /v1/leads/:id — update lead (status, notes, assigned_cs_id)
+		v1Protected.Get("/leads", wrapper.ListLeads)
+		v1Protected.Get("/leads/:id", wrapper.GetLeadByID)
+		v1Protected.Put("/leads/:id", wrapper.UpdateLeadByID)
 	}
 
 	go func() {

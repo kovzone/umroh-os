@@ -211,10 +211,10 @@ Slice **S1** engineering-freeze rows from **05** are listed first (`BL-JNT-001`�
 | ----- | ----------- | ---------------------------------------- | -------- | -------- | ----- | --------- | ------------- | ----- | ------ | ---------------- | --------------------------------------- |
 | 4     | S4-J-01     | Lead schema + UTM snapshot + attribution (Q019/Q057) | MH-V1    | 401      | S4    | S4-J-01   | BL-JNT-012    | J     | todo   | —                | `slice-S4.md` lead/UTM section merged + reviewed |
 | 4     | S4-J-02     | Booking → CRM events (names + payload) | MH-V1    | 402      | S4    | S4-J-02   | BL-JNT-013    | J     | todo   | BL-JNT-012       | `slice-S4.md` event section merged + reviewed |
-| 4     | F10-W3      | Lead tracker + tagging (basic CRM)       | MH-V1    | 410      | S4    | S4-E-02   | BL-CRM-001    | E     | todo   | BL-JNT-012..013 | Lead stored + list/filter/tag works     |
-| 4     | F10-W8      | Attribution + UTM reconciliation (basic) | MH-V1    | 411      | S4    | S4-E-02   | BL-CRM-002    | E     | todo   | BL-JNT-012..013 | UTM stored + consistent into booking    |
-| 4     | F10-W4      | CS round-robin + basic SLA               | MH-V1    | 412      | S4    | S4-E-02   | BL-CRM-003    | E     | todo   | BL-JNT-012..013 | Lead distribution + minimum SLA works   |
-| 4     | F10-UI      | Lead capture form (public/internal)      | MH-V1    | 420      | S4    | S4-L-01   | BL-FE-CRM-001 | L     | todo   | BL-JNT-012..013 | Form submit succeeds + basic validation |
+| 4     | F10-W3      | Lead tracker + tagging (basic CRM)       | MH-V1    | 410      | S4    | S4-E-02   | BL-CRM-001    | E     | done   | BL-JNT-012..013 | Lead stored + list/filter/tag works     |
+| 4     | F10-W8      | Attribution + UTM reconciliation (basic) | MH-V1    | 411      | S4    | S4-E-02   | BL-CRM-002    | E     | done   | BL-JNT-012..013 | UTM stored + consistent into booking    |
+| 4     | F10-W4      | CS round-robin + basic SLA               | MH-V1    | 412      | S4    | S4-E-02   | BL-CRM-003    | E     | done   | BL-JNT-012..013 | Lead distribution + minimum SLA works   |
+| 4     | F10-UI      | Lead capture form (public/internal)      | MH-V1    | 420      | S4    | S4-L-01   | BL-FE-CRM-001 | L     | done   | BL-JNT-012..013 | Form submit succeeds + basic validation |
 
 
 ---

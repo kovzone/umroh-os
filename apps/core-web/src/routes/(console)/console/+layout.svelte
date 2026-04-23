@@ -19,6 +19,7 @@
     { label: 'Logistik', icon: 'conveyor_belt', href: '/console/logistics', badge: '' },
     { label: 'Finance', icon: 'account_balance', href: '/console/finance', badge: '3' },
     { label: 'CRM', icon: 'hub', href: '/console/crm', badge: '' },
+    { label: 'Leads', icon: 'person_add', href: '/console/leads', badge: '' },
     { label: 'IAM & Akses', icon: 'admin_panel_settings', href: '/console/iam', badge: '' },
     { label: 'Audit Log', icon: 'history_edu', href: '/console/audit-log', badge: '' },
     { label: 'Pengaturan Sistem', icon: 'settings', href: '/console/system-settings', badge: '' },

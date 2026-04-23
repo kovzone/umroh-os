@@ -8,6 +8,7 @@ import (
 
 	"gateway-svc/adapter/booking_grpc_adapter"
 	"gateway-svc/adapter/catalog_grpc_adapter"
+	"gateway-svc/adapter/crm_grpc_adapter"
 	"gateway-svc/adapter/finance_rest_adapter"
 	"gateway-svc/adapter/iam_grpc_adapter"
 	"gateway-svc/adapter/iam_rest_adapter"
@@ -149,6 +150,31 @@ func start() {
 	}()
 	bookingGrpcAdapter := booking_grpc_adapter.NewAdapter(logger, tracer, bookingConn)
 
+	// --- Dial crm-svc gRPC (S4-E-02) ---
+	//
+	// Per ADR-0009, gateway's /v1/leads* routes proxy to crm-svc.CrmService over gRPC
+	// via crm_grpc_adapter. Same dial + OTel handler pattern as the other conns above.
+	crmConn, err := grpc.NewClient(
+		config.External.CrmSvc.GrpcTarget,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Dial crm-svc gRPC").
+			Str("target", config.External.CrmSvc.GrpcTarget).
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+	defer func() {
+		if err := crmConn.Close(); err != nil {
+			logger.Error().Err(err).Msg("close crm gRPC conn")
+		}
+	}()
+	crmGrpcAdapter := crm_grpc_adapter.NewAdapter(logger, tracer, crmConn)
+
 	// --- Init REST adapters (interim; retire as each backend graduates to gRPC) ---
 	// gateway-svc has no DB and no internal store; the service layer dispatches
 	// to these per-backend adapters.
@@ -175,6 +201,7 @@ func start() {
 		CatalogGrpc: catalogGrpcAdapter,
 		FinanceRest: financeAdapter,
 		BookingGrpc: bookingGrpcAdapter,
+		CrmGrpc:     crmGrpcAdapter,
 	})
 
 	// --- Init API layer (REST only — gateway is the edge proxy, no gRPC server) ---

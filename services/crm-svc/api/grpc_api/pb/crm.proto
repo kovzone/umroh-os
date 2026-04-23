@@ -4,22 +4,158 @@ package pb;
 
 option go_package="./pb";
 
-// CrmService — internal gRPC surface for Identity, Access, Audit.
+// CrmService — internal gRPC surface for CRM lead management (S4-E-02).
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// All mutation RPCs are idempotent: duplicate calls with the same booking_id
+// produce no-ops. Status transitions are validated in the service layer.
 service CrmService {
   // Healthz returns ok=true if the service process is alive.
-  // Placeholder for the pilot; real health checks go through gRPC health protocol.
   rpc Healthz(HealthzRequest) returns (HealthzResponse) {}
+
+  // CreateLead creates a new lead with optional UTM attribution.
+  // Auto-assigns a CS via round-robin.
+  rpc CreateLead(CreateLeadRequest) returns (LeadResponse) {}
+
+  // GetLead returns a single lead by ID.
+  rpc GetLead(GetLeadRequest) returns (LeadResponse) {}
+
+  // UpdateLead performs a partial update on a lead (status, notes, assigned_cs_id).
+  rpc UpdateLead(UpdateLeadRequest) returns (LeadResponse) {}
+
+  // ListLeads returns a filtered, paginated list of leads sorted by created_at DESC.
+  rpc ListLeads(ListLeadsRequest) returns (ListLeadsResponse) {}
+
+  // OnBookingCreated is called by booking-svc when a draft booking is created.
+  // If lead_id is provided, the lead status is updated to 'qualified'.
+  // Idempotent: duplicate booking_id is a no-op.
+  rpc OnBookingCreated(OnBookingCreatedRequest) returns (OnBookingCreatedResponse) {}
+
+  // OnBookingPaidInFull is called by booking-svc when a booking is paid in full.
+  // If lead_id is provided, the lead status is updated to 'converted'.
+  // Idempotent: duplicate booking_id is a no-op.
+  rpc OnBookingPaidInFull(OnBookingPaidInFullRequest) returns (OnBookingPaidInFullResponse) {}
 }
+
+// ---------------------------------------------------------------------------
+// Healthz
+// ---------------------------------------------------------------------------
 
 message HealthzRequest {}
 
 message HealthzResponse {
   bool ok = 1;
+}
+
+// ---------------------------------------------------------------------------
+// Lead messages
+// ---------------------------------------------------------------------------
+
+message LeadResponse {
+  string id = 1;
+  string source = 2;
+  string utm_source = 3;
+  string utm_medium = 4;
+  string utm_campaign = 5;
+  string utm_content = 6;
+  string utm_term = 7;
+  string name = 8;
+  string phone = 9;
+  string email = 10;
+  string interest_package_id = 11;
+  string interest_departure_id = 12;
+  string status = 13;
+  string assigned_cs_id = 14;
+  string notes = 15;
+  string booking_id = 16;
+  string created_at = 17;
+  string updated_at = 18;
+}
+
+// ---------------------------------------------------------------------------
+// CreateLead
+// ---------------------------------------------------------------------------
+
+message CreateLeadRequest {
+  string name = 1;
+  string phone = 2;
+  string email = 3;
+  string source = 4;
+  string utm_source = 5;
+  string utm_medium = 6;
+  string utm_campaign = 7;
+  string utm_content = 8;
+  string utm_term = 9;
+  string interest_package_id = 10;
+  string interest_departure_id = 11;
+  string notes = 12;
+}
+
+// ---------------------------------------------------------------------------
+// GetLead
+// ---------------------------------------------------------------------------
+
+message GetLeadRequest {
+  string id = 1;
+}
+
+// ---------------------------------------------------------------------------
+// UpdateLead
+// ---------------------------------------------------------------------------
+
+message UpdateLeadRequest {
+  string id = 1;
+  string status = 2;          // optional; empty = no change
+  string notes = 3;           // optional; empty = no change
+  string assigned_cs_id = 4;  // optional; empty = no change
+}
+
+// ---------------------------------------------------------------------------
+// ListLeads
+// ---------------------------------------------------------------------------
+
+message ListLeadsRequest {
+  string status_filter = 1;      // optional; empty = all statuses
+  string assigned_cs_id_filter = 2; // optional; empty = all CS
+  int32 page = 3;                // 1-based; default 1
+  int32 page_size = 4;           // default 20; max 100
+}
+
+message ListLeadsResponse {
+  repeated LeadResponse leads = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+// ---------------------------------------------------------------------------
+// OnBookingCreated
+// ---------------------------------------------------------------------------
+
+message OnBookingCreatedRequest {
+  string booking_id = 1;
+  string lead_id = 2;         // optional; empty = no lead attribution
+  string package_id = 3;
+  string departure_id = 4;
+  int32 jamaah_count = 5;
+  string created_at = 6;      // RFC3339
+}
+
+message OnBookingCreatedResponse {
+  bool updated = 1;   // true if a lead was updated
+  string lead_id = 2; // the lead that was updated (or empty)
+}
+
+// ---------------------------------------------------------------------------
+// OnBookingPaidInFull
+// ---------------------------------------------------------------------------
+
+message OnBookingPaidInFullRequest {
+  string booking_id = 1;
+  string lead_id = 2;  // optional; empty = no lead attribution
+  string paid_at = 3;  // RFC3339
+}
+
+message OnBookingPaidInFullResponse {
+  bool updated = 1;   // true if a lead was updated
+  string lead_id = 2; // the lead that was updated (or empty)
 }

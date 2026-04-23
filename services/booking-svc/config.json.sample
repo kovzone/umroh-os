@@ -34,5 +34,8 @@
   },
   "finance": {
     "grpc_target": "finance-svc:50059"
+  },
+  "crm": {
+    "grpc_target": "crm-svc:50060"
   }
 }
