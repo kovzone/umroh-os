@@ -88,7 +88,7 @@ export const actions: Actions = {
 
     let response: Response;
     try {
-      response = await fetch(`${iamBaseUrl}/v1/sessions`, {
+      response = await fetch(`${iamBaseUrl}/v1/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
