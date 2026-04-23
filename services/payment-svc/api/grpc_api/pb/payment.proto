@@ -4,22 +4,97 @@ package pb;
 
 option go_package="./pb";
 
-// PaymentService — internal gRPC surface for Identity, Access, Audit.
+// PaymentService — internal gRPC surface for payment-svc (F5).
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// S1 scaffold: Healthz placeholder.
+// S2-E-02: IssueVirtualAccount, ProcessWebhook, StartRefund.
+//
+// NOTE: This .proto file is the source-of-truth for protoc generation.
+// Because protoc is not available in the sandbox, the generated files
+// (payment.pb.go, payment_grpc.pb.go) and message types (payment_messages.go)
+// are maintained by hand. Run `make genpb` once protoc is available
+// to replace the hand-written files with proper generated output.
 service PaymentService {
   // Healthz returns ok=true if the service process is alive.
-  // Placeholder for the pilot; real health checks go through gRPC health protocol.
   rpc Healthz(HealthzRequest) returns (HealthzResponse) {}
+
+  // IssueVirtualAccount creates an invoice and virtual account for a booking.
+  // Called by booking-svc submit saga (F4→F5 per ADR-0006 in-process saga).
+  rpc IssueVirtualAccount(IssueVirtualAccountRequest) returns (IssueVirtualAccountResponse) {}
+
+  // ProcessWebhook handles a gateway webhook forwarded via gRPC.
+  // (Webhooks are also ingested directly via HTTP on port 50065 per arch decision.)
+  rpc ProcessWebhook(ProcessWebhookRequest) returns (ProcessWebhookResponse) {}
+
+  // StartRefund initiates the refund flow for a booking's invoice.
+  // Called by booking-svc cancel saga (F4→F5 per ADR-0006).
+  rpc StartRefund(StartRefundRequest) returns (StartRefundResponse) {}
 }
+
+// ---------------------------------------------------------------------------
+// System messages
+// ---------------------------------------------------------------------------
 
 message HealthzRequest {}
 
 message HealthzResponse {
   bool ok = 1;
+}
+
+// ---------------------------------------------------------------------------
+// IssueVirtualAccount
+// ---------------------------------------------------------------------------
+
+message IssueVirtualAccountRequest {
+  string booking_id              = 1;
+  double amount_total            = 2;
+  double rounding_adjustment_idr = 3;
+  string fx_snapshot_json        = 4;
+  string gateway_pref            = 5;
+  string bank_code               = 6;
+  string actor_user_id           = 7;
+}
+
+message IssueVirtualAccountResponse {
+  string invoice_id     = 1;
+  string booking_id     = 2;
+  string account_number = 3;
+  string bank_code      = 4;
+  double amount_total   = 5;
+  string expires_at     = 6; // RFC3339
+  string gateway        = 7;
+  bool   replayed       = 8;
+}
+
+// ---------------------------------------------------------------------------
+// ProcessWebhook
+// ---------------------------------------------------------------------------
+
+message ProcessWebhookRequest {
+  string gateway   = 1;
+  bytes  payload   = 2;
+  string signature = 3;
+}
+
+message ProcessWebhookResponse {
+  bool   replayed   = 1;
+  string invoice_id = 2;
+  string new_status = 3;
+}
+
+// ---------------------------------------------------------------------------
+// StartRefund
+// ---------------------------------------------------------------------------
+
+message StartRefundRequest {
+  string booking_id    = 1;
+  string reason_code   = 2;
+  string actor_user_id = 3;
+}
+
+message StartRefundResponse {
+  string refund_id   = 1;
+  string invoice_id  = 2;
+  double amount_idr  = 3;
+  string status      = 4;
 }

@@ -21,7 +21,7 @@ RUN go mod download
 # CGO_ENABLED=0: Pure Go (no C dependencies)
 # GOOS=linux: Target OS
 # Compile all Go files in cmd directory into a single binary named 'main'
-RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/*.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd
 
 # Download grpc_health_probe in build stage (golang:alpine already has wget)
 ARG GRPC_HEALTH_PROBE_VERSION=v0.4.28

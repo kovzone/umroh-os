@@ -21,7 +21,7 @@ RUN go mod download
 # CGO_ENABLED=0: Pure Go (no C dependencies)
 # GOOS=linux: Target OS
 # Compile all Go files in cmd directory into a single binary named 'main'
-RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/*.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd
 
 # Stage 2: Production environment
 # Using minimal alpine image for the final container

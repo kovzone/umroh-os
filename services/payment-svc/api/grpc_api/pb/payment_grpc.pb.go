@@ -3,6 +3,11 @@
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v6.32.1
 // source: payment.proto
+//
+// NOTE (S2-E-02): IssueVirtualAccount, ProcessWebhook, and StartRefund RPC
+// descriptors are added by hand below because protoc is not available in the
+// sandbox. Once the sandbox has protoc, update payment.proto and run
+// `make genpb` to regenerate this file.
 
 package pb
 
@@ -19,25 +24,31 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PaymentService_Healthz_FullMethodName = "/pb.PaymentService/Healthz"
+	PaymentService_Healthz_FullMethodName             = "/pb.PaymentService/Healthz"
+	PaymentService_IssueVA_FullMethodName             = "/pb.PaymentService/IssueVirtualAccount"
+	PaymentService_ProcessWebhook_FullMethodName      = "/pb.PaymentService/ProcessWebhook"
+	PaymentService_StartRefund_FullMethodName         = "/pb.PaymentService/StartRefund"
 )
 
 // PaymentServiceClient is the client API for PaymentService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// PaymentService — internal gRPC surface for Identity, Access, Audit.
+// PaymentService — internal gRPC surface for payment-svc (F5).
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// Pilot scaffold (Healthz) plus S2-E-02 payment RPCs:
+//   - IssueVirtualAccount — called by booking-svc submit saga
+//   - ProcessWebhook      — internal gRPC path for webhook ingestion
+//   - StartRefund         — called by booking-svc cancel saga
 type PaymentServiceClient interface {
 	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
 	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
+	// IssueVirtualAccount creates an invoice and VA for a booking.
+	IssueVirtualAccount(ctx context.Context, in *IssueVirtualAccountRequest, opts ...grpc.CallOption) (*IssueVirtualAccountResponse, error)
+	// ProcessWebhook handles a gateway webhook forwarded via gRPC.
+	ProcessWebhook(ctx context.Context, in *ProcessWebhookRequest, opts ...grpc.CallOption) (*ProcessWebhookResponse, error)
+	// StartRefund initiates the refund flow for a booking.
+	StartRefund(ctx context.Context, in *StartRefundRequest, opts ...grpc.CallOption) (*StartRefundResponse, error)
 }
 
 type paymentServiceClient struct {
@@ -58,22 +69,50 @@ func (c *paymentServiceClient) Healthz(ctx context.Context, in *HealthzRequest, 
 	return out, nil
 }
 
+func (c *paymentServiceClient) IssueVirtualAccount(ctx context.Context, in *IssueVirtualAccountRequest, opts ...grpc.CallOption) (*IssueVirtualAccountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IssueVirtualAccountResponse)
+	err := c.cc.Invoke(ctx, PaymentService_IssueVA_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paymentServiceClient) ProcessWebhook(ctx context.Context, in *ProcessWebhookRequest, opts ...grpc.CallOption) (*ProcessWebhookResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProcessWebhookResponse)
+	err := c.cc.Invoke(ctx, PaymentService_ProcessWebhook_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paymentServiceClient) StartRefund(ctx context.Context, in *StartRefundRequest, opts ...grpc.CallOption) (*StartRefundResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StartRefundResponse)
+	err := c.cc.Invoke(ctx, PaymentService_StartRefund_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PaymentServiceServer is the server API for PaymentService service.
 // All implementations must embed UnimplementedPaymentServiceServer
 // for forward compatibility.
 //
-// PaymentService — internal gRPC surface for Identity, Access, Audit.
-//
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// PaymentService — internal gRPC surface for payment-svc (F5).
 type PaymentServiceServer interface {
 	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
 	Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error)
+	// IssueVirtualAccount creates an invoice and VA for a booking (F5-W1).
+	IssueVirtualAccount(context.Context, *IssueVirtualAccountRequest) (*IssueVirtualAccountResponse, error)
+	// ProcessWebhook handles a gateway webhook payload (F5-W2).
+	ProcessWebhook(context.Context, *ProcessWebhookRequest) (*ProcessWebhookResponse, error)
+	// StartRefund initiates the refund flow (F5-W8).
+	StartRefund(context.Context, *StartRefundRequest) (*StartRefundResponse, error)
 	mustEmbedUnimplementedPaymentServiceServer()
 }
 
@@ -87,6 +126,15 @@ type UnimplementedPaymentServiceServer struct{}
 func (UnimplementedPaymentServiceServer) Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Healthz not implemented")
 }
+func (UnimplementedPaymentServiceServer) IssueVirtualAccount(context.Context, *IssueVirtualAccountRequest) (*IssueVirtualAccountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IssueVirtualAccount not implemented")
+}
+func (UnimplementedPaymentServiceServer) ProcessWebhook(context.Context, *ProcessWebhookRequest) (*ProcessWebhookResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProcessWebhook not implemented")
+}
+func (UnimplementedPaymentServiceServer) StartRefund(context.Context, *StartRefundRequest) (*StartRefundResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StartRefund not implemented")
+}
 func (UnimplementedPaymentServiceServer) mustEmbedUnimplementedPaymentServiceServer() {}
 func (UnimplementedPaymentServiceServer) testEmbeddedByValue()                        {}
 
@@ -98,7 +146,7 @@ type UnsafePaymentServiceServer interface {
 }
 
 func RegisterPaymentServiceServer(s grpc.ServiceRegistrar, srv PaymentServiceServer) {
-	// If the following call pancis, it indicates UnimplementedPaymentServiceServer was
+	// If the following call panics, it indicates UnimplementedPaymentServiceServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
@@ -107,6 +155,10 @@ func RegisterPaymentServiceServer(s grpc.ServiceRegistrar, srv PaymentServiceSer
 	}
 	s.RegisterService(&PaymentService_ServiceDesc, srv)
 }
+
+// ---------------------------------------------------------------------------
+// Handler functions
+// ---------------------------------------------------------------------------
 
 func _PaymentService_Healthz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HealthzRequest)
@@ -126,6 +178,60 @@ func _PaymentService_Healthz_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PaymentService_IssueVirtualAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IssueVirtualAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentServiceServer).IssueVirtualAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentService_IssueVA_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentServiceServer).IssueVirtualAccount(ctx, req.(*IssueVirtualAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PaymentService_ProcessWebhook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProcessWebhookRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentServiceServer).ProcessWebhook(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentService_ProcessWebhook_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentServiceServer).ProcessWebhook(ctx, req.(*ProcessWebhookRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PaymentService_StartRefund_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StartRefundRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentServiceServer).StartRefund(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentService_StartRefund_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentServiceServer).StartRefund(ctx, req.(*StartRefundRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PaymentService_ServiceDesc is the grpc.ServiceDesc for PaymentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -136,6 +242,18 @@ var PaymentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Healthz",
 			Handler:    _PaymentService_Healthz_Handler,
+		},
+		{
+			MethodName: "IssueVirtualAccount",
+			Handler:    _PaymentService_IssueVirtualAccount_Handler,
+		},
+		{
+			MethodName: "ProcessWebhook",
+			Handler:    _PaymentService_ProcessWebhook_Handler,
+		},
+		{
+			MethodName: "StartRefund",
+			Handler:    _PaymentService_StartRefund_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

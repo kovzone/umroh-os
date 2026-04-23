@@ -236,7 +236,8 @@
         }
       });
       draftResult = { bookingId: result.bookingId, createdAt: result.createdAt };
-      gotoStep(4);
+      // S2-L-03: navigate to checkout page to issue VA and complete payment
+      void goto(`/checkout/${result.bookingId}`);
     } catch (err) {
       const bookingErr = err as DraftBookingError;
       submitError = `${bookingErr.code}: ${bookingErr.message}`;

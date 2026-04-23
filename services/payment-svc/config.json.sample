@@ -5,6 +5,9 @@
   "api": {
     "grpc": {
       "address": "0.0.0.0:50055"
+    },
+    "http": {
+      "webhook_address": "0.0.0.0:50065"
     }
   },
   "store": {
@@ -18,6 +21,17 @@
         "retry_max_delay": "60s"
       }
     }
+  },
+  "gateway": {
+    "mock_gateway": true,
+    "midtrans_server_key": "",
+    "midtrans_base_url": "https://api.sandbox.midtrans.com",
+    "xendit_callback_token": "",
+    "xendit_secret_key": "",
+    "xendit_base_url": "https://api.xendit.co"
+  },
+  "services": {
+    "booking_svc_addr": "booking-svc:50051"
   },
   "otel_tracer": {
     "name": "payment-svc-tracer",

@@ -136,8 +136,8 @@ Nilai yang WAJIB diisi:
 - `POSTGRES_PASSWORD` — gunakan `openssl rand -base64 24`
 - `DATABASE_URL` — sesuaikan password dengan POSTGRES_PASSWORD
 - `POSTGRES_CONNECTION_STRING` — idem
-- `TOKEN_KEY` — gunakan `openssl rand -base64 32`
-- `TOTP_ENCRYPTION_KEY` — gunakan `openssl rand -base64 32`
+- `TOKEN_KEY` — tepat 32 karakter (bukan output `openssl rand -base64 32`); gunakan mis. `openssl rand -hex 16`
+- `TOTP_ENCRYPTION_KEY` — sama, tepat 32 karakter, nilai berbeda dari `TOKEN_KEY`; mis. `openssl rand -hex 16` (jalankan dua kali)
 - `GF_ADMIN_PASSWORD` — ganti dari default
 
 ### 4. Jalankan first deploy
