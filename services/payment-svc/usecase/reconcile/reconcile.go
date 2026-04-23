@@ -245,10 +245,12 @@ func (r *Reconciler) reconcileInvoice(ctx context.Context, invoice sqlc.Invoice,
 			}
 			return nil
 		}
-		if !errors.Is(postgres_store.WrapDBError(dupErr), errors.New("not found")) {
-			// Ignore ErrNotFound — that's the expected case (event doesn't exist yet).
-			// For any other error, skip this invoice and log.
+		wrappedDupErr := postgres_store.WrapDBError(dupErr)
+		if !errors.Is(wrappedDupErr, apperrors.ErrNotFound) {
+			// Non-ErrNotFound error querying duplicate event — surface it.
+			return fmt.Errorf("check duplicate payment event: %w", wrappedDupErr)
 		}
+		// ErrNotFound — event doesn't exist yet, proceed with backfill below.
 	}
 
 	// Backfill: insert payment_event for the reconciled amount.

@@ -97,16 +97,21 @@ func (h *WebhookHandler) handleWebhook(gateway string) http.HandlerFunc {
 		if err != nil {
 			// Signature failure → 401 so gateway stops retrying bad-signature payloads.
 			code := http.StatusInternalServerError
+			errCode := "internal_error"
+			errMsg := "internal server error"
 			if isUnauthorizedErr(err) {
 				code = http.StatusUnauthorized
+				errCode = "invalid_signature"
+				errMsg = "webhook signature validation failed"
 			}
+			// Log full error internally; do NOT leak internal details to caller.
 			logger.Error().Err(err).Str("op", op).Str("gateway", gateway).Int("code", code).Msg("webhook processing failed")
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(code)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"error": map[string]string{
-					"code":    "internal_error",
-					"message": err.Error(),
+					"code":    errCode,
+					"message": errMsg,
 				},
 			})
 			return
@@ -270,7 +275,7 @@ func (h *WebhookHandler) handleMockTrigger() http.HandlerFunc {
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"error": map[string]string{
 					"code":    "internal_error",
-					"message": err.Error(),
+					"message": "internal server error",
 				},
 			})
 			return
