@@ -59,6 +59,20 @@ function loginErrorMessage(status: number, fallback?: string): string {
   return fallback?.trim() || 'Autentikasi gagal. Silakan coba lagi.';
 }
 
+function parseCookieSecureOverride(value: string | undefined): boolean | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'true' || normalized === '1' || normalized === 'yes') {
+    return true;
+  }
+  if (normalized === 'false' || normalized === '0' || normalized === 'no') {
+    return false;
+  }
+  return undefined;
+}
+
 export const load: PageServerLoad = async ({ cookies, fetch }) => {
   const accessToken = cookies.get('umrohos_access_token');
   if (!accessToken) {
@@ -112,7 +126,7 @@ export const actions: Actions = {
 
     const refreshExpiresAt = toValidDate(data.refresh_expires_at);
     const accessExpiresAt = toValidDate(data.access_expires_at);
-    const secureCookie = !dev;
+    const secureCookie = parseCookieSecureOverride(env.AUTH_COOKIE_SECURE) ?? !dev;
 
     cookies.set('umrohos_refresh_token', data.refresh_token, {
       path: '/',
