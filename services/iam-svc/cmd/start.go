@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"time"
 
 	"iam-svc/api/grpc_api"
-	"iam-svc/api/rest_oapi"
 	"iam-svc/service"
 	"iam-svc/store/postgres_store"
 	"iam-svc/util/config"
@@ -40,7 +38,7 @@ func start() {
 	}
 
 	// --- Init otel tracer ---
-	cleanup, err := tracing.InitTracer(config.OtelTracer.Name, config.OtelTracer.Endpoint)
+	cleanupTracer, err := tracing.InitTracer(config.OtelTracer.Name, config.OtelTracer.Endpoint)
 	if err != nil {
 		logger.Error().
 			Str("op", op).
@@ -49,7 +47,7 @@ func start() {
 			Msg("")
 	}
 	defer func() {
-		if err := cleanup(context.Background()); err != nil {
+		if err := cleanupTracer(context.Background()); err != nil {
 			logger.Error().
 				Str("op", op).
 				Str("scope", "Cleanup otel tracer").
@@ -59,6 +57,26 @@ func start() {
 	}()
 
 	tracer := tracing.GetTracer(config.OtelTracer.Name)
+
+	// --- Init otel meter (OTLP push → otel-collector → Prometheus exporter) ---
+	cleanupMeter, err := monitoring.InitMeter(config.App.Name, config.OtelTracer.Endpoint)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Init otel meter").
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+	defer func() {
+		if err := cleanupMeter(context.Background()); err != nil {
+			logger.Error().
+				Str("op", op).
+				Str("scope", "Cleanup otel meter").
+				Err(err).
+				Msg("")
+		}
+	}()
 
 	logger.Info().
 		Str("op", op).
@@ -79,16 +97,21 @@ func start() {
 	// --- Init store layer ---
 	store := postgres_store.NewStore(logger, tracer, postgresPool)
 
-	// --- Start DB pool metrics collector (when metrics enabled) ---
-	if config.Api.Metrics.Enabled {
-		go monitoring.RegisterDBPoolStats(context.Background(), func() monitoring.DBPoolStats {
-			s := postgresPool.Stat()
-			return monitoring.DBPoolStats{
-				Acquired: s.AcquiredConns(),
-				Idle:     s.IdleConns(),
-				Total:    s.TotalConns(),
-			}
-		}, 10*time.Second)
+	// --- Register DB pool metrics (OTel observable gauges, pulled on each scrape) ---
+	if err := monitoring.RegisterDBPoolStats(func() monitoring.DBPoolStats {
+		s := postgresPool.Stat()
+		return monitoring.DBPoolStats{
+			Acquired: s.AcquiredConns(),
+			Idle:     s.IdleConns(),
+			Total:    s.TotalConns(),
+		}
+	}); err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Register DB pool stats").
+			Err(err).
+			Msg("")
+		os.Exit(1)
 	}
 
 	// --- Init token maker (PASETO / JWT per config) ---
@@ -126,12 +149,10 @@ func start() {
 		totpKey,
 	)
 
-	// --- Init API layers ---
-	restServer := rest_oapi.NewServer(logger, tracer, svc)
+	// --- Init API layer (gRPC only per ADR 0009; REST retired BL-IAM-018 / S1-E-12) ---
 	grpcServer := grpc_api.NewServer(logger, tracer, svc)
 
-	// --- Run servers ---
-	runRestServer(config.Api.Rest.Port, restServer, tokenMaker, config.Api.Metrics.Enabled, config.OtelTracer.Name)
+	// --- Run server ---
 	runGrpcServer(config.Api.Grpc.Address, grpcServer)
 
 	// --- Wait for signal ---

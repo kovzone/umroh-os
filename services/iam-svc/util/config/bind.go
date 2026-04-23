@@ -10,12 +10,9 @@ func bindEnvironmentVariables() {
 
 	viper.BindEnv("app.name", "APP_NAME")
 
-	// API config
+	// API config (gRPC only; REST retired BL-IAM-018 / S1-E-12).
 
-	viper.BindEnv("api.rest.host", "API_REST_HOST")
-	viper.BindEnv("api.rest.port", "API_REST_PORT")
 	viper.BindEnv("api.grpc.address", "API_GRPC_ADDRESS")
-	viper.BindEnv("api.metrics.enabled", "API_METRICS_ENABLED")
 
 	// Store config
 
