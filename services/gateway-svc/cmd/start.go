@@ -6,17 +6,10 @@ import (
 	"os"
 	"os/signal"
 
-	"gateway-svc/adapter/booking_rest_adapter"
 	"gateway-svc/adapter/catalog_grpc_adapter"
-	"gateway-svc/adapter/crm_rest_adapter"
 	"gateway-svc/adapter/finance_rest_adapter"
 	"gateway-svc/adapter/iam_grpc_adapter"
 	"gateway-svc/adapter/iam_rest_adapter"
-	"gateway-svc/adapter/jamaah_rest_adapter"
-	"gateway-svc/adapter/logistics_rest_adapter"
-	"gateway-svc/adapter/ops_rest_adapter"
-	"gateway-svc/adapter/payment_rest_adapter"
-	"gateway-svc/adapter/visa_rest_adapter"
 	"gateway-svc/api/rest_oapi"
 	"gateway-svc/service"
 	"gateway-svc/util/config"
@@ -129,44 +122,31 @@ func start() {
 	}()
 	catalogGrpcAdapter := catalog_grpc_adapter.NewAdapter(logger, tracer, catalogConn)
 
-	// --- Init REST adapters (one per backend service) ---
+	// --- Init REST adapters (interim; retire as each backend graduates to gRPC) ---
 	// gateway-svc has no DB and no internal store; the service layer dispatches
-	// to these per-backend adapters. As real per-route methods are added on
-	// each adapter (e.g. iam.GetUser, catalog.GetPackage), the gateway proxies
-	// them via the same dispatch shape.
+	// to these per-backend adapters.
 	//
-	// Note: iamGrpcAdapter (above) now handles all IAM routes (ValidateToken
-	// for bearer middleware + Login/Logout/GetMe/etc for BL-IAM-018 / S1-E-12).
-	// iam_rest_adapter is retained only for GetIamSystemLive + GetIamSystemDbTxDiagnostic
-	// (retired once iam-svc HTTP is fully removed).
+	// - iam_rest_adapter: interim; retires with BL-IAM-018 / S1-E-12 once iam-svc
+	//   HTTP surface is fully removed.
+	// - finance_rest_adapter: still serves /v1/finance/system/live. Retires with
+	//   BL-IAM-019 / S1-E-14.
 	//
-	// catalog_rest_adapter removed in S1-E-11 (catalog-svc is gRPC-only).
+	// The seven pure-scaffold backends (booking/crm/jamaah/logistics/ops/
+	// payment/visa) retired their REST surfaces in BL-REFACTOR-002..008 /
+	// S1-E-13 — gateway has no adapters for them. catalog_rest_adapter removed
+	// in S1-E-11 (catalog-svc is gRPC-only).
 	iamAdapter := iam_rest_adapter.NewAdapter(logger, tracer, config.External.IamSvc.Address)
-	bookingAdapter := booking_rest_adapter.NewAdapter(logger, tracer, config.External.BookingSvc.Address)
-	jamaahAdapter := jamaah_rest_adapter.NewAdapter(logger, tracer, config.External.JamaahSvc.Address)
-	paymentAdapter := payment_rest_adapter.NewAdapter(logger, tracer, config.External.PaymentSvc.Address)
-	visaAdapter := visa_rest_adapter.NewAdapter(logger, tracer, config.External.VisaSvc.Address)
-	opsAdapter := ops_rest_adapter.NewAdapter(logger, tracer, config.External.OpsSvc.Address)
-	logisticsAdapter := logistics_rest_adapter.NewAdapter(logger, tracer, config.External.LogisticsSvc.Address)
 	financeAdapter := finance_rest_adapter.NewAdapter(logger, tracer, config.External.FinanceSvc.Address)
-	crmAdapter := crm_rest_adapter.NewAdapter(logger, tracer, config.External.CrmSvc.Address)
 
 	// --- Init service layer ---
 	svc := service.NewService(service.NewServiceParams{
-		Logger:        logger,
-		Tracer:        tracer,
-		AppName:       config.App.Name,
-		IamRest:       iamAdapter,
-		IamGrpc:       iamGrpcAdapter,
-		CatalogGrpc:   catalogGrpcAdapter,
-		BookingRest:   bookingAdapter,
-		JamaahRest:    jamaahAdapter,
-		PaymentRest:   paymentAdapter,
-		VisaRest:      visaAdapter,
-		OpsRest:       opsAdapter,
-		LogisticsRest: logisticsAdapter,
-		FinanceRest:   financeAdapter,
-		CrmRest:       crmAdapter,
+		Logger:      logger,
+		Tracer:      tracer,
+		AppName:     config.App.Name,
+		IamRest:     iamAdapter,
+		IamGrpc:     iamGrpcAdapter,
+		CatalogGrpc: catalogGrpcAdapter,
+		FinanceRest: financeAdapter,
 	})
 
 	// --- Init API layer (REST only — gateway is the edge proxy, no gRPC server) ---

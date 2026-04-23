@@ -6,6 +6,9 @@ import (
 
 // Config holds all configuration for the application.
 //
+// Post-ADR 0009: catalog-svc is gRPC-only. Metrics push via OTLP to the
+// OpenTelemetry Collector using the OtelTracer.Endpoint; there is no local
+// /metrics HTTP endpoint and no opt-in knob.
 // S1-E-07 adds `iam` section for the gRPC connection to iam-svc used by
 // staff catalog write endpoint permission gates.
 type Config struct {
@@ -29,24 +32,12 @@ type App struct {
 
 // API config
 
-type Rest struct {
-	Host string `mapstructure:"host"`
-	Port int    `mapstructure:"port"`
-}
-
 type Grpc struct {
 	Address string `mapstructure:"address"`
 }
 
 type Api struct {
-	Rest    Rest    `mapstructure:"rest"`
-	Grpc    Grpc    `mapstructure:"grpc"`
-	Metrics Metrics `mapstructure:"metrics"`
-}
-
-// Metrics config (Prometheus). Opt-in: set enabled to true to expose /metrics.
-type Metrics struct {
-	Enabled bool `mapstructure:"enabled"`
+	Grpc Grpc `mapstructure:"grpc"`
 }
 
 // Store config

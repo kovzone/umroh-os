@@ -3,15 +3,8 @@
     "name": "jamaah-svc"
   },
   "api": {
-    "rest": {
-      "host": "0.0.0.0",
-      "port": 4004
-    },
     "grpc": {
       "address": "0.0.0.0:50054"
-    },
-    "metrics": {
-      "enabled": true
     }
   },
   "store": {

@@ -25,10 +25,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CatalogService_Healthz_FullMethodName              = "/pb.CatalogService/Healthz"
-	CatalogService_ListPackages_FullMethodName         = "/pb.CatalogService/ListPackages"
-	CatalogService_GetPackage_FullMethodName           = "/pb.CatalogService/GetPackage"
-	CatalogService_GetPackageDeparture_FullMethodName  = "/pb.CatalogService/GetPackageDeparture"
+	CatalogService_Healthz_FullMethodName             = "/pb.CatalogService/Healthz"
+	CatalogService_ListPackages_FullMethodName        = "/pb.CatalogService/ListPackages"
+	CatalogService_GetPackage_FullMethodName          = "/pb.CatalogService/GetPackage"
+	CatalogService_GetPackageDeparture_FullMethodName = "/pb.CatalogService/GetPackageDeparture"
 	// Write quartet (S1-E-07 / BL-CAT-014) — hand-extended.
 	CatalogService_CreatePackage_FullMethodName   = "/pb.CatalogService/CreatePackage"
 	CatalogService_UpdatePackage_FullMethodName   = "/pb.CatalogService/UpdatePackage"
@@ -44,20 +44,17 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// CatalogService — internal gRPC surface for the catalog (packages +
-// master data). Per ADR 0009 backend services are gRPC-only; the public
-// REST surface lives on gateway-svc which proxies to these RPCs.
+// CatalogService — the catalog's only transport surface (packages + master
+// data). Per ADR 0009 this service is gRPC-only; the public REST surface
+// lives on gateway-svc (services/gateway-svc/api/rest_oapi/openapi.yaml
+// § Catalog) which proxies to these RPCs.
 //
-// BL-GTW-002 / S1-E-10 adds the public-read trio (ListPackages,
-// GetPackage, GetPackageDeparture) mirroring the shapes in
-// services/catalog-svc/api/rest_oapi/openapi.yaml § Catalog. Dates are
-// ISO YYYY-MM-DD strings (matching the service layer); enums stay as
-// strings per the adapter pattern (cross-service type churn avoided; the
-// REST layer's oapi-generated enum validation is the authoritative gate).
-//
-// Catalog-svc's REST handlers still exist and call the same service-layer
-// methods as these gRPC handlers; G7 (BL-REFACTOR-001) removes the REST
-// side once gateway is proven end-to-end.
+// ListPackages / GetPackage / GetPackageDeparture landed in BL-GTW-002
+// (S1-E-10). Dates are ISO YYYY-MM-DD strings (matching the service
+// layer); enums stay as strings per the adapter pattern (cross-service
+// type churn avoided; gateway's oapi-generated enum validation is the
+// authoritative gate). DiagnosticsDbTx landed in BL-REFACTOR-001 (S1-E-11)
+// when the legacy REST /system/diagnostics/db-tx was retired.
 type CatalogServiceClient interface {
 	// Healthz — pilot placeholder. Retained for reflection-based probing
 	// that predates the standard grpc.health.v1.Health protocol added in
@@ -210,20 +207,17 @@ func (c *catalogServiceClient) ReleaseSeats(ctx context.Context, in *ReleaseSeat
 // All implementations must embed UnimplementedCatalogServiceServer
 // for forward compatibility.
 //
-// CatalogService — internal gRPC surface for the catalog (packages +
-// master data). Per ADR 0009 backend services are gRPC-only; the public
-// REST surface lives on gateway-svc which proxies to these RPCs.
+// CatalogService — the catalog's only transport surface (packages + master
+// data). Per ADR 0009 this service is gRPC-only; the public REST surface
+// lives on gateway-svc (services/gateway-svc/api/rest_oapi/openapi.yaml
+// § Catalog) which proxies to these RPCs.
 //
-// BL-GTW-002 / S1-E-10 adds the public-read trio (ListPackages,
-// GetPackage, GetPackageDeparture) mirroring the shapes in
-// services/catalog-svc/api/rest_oapi/openapi.yaml § Catalog. Dates are
-// ISO YYYY-MM-DD strings (matching the service layer); enums stay as
-// strings per the adapter pattern (cross-service type churn avoided; the
-// REST layer's oapi-generated enum validation is the authoritative gate).
-//
-// Catalog-svc's REST handlers still exist and call the same service-layer
-// methods as these gRPC handlers; G7 (BL-REFACTOR-001) removes the REST
-// side once gateway is proven end-to-end.
+// ListPackages / GetPackage / GetPackageDeparture landed in BL-GTW-002
+// (S1-E-10). Dates are ISO YYYY-MM-DD strings (matching the service
+// layer); enums stay as strings per the adapter pattern (cross-service
+// type churn avoided; gateway's oapi-generated enum validation is the
+// authoritative gate). DiagnosticsDbTx landed in BL-REFACTOR-001 (S1-E-11)
+// when the legacy REST /system/diagnostics/db-tx was retired.
 type CatalogServiceServer interface {
 	// Healthz — pilot placeholder. Retained for reflection-based probing
 	// that predates the standard grpc.health.v1.Health protocol added in

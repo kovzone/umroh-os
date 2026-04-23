@@ -381,12 +381,6 @@ type ServerInterface interface {
 	// Readiness probe
 	// (GET /system/ready)
 	Readiness(c *fiber.Ctx) error
-	// Proxy booking-svc liveness
-	// (GET /v1/booking/system/live)
-	GetBookingSystemLive(c *fiber.Ctx) error
-	// Proxy crm-svc liveness
-	// (GET /v1/crm/system/live)
-	GetCrmSystemLive(c *fiber.Ctx) error
 	// Proxy finance-svc liveness
 	// (GET /v1/finance/system/live)
 	GetFinanceSystemLive(c *fiber.Ctx) error
@@ -396,15 +390,6 @@ type ServerInterface interface {
 	// Proxy iam-svc liveness
 	// (GET /v1/iam/system/live)
 	GetIamSystemLive(c *fiber.Ctx) error
-	// Proxy jamaah-svc liveness
-	// (GET /v1/jamaah/system/live)
-	GetJamaahSystemLive(c *fiber.Ctx) error
-	// Proxy logistics-svc liveness
-	// (GET /v1/logistics/system/live)
-	GetLogisticsSystemLive(c *fiber.Ctx) error
-	// Proxy ops-svc liveness
-	// (GET /v1/ops/system/live)
-	GetOpsSystemLive(c *fiber.Ctx) error
 	// Active package-departure detail
 	// (GET /v1/package-departures/{id})
 	GetPackageDepartureById(c *fiber.Ctx, id string) error
@@ -414,12 +399,6 @@ type ServerInterface interface {
 	// Active package detail
 	// (GET /v1/packages/{id})
 	GetPackageById(c *fiber.Ctx, id string) error
-	// Proxy payment-svc liveness
-	// (GET /v1/payment/system/live)
-	GetPaymentSystemLive(c *fiber.Ctx) error
-	// Proxy visa-svc liveness
-	// (GET /v1/visa/system/live)
-	GetVisaSystemLive(c *fiber.Ctx) error
 
 	// IAM auth routes (BL-IAM-018 / S1-E-12) — gateway proxies all former
 	// iam-svc REST routes to iam-svc over gRPC per ADR 0009.
@@ -472,19 +451,7 @@ func (siw *ServerInterfaceWrapper) Readiness(c *fiber.Ctx) error {
 	return siw.Handler.Readiness(c)
 }
 
-// GetBookingSystemLive operation middleware
-func (siw *ServerInterfaceWrapper) GetBookingSystemLive(c *fiber.Ctx) error {
-
-	return siw.Handler.GetBookingSystemLive(c)
-}
-
 // GetCatalogSystemLive removed in S1-E-11 (catalog-svc is gRPC-only).
-
-// GetCrmSystemLive operation middleware
-func (siw *ServerInterfaceWrapper) GetCrmSystemLive(c *fiber.Ctx) error {
-
-	return siw.Handler.GetCrmSystemLive(c)
-}
 
 // GetFinanceSystemLive operation middleware
 func (siw *ServerInterfaceWrapper) GetFinanceSystemLive(c *fiber.Ctx) error {
@@ -520,24 +487,6 @@ func (siw *ServerInterfaceWrapper) GetIamSystemDbTxDiagnostic(c *fiber.Ctx) erro
 func (siw *ServerInterfaceWrapper) GetIamSystemLive(c *fiber.Ctx) error {
 
 	return siw.Handler.GetIamSystemLive(c)
-}
-
-// GetJamaahSystemLive operation middleware
-func (siw *ServerInterfaceWrapper) GetJamaahSystemLive(c *fiber.Ctx) error {
-
-	return siw.Handler.GetJamaahSystemLive(c)
-}
-
-// GetLogisticsSystemLive operation middleware
-func (siw *ServerInterfaceWrapper) GetLogisticsSystemLive(c *fiber.Ctx) error {
-
-	return siw.Handler.GetLogisticsSystemLive(c)
-}
-
-// GetOpsSystemLive operation middleware
-func (siw *ServerInterfaceWrapper) GetOpsSystemLive(c *fiber.Ctx) error {
-
-	return siw.Handler.GetOpsSystemLive(c)
 }
 
 // GetPackageDepartureById operation middleware
@@ -636,18 +585,6 @@ func (siw *ServerInterfaceWrapper) GetPackageById(c *fiber.Ctx) error {
 	}
 
 	return siw.Handler.GetPackageById(c, id)
-}
-
-// GetPaymentSystemLive operation middleware
-func (siw *ServerInterfaceWrapper) GetPaymentSystemLive(c *fiber.Ctx) error {
-
-	return siw.Handler.GetPaymentSystemLive(c)
-}
-
-// GetVisaSystemLive operation middleware
-func (siw *ServerInterfaceWrapper) GetVisaSystemLive(c *fiber.Ctx) error {
-
-	return siw.Handler.GetVisaSystemLive(c)
 }
 
 // IAM auth route wrappers (BL-IAM-018 / S1-E-12)
@@ -765,11 +702,10 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 
 	router.Get(options.BaseURL+"/system/ready", wrapper.Readiness)
 
-	router.Get(options.BaseURL+"/v1/booking/system/live", wrapper.GetBookingSystemLive)
-
 	// /v1/catalog/system/live removed in S1-E-11 (catalog-svc is gRPC-only).
-
-	router.Get(options.BaseURL+"/v1/crm/system/live", wrapper.GetCrmSystemLive)
+	// /v1/iam/system/live + /v1/iam/system/diagnostics/db-tx removed in S1-E-12.
+	// The seven scaffold backends (booking/crm/jamaah/logistics/ops/payment/visa)
+	// retired their REST surfaces in S1-E-13.
 
 	router.Get(options.BaseURL+"/v1/finance/system/live", wrapper.GetFinanceSystemLive)
 
@@ -777,21 +713,11 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 
 	router.Get(options.BaseURL+"/v1/iam/system/live", wrapper.GetIamSystemLive)
 
-	router.Get(options.BaseURL+"/v1/jamaah/system/live", wrapper.GetJamaahSystemLive)
-
-	router.Get(options.BaseURL+"/v1/logistics/system/live", wrapper.GetLogisticsSystemLive)
-
-	router.Get(options.BaseURL+"/v1/ops/system/live", wrapper.GetOpsSystemLive)
-
 	router.Get(options.BaseURL+"/v1/package-departures/:id", wrapper.GetPackageDepartureById)
 
 	router.Get(options.BaseURL+"/v1/packages", wrapper.ListPackages)
 
 	router.Get(options.BaseURL+"/v1/packages/:id", wrapper.GetPackageById)
-
-	router.Get(options.BaseURL+"/v1/payment/system/live", wrapper.GetPaymentSystemLive)
-
-	router.Get(options.BaseURL+"/v1/visa/system/live", wrapper.GetVisaSystemLive)
 
 }
 
@@ -823,81 +749,6 @@ type Readiness200JSONResponse ReadyResponse
 func (response Readiness200JSONResponse) VisitReadinessResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type GetBookingSystemLiveRequestObject struct {
-}
-
-type GetBookingSystemLiveResponseObject interface {
-	VisitGetBookingSystemLiveResponse(ctx *fiber.Ctx) error
-}
-
-type GetBookingSystemLive200JSONResponse LiveResponse
-
-func (response GetBookingSystemLive200JSONResponse) VisitGetBookingSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type GetBookingSystemLive502JSONResponse ErrorResponse
-
-func (response GetBookingSystemLive502JSONResponse) VisitGetBookingSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(502)
-
-	return ctx.JSON(&response)
-}
-
-type GetCatalogSystemLiveRequestObject struct {
-}
-
-type GetCatalogSystemLiveResponseObject interface {
-	VisitGetCatalogSystemLiveResponse(ctx *fiber.Ctx) error
-}
-
-type GetCatalogSystemLive200JSONResponse LiveResponse
-
-func (response GetCatalogSystemLive200JSONResponse) VisitGetCatalogSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type GetCatalogSystemLive502JSONResponse ErrorResponse
-
-func (response GetCatalogSystemLive502JSONResponse) VisitGetCatalogSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(502)
-
-	return ctx.JSON(&response)
-}
-
-type GetCrmSystemLiveRequestObject struct {
-}
-
-type GetCrmSystemLiveResponseObject interface {
-	VisitGetCrmSystemLiveResponse(ctx *fiber.Ctx) error
-}
-
-type GetCrmSystemLive200JSONResponse LiveResponse
-
-func (response GetCrmSystemLive200JSONResponse) VisitGetCrmSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type GetCrmSystemLive502JSONResponse ErrorResponse
-
-func (response GetCrmSystemLive502JSONResponse) VisitGetCrmSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(502)
 
 	return ctx.JSON(&response)
 }
@@ -972,81 +823,6 @@ func (response GetIamSystemLive200JSONResponse) VisitGetIamSystemLiveResponse(ct
 type GetIamSystemLive502JSONResponse ErrorResponse
 
 func (response GetIamSystemLive502JSONResponse) VisitGetIamSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(502)
-
-	return ctx.JSON(&response)
-}
-
-type GetJamaahSystemLiveRequestObject struct {
-}
-
-type GetJamaahSystemLiveResponseObject interface {
-	VisitGetJamaahSystemLiveResponse(ctx *fiber.Ctx) error
-}
-
-type GetJamaahSystemLive200JSONResponse LiveResponse
-
-func (response GetJamaahSystemLive200JSONResponse) VisitGetJamaahSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type GetJamaahSystemLive502JSONResponse ErrorResponse
-
-func (response GetJamaahSystemLive502JSONResponse) VisitGetJamaahSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(502)
-
-	return ctx.JSON(&response)
-}
-
-type GetLogisticsSystemLiveRequestObject struct {
-}
-
-type GetLogisticsSystemLiveResponseObject interface {
-	VisitGetLogisticsSystemLiveResponse(ctx *fiber.Ctx) error
-}
-
-type GetLogisticsSystemLive200JSONResponse LiveResponse
-
-func (response GetLogisticsSystemLive200JSONResponse) VisitGetLogisticsSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type GetLogisticsSystemLive502JSONResponse ErrorResponse
-
-func (response GetLogisticsSystemLive502JSONResponse) VisitGetLogisticsSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(502)
-
-	return ctx.JSON(&response)
-}
-
-type GetOpsSystemLiveRequestObject struct {
-}
-
-type GetOpsSystemLiveResponseObject interface {
-	VisitGetOpsSystemLiveResponse(ctx *fiber.Ctx) error
-}
-
-type GetOpsSystemLive200JSONResponse LiveResponse
-
-func (response GetOpsSystemLive200JSONResponse) VisitGetOpsSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type GetOpsSystemLive502JSONResponse ErrorResponse
-
-func (response GetOpsSystemLive502JSONResponse) VisitGetOpsSystemLiveResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(502)
 
@@ -1185,56 +961,6 @@ func (response GetPackageById502JSONResponse) VisitGetPackageByIdResponse(ctx *f
 	return ctx.JSON(&response)
 }
 
-type GetPaymentSystemLiveRequestObject struct {
-}
-
-type GetPaymentSystemLiveResponseObject interface {
-	VisitGetPaymentSystemLiveResponse(ctx *fiber.Ctx) error
-}
-
-type GetPaymentSystemLive200JSONResponse LiveResponse
-
-func (response GetPaymentSystemLive200JSONResponse) VisitGetPaymentSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type GetPaymentSystemLive502JSONResponse ErrorResponse
-
-func (response GetPaymentSystemLive502JSONResponse) VisitGetPaymentSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(502)
-
-	return ctx.JSON(&response)
-}
-
-type GetVisaSystemLiveRequestObject struct {
-}
-
-type GetVisaSystemLiveResponseObject interface {
-	VisitGetVisaSystemLiveResponse(ctx *fiber.Ctx) error
-}
-
-type GetVisaSystemLive200JSONResponse LiveResponse
-
-func (response GetVisaSystemLive200JSONResponse) VisitGetVisaSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(200)
-
-	return ctx.JSON(&response)
-}
-
-type GetVisaSystemLive502JSONResponse ErrorResponse
-
-func (response GetVisaSystemLive502JSONResponse) VisitGetVisaSystemLiveResponse(ctx *fiber.Ctx) error {
-	ctx.Response().Header.Set("Content-Type", "application/json")
-	ctx.Status(502)
-
-	return ctx.JSON(&response)
-}
-
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// Liveness probe
@@ -1243,15 +969,6 @@ type StrictServerInterface interface {
 	// Readiness probe
 	// (GET /system/ready)
 	Readiness(ctx context.Context, request ReadinessRequestObject) (ReadinessResponseObject, error)
-	// Proxy booking-svc liveness
-	// (GET /v1/booking/system/live)
-	GetBookingSystemLive(ctx context.Context, request GetBookingSystemLiveRequestObject) (GetBookingSystemLiveResponseObject, error)
-	// Proxy catalog-svc liveness
-	// (GET /v1/catalog/system/live)
-	GetCatalogSystemLive(ctx context.Context, request GetCatalogSystemLiveRequestObject) (GetCatalogSystemLiveResponseObject, error)
-	// Proxy crm-svc liveness
-	// (GET /v1/crm/system/live)
-	GetCrmSystemLive(ctx context.Context, request GetCrmSystemLiveRequestObject) (GetCrmSystemLiveResponseObject, error)
 	// Proxy finance-svc liveness
 	// (GET /v1/finance/system/live)
 	GetFinanceSystemLive(ctx context.Context, request GetFinanceSystemLiveRequestObject) (GetFinanceSystemLiveResponseObject, error)
@@ -1261,15 +978,6 @@ type StrictServerInterface interface {
 	// Proxy iam-svc liveness
 	// (GET /v1/iam/system/live)
 	GetIamSystemLive(ctx context.Context, request GetIamSystemLiveRequestObject) (GetIamSystemLiveResponseObject, error)
-	// Proxy jamaah-svc liveness
-	// (GET /v1/jamaah/system/live)
-	GetJamaahSystemLive(ctx context.Context, request GetJamaahSystemLiveRequestObject) (GetJamaahSystemLiveResponseObject, error)
-	// Proxy logistics-svc liveness
-	// (GET /v1/logistics/system/live)
-	GetLogisticsSystemLive(ctx context.Context, request GetLogisticsSystemLiveRequestObject) (GetLogisticsSystemLiveResponseObject, error)
-	// Proxy ops-svc liveness
-	// (GET /v1/ops/system/live)
-	GetOpsSystemLive(ctx context.Context, request GetOpsSystemLiveRequestObject) (GetOpsSystemLiveResponseObject, error)
 	// Active package-departure detail
 	// (GET /v1/package-departures/{id})
 	GetPackageDepartureById(ctx context.Context, request GetPackageDepartureByIdRequestObject) (GetPackageDepartureByIdResponseObject, error)
@@ -1279,12 +987,6 @@ type StrictServerInterface interface {
 	// Active package detail
 	// (GET /v1/packages/{id})
 	GetPackageById(ctx context.Context, request GetPackageByIdRequestObject) (GetPackageByIdResponseObject, error)
-	// Proxy payment-svc liveness
-	// (GET /v1/payment/system/live)
-	GetPaymentSystemLive(ctx context.Context, request GetPaymentSystemLiveRequestObject) (GetPaymentSystemLiveResponseObject, error)
-	// Proxy visa-svc liveness
-	// (GET /v1/visa/system/live)
-	GetVisaSystemLive(ctx context.Context, request GetVisaSystemLiveRequestObject) (GetVisaSystemLiveResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx *fiber.Ctx, args interface{}) (interface{}, error)
@@ -1342,81 +1044,6 @@ func (sh *strictHandler) Readiness(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else if validResponse, ok := response.(ReadinessResponseObject); ok {
 		if err := validResponse.VisitReadinessResponse(ctx); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// GetBookingSystemLive operation middleware
-func (sh *strictHandler) GetBookingSystemLive(ctx *fiber.Ctx) error {
-	var request GetBookingSystemLiveRequestObject
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetBookingSystemLive(ctx.UserContext(), request.(GetBookingSystemLiveRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetBookingSystemLive")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(GetBookingSystemLiveResponseObject); ok {
-		if err := validResponse.VisitGetBookingSystemLiveResponse(ctx); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// GetCatalogSystemLive operation middleware
-func (sh *strictHandler) GetCatalogSystemLive(ctx *fiber.Ctx) error {
-	var request GetCatalogSystemLiveRequestObject
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetCatalogSystemLive(ctx.UserContext(), request.(GetCatalogSystemLiveRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetCatalogSystemLive")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(GetCatalogSystemLiveResponseObject); ok {
-		if err := validResponse.VisitGetCatalogSystemLiveResponse(ctx); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// GetCrmSystemLive operation middleware
-func (sh *strictHandler) GetCrmSystemLive(ctx *fiber.Ctx) error {
-	var request GetCrmSystemLiveRequestObject
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetCrmSystemLive(ctx.UserContext(), request.(GetCrmSystemLiveRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetCrmSystemLive")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(GetCrmSystemLiveResponseObject); ok {
-		if err := validResponse.VisitGetCrmSystemLiveResponse(ctx); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
 	} else if response != nil {
@@ -1502,81 +1129,6 @@ func (sh *strictHandler) GetIamSystemLive(ctx *fiber.Ctx) error {
 	return nil
 }
 
-// GetJamaahSystemLive operation middleware
-func (sh *strictHandler) GetJamaahSystemLive(ctx *fiber.Ctx) error {
-	var request GetJamaahSystemLiveRequestObject
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetJamaahSystemLive(ctx.UserContext(), request.(GetJamaahSystemLiveRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetJamaahSystemLive")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(GetJamaahSystemLiveResponseObject); ok {
-		if err := validResponse.VisitGetJamaahSystemLiveResponse(ctx); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// GetLogisticsSystemLive operation middleware
-func (sh *strictHandler) GetLogisticsSystemLive(ctx *fiber.Ctx) error {
-	var request GetLogisticsSystemLiveRequestObject
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetLogisticsSystemLive(ctx.UserContext(), request.(GetLogisticsSystemLiveRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetLogisticsSystemLive")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(GetLogisticsSystemLiveResponseObject); ok {
-		if err := validResponse.VisitGetLogisticsSystemLiveResponse(ctx); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// GetOpsSystemLive operation middleware
-func (sh *strictHandler) GetOpsSystemLive(ctx *fiber.Ctx) error {
-	var request GetOpsSystemLiveRequestObject
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetOpsSystemLive(ctx.UserContext(), request.(GetOpsSystemLiveRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetOpsSystemLive")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(GetOpsSystemLiveResponseObject); ok {
-		if err := validResponse.VisitGetOpsSystemLiveResponse(ctx); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
 // GetPackageDepartureById operation middleware
 func (sh *strictHandler) GetPackageDepartureById(ctx *fiber.Ctx, id string) error {
 	var request GetPackageDepartureByIdRequestObject
@@ -1650,56 +1202,6 @@ func (sh *strictHandler) GetPackageById(ctx *fiber.Ctx, id string) error {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else if validResponse, ok := response.(GetPackageByIdResponseObject); ok {
 		if err := validResponse.VisitGetPackageByIdResponse(ctx); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// GetPaymentSystemLive operation middleware
-func (sh *strictHandler) GetPaymentSystemLive(ctx *fiber.Ctx) error {
-	var request GetPaymentSystemLiveRequestObject
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetPaymentSystemLive(ctx.UserContext(), request.(GetPaymentSystemLiveRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetPaymentSystemLive")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(GetPaymentSystemLiveResponseObject); ok {
-		if err := validResponse.VisitGetPaymentSystemLiveResponse(ctx); err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, err.Error())
-		}
-	} else if response != nil {
-		return fmt.Errorf("unexpected response type: %T", response)
-	}
-	return nil
-}
-
-// GetVisaSystemLive operation middleware
-func (sh *strictHandler) GetVisaSystemLive(ctx *fiber.Ctx) error {
-	var request GetVisaSystemLiveRequestObject
-
-	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetVisaSystemLive(ctx.UserContext(), request.(GetVisaSystemLiveRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetVisaSystemLive")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(GetVisaSystemLiveResponseObject); ok {
-		if err := validResponse.VisitGetVisaSystemLiveResponse(ctx); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
 	} else if response != nil {

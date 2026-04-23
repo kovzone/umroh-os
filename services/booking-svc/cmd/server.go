@@ -1,91 +1,22 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"os"
 
 	"booking-svc/api/grpc_api"
 	"booking-svc/api/grpc_api/pb"
-	"booking-svc/api/rest_oapi"
-	"booking-svc/api/rest_oapi/middleware"
-	"booking-svc/util/monitoring"
 
-	"github.com/gofiber/contrib/otelfiber/v2"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/adaptor"
-	"github.com/gofiber/fiber/v2/middleware/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	health_pb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 )
 
-// runRestServer runs the REST server using the OpenAPI-generated routes and handler.
-//
-// S1 REST surface:
-//   - POST /v1/bookings        — create draft booking (S1-E-03 / BL-BOOK-001..006)
-//   - GET  /system/live        — liveness probe
-//   - GET  /system/ready       — readiness probe
-//   - GET  /system/diagnostics/db-tx — WithTx diagnostic
-func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool, serviceName string) {
-	app := fiber.New()
-
-	// CORS
-	corsConfig := cors.Config{
-		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
-	}
-	app.Use(cors.New(corsConfig))
-
-	// OpenTelemetry — start an inbound span for every request so cross-service
-	// traces initiated by an upstream caller (via W3C traceparent) continue in
-	// this process's spans instead of starting a new trace. Span names are
-	// prefixed with the service name so a multi-service trace in Tempo is easy
-	// to scan (e.g. "booking-svc GET /system/diagnostics/db-tx").
-	app.Use(otelfiber.Middleware(
-		otelfiber.WithSpanNameFormatter(func(c *fiber.Ctx) string {
-			return serviceName + " " + c.Method() + " " + c.Route().Path
-		}),
-	))
-
-	if metricsEnabled {
-		app.Use(monitoring.RecoveryMiddleware())
-		app.Use(monitoring.Middleware())
-		app.Get("/metrics", adaptor.HTTPHandler(monitoring.Handler()))
-	}
-
-	app.Use(middleware.ErrorHandler())
-
-	wrapper := rest_oapi.ServerInterfaceWrapper{Handler: api}
-
-	// Booking routes (S1-E-03)
-	app.Post("/v1/bookings", wrapper.CreateDraftBooking)
-
-	// System routes (probes + WithTx diagnostic)
-	system := app.Group("/system")
-	{
-		system.Get("/live", wrapper.Liveness)
-		system.Get("/ready", wrapper.Readiness)
-		system.Get("/diagnostics/db-tx", wrapper.DbTxDiagnostic)
-	}
-
-	go func() {
-		log.Printf("rest server started successfully 🚀")
-
-		err := app.Listen(fmt.Sprintf(":%d", port))
-		if err != nil {
-			log.Printf("failed to listen at port: %v!\n", port)
-			log.Printf("error: %v\n", err)
-			os.Exit(1)
-		}
-	}()
-}
-
-// runGrpcServer runs the gRPC server exposing the BookingService surface plus the
-// standard gRPC health protocol. Pilot wires a placeholder Healthz RPC;
-// ValidateToken, CheckPermission, GetUser, and RecordAudit land in F1.7.
+// runGrpcServer runs the gRPC server exposing the BookingService surface plus
+// the standard gRPC health protocol. Per ADR 0009 this is booking-svc's only
+// transport — REST was removed in BL-REFACTOR-002 / S1-E-13.
 func runGrpcServer(address string, apiServer *grpc_api.Server) *grpc.Server {
 	grpcServer := grpc.NewServer()
 
@@ -97,8 +28,8 @@ func runGrpcServer(address string, apiServer *grpc_api.Server) *grpc.Server {
 		"booking.v1.BookingService",
 		health_pb.HealthCheckResponse_SERVING,
 	)
-	// Empty service name = whole-server health. Required for grpc_health_probe's default
-	// probe (called from docker-compose healthchecks per ADR 0009 / BL-MON-001).
+	// Empty service name = whole-server health. Required for grpc_health_probe's
+	// default probe (called from docker-compose healthchecks per BL-MON-001).
 	healthServer.SetServingStatus(
 		"",
 		health_pb.HealthCheckResponse_SERVING,

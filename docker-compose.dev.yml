@@ -24,6 +24,7 @@ services:
     ports:
       - "4317:4317" # gRPC OTLP
       - "4318:4318" # HTTP OTLP
+      - "8889:8889" # Prometheus exporter (scraped by Prometheus for OTLP-push services)
       - "55679:55679" # zPages (optional)
     depends_on:
       - jaeger
@@ -318,7 +319,6 @@ services:
     container_name: catalog-svc
     restart: unless-stopped
     ports:
-      - "4002:4002"
       - "50052:50052"
     volumes:
       - ./services/catalog-svc/config.json:/app/config.json
@@ -350,7 +350,6 @@ services:
     container_name: booking-svc
     restart: unless-stopped
     ports:
-      - "4003:4003"
       - "50053:50053"
     volumes:
       - ./services/booking-svc/config.json:/app/config.json
@@ -382,7 +381,6 @@ services:
     container_name: jamaah-svc
     restart: unless-stopped
     ports:
-      - "4004:4004"
       - "50054:50054"
     volumes:
       - ./services/jamaah-svc/config.json:/app/config.json
@@ -414,7 +412,6 @@ services:
     container_name: payment-svc
     restart: unless-stopped
     ports:
-      - "4005:4005"
       - "50055:50055"
     volumes:
       - ./services/payment-svc/config.json:/app/config.json
@@ -446,7 +443,6 @@ services:
     container_name: visa-svc
     restart: unless-stopped
     ports:
-      - "4006:4006"
       - "50056:50056"
     volumes:
       - ./services/visa-svc/config.json:/app/config.json
@@ -478,7 +474,6 @@ services:
     container_name: ops-svc
     restart: unless-stopped
     ports:
-      - "4007:4007"
       - "50057:50057"
     volumes:
       - ./services/ops-svc/config.json:/app/config.json
@@ -510,7 +505,6 @@ services:
     container_name: logistics-svc
     restart: unless-stopped
     ports:
-      - "4008:4008"
       - "50058:50058"
     volumes:
       - ./services/logistics-svc/config.json:/app/config.json
@@ -574,7 +568,6 @@ services:
     container_name: crm-svc
     restart: unless-stopped
     ports:
-      - "4010:4010"
       - "50060:50060"
     volumes:
       - ./services/crm-svc/config.json:/app/config.json

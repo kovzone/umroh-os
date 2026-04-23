@@ -48,8 +48,9 @@ COPY --from=build-env /bin/grpc_health_probe /bin/grpc_health_probe
 # Note: config.json is mounted via docker-compose volume
 # This allows for different configs (local vs docker) without rebuilding
 
-# Expose REST (4002) and gRPC (50052)
-EXPOSE 4002 50052
+# Expose gRPC (50052). Per ADR 0009 catalog-svc is gRPC-only — REST was removed
+# in BL-REFACTOR-001 / S1-E-11.
+EXPOSE 50052
 
 # Run the executable with 'start' argument
 ENTRYPOINT [ "./main", "start" ]

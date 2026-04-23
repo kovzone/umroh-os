@@ -48,8 +48,9 @@ COPY --from=build-env /bin/grpc_health_probe /bin/grpc_health_probe
 # Note: config.json is mounted via docker-compose volume
 # This allows for different configs (local vs docker) without rebuilding
 
-# Expose REST (4004) and gRPC (50054)
-EXPOSE 4004 50054
+# Expose gRPC (50054). Per ADR 0009 jamaah-svc is gRPC-only — REST was removed
+# in BL-REFACTOR-004 / S1-E-13.
+EXPOSE 50054
 
 # Run the executable with 'start' argument
 ENTRYPOINT [ "./main", "start" ]

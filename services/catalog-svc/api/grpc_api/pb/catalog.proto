@@ -4,20 +4,16 @@ package pb;
 
 option go_package="./pb";
 
-// CatalogService — internal gRPC surface for the catalog (packages +
-// master data). Per ADR 0009 backend services are gRPC-only; the public
-// REST surface lives on gateway-svc which proxies to these RPCs.
+// CatalogService — the catalog's only transport surface (packages + master
+// data). Per ADR 0009 this service is gRPC-only; the public REST surface
+// lives on gateway-svc (services/gateway-svc/api/rest_oapi/openapi.yaml
+// § Catalog) which proxies to these RPCs.
 //
 // BL-GTW-002 / S1-E-10 adds the public-read trio (ListPackages,
-// GetPackage, GetPackageDeparture) mirroring the shapes in
-// services/catalog-svc/api/rest_oapi/openapi.yaml § Catalog. Dates are
-// ISO YYYY-MM-DD strings (matching the service layer); enums stay as
-// strings per the adapter pattern (cross-service type churn avoided; the
-// REST layer's oapi-generated enum validation is the authoritative gate).
-//
-// Catalog-svc's REST handlers still exist and call the same service-layer
-// methods as these gRPC handlers; G7 (BL-REFACTOR-001) removes the REST
-// side once gateway is proven end-to-end.
+// GetPackage, GetPackageDeparture). Dates are ISO YYYY-MM-DD strings
+// (matching the service layer); enums stay as strings per the adapter
+// pattern (cross-service type churn avoided; gateway's oapi-generated
+// enum validation is the authoritative gate).
 //
 // S1-E-07 / BL-CAT-014 adds the staff write quartet:
 // CreatePackage, UpdatePackage, CreateDeparture, UpdateDeparture.

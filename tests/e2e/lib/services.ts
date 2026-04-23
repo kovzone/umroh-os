@@ -1,10 +1,17 @@
-// Service registry — base URLs for every scaffolded service.
+// Service registry — base URLs for every backend that still exposes a REST
+// surface (the ADR 0009 sweep has moved most backends to gRPC-only).
 //
 // Two registries:
-//   - backendServices: the 10 stateful services. Each exposes the standard
-//     scaffold endpoints /system/live, /system/ready, /system/diagnostics/db-tx.
+//   - backendServices: backends whose /system/live, /system/ready,
+//     /system/diagnostics/db-tx probes are still REST-accessible. The seven
+//     pure-scaffold backends (booking/crm/jamaah/logistics/ops/payment/visa)
+//     retired their REST surfaces in BL-REFACTOR-002..008 / S1-E-13; probe
+//     them via `grpc_health_probe -addr=<svc>:<grpc-port>` instead. finance-svc
+//     follows in BL-IAM-019 / S1-E-14. catalog-svc moved earlier in
+//     BL-REFACTOR-001 (G7).
 //   - gateway: the edge proxy. Exposes /system/live + /system/ready locally
-//     plus one /v1/<shortName>/system/live per backend it fronts.
+//     plus the few /v1/<shortName>/system/live proxies that are still wired
+//     (currently iam + finance).
 
 export interface ServiceEntry {
   name: string;       // "iam-svc"
@@ -19,14 +26,7 @@ export interface ServiceEntry {
 // The 01-system.spec.ts loop (which tests /system/live + /system/diagnostics/db-tx
 // on each backend) skips these two services accordingly.
 export const backendServices: ServiceEntry[] = [
-  { name: "booking-svc",   shortName: "booking",   baseURL: process.env.BOOKING_SVC_URL   || "http://127.0.0.1:4003" },
-  { name: "jamaah-svc",    shortName: "jamaah",    baseURL: process.env.JAMAAH_SVC_URL    || "http://127.0.0.1:4004" },
-  { name: "payment-svc",   shortName: "payment",   baseURL: process.env.PAYMENT_SVC_URL   || "http://127.0.0.1:4005" },
-  { name: "visa-svc",      shortName: "visa",      baseURL: process.env.VISA_SVC_URL      || "http://127.0.0.1:4006" },
-  { name: "ops-svc",       shortName: "ops",       baseURL: process.env.OPS_SVC_URL       || "http://127.0.0.1:4007" },
-  { name: "logistics-svc", shortName: "logistics", baseURL: process.env.LOGISTICS_SVC_URL || "http://127.0.0.1:4008" },
-  { name: "finance-svc",   shortName: "finance",   baseURL: process.env.FINANCE_SVC_URL   || "http://127.0.0.1:4009" },
-  { name: "crm-svc",       shortName: "crm",       baseURL: process.env.CRM_SVC_URL       || "http://127.0.0.1:4010" },
+  { name: "finance-svc", shortName: "finance", baseURL: process.env.FINANCE_SVC_URL || "http://127.0.0.1:4009" },
 ];
 
 export interface GatewayEntry {

@@ -84,15 +84,10 @@ func runRestServer(port int, api rest_oapi.ServerInterface, iamValidator middlew
 	{
 		// System-probe proxies (REST adapters; retire with each BL-REFACTOR-* card).
 		// Note: /v1/catalog/system/live removed in S1-E-11 (catalog-svc is gRPC-only).
-		// Note: /v1/iam/system/live removed in S1-E-12 (iam-svc is gRPC-only).
-		v1.Get("/booking/system/live", wrapper.GetBookingSystemLive)
-		v1.Get("/jamaah/system/live", wrapper.GetJamaahSystemLive)
-		v1.Get("/payment/system/live", wrapper.GetPaymentSystemLive)
-		v1.Get("/visa/system/live", wrapper.GetVisaSystemLive)
-		v1.Get("/ops/system/live", wrapper.GetOpsSystemLive)
-		v1.Get("/logistics/system/live", wrapper.GetLogisticsSystemLive)
+		// Note: /v1/iam/system/live + /v1/iam/system/diagnostics/db-tx removed in S1-E-12
+		//       (iam-svc is gRPC-only). The seven pure-scaffold backends (booking/crm/
+		//       jamaah/logistics/ops/payment/visa) retired their REST surfaces in S1-E-13.
 		v1.Get("/finance/system/live", wrapper.GetFinanceSystemLive)
-		v1.Get("/crm/system/live", wrapper.GetCrmSystemLive)
 
 		// Public catalog read (BL-GTW-002 / S1-E-10) — gRPC adapter.
 		// security: [] in openapi.yaml — no bearer required.

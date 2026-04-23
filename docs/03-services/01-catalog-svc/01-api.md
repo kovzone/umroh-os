@@ -1,52 +1,38 @@
 # catalog-svc — API
 
-## Current status (S1-E-02 / BL-CAT-001 + BL-CAT-002)
+Per ADR 0009 catalog-svc is **gRPC-only**. All client-facing REST paths live on `gateway-svc`; the gateway proxies to the RPCs below via `gateway-svc/adapter/catalog_grpc_adapter`. The legacy catalog REST package (`api/rest_oapi/`) was removed in `BL-REFACTOR-001 / S1-E-11` on 2026-04-23 — there is no longer a backend REST surface.
 
-The three public read endpoints below are **live** (all merged 2026-04-22). All other endpoints are planned/stub and land via later cards (`BL-CAT-005..011` for admin CRUD + bulk, `S1-E-03` for the seat RPCs).
+## gRPC methods (CatalogService)
 
-| Method | Path | Status | Purpose |
+Defined in `services/catalog-svc/api/grpc_api/pb/catalog.proto`.
+
+| RPC | Status | Caller | Purpose |
 |---|---|---|---|
-| `GET` | `/v1/packages` | **live** (BL-CAT-001) | List active packages. Filter by `kind`, `departure_from/to`, `airline_code`, `hotel_id`; cursor-paginated. |
-| `GET` | `/v1/packages/{id}` | **live** (BL-CAT-001) | Active package detail with eager master refs + upcoming open/closed departures. |
-| `GET` | `/v1/package-departures/{id}` | **live** (BL-CAT-002) | Departure detail with live `remaining_seats`, pricing per room type, and stubbed `vendor_readiness`. |
-| `GET` | `/v1/hotels` | planned | List hotels (admin). |
-| … | | | |
+| `Healthz` | live | reflection probes (legacy) | Pilot placeholder; real infra probes use the standard `grpc.health.v1.Health` protocol registered in `cmd/server.go`. |
+| `ListPackages` | **live** (BL-GTW-002 / S1-E-10) | `gateway-svc` → public `GET /v1/packages` | Filter by `kind`, `departure_from/to`, `airline_code`, `hotel_id`; cursor-paginated. |
+| `GetPackage` | **live** (BL-GTW-002 / S1-E-10) | `gateway-svc` → public `GET /v1/packages/{id}` | Active package detail with eager master refs + upcoming open/closed departures. |
+| `GetPackageDeparture` | **live** (BL-GTW-002 / S1-E-10) | `gateway-svc` → public `GET /v1/package-departures/{id}` | Departure detail with live `remaining_seats`, pricing per room type, and `vendor_readiness`. |
+| `DiagnosticsDbTx` | **live** (BL-REFACTOR-001 / S1-E-11) | dev-only (invoke via `grpcurl`) | State-mutating WithTx reference path. No gateway REST route — the equivalent cross-service trace demo is `/v1/iam/system/diagnostics/db-tx` on iam-svc (S0-J-05). |
+| `ReserveSeats` | planned (S1-E-03) | `booking-svc` | Atomic reservation, called by the booking saga. |
+| `ReleaseSeats` | planned (S1-E-03) | `booking-svc` | Compensating action. |
+| `GetHotel` / `GetAirline` / `GetMuthawwif` | planned | internal | Master-data lookups. |
 
-Wire shapes are pinned in `docs/contracts/slice-S1.md § Catalog` — the contract is the source of truth; this file is a summary for navigation.
+## Public REST paths (on gateway-svc, not here)
 
-## REST endpoints (planned)
+For completeness — these are served by `gateway-svc:4000` and proxy to the RPCs above:
 
-| Method | Path | Purpose |
+| Method | Path | Backing RPC |
 |---|---|---|
-| `GET` | `/v1/packages` | List packages (filterable) — **public** (no Bearer) |
-| `POST` | `/v1/packages` | Create package — **staff only** (Bearer + `catalog.package.manage`; see `slice-S1.md` § Catalog — internal write MVP / backlog `BL-CAT-014`) |
-| `GET` | `/v1/packages/{id}` | Get package detail — **public** |
-| `PATCH` | `/v1/packages/{id}` | Update package — **staff only** |
-| `DELETE` | `/v1/packages/{id}` | Soft-delete package — **staff only** |
-| `GET` | `/v1/packages/{id}/departures` | List departures for package |
-| `POST` | `/v1/packages/{id}/departures` | Create departure — **staff only** |
-| `GET` | `/v1/package-departures/{id}` | Get departure detail — **public** |
-| `PATCH` | `/v1/package-departures/{id}` | Update departure — **staff only** |
-| `GET` | `/v1/hotels` | List hotels |
-| `POST` | `/v1/hotels` | Create hotel |
-| `GET` | `/v1/hotels/{id}` | Get hotel detail |
-| `PATCH` | `/v1/hotels/{id}` | Update hotel |
-| `GET` | `/v1/airlines` | List airlines |
-| `POST` | `/v1/airlines` | Create airline |
-| `GET` | `/v1/muthawwif` | List muthawwif |
-| `POST` | `/v1/muthawwif` | Create muthawwif |
-| `POST` | `/v1/packages/import` | Bulk import via CSV |
-| `GET` | `/v1/packages/export` | Bulk export to CSV |
+| `GET` | `/v1/packages` | `ListPackages` |
+| `GET` | `/v1/packages/{id}` | `GetPackage` |
+| `GET` | `/v1/package-departures/{id}` | `GetPackageDeparture` |
 
-## gRPC methods (planned)
+Admin / staff-write paths (create / patch / delete packages, hotels, airlines, muthawwif, bulk CSV import/export) are not live yet — they land with `BL-CAT-014` and the bulk cards. When added, they ship as paired gRPC methods on this service + gateway REST routes per ADR 0009.
 
-`CatalogService`:
-- `GetPackage(GetPackageRequest) → GetPackageResponse`
-- `GetPackageDeparture(...)` — used by booking-svc and ops-svc
-- `ReserveSeats(ReserveSeatsRequest) → ReserveSeatsResponse` — atomic reservation, called by booking saga
-- `ReleaseSeats(ReleaseSeatsRequest) → ReleaseSeatsResponse` — compensating action
-- `GetHotel(...)`
-- `GetAirline(...)`
-- `GetMuthawwif(...)`
+## Payload alignment
 
-**Payload alignment:** departure + pricing responses expose `list_amount`, `list_currency`, and `settlement_currency` per `02-data-model.md` (F2 / **Q001**). Consumers compute **IDR** payable only at booking/invoice lock in `payment-svc`.
+Departure + pricing responses expose `list_amount`, `list_currency`, and `settlement_currency` per `02-data-model.md` (F2 / **Q001**). Consumers compute **IDR** payable only at booking/invoice lock in `payment-svc`.
+
+## Contract
+
+Wire shapes are pinned in `docs/contracts/slice-S1.md § Catalog` + `§ Gateway` — the contract is the source of truth; this file is a summary for navigation.

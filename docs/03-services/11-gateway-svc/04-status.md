@@ -7,8 +7,11 @@
 - [x] First adapter: `iam_rest_adapter` + `GET /v1/iam/system/live` proof *(interim; replaced by `iam_grpc_adapter` in `BL-GTW-001` per ADR 0009)*
 - [ ] **`iam_grpc_adapter`** — gateway's gRPC client to `iam-svc` (replaces the interim REST adapter per ADR 0009) — `BL-GTW-001` / S1-E-09
 - [ ] **Bearer-auth middleware** — extracts `Authorization: Bearer`, calls `iam.v1.IamService/ValidateToken`, fail-closed 502 on iam-svc unreachable — `BL-GTW-001` / S1-E-09
-- [x] **`catalog_grpc_adapter`** + public REST routes (`GET /v1/packages`, `GET /v1/packages/{id}`, `GET /v1/package-departures/{id}`); e2e migrated to `gateway-svc:4000` — `BL-GTW-002` / S1-E-10 (PR pending)
+- [x] **`catalog_grpc_adapter`** + public REST routes (`GET /v1/packages`, `GET /v1/packages/{id}`, `GET /v1/package-departures/{id}`); e2e migrated to `gateway-svc:4000` — `BL-GTW-002` / S1-E-10 (merged 2026-04-22, PR #48)
+- [x] **`catalog_rest_adapter` retired** + `/v1/catalog/system/live` removed + `external.catalog_svc.address` dropped from config — `BL-REFACTOR-001` / S1-E-11 (2026-04-23). catalog-svc is now gRPC-only; operators probe via `grpc_health_probe`.
+- [x] **Seven scaffold REST adapters retired** (`booking/crm/jamaah/logistics/ops/payment/visa`) + seven `/v1/<svc>/system/live` routes removed + seven `external.<svc>_svc.address` fields dropped — `BL-REFACTOR-002..008` / S1-E-13 (2026-04-23). The 7 backends now run gRPC-only; operators probe via `grpc_health_probe`.
 - [ ] **Iam client-facing REST** (`/v1/sessions*`, `/v1/me*`, `/v1/users*`) proxied to iam gRPC — `BL-IAM-018` / S1-E-12
+- [ ] **finance-svc ADR 0009 realignment** — `/v1/finance/ping` + `/v1/finance/system/live` move to gateway with `RequirePermission` middleware + `finance_grpc_adapter` — `BL-IAM-019` / S1-E-14
 - [ ] Per-backend gRPC adapters for the remaining services (booking, jamaah, payment, visa, ops, logistics, finance, crm) — opened as each consumer slice lands
 - [ ] **Trust contract (gateway↔backend)** — signed header or mTLS, closes the defense-in-depth gap — `BL-GTW-100` (deferred, later slice)
 - [ ] Grafana dashboard `gateway-svc.json` in the `UmrohOS Services` folder
@@ -56,7 +59,7 @@ Gateway is the only REST surface in UmrohOS. For each backend it calls, it carri
 - `<topic>.go` — typed methods that call the backend's gRPC RPCs and translate gRPC status codes to `apperrors` sentinels for consistent Fiber rendering.
 - `pb/<svc>.proto` — local copy of the backend's proto (per ADR 0004).
 
-The original REST-adapter pattern (`services/gateway-svc/adapter/<svc>_rest_adapter/`) was an interim shape used during S0 scaffolding. `iam_rest_adapter` is the only concrete example today; it is replaced by `iam_grpc_adapter` as part of `BL-GTW-001` / S1-E-09 (and deleted as part of `BL-IAM-018` / S1-E-12 when iam's REST package goes away altogether).
+The original REST-adapter pattern (`services/gateway-svc/adapter/<svc>_rest_adapter/`) was an interim shape used during S0 scaffolding. Each backend's REST adapter retires as its `BL-REFACTOR-*` card lands; `catalog_rest_adapter` went first (2026-04-23, `BL-REFACTOR-001`); the **seven scaffold adapters** (`booking/crm/jamaah/logistics/ops/payment/visa`) followed in a single sweep as `BL-REFACTOR-002..008` / S1-E-13 (2026-04-23). `iam_rest_adapter` still serves the interim system-probe + WithTx-diagnostic routes and retires with `BL-IAM-018` / S1-E-12. `finance_rest_adapter` still serves `/v1/finance/system/live` + the BL-IAM-002 `/v1/finance/ping` permission-gate demo and retires with `BL-IAM-019` / S1-E-14.
 
 ## Next
 

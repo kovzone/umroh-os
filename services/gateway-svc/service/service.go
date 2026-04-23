@@ -3,17 +3,10 @@ package service
 import (
 	"context"
 
-	"gateway-svc/adapter/booking_rest_adapter"
 	"gateway-svc/adapter/catalog_grpc_adapter"
-	"gateway-svc/adapter/crm_rest_adapter"
 	"gateway-svc/adapter/finance_rest_adapter"
 	"gateway-svc/adapter/iam_grpc_adapter"
 	"gateway-svc/adapter/iam_rest_adapter"
-	"gateway-svc/adapter/jamaah_rest_adapter"
-	"gateway-svc/adapter/logistics_rest_adapter"
-	"gateway-svc/adapter/ops_rest_adapter"
-	"gateway-svc/adapter/payment_rest_adapter"
-	"gateway-svc/adapter/visa_rest_adapter"
 
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel/trace"
@@ -21,12 +14,13 @@ import (
 
 // IService is the business-layer interface for gateway-svc.
 //
-// gateway-svc fronts every backend over REST. Methods either return
-// process-local state (Liveness, Readiness) or dispatch to a backend through
-// the corresponding adapter. Per ADR 0009, backends graduate to gRPC-only as
-// their BL-REFACTOR-* cards land:
+// gateway-svc fronts every backend. Methods either return process-local state
+// (Liveness, Readiness) or dispatch to a backend through the corresponding
+// adapter. Under ADR 0009 the target shape is REST-in, gRPC-out:
 //   - catalog-svc: gRPC-only from S1-E-11 (catalog_grpc_adapter)
-//   - iam-svc: gRPC-only from S1-E-12 (iam_grpc_adapter)
+//   - iam-svc: gRPC-only from S1-E-12 (iam_grpc_adapter); iam_rest_adapter
+//     retained only for interim probes until HTTP surface is fully removed.
+//   - finance_rest_adapter: retires with BL-IAM-019 / S1-E-14.
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
@@ -68,14 +62,9 @@ type IService interface {
 	VerifyTOTP(ctx context.Context, params *iam_grpc_adapter.VerifyTOTPParams) (*iam_grpc_adapter.VerifyTOTPResult, error)
 	SuspendUser(ctx context.Context, params *iam_grpc_adapter.SuspendUserParams) (*iam_grpc_adapter.SuspendUserResult, error)
 
-	GetBookingSystemLive(ctx context.Context) (*booking_rest_adapter.LivenessResult, error)
-	GetJamaahSystemLive(ctx context.Context) (*jamaah_rest_adapter.LivenessResult, error)
-	GetPaymentSystemLive(ctx context.Context) (*payment_rest_adapter.LivenessResult, error)
-	GetVisaSystemLive(ctx context.Context) (*visa_rest_adapter.LivenessResult, error)
-	GetOpsSystemLive(ctx context.Context) (*ops_rest_adapter.LivenessResult, error)
-	GetLogisticsSystemLive(ctx context.Context) (*logistics_rest_adapter.LivenessResult, error)
+	// Finance liveness proxy — interim REST adapter; retires with
+	// BL-IAM-019 / S1-E-14 when /v1/finance/* moves to gRPC.
 	GetFinanceSystemLive(ctx context.Context) (*finance_rest_adapter.LivenessResult, error)
-	GetCrmSystemLive(ctx context.Context) (*crm_rest_adapter.LivenessResult, error)
 }
 
 // Adapters bundles the adapters this service can dispatch through.
@@ -86,14 +75,7 @@ type Adapters struct {
 	iamRest     *iam_rest_adapter.Adapter
 	iamGrpc     *iam_grpc_adapter.Adapter
 	catalogGrpc *catalog_grpc_adapter.Adapter
-	bookingRest *booking_rest_adapter.Adapter
-	jamaahRest  *jamaah_rest_adapter.Adapter
-	paymentRest *payment_rest_adapter.Adapter
-	visaRest    *visa_rest_adapter.Adapter
-	opsRest     *ops_rest_adapter.Adapter
-	logisticsRest *logistics_rest_adapter.Adapter
 	financeRest *finance_rest_adapter.Adapter
-	crmRest     *crm_rest_adapter.Adapter
 }
 
 type Service struct {
@@ -106,20 +88,13 @@ type Service struct {
 
 // NewServiceParams keeps the constructor readable as the adapter list grows.
 type NewServiceParams struct {
-	Logger        *zerolog.Logger
-	Tracer        trace.Tracer
-	AppName       string
-	IamRest       *iam_rest_adapter.Adapter
-	IamGrpc       *iam_grpc_adapter.Adapter
-	CatalogGrpc   *catalog_grpc_adapter.Adapter
-	BookingRest   *booking_rest_adapter.Adapter
-	JamaahRest    *jamaah_rest_adapter.Adapter
-	PaymentRest   *payment_rest_adapter.Adapter
-	VisaRest      *visa_rest_adapter.Adapter
-	OpsRest       *ops_rest_adapter.Adapter
-	LogisticsRest *logistics_rest_adapter.Adapter
-	FinanceRest   *finance_rest_adapter.Adapter
-	CrmRest       *crm_rest_adapter.Adapter
+	Logger      *zerolog.Logger
+	Tracer      trace.Tracer
+	AppName     string
+	IamRest     *iam_rest_adapter.Adapter
+	IamGrpc     *iam_grpc_adapter.Adapter
+	CatalogGrpc *catalog_grpc_adapter.Adapter
+	FinanceRest *finance_rest_adapter.Adapter
 }
 
 func NewService(p NewServiceParams) IService {
@@ -128,17 +103,10 @@ func NewService(p NewServiceParams) IService {
 		tracer:  p.Tracer,
 		appName: p.AppName,
 		adapters: Adapters{
-			iamRest:       p.IamRest,
-			iamGrpc:       p.IamGrpc,
-			catalogGrpc:   p.CatalogGrpc,
-			bookingRest:   p.BookingRest,
-			jamaahRest:    p.JamaahRest,
-			paymentRest:   p.PaymentRest,
-			visaRest:      p.VisaRest,
-			opsRest:       p.OpsRest,
-			logisticsRest: p.LogisticsRest,
-			financeRest:   p.FinanceRest,
-			crmRest:       p.CrmRest,
+			iamRest:     p.IamRest,
+			iamGrpc:     p.IamGrpc,
+			catalogGrpc: p.CatalogGrpc,
+			financeRest: p.FinanceRest,
 		},
 	}
 }

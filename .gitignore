@@ -12,6 +12,9 @@ CLAUDE.md
 # docs
 docs/elda_mahaindra_cv.pdf
 
+# local agent role docs (not part of product source)
+docs/agents/
+
 # private collab docs (AI-assisted backend workflow, not shared with other devs)
 docs/90-agent-workflow/
 docs/91-progress/
