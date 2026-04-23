@@ -28,5 +28,11 @@
   },
   "catalog": {
     "grpc_target": "catalog-svc:50052"
+  },
+  "logistics": {
+    "grpc_target": "logistics-svc:50058"
+  },
+  "finance": {
+    "grpc_target": "finance-svc:50059"
   }
 }

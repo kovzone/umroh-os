@@ -10,11 +10,23 @@
 package pb
 
 // MarkBookingPaidRequest carries the payment event details from payment-svc.
+// S3 additions: DepartureId, ReceivedAt — needed by the fan-out to logistics-svc
+// and finance-svc (§S3-J-01 / §S3-J-02 / §S3-J-03).
 type MarkBookingPaidRequest struct {
 	BookingId     string
 	AmountPaidIdr float64
 	InvoiceStatus string
 	InvoiceId     string
+	// DepartureId is required for the logistics-svc.OnBookingPaid fan-out.
+	// payment-svc must populate this field from the booking record.
+	DepartureId string
+	// JamaahIds are the ULIDs of jamaah on this booking (min 1).
+	// Required for the logistics-svc.OnBookingPaid fan-out per §S3-J-02.
+	// TODO: booking-svc should look these up from its DB instead.
+	JamaahIds []string
+	// ReceivedAt is the RFC3339 timestamp of the gateway webhook receipt.
+	// Forwarded to finance-svc.OnPaymentReceived as the journal entry_date.
+	ReceivedAt string
 }
 
 func (x *MarkBookingPaidRequest) GetBookingId() string {
@@ -40,6 +52,25 @@ func (x *MarkBookingPaidRequest) GetInvoiceId() string {
 		return ""
 	}
 	return x.InvoiceId
+}
+func (x *MarkBookingPaidRequest) GetDepartureId() string {
+	if x == nil {
+		return ""
+	}
+	return x.DepartureId
+}
+func (x *MarkBookingPaidRequest) GetJamaahIds() []string {
+	if x == nil {
+		return nil
+	}
+	return x.JamaahIds
+}
+
+func (x *MarkBookingPaidRequest) GetReceivedAt() string {
+	if x == nil {
+		return ""
+	}
+	return x.ReceivedAt
 }
 
 // MarkBookingPaidResponse is the booking-svc acknowledgement.

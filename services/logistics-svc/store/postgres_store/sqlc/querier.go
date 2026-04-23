@@ -12,6 +12,10 @@ type Querier interface {
 	GetDbTxDiagnostic(ctx context.Context, id int64) (Diagnostic, error)
 	InsertDbTxDiagnostic(ctx context.Context, arg InsertDbTxDiagnosticParams) (Diagnostic, error)
 	ReadyCheck(ctx context.Context) (int32, error)
+
+	// Fulfillment task queries (S3-E-02 / BL-LOG-001)
+	GetFulfillmentTaskByBookingID(ctx context.Context, bookingID string) (FulfillmentTaskRow, error)
+	InsertFulfillmentTask(ctx context.Context, arg InsertFulfillmentTaskParams) (FulfillmentTaskRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

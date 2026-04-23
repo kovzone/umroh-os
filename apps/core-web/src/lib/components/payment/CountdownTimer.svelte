@@ -14,7 +14,7 @@
     return Math.max(0, Math.floor((new Date(expires).getTime() - Date.now()) / 1000));
   }
 
-  let secondsLeft = $state(computeSecondsLeft(expiresAt));
+  let secondsLeft = $state(0);
 
   const hours = $derived(Math.floor(secondsLeft / 3600));
   const minutes = $derived(Math.floor((secondsLeft % 3600) / 60));

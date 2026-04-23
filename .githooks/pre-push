@@ -2,12 +2,24 @@
 # Pre-push hook — blocks push if type checks or Go builds fail.
 # Install once: git config core.hooksPath .githooks
 #
+# Bypass (e.g. machine without Node yet): SKIP_PREPUSH=1 git push
+#
 # Re-exec via login shell so .zprofile / .bash_profile load nvm, go, etc.
 if [ -z "$_HOOK_LOGIN_SHELL" ]; then
   _HOOK_LOGIN_SHELL=1 exec "$SHELL" -l "$0" "$@"
 fi
 
 set -euo pipefail
+
+if [ "${SKIP_PREPUSH:-}" = "1" ]; then
+  echo "▶ pre-push: SKIP_PREPUSH=1 — skipping checks"
+  exit 0
+fi
+
+# True only if a real npm binary runs (aliases/functions can fool command -v).
+have_npm() {
+  command -v npm >/dev/null 2>&1 && npm -v >/dev/null 2>&1
+}
 
 # ── Helper: check if a path prefix was touched in this push ────────────────
 changed_in() {
@@ -19,8 +31,8 @@ echo "▶ pre-push: running checks before push..."
 
 # ── Frontend: svelte-check ──────────────────────────────────────────────────
 if changed_in "apps/core-web/"; then
-  if ! command -v npm &>/dev/null; then
-    echo "  ⚠ npm not found — skipping svelte-check (CI will catch it)"
+  if ! have_npm; then
+    echo "  ⚠ npm not available — skipping svelte-check (install Node LTS or use SKIP_PREPUSH=1; CI will catch issues)"
   else
     echo "  → svelte-check (core-web)..."
     (cd apps/core-web && npm run check) || {

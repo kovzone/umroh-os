@@ -11,6 +11,8 @@ import (
 // /metrics HTTP endpoint and no opt-in knob.
 // S1-E-03 adds `catalog` section for the gRPC connection to catalog-svc
 // used by draft booking creation (ReserveSeats / GetDeparture calls).
+// S3-E-02 adds `logistics` section for the OnBookingPaid fan-out.
+// S3-E-03 adds `finance` section for the OnPaymentReceived fan-out.
 type Config struct {
 	App        App        `mapstructure:"app"`
 	Api        Api        `mapstructure:"api"`
@@ -18,10 +20,22 @@ type Config struct {
 	OtelTracer OtelTracer `mapstructure:"otel_tracer"`
 	Iam        Iam        `mapstructure:"iam"`
 	Catalog    Catalog    `mapstructure:"catalog"`
+	Logistics  Logistics  `mapstructure:"logistics"`
+	Finance    Finance    `mapstructure:"finance"`
 }
 
 // Catalog config — gRPC connection to catalog-svc for ReserveSeats / GetDeparture.
 type Catalog struct {
+	GrpcTarget string `mapstructure:"grpc_target"`
+}
+
+// Logistics config — gRPC connection to logistics-svc for OnBookingPaid fan-out (S3-E-02).
+type Logistics struct {
+	GrpcTarget string `mapstructure:"grpc_target"`
+}
+
+// Finance config — gRPC connection to finance-svc for OnPaymentReceived fan-out (S3-E-03).
+type Finance struct {
 	GrpcTarget string `mapstructure:"grpc_target"`
 }
 

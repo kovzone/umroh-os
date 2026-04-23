@@ -11,20 +11,23 @@ import (
 
 // IService is the business-layer interface for jamaah-svc.
 //
-// Pilot scaffold surfaces only the three standard scaffold endpoints:
+// Pilot scaffold surfaces the three standard scaffold endpoints plus the
+// S3-E-02 document upload/review scaffold:
 //
 //   - Liveness — process is up
 //   - Readiness — process is up AND the database is reachable
-//   - DbTxDiagnostic — writes + reads inside a WithTx, the canonical reference
-//     for how services should use transactions (per docs/04-backend-conventions)
-//
-// Real iam responsibilities (user/role/branch CRUD, auth login/refresh/logout,
-// permission checks, session lifecycle, audit writes) land in F1.5–F1.11 and
-// are deliberately out of scaffold scope.
+//   - DbTxDiagnostic — canonical WithTx reference
+//   - UploadDocument — store a document record in status='pending' (F3-W1 / BL-DOC-001)
+//   - ReviewDocument — approve or reject a document (F3-W3 / BL-DOC-003)
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
 	DbTxDiagnostic(ctx context.Context, params *DbTxDiagnosticParams) (*DbTxDiagnosticResult, error)
+
+	// Document upload (S3-E-02 / F3-W1 / BL-DOC-001)
+	UploadDocument(ctx context.Context, params *UploadDocumentParams) (*UploadDocumentResult, error)
+	// Document review (S3-E-02 / F3-W3 / BL-DOC-003)
+	ReviewDocument(ctx context.Context, params *ReviewDocumentParams) (*ReviewDocumentResult, error)
 }
 
 type Service struct {

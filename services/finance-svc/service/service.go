@@ -11,17 +11,16 @@ import (
 
 // IService is the business-layer interface for finance-svc.
 //
-// Pilot scaffold surfaces the three standard scaffold endpoints:
+// Pilot scaffold surfaces the three standard scaffold endpoints plus the
+// S3-E-03 journal engine:
 //
 //   - Liveness — process is up
 //   - Readiness — process is up AND the database is reachable
 //   - DbTxDiagnostic — writes + reads inside a WithTx, the canonical reference
 //     for how services should use transactions (per docs/04-backend-conventions)
-//
-// BL-IAM-002 adds FinancePing — the placeholder authenticated route that
-// exercises the iam-svc permission gate so the "finance routes denied for
-// non-finance roles" acceptance has a concrete surface. Real finance endpoints
-// (journals, AR/AP, reports) land with S3-E-03 + S3-E-07.
+//   - FinancePing — BL-IAM-002 authenticated placeholder
+//   - OnPaymentReceived — creates (or returns existing) double-entry journal
+//     for a payment received event (S3-E-03 / BL-FIN-001..003)
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
@@ -29,6 +28,11 @@ type IService interface {
 
 	// Finance — BL-IAM-002 placeholder.
 	FinancePing(ctx context.Context, params *FinancePingParams) (*FinancePingResult, error)
+
+	// OnPaymentReceived posts a double-entry journal for a payment received
+	// event. Idempotent on idempotency_key = "payment:<invoice_id>".
+	// Dr 1001 (Bank) / Cr 2001 (Pilgrim Liability).
+	OnPaymentReceived(ctx context.Context, params *OnPaymentReceivedParams) (*OnPaymentReceivedResult, error)
 }
 
 type Service struct {

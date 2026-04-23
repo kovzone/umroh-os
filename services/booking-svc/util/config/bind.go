@@ -27,4 +27,9 @@ func bindEnvironmentVariables() {
 
 	viper.BindEnv("otel_tracer.name", "OTEL_TRACER_NAME")
 	viper.BindEnv("otel_tracer.endpoint", "OTEL_TRACER_ENDPOINT")
+
+	// Downstream service gRPC targets (S3-E-02 / S3-E-03)
+
+	viper.BindEnv("logistics.grpc_target", "LOGISTICS_GRPC_TARGET")
+	viper.BindEnv("finance.grpc_target", "FINANCE_GRPC_TARGET")
 }

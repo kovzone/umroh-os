@@ -11,20 +11,24 @@ import (
 
 // IService is the business-layer interface for logistics-svc.
 //
-// Pilot scaffold surfaces only the three standard scaffold endpoints:
+// Pilot scaffold surfaces the three standard scaffold endpoints plus the
+// S3-E-02 fulfillment trigger:
 //
 //   - Liveness — process is up
 //   - Readiness — process is up AND the database is reachable
 //   - DbTxDiagnostic — writes + reads inside a WithTx, the canonical reference
 //     for how services should use transactions (per docs/04-backend-conventions)
-//
-// Real iam responsibilities (user/role/branch CRUD, auth login/refresh/logout,
-// permission checks, session lifecycle, audit writes) land in F1.5–F1.11 and
-// are deliberately out of scaffold scope.
+//   - OnBookingPaid — creates (or returns existing) fulfillment task for a
+//     paid-in-full booking (S3-E-02 / BL-LOG-001)
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
 	DbTxDiagnostic(ctx context.Context, params *DbTxDiagnosticParams) (*DbTxDiagnosticResult, error)
+
+	// OnBookingPaid creates a fulfillment task for a booking that has just
+	// been fully paid. Idempotent: returns the existing task if one already
+	// exists for this booking_id.
+	OnBookingPaid(ctx context.Context, params *OnBookingPaidParams) (*OnBookingPaidResult, error)
 }
 
 type Service struct {

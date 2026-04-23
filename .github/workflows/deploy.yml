@@ -13,15 +13,10 @@ name: Deploy production
 
 on:
   workflow_dispatch:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
-    paths:
-      - "services/**"
-      - "apps/core-web/**"
-      - "migration/**"
-      - "docker-compose.prod.yml"
-      - "monitoring/**"
-      - "docs/deployment/**"
 
 concurrency:
   group: deploy-prod-${{ github.ref }}
@@ -30,9 +25,12 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Deploy to production via SSH
         id: deploy

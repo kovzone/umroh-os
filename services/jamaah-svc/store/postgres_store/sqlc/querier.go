@@ -12,6 +12,12 @@ type Querier interface {
 	GetDbTxDiagnostic(ctx context.Context, id int64) (Diagnostic, error)
 	InsertDbTxDiagnostic(ctx context.Context, arg InsertDbTxDiagnosticParams) (Diagnostic, error)
 	ReadyCheck(ctx context.Context) (int32, error)
+
+	// Pilgrim document queries (S3-E-02 scaffold / BL-DOC-001..003)
+	InsertPilgrimDocument(ctx context.Context, arg InsertPilgrimDocumentParams) (PilgrimDocumentRow, error)
+	GetPilgrimDocumentByID(ctx context.Context, id string) (PilgrimDocumentRow, error)
+	ApprovePilgrimDocument(ctx context.Context, arg ApprovePilgrimDocumentParams) (PilgrimDocumentRow, error)
+	RejectPilgrimDocument(ctx context.Context, arg RejectPilgrimDocumentParams) (PilgrimDocumentRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

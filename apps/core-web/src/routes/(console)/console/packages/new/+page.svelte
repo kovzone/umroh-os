@@ -16,15 +16,29 @@
   };
 
   // Local validation state
-  let nameValue = $state(form?.values?.name ?? '');
-  let priceValue = $state(form?.values?.starting_price_idr ?? '');
+  let nameValue = $state('');
+  let priceValue = $state('');
+
+  $effect(() => {
+    nameValue = form?.values?.name ?? '';
+    priceValue = form?.values?.starting_price_idr ?? '';
+  });
+
+  function getError(field: 'name' | 'starting_price_idr'): string | null {
+    const errors = form?.errors;
+    if (!errors || typeof errors !== 'object' || !(field in errors)) {
+      return null;
+    }
+    const value = errors[field as keyof typeof errors];
+    return typeof value === 'string' ? value : null;
+  }
 
   const nameError = $derived(
-    form?.errors?.name ?? (nameValue.trim().length === 0 && nameValue !== '' ? 'Nama paket wajib diisi.' : null)
+    getError('name') ?? (nameValue.trim().length === 0 && nameValue !== '' ? 'Nama paket wajib diisi.' : null)
   );
 
   const priceError = $derived(
-    form?.errors?.starting_price_idr ??
+    getError('starting_price_idr') ??
       (priceValue !== '' && (isNaN(Number(priceValue)) || Number(priceValue) <= 0)
         ? 'Harga harus lebih dari 0.'
         : null)

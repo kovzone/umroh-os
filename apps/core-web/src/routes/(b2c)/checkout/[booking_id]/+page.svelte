@@ -22,10 +22,18 @@
 
   // ---- State ----
 
-  let status = $state<CheckoutStatus>(data.issueError ? 'error' : data.initialInvoice ? 'waiting_payment' : 'loading');
-  let invoiceWithVA = $state<InvoiceWithVA | null>(data.initialInvoice);
+  let invoiceWithVA = $state<InvoiceWithVA | null>(null);
   let invoice = $state<Invoice | null>(null);
-  let errorMessage = $state(data.issueError ?? '');
+  let status = $state<CheckoutStatus>('loading');
+  let errorMessage = $state('');
+
+  // ---- Sync from page data (runs once on mount, and if data changes) ----
+
+  $effect(() => {
+    invoiceWithVA = data.initialInvoice ?? null;
+    errorMessage = data.issueError ?? '';
+    status = data.issueError ? 'error' : data.initialInvoice ? 'waiting_payment' : 'loading';
+  });
 
   // ---- Derived ----
 

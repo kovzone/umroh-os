@@ -15,6 +15,7 @@
     { label: 'Pembayaran', icon: 'payments', href: '/console/payments', badge: '' },
     { label: 'Visa & Dokumen', icon: 'description', href: '/console/visa-docs', badge: '5' },
     { label: 'Operasional', icon: 'settings_applications', href: '/console/operations', badge: '' },
+    { label: 'Ops Board', icon: 'local_shipping', href: '/console/ops', badge: '' },
     { label: 'Logistik', icon: 'conveyor_belt', href: '/console/logistics', badge: '' },
     { label: 'Finance', icon: 'account_balance', href: '/console/finance', badge: '3' },
     { label: 'CRM', icon: 'hub', href: '/console/crm', badge: '' },

@@ -19,14 +19,28 @@
       String(pkg?.starting_price?.list_amount ?? '')
   );
 
-  let nameValue = $state(currentName);
-  let priceValue = $state(currentPrice);
+  let nameValue = $state('');
+  let priceValue = $state('');
+
+  $effect(() => {
+    nameValue = currentName;
+    priceValue = currentPrice;
+  });
+
+  function getError(field: 'name' | 'starting_price_idr'): string | null {
+    const errors = form?.errors;
+    if (!errors || typeof errors !== 'object' || !(field in errors)) {
+      return null;
+    }
+    const value = errors[field as keyof typeof errors];
+    return typeof value === 'string' ? value : null;
+  }
 
   const nameError = $derived(
-    form?.errors?.name ?? null
+    getError('name')
   );
   const priceError = $derived(
-    form?.errors?.starting_price_idr ?? null
+    getError('starting_price_idr')
   );
 
   const formEnhance: SubmitFunction = () => {

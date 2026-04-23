@@ -20,7 +20,11 @@ import (
 func runGrpcServer(address string, apiServer *grpc_api.Server) *grpc.Server {
 	grpcServer := grpc.NewServer()
 
-	pb.RegisterLogisticsServiceServer(grpcServer, apiServer)
+	// RegisterLogisticsServiceServerWithExtensions registers both the generated
+	// Healthz RPC and the hand-written OnBookingPaid RPC (S3-E-02).
+	// Replace with pb.RegisterLogisticsServiceServer once `make genpb` includes
+	// OnBookingPaid from logistics.proto.
+	pb.RegisterLogisticsServiceServerWithExtensions(grpcServer, apiServer)
 
 	healthServer := health.NewServer()
 	health_pb.RegisterHealthServer(grpcServer, healthServer)

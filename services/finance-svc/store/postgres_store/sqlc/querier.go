@@ -12,6 +12,11 @@ type Querier interface {
 	GetDbTxDiagnostic(ctx context.Context, id int64) (Diagnostic, error)
 	InsertDbTxDiagnostic(ctx context.Context, arg InsertDbTxDiagnosticParams) (Diagnostic, error)
 	ReadyCheck(ctx context.Context) (int32, error)
+
+	// Journal entry queries (S3-E-03 / BL-FIN-001..003)
+	GetJournalEntryByIdempotencyKey(ctx context.Context, idempotencyKey string) (JournalEntryRow, error)
+	InsertJournalEntry(ctx context.Context, arg InsertJournalEntryParams) (JournalEntryRow, error)
+	InsertJournalLine(ctx context.Context, arg InsertJournalLineParams) (JournalLineRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

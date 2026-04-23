@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"booking-svc/adapter/catalog_grpc_adapter"
+	"booking-svc/adapter/finance_grpc_adapter"
 	"booking-svc/adapter/iam_grpc_adapter"
+	"booking-svc/adapter/logistics_grpc_adapter"
 	"booking-svc/store/postgres_store"
 
 	"github.com/rs/zerolog"
@@ -14,6 +16,7 @@ import (
 // IService is the business-layer interface for booking-svc.
 //
 // S1-E-03 adds CreateDraftBooking for BL-BOOK-001..006.
+// S3 adds FanOutBookingPaid for the logistics + finance callback chain.
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
@@ -21,6 +24,13 @@ type IService interface {
 
 	// Booking draft (S1-E-03 / BL-BOOK-001..006)
 	CreateDraftBooking(ctx context.Context, params *CreateDraftBookingParams) (*DraftBookingResult, error)
+
+	// FanOutBookingPaid triggers downstream services after a booking is
+	// confirmed as paid_in_full (S3-E-02 / S3-E-03).
+	// Calls logistics-svc.OnBookingPaid and finance-svc.OnPaymentReceived
+	// SYNCHRONOUSLY (ADR-0006 / §S3-J-01). Errors are returned to the caller
+	// so the webhook pipeline can surface a 500 and trigger gateway retry.
+	FanOutBookingPaid(ctx context.Context, params *FanOutBookingPaidParams) (*FanOutBookingPaidResult, error)
 }
 
 // IamClient is the slice of iam-svc the booking-svc service layer calls.
@@ -39,6 +49,18 @@ type CatalogClient interface {
 	ReleaseSeats(ctx context.Context, params *catalog_grpc_adapter.ReleaseSeatsParams) (*catalog_grpc_adapter.ReleaseSeatsResult, error)
 }
 
+// LogisticsClient is the slice of logistics-svc the booking-svc service layer
+// calls (S3-E-02). Defined as an interface so tests can inject a mock.
+type LogisticsClient interface {
+	OnBookingPaid(ctx context.Context, params *logistics_grpc_adapter.OnBookingPaidParams) (*logistics_grpc_adapter.OnBookingPaidResult, error)
+}
+
+// FinanceClient is the slice of finance-svc the booking-svc service layer
+// calls (S3-E-03). Defined as an interface so tests can inject a mock.
+type FinanceClient interface {
+	OnPaymentReceived(ctx context.Context, params *finance_grpc_adapter.OnPaymentReceivedParams) (*finance_grpc_adapter.OnPaymentReceivedResult, error)
+}
+
 type Service struct {
 	logger *zerolog.Logger
 	tracer trace.Tracer
@@ -55,6 +77,14 @@ type Service struct {
 	// catalogClient is the consumer-side wrapper around catalog-svc's gRPC surface.
 	// Used by CreateDraftBooking to validate departure and reserve seats.
 	catalogClient CatalogClient
+
+	// logisticsClient is the consumer-side wrapper around logistics-svc's gRPC surface.
+	// Used by MarkBookingPaid to trigger fulfillment task creation (S3-E-02).
+	logisticsClient LogisticsClient
+
+	// financeClient is the consumer-side wrapper around finance-svc's gRPC surface.
+	// Used by MarkBookingPaid to post journal entries (S3-E-03).
+	financeClient FinanceClient
 }
 
 func NewService(
@@ -64,13 +94,17 @@ func NewService(
 	store postgres_store.IStore,
 	iamClient IamClient,
 	catalogClient CatalogClient,
+	logisticsClient LogisticsClient,
+	financeClient FinanceClient,
 ) IService {
 	return &Service{
-		logger:        logger,
-		tracer:        tracer,
-		appName:       appName,
-		store:         store,
-		iamClient:     iamClient,
-		catalogClient: catalogClient,
+		logger:          logger,
+		tracer:          tracer,
+		appName:         appName,
+		store:           store,
+		iamClient:       iamClient,
+		catalogClient:   catalogClient,
+		logisticsClient: logisticsClient,
+		financeClient:   financeClient,
 	}
 }

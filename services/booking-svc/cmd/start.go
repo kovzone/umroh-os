@@ -7,7 +7,9 @@ import (
 	"os/signal"
 
 	"booking-svc/adapter/catalog_grpc_adapter"
+	"booking-svc/adapter/finance_grpc_adapter"
 	"booking-svc/adapter/iam_grpc_adapter"
+	"booking-svc/adapter/logistics_grpc_adapter"
 	"booking-svc/api/grpc_api"
 	"booking-svc/service"
 	"booking-svc/store/postgres_store"
@@ -173,8 +175,60 @@ func start() {
 	}()
 	catalogAdapter := catalog_grpc_adapter.NewAdapter(logger, tracer, catalogConn)
 
+	// --- Dial logistics-svc gRPC (S3-E-02) ---
+	//
+	// Used by MarkBookingPaid to trigger fulfillment task creation when a
+	// booking transitions to paid_in_full. Fire-and-forget; failure is logged
+	// but does not block payment-svc response.
+	logisticsConn, err := grpc.NewClient(
+		config.Logistics.GrpcTarget,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Dial logistics-svc gRPC").
+			Str("target", config.Logistics.GrpcTarget).
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+	defer func() {
+		if err := logisticsConn.Close(); err != nil {
+			logger.Error().Err(err).Msg("close logistics gRPC conn")
+		}
+	}()
+	logisticsAdapter := logistics_grpc_adapter.NewAdapter(logger, tracer, logisticsConn)
+
+	// --- Dial finance-svc gRPC (S3-E-03) ---
+	//
+	// Used by MarkBookingPaid to trigger journal posting when a booking
+	// transitions to paid_in_full. Fire-and-forget; failure is logged but
+	// does not block payment-svc response.
+	financeConn, err := grpc.NewClient(
+		config.Finance.GrpcTarget,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Dial finance-svc gRPC").
+			Str("target", config.Finance.GrpcTarget).
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+	defer func() {
+		if err := financeConn.Close(); err != nil {
+			logger.Error().Err(err).Msg("close finance gRPC conn")
+		}
+	}()
+	financeAdapter := finance_grpc_adapter.NewAdapter(logger, tracer, financeConn)
+
 	// --- Init service layer ---
-	svc := service.NewService(logger, tracer, config.App.Name, store, iamAdapter, catalogAdapter)
+	svc := service.NewService(logger, tracer, config.App.Name, store, iamAdapter, catalogAdapter, logisticsAdapter, financeAdapter)
 
 	// --- Init API layer (gRPC only per ADR 0009) ---
 	grpcServer := grpc_api.NewServer(logger, tracer, svc)
