@@ -1,25 +1,15 @@
 #!/usr/bin/env bash
 # Pre-push hook — blocks push if type checks or Go builds fail.
 # Install once: git config core.hooksPath .githooks
+#
+# Re-exec via login shell so .zprofile / .bash_profile load nvm, go, etc.
+if [ -z "$_HOOK_LOGIN_SHELL" ]; then
+  _HOOK_LOGIN_SHELL=1 exec "$SHELL" -l "$0" "$@"
+fi
 
 set -euo pipefail
 
-# ── Load nvm / Homebrew node so npm and go are available ───────────────────
-export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
-# shellcheck disable=SC1091
-[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh" --no-use
-
-# Homebrew (Apple Silicon + Intel)
-for brew_prefix in /opt/homebrew /usr/local; do
-  [ -d "$brew_prefix/bin" ] && export PATH="$brew_prefix/bin:$PATH"
-done
-
-# Use nvm default node if node not yet on PATH
-if ! command -v node &>/dev/null && command -v nvm &>/dev/null; then
-  nvm use default --silent 2>/dev/null || true
-fi
-
-# ── Helper: check if a file path was touched in this push ──────────────────
+# ── Helper: check if a path prefix was touched in this push ────────────────
 changed_in() {
   git diff --name-only HEAD @{u} 2>/dev/null | grep -q "^$1" || \
   git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -q "^$1"
@@ -30,7 +20,7 @@ echo "▶ pre-push: running checks before push..."
 # ── Frontend: svelte-check ──────────────────────────────────────────────────
 if changed_in "apps/core-web/"; then
   if ! command -v npm &>/dev/null; then
-    echo "  ⚠ npm not found on PATH — skipping svelte-check (CI will catch it)"
+    echo "  ⚠ npm not found — skipping svelte-check (CI will catch it)"
   else
     echo "  → svelte-check (core-web)..."
     (cd apps/core-web && npm run check) || {
@@ -48,7 +38,7 @@ SERVICES="gateway-svc iam-svc catalog-svc booking-svc payment-svc finance-svc lo
 for svc in $SERVICES; do
   if changed_in "services/${svc}/"; then
     if ! command -v go &>/dev/null; then
-      echo "  ⚠ go not found on PATH — skipping build for ${svc} (CI will catch it)"
+      echo "  ⚠ go not found — skipping build for ${svc} (CI will catch it)"
       continue
     fi
     echo "  → go build: services/${svc}..."
