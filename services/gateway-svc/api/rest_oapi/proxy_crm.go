@@ -188,13 +188,12 @@ func (s *Server) ListLeads(c *fiber.Ctx) error {
 // GetLeadByID — GET /v1/leads/:id (bearer)
 // ---------------------------------------------------------------------------
 
-func (s *Server) GetLeadByID(c *fiber.Ctx) error {
+func (s *Server) GetLeadByID(c *fiber.Ctx, id string) error {
 	const op = "rest_oapi.Server.GetLeadByID"
 
 	ctx, span := s.tracer.Start(c.UserContext(), op)
 	defer span.End()
 
-	id := c.Params("id")
 	span.SetAttributes(attribute.String("lead_id", id))
 
 	result, err := s.svc.GetLead(ctx, id)
@@ -216,13 +215,12 @@ func (s *Server) GetLeadByID(c *fiber.Ctx) error {
 // against IAM to confirm the target user has role=CS. crm-svc stores any UUID provided.
 // Full validation (gRPC call to iam-svc.GetUser to confirm role=CS) is deferred to Phase 6
 // BL-CRM-003. Current risk: an admin could assign a lead to a non-CS user UUID.
-func (s *Server) UpdateLeadByID(c *fiber.Ctx) error {
+func (s *Server) UpdateLeadByID(c *fiber.Ctx, id string) error {
 	const op = "rest_oapi.Server.UpdateLeadByID"
 
 	ctx, span := s.tracer.Start(c.UserContext(), op)
 	defer span.End()
 
-	id := c.Params("id")
 	span.SetAttributes(attribute.String("lead_id", id))
 
 	var body UpdateLeadBody

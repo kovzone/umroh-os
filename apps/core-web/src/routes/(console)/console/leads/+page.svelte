@@ -45,6 +45,7 @@
   };
 
   const SOURCE_LABELS: Record<LeadSource, string> = {
+    direct: 'Direct',
     whatsapp: 'WhatsApp',
     instagram: 'Instagram',
     facebook: 'Facebook',

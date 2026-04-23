@@ -184,7 +184,7 @@ export async function updateLeadMock(id: string, req: UpdateLeadRequest): Promis
     : undefined;
   leads[idx] = {
     ...leads[idx],
-    status: req.status,
+    status: req.status ?? leads[idx].status,
     notes: req.notes ?? leads[idx].notes,
     assigned_cs_id: req.assigned_cs_id ?? leads[idx].assigned_cs_id,
     assigned_cs_name: cs?.name ?? leads[idx].assigned_cs_name,
