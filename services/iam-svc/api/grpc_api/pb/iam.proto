@@ -14,7 +14,15 @@ option go_package="./pb";
 // service record one append-only row in iam.audit_logs:
 //   - RecordAudit — insert one row into iam.audit_logs for a state-changing action
 //
-// GetUser remains planned (S1-E-06) — not part of this contract yet.
+// BL-IAM-018 (S1-E-12) moves the client-facing REST surface onto gateway-svc.
+// These RPCs mirror the operations that used to live on iam-svc's REST port.
+// They are gateway-to-iam-svc only — never exposed directly to browsers.
+// Auth extraction (bearer → user_id / session_id) happens once at the gateway's
+// bearer middleware per ADR 0009; iam-svc handlers trust the user_id /
+// session_id fields and do not re-validate the bearer.
+//   - Login / RefreshSession / Logout
+//   - GetMe / EnrollTotp / VerifyTotp
+//   - SuspendUser (gateway enforces bearer + permission gate)
 service IamService {
   // Healthz returns ok=true if the service process is alive.
   // Placeholder for the pilot; real health checks go through gRPC health protocol.
@@ -45,6 +53,41 @@ service IamService {
   // Returns InvalidArgument when resource / action are empty, or when user_id /
   // branch_id are set but not valid UUIDs.
   rpc RecordAudit(RecordAuditRequest) returns (RecordAuditResponse) {}
+
+  // Login exchanges email + password for a PASETO access + opaque refresh pair.
+  // Public from the gateway's perspective (no bearer required on the REST route
+  // that fronts it). TOTP enforcement at login is deferred to S1-E-06.
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+
+  // RefreshSession rotates a refresh token and returns a new pair. Replay
+  // (presenting a revoked refresh token) revokes every active session for the
+  // user and fails Unauthenticated.
+  rpc RefreshSession(RefreshSessionRequest) returns (RefreshSessionResponse) {}
+
+  // Logout revokes the session row identified by session_id (the gateway
+  // forwards the id from the bearer's payload after ValidateToken). Idempotent:
+  // a second logout on the same session_id returns ok.
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {}
+
+  // GetMe returns the profile for the user_id carried in the validated bearer
+  // (forwarded by the gateway). NotFound when the user was soft-deleted after
+  // token issuance.
+  rpc GetMe(GetMeRequest) returns (GetMeResponse) {}
+
+  // EnrollTotp generates a fresh TOTP secret, persists it encrypted at rest on
+  // the user's row, and returns the plaintext secret + otpauth URL exactly once.
+  // AlreadyExists when the user already has a verified TOTP.
+  rpc EnrollTotp(EnrollTotpRequest) returns (EnrollTotpResponse) {}
+
+  // VerifyTotp accepts a six-digit code from the user's authenticator and, on
+  // success, stamps users.totp_verified_at. Unauthenticated for a bad code.
+  rpc VerifyTotp(VerifyTotpRequest) returns (VerifyTotpResponse) {}
+
+  // SuspendUser flips the target user's status to `suspended` and revokes every
+  // active session for that user in one transaction. Gateway validates the
+  // bearer; this handler enforces the iam.users/suspend/global permission gate
+  // via an inline CheckPermission call and refuses self-suspend.
+  rpc SuspendUser(SuspendUserRequest) returns (SuspendUserResponse) {}
 }
 
 message HealthzRequest {}
@@ -124,4 +167,104 @@ message RecordAuditResponse {
 
   // Insertion timestamp as Unix seconds UTC (matches ValidateToken convention).
   int64 created_at_unix = 2;
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// BL-IAM-018 (S1-E-12) — client-facing auth ops moved from REST to gRPC.
+// ──────────────────────────────────────────────────────────────────────────
+
+// UserProfile is the shared user envelope returned by Login / RefreshSession /
+// GetMe / SuspendUser. Matches iam-svc service.UserProfile 1:1.
+message UserProfile {
+  // UUID string of the user (iam.users.id).
+  string user_id = 1;
+  string email = 2;
+  string name = 3;
+  // UUID string of the user's branch. Empty for branch-less staff (super_admin seed).
+  string branch_id = 4;
+  // Matches iam.users.status enum: "active" | "suspended" | "pending".
+  string status = 5;
+}
+
+message LoginRequest {
+  string email = 1;
+  // Plaintext password; bcrypt-compared server-side. Never logged.
+  string password = 2;
+  // Optional six-digit TOTP code. Accepted-but-unused until S1-E-06.
+  string totp_code = 3;
+  // Caller's User-Agent header; gateway forwards verbatim for iam.sessions row.
+  string user_agent = 4;
+  // Caller's IP literal (IPv4 or IPv6); gateway forwards. Empty → no IP stored.
+  string ip = 5;
+}
+
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 access_expires_at_unix = 3;
+  int64 refresh_expires_at_unix = 4;
+  UserProfile user = 5;
+}
+
+message RefreshSessionRequest {
+  string refresh_token = 1;
+  string user_agent = 2;
+  string ip = 3;
+}
+
+message RefreshSessionResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 access_expires_at_unix = 3;
+  int64 refresh_expires_at_unix = 4;
+}
+
+message LogoutRequest {
+  // Session UUID from the validated bearer's payload.ID claim, forwarded by
+  // the gateway. iam-svc revokes the row identified by this id.
+  string session_id = 1;
+}
+
+message LogoutResponse {}
+
+message GetMeRequest {
+  // User UUID from the validated bearer's payload, forwarded by the gateway.
+  string user_id = 1;
+}
+
+message GetMeResponse {
+  UserProfile user = 1;
+  bool totp_enrolled = 2;
+  bool totp_verified = 3;
+}
+
+message EnrollTotpRequest {
+  string user_id = 1;
+}
+
+message EnrollTotpResponse {
+  // Plaintext base32 secret — shown exactly once, never logged.
+  string secret = 1;
+  // otpauth:// URL the client renders as a QR code.
+  string otpauth_url = 2;
+}
+
+message VerifyTotpRequest {
+  string user_id = 1;
+  string code = 2;
+}
+
+message VerifyTotpResponse {
+  int64 verified_at_unix = 1;
+}
+
+message SuspendUserRequest {
+  // Actor user_id from the validated bearer's payload.
+  string actor_user_id = 1;
+  // Target user UUID from the REST path param.
+  string target_user_id = 2;
+}
+
+message SuspendUserResponse {
+  UserProfile user = 1;
 }

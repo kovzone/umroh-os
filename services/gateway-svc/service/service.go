@@ -5,7 +5,7 @@ import (
 
 	"gateway-svc/adapter/catalog_grpc_adapter"
 	"gateway-svc/adapter/finance_rest_adapter"
-	"gateway-svc/adapter/iam_rest_adapter"
+	"gateway-svc/adapter/iam_grpc_adapter"
 
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel/trace"
@@ -15,19 +15,11 @@ import (
 //
 // gateway-svc fronts every backend. Methods either return process-local state
 // (Liveness, Readiness) or dispatch to a backend through the corresponding
-// adapter. Under ADR 0009 the target shape is REST-in, gRPC-out; the iam and
-// finance REST adapters are the remaining interim surfaces (retired by
-// BL-IAM-018 / S1-E-12 and BL-IAM-019 / S1-E-14 respectively).
+// adapter. Under ADR 0009 the target shape is REST-in, gRPC-out; finance-svc
+// REST is the remaining interim surface (retires with BL-IAM-019 / S1-E-14).
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
-
-	// Per-backend liveness proxies — called by the web app's status page.
-	GetIamSystemLive(ctx context.Context) (*iam_rest_adapter.LivenessResult, error)
-
-	// Traced cross-service path — the S0-J-05 observability acceptance check
-	// flows through gateway-svc → iam-svc here.
-	GetIamSystemDbTxDiagnostic(ctx context.Context, message string) (*iam_rest_adapter.DbTxDiagnosticResult, error)
 
 	// Public catalog read (BL-GTW-002 / S1-E-10) — proxies to catalog-svc
 	// gRPC via catalog_grpc_adapter. Mirrors GET /v1/packages,
@@ -35,6 +27,18 @@ type IService interface {
 	ListPackages(ctx context.Context, params *catalog_grpc_adapter.ListPackagesParams) (*catalog_grpc_adapter.ListPackagesResult, error)
 	GetPackage(ctx context.Context, params *catalog_grpc_adapter.GetPackageParams) (*catalog_grpc_adapter.PackageDetail, error)
 	GetPackageDeparture(ctx context.Context, params *catalog_grpc_adapter.GetPackageDepartureParams) (*catalog_grpc_adapter.DepartureDetail, error)
+
+	// Client-facing auth (BL-IAM-018 / S1-E-12) — proxies to iam-svc gRPC
+	// via iam_grpc_adapter. The gateway bearer middleware enforces auth on
+	// protected routes; iam-svc handlers trust the forwarded user_id /
+	// session_id per ADR 0009 single-point-auth.
+	Login(ctx context.Context, params *iam_grpc_adapter.LoginParams) (*iam_grpc_adapter.LoginResult, error)
+	RefreshSession(ctx context.Context, params *iam_grpc_adapter.RefreshSessionParams) (*iam_grpc_adapter.RefreshSessionResult, error)
+	Logout(ctx context.Context, params *iam_grpc_adapter.LogoutParams) (*iam_grpc_adapter.LogoutResult, error)
+	GetMe(ctx context.Context, params *iam_grpc_adapter.GetMeParams) (*iam_grpc_adapter.GetMeResult, error)
+	EnrollTOTP(ctx context.Context, params *iam_grpc_adapter.EnrollTOTPParams) (*iam_grpc_adapter.EnrollTOTPResult, error)
+	VerifyTOTP(ctx context.Context, params *iam_grpc_adapter.VerifyTOTPParams) (*iam_grpc_adapter.VerifyTOTPResult, error)
+	SuspendUser(ctx context.Context, params *iam_grpc_adapter.SuspendUserParams) (*iam_grpc_adapter.SuspendUserResult, error)
 
 	// Finance liveness proxy — interim REST adapter; retires with
 	// BL-IAM-019 / S1-E-14 when /v1/finance/* moves to gRPC.
@@ -46,7 +50,7 @@ type IService interface {
 // Mixed REST + gRPC during the ADR-0009 transition — each backend
 // graduates to gRPC-only as its BL-REFACTOR-* card lands.
 type Adapters struct {
-	iamRest     *iam_rest_adapter.Adapter
+	iamGrpc     *iam_grpc_adapter.Adapter
 	catalogGrpc *catalog_grpc_adapter.Adapter
 	financeRest *finance_rest_adapter.Adapter
 }
@@ -64,7 +68,7 @@ type NewServiceParams struct {
 	Logger      *zerolog.Logger
 	Tracer      trace.Tracer
 	AppName     string
-	IamRest     *iam_rest_adapter.Adapter
+	IamGrpc     *iam_grpc_adapter.Adapter
 	CatalogGrpc *catalog_grpc_adapter.Adapter
 	FinanceRest *finance_rest_adapter.Adapter
 }
@@ -75,7 +79,7 @@ func NewService(p NewServiceParams) IService {
 		tracer:  p.Tracer,
 		appName: p.AppName,
 		adapters: Adapters{
-			iamRest:     p.IamRest,
+			iamGrpc:     p.IamGrpc,
 			catalogGrpc: p.CatalogGrpc,
 			financeRest: p.FinanceRest,
 		},

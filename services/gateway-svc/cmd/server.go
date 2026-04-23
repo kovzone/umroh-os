@@ -16,12 +16,17 @@ import (
 )
 
 // runRestServer runs the REST server using the OpenAPI-generated routes and handler.
-// gateway-svc currently exposes own probes + per-backend liveness proxies for
-// the two interim REST surfaces (iam, finance) plus the BL-GTW-002 public
-// catalog read. As each remaining backend graduates to gRPC-only, its adapter
-// and route disappear; real per-route proxies (auth, bookings, ...) land
-// alongside each backend's first feature work.
-func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool, serviceName string) {
+// gateway-svc currently exposes own probes, the finance liveness proxy (interim
+// REST adapter, retires with BL-IAM-019 / S1-E-14), the BL-GTW-002 public
+// catalog read, and — post BL-IAM-018 / S1-E-12 — the client-facing auth
+// surface backed by iam-svc gRPC with the bearer middleware mounted on every
+// protected route. As each remaining REST adapter graduates to gRPC-only, the
+// corresponding proxy disappears.
+//
+// The api parameter is typed as *rest_oapi.Server (not the interface) so we
+// can call RequireBearerToken() to mount the bearer middleware on protected
+// route groups.
+func runRestServer(port int, api *rest_oapi.Server, metricsEnabled bool, serviceName string) {
 	app := fiber.New()
 
 	// CORS — gateway is the edge, accept cross-origin from any browser client.
@@ -61,22 +66,35 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool,
 		system.Get("/ready", wrapper.Readiness)
 	}
 
+	// Bearer middleware mounted per protected route below. Cached once so
+	// each route registration reuses the same handler instance.
+	bearer := api.RequireBearerToken()
+
 	// /v1 proxy routes — one per backend, dispatched via its adapter.
 	v1 := app.Group("/v1")
 	{
 		// System-probe proxies (REST adapters; retire with each BL-REFACTOR-* card).
-		// catalog-svc's proxy was removed in G7 (BL-REFACTOR-001) — catalog is
-		// gRPC-only; operators probe via grpc_health_probe. The seven
-		// pure-scaffold backends (booking/crm/jamaah/logistics/ops/payment/visa)
-		// retired their REST surfaces in BL-REFACTOR-002..008 / S1-E-13.
-		v1.Get("/iam/system/live", wrapper.GetIamSystemLive)
-		v1.Get("/iam/system/diagnostics/db-tx", wrapper.GetIamSystemDbTxDiagnostic)
+		// iam-svc's proxies were removed in BL-IAM-018 / S1-E-12 — iam is now
+		// gRPC-only; operators probe via grpc_health_probe. catalog-svc's
+		// proxy was removed in G7. The seven pure-scaffold backends
+		// (booking/crm/jamaah/logistics/ops/payment/visa) retired their
+		// REST surfaces in BL-REFACTOR-002..008 / S1-E-13.
 		v1.Get("/finance/system/live", wrapper.GetFinanceSystemLive)
 
 		// Public catalog read (BL-GTW-002 / S1-E-10) — gRPC adapter.
 		v1.Get("/packages", wrapper.ListPackages)
 		v1.Get("/packages/:id", wrapper.GetPackageById)
 		v1.Get("/package-departures/:id", wrapper.GetPackageDepartureById)
+
+		// Client-facing auth (BL-IAM-018 / S1-E-12) — iam-svc gRPC adapter.
+		// Public: login + refresh (no bearer). Protected: everything else.
+		v1.Post("/sessions", wrapper.Login)
+		v1.Post("/sessions/refresh", wrapper.RefreshSession)
+		v1.Delete("/sessions", bearer, wrapper.Logout)
+		v1.Get("/me", bearer, wrapper.GetMe)
+		v1.Post("/me/2fa/enroll", bearer, wrapper.EnrollTotp)
+		v1.Post("/me/2fa/verify", bearer, wrapper.VerifyTotp)
+		v1.Post("/users/:id/suspend", bearer, wrapper.SuspendUser)
 	}
 
 	go func() {

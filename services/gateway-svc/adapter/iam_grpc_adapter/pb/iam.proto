@@ -11,6 +11,10 @@ option go_package="./pb";
 // forward symmetry — cheap to generate now, used by future gateway handlers
 // that need authorization checks or audit emission at the edge.
 //
+// BL-IAM-018 (S1-E-12) extends this mirror with the client-facing auth RPCs
+// that the gateway now proxies: Login / RefreshSession / Logout / GetMe /
+// EnrollTotp / VerifyTotp / SuspendUser. iam-svc is gRPC-only after that card.
+//
 // Kept in sync by hand as the contract evolves; any change must be reflected
 // here AND in the producer proto, with a § Changelog entry in
 // docs/contracts/slice-S1.md if the wire shape changes.
@@ -22,6 +26,14 @@ service IamService {
   rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse) {}
   rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse) {}
   rpc RecordAudit(RecordAuditRequest) returns (RecordAuditResponse) {}
+
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+  rpc RefreshSession(RefreshSessionRequest) returns (RefreshSessionResponse) {}
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {}
+  rpc GetMe(GetMeRequest) returns (GetMeResponse) {}
+  rpc EnrollTotp(EnrollTotpRequest) returns (EnrollTotpResponse) {}
+  rpc VerifyTotp(VerifyTotpRequest) returns (VerifyTotpResponse) {}
+  rpc SuspendUser(SuspendUserRequest) returns (SuspendUserResponse) {}
 }
 
 message ValidateTokenRequest {
@@ -61,4 +73,88 @@ message RecordAuditRequest {
 message RecordAuditResponse {
   string audit_log_id = 1;
   int64 created_at_unix = 2;
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// BL-IAM-018 — client-facing auth messages (gateway proxies these).
+// ──────────────────────────────────────────────────────────────────────────
+
+message UserProfile {
+  string user_id = 1;
+  string email = 2;
+  string name = 3;
+  string branch_id = 4;
+  string status = 5;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+  string totp_code = 3;
+  string user_agent = 4;
+  string ip = 5;
+}
+
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 access_expires_at_unix = 3;
+  int64 refresh_expires_at_unix = 4;
+  UserProfile user = 5;
+}
+
+message RefreshSessionRequest {
+  string refresh_token = 1;
+  string user_agent = 2;
+  string ip = 3;
+}
+
+message RefreshSessionResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 access_expires_at_unix = 3;
+  int64 refresh_expires_at_unix = 4;
+}
+
+message LogoutRequest {
+  string session_id = 1;
+}
+
+message LogoutResponse {}
+
+message GetMeRequest {
+  string user_id = 1;
+}
+
+message GetMeResponse {
+  UserProfile user = 1;
+  bool totp_enrolled = 2;
+  bool totp_verified = 3;
+}
+
+message EnrollTotpRequest {
+  string user_id = 1;
+}
+
+message EnrollTotpResponse {
+  string secret = 1;
+  string otpauth_url = 2;
+}
+
+message VerifyTotpRequest {
+  string user_id = 1;
+  string code = 2;
+}
+
+message VerifyTotpResponse {
+  int64 verified_at_unix = 1;
+}
+
+message SuspendUserRequest {
+  string actor_user_id = 1;
+  string target_user_id = 2;
+}
+
+message SuspendUserResponse {
+  UserProfile user = 1;
 }
