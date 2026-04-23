@@ -485,14 +485,13 @@ func (s *Service) GetPackageByID(ctx context.Context, params *GetPackageByIDPara
 }
 
 // GetDepartureByID fetches a single public-visible departure (status in
-// {open, closed}) with its pricing rows and a stubbed vendor readiness
-// summary. Returns apperrors.ErrNotFound with identical shape for
-// unknown-id / hidden-status — no existence oracle per § Catalog.
+// {open, closed}) with its pricing rows and the real vendor readiness summary
+// from catalog.departure_vendor_readiness. Returns apperrors.ErrNotFound with
+// identical shape for unknown-id / hidden-status — no existence oracle per
+// § Catalog.
 //
-// vendor_readiness is currently stubbed to "not_started" across all three
-// sub-states; real readiness updates come from visa-svc / logistics-svc
-// over gRPC, wired in S3-E-02 / S3-E-06.
-// TODO(BL-CAT-002 → S3): wire real readiness via gRPC from visa-svc / logistics-svc.
+// BL-OPS-020: vendor_readiness is now read from the DB; missing kinds default
+// to "not_started".
 func (s *Service) GetDepartureByID(ctx context.Context, params *GetDepartureByIDParams) (*DepartureDetail, error) {
 	const op = "service.Service.GetDepartureByID"
 
@@ -531,20 +530,22 @@ func (s *Service) GetDepartureByID(ctx context.Context, params *GetDepartureByID
 	depDate, _ := row.DepartureDate.Value()
 	retDate, _ := row.ReturnDate.Value()
 
+	// Fetch real vendor readiness from DB (BL-OPS-020).
+	readiness, err := s.getReadinessFromDB(ctx, row.ID)
+	if err != nil {
+		return nil, fmt.Errorf("get vendor readiness: %w", err)
+	}
+
 	detail := &DepartureDetail{
-		ID:             row.ID,
-		PackageID:      row.PackageID,
-		DepartureDate:  dateToISO(depDate),
-		ReturnDate:     dateToISO(retDate),
-		TotalSeats:     int(row.TotalSeats),
-		RemainingSeats: int(row.RemainingSeats),
-		Status:         string(row.Status),
-		Pricing:        pricing,
-		VendorReadiness: VendorReadiness{
-			Ticket: "not_started",
-			Hotel:  "not_started",
-			Visa:   "not_started",
-		},
+		ID:              row.ID,
+		PackageID:       row.PackageID,
+		DepartureDate:   dateToISO(depDate),
+		ReturnDate:      dateToISO(retDate),
+		TotalSeats:      int(row.TotalSeats),
+		RemainingSeats:  int(row.RemainingSeats),
+		Status:          string(row.Status),
+		Pricing:         pricing,
+		VendorReadiness: *readiness,
 	}
 
 	span.SetStatus(codes.Ok, "success")

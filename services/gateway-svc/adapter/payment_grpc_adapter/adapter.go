@@ -101,6 +101,167 @@ func (a *Adapter) ReissuePaymentLink(ctx context.Context, params *ReissuePayment
 }
 
 // ---------------------------------------------------------------------------
+// IssueVirtualAccount
+// ---------------------------------------------------------------------------
+
+// IssueVirtualAccountParams holds the input for creating an invoice + VA.
+type IssueVirtualAccountParams struct {
+	BookingID   string
+	AmountTotal float64
+	GatewayPref string
+	BankCode    string
+	ActorUserID string
+}
+
+// IssueVirtualAccountResult holds the issued VA details.
+type IssueVirtualAccountResult struct {
+	InvoiceID     string
+	BookingID     string
+	AccountNumber string
+	BankCode      string
+	AmountTotal   float64
+	ExpiresAt     string
+	Gateway       string
+	Replayed      bool
+}
+
+func (a *Adapter) IssueVirtualAccount(ctx context.Context, params *IssueVirtualAccountParams) (*IssueVirtualAccountResult, error) {
+	const op = "payment_grpc_adapter.Adapter.IssueVirtualAccount"
+
+	ctx, span := a.tracer.Start(ctx, op)
+	defer span.End()
+
+	logger := logging.LogWithTrace(ctx, a.logger)
+
+	resp, err := a.paymentClient.IssueVirtualAccount(ctx, &pb.IssueVirtualAccountRequest{
+		BookingId:   params.BookingID,
+		AmountTotal: params.AmountTotal,
+		GatewayPref: params.GatewayPref,
+		BankCode:    params.BankCode,
+		ActorUserId: params.ActorUserID,
+	})
+	if err != nil {
+		wrapped := mapPaymentError(err)
+		logger.Warn().Err(wrapped).Msg("payment-svc.IssueVirtualAccount failed")
+		span.RecordError(wrapped)
+		span.SetStatus(codes.Error, wrapped.Error())
+		return nil, wrapped
+	}
+
+	span.SetStatus(codes.Ok, "ok")
+	return &IssueVirtualAccountResult{
+		InvoiceID:     resp.GetInvoiceId(),
+		BookingID:     resp.GetBookingId(),
+		AccountNumber: resp.GetAccountNumber(),
+		BankCode:      resp.GetBankCode(),
+		AmountTotal:   resp.GetAmountTotal(),
+		ExpiresAt:     resp.GetExpiresAt(),
+		Gateway:       resp.GetGateway(),
+		Replayed:      resp.GetReplayed(),
+	}, nil
+}
+
+// ---------------------------------------------------------------------------
+// GetInvoiceByID
+// ---------------------------------------------------------------------------
+
+// GetInvoiceByIDParams holds the input for fetching a single invoice.
+type GetInvoiceByIDParams struct {
+	InvoiceID string
+}
+
+// GetInvoiceByIDResult holds the invoice details.
+type GetInvoiceByIDResult struct {
+	ID          string
+	BookingID   string
+	Status      string
+	AmountTotal float64
+	PaidAmount  float64
+	Currency    string
+	CreatedAt   string
+	UpdatedAt   string
+}
+
+func (a *Adapter) GetInvoiceByID(ctx context.Context, params *GetInvoiceByIDParams) (*GetInvoiceByIDResult, error) {
+	const op = "payment_grpc_adapter.Adapter.GetInvoiceByID"
+
+	ctx, span := a.tracer.Start(ctx, op)
+	defer span.End()
+
+	logger := logging.LogWithTrace(ctx, a.logger)
+
+	resp, err := a.paymentClient.GetInvoiceByID(ctx, &pb.GetInvoiceByIDRequest{
+		InvoiceId: params.InvoiceID,
+	})
+	if err != nil {
+		wrapped := mapPaymentError(err)
+		logger.Warn().Err(wrapped).Msg("payment-svc.GetInvoiceByID failed")
+		span.RecordError(wrapped)
+		span.SetStatus(codes.Error, wrapped.Error())
+		return nil, wrapped
+	}
+
+	span.SetStatus(codes.Ok, "ok")
+	return &GetInvoiceByIDResult{
+		ID:          resp.GetId(),
+		BookingID:   resp.GetBookingId(),
+		Status:      resp.GetStatus(),
+		AmountTotal: resp.GetAmountTotal(),
+		PaidAmount:  resp.GetPaidAmount(),
+		Currency:    resp.GetCurrency(),
+		CreatedAt:   resp.GetCreatedAt(),
+		UpdatedAt:   resp.GetUpdatedAt(),
+	}, nil
+}
+
+// ---------------------------------------------------------------------------
+// ProcessWebhook
+// ---------------------------------------------------------------------------
+
+// ProcessWebhookParams holds the input for forwarding a webhook payload.
+type ProcessWebhookParams struct {
+	Gateway   string
+	Payload   []byte
+	Signature string
+}
+
+// ProcessWebhookResult holds the result from processing a webhook.
+type ProcessWebhookResult struct {
+	Replayed  bool
+	InvoiceID string
+	NewStatus string
+}
+
+func (a *Adapter) ProcessWebhook(ctx context.Context, params *ProcessWebhookParams) (*ProcessWebhookResult, error) {
+	const op = "payment_grpc_adapter.Adapter.ProcessWebhook"
+
+	ctx, span := a.tracer.Start(ctx, op)
+	defer span.End()
+
+	logger := logging.LogWithTrace(ctx, a.logger)
+
+	resp, err := a.paymentClient.ProcessWebhook(ctx, &pb.ProcessWebhookRequest{
+		Gateway:   params.Gateway,
+		Payload:   params.Payload,
+		Signature: params.Signature,
+	})
+	if err != nil {
+		wrapped := mapPaymentError(err)
+		logger.Warn().Err(wrapped).Msg("payment-svc.ProcessWebhook failed")
+		span.RecordError(wrapped)
+		span.SetStatus(codes.Error, wrapped.Error())
+		return nil, wrapped
+	}
+
+	span.SetStatus(codes.Ok, "ok")
+	return &ProcessWebhookResult{
+		Replayed:  resp.GetReplayed(),
+		InvoiceID: resp.GetInvoiceId(),
+		NewStatus: resp.GetNewStatus(),
+	}, nil
+}
+
+// ---------------------------------------------------------------------------
 // Error mapping
 // ---------------------------------------------------------------------------
 

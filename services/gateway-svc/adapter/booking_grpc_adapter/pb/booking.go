@@ -24,6 +24,7 @@ import (
 const (
 	BookingService_Healthz_FullMethodName            = "/pb.BookingService/Healthz"
 	BookingService_CreateDraftBooking_FullMethodName = "/pb.BookingService/CreateDraftBooking"
+	BookingService_SubmitBooking_FullMethodName      = "/pb.BookingService/SubmitBooking"
 )
 
 // ---------------------------------------------------------------------------
@@ -34,6 +35,7 @@ const (
 type BookingServiceClient interface {
 	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
 	CreateDraftBooking(ctx context.Context, in *CreateDraftBookingRequest, opts ...grpc.CallOption) (*CreateDraftBookingResponse, error)
+	SubmitBooking(ctx context.Context, in *SubmitBookingRequest, opts ...grpc.CallOption) (*SubmitBookingResponse, error)
 }
 
 type bookingServiceClient struct {
@@ -59,6 +61,16 @@ func (c *bookingServiceClient) CreateDraftBooking(ctx context.Context, in *Creat
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateDraftBookingResponse)
 	err := c.cc.Invoke(ctx, BookingService_CreateDraftBooking_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bookingServiceClient) SubmitBooking(ctx context.Context, in *SubmitBookingRequest, opts ...grpc.CallOption) (*SubmitBookingResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubmitBookingResponse)
+	err := c.cc.Invoke(ctx, BookingService_SubmitBooking_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -546,6 +558,133 @@ func (x *CreateDraftBookingResponse) GetReplayed() bool {
 		return false
 	}
 	return x.Replayed
+}
+
+// ---------------------------------------------------------------------------
+// SubmitBookingRequest / SubmitBookingResponse / BookingSummary
+// ---------------------------------------------------------------------------
+
+// SubmitBookingRequest is sent by gateway-svc to transition a booking
+// from 'draft' to 'pending_payment'.
+type SubmitBookingRequest struct {
+	BookingId string
+}
+
+func (x *SubmitBookingRequest) Reset()         {}
+func (x *SubmitBookingRequest) String() string { return "" }
+func (x *SubmitBookingRequest) ProtoMessage()  {}
+func (x *SubmitBookingRequest) GetBookingId() string {
+	if x == nil {
+		return ""
+	}
+	return x.BookingId
+}
+
+// SubmitBookingResponse carries the updated booking summary.
+type SubmitBookingResponse struct {
+	Booking *BookingSummary
+}
+
+func (x *SubmitBookingResponse) Reset()         {}
+func (x *SubmitBookingResponse) String() string { return "" }
+func (x *SubmitBookingResponse) ProtoMessage()  {}
+func (x *SubmitBookingResponse) GetBooking() *BookingSummary {
+	if x == nil {
+		return nil
+	}
+	return x.Booking
+}
+
+// BookingSummary is a lightweight booking projection returned by SubmitBooking.
+type BookingSummary struct {
+	Id                 string
+	Status             string
+	Channel            string
+	PackageId          string
+	DepartureId        string
+	RoomType           string
+	LeadFullName       string
+	LeadWhatsapp       string
+	LeadDomicile       string
+	ListAmount         int64
+	ListCurrency       string
+	SettlementCurrency string
+}
+
+func (x *BookingSummary) Reset()         {}
+func (x *BookingSummary) String() string { return "" }
+func (x *BookingSummary) ProtoMessage()  {}
+func (x *BookingSummary) GetId() string {
+	if x == nil {
+		return ""
+	}
+	return x.Id
+}
+func (x *BookingSummary) GetStatus() string {
+	if x == nil {
+		return ""
+	}
+	return x.Status
+}
+func (x *BookingSummary) GetChannel() string {
+	if x == nil {
+		return ""
+	}
+	return x.Channel
+}
+func (x *BookingSummary) GetPackageId() string {
+	if x == nil {
+		return ""
+	}
+	return x.PackageId
+}
+func (x *BookingSummary) GetDepartureId() string {
+	if x == nil {
+		return ""
+	}
+	return x.DepartureId
+}
+func (x *BookingSummary) GetRoomType() string {
+	if x == nil {
+		return ""
+	}
+	return x.RoomType
+}
+func (x *BookingSummary) GetLeadFullName() string {
+	if x == nil {
+		return ""
+	}
+	return x.LeadFullName
+}
+func (x *BookingSummary) GetLeadWhatsapp() string {
+	if x == nil {
+		return ""
+	}
+	return x.LeadWhatsapp
+}
+func (x *BookingSummary) GetLeadDomicile() string {
+	if x == nil {
+		return ""
+	}
+	return x.LeadDomicile
+}
+func (x *BookingSummary) GetListAmount() int64 {
+	if x == nil {
+		return 0
+	}
+	return x.ListAmount
+}
+func (x *BookingSummary) GetListCurrency() string {
+	if x == nil {
+		return ""
+	}
+	return x.ListCurrency
+}
+func (x *BookingSummary) GetSettlementCurrency() string {
+	if x == nil {
+		return ""
+	}
+	return x.SettlementCurrency
 }
 
 // ---------------------------------------------------------------------------

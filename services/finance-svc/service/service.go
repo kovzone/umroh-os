@@ -72,6 +72,15 @@ type IService interface {
 	// DeleteJournalEntry always returns ErrForbidden (BL-FIN-006 anti-delete
 	// guard). Corrections must use CorrectJournal instead.
 	DeleteJournalEntry(ctx context.Context, entryID string) error
+
+	// CreateDisbursementBatch creates an AP disbursement batch in pending_approval (BL-FIN-010).
+	CreateDisbursementBatch(ctx context.Context, params *CreateDisbursementBatchParams) (*CreateDisbursementBatchResult, error)
+
+	// ApproveDisbursement approves or rejects a batch; on approval posts Dr AP / Cr Cash (BL-FIN-010).
+	ApproveDisbursement(ctx context.Context, params *ApproveDisbursementParams) (*ApproveDisbursementResult, error)
+
+	// GetARAPAging returns aging buckets for AR, AP, or both as of a given date (BL-FIN-011).
+	GetARAPAging(ctx context.Context, params *GetARAPAgingParams) (*GetARAPAgingResult, error)
 }
 
 type Service struct {

@@ -50,7 +50,17 @@ type AddonBody struct {
 	SettlementCurrency string `json:"settlement_currency,omitempty"`
 }
 
+// LeadBody is the nested lead object in the booking request body (ISSUE-011 alias).
+type LeadBody struct {
+	FullName  string `json:"full_name"`
+	Email     string `json:"email,omitempty"`
+	Whatsapp  string `json:"whatsapp,omitempty"`
+	Domicile  string `json:"domicile,omitempty"`
+}
+
 // CreateDraftBookingBody is the JSON body for POST /v1/bookings.
+// Supports both flat fields (lead_full_name, pilgrims) and nested aliases
+// (lead, jamaah) per ISSUE-011 — the UAT spec sends the nested form.
 type CreateDraftBookingBody struct {
 	Channel            string        `json:"channel"`
 	AgentID            string        `json:"agent_id,omitempty"`
@@ -58,11 +68,15 @@ type CreateDraftBookingBody struct {
 	PackageID          string        `json:"package_id"`
 	DepartureID        string        `json:"departure_id"`
 	RoomType           string        `json:"room_type"`
+	// Flat form (legacy / internal)
 	LeadFullName       string        `json:"lead_full_name"`
 	LeadEmail          string        `json:"lead_email,omitempty"`
 	LeadWhatsapp       string        `json:"lead_whatsapp"`
 	LeadDomicile       string        `json:"lead_domicile"`
 	Pilgrims           []PilgrimBody `json:"pilgrims,omitempty"`
+	// Nested form (UAT spec / B2C form) — ISSUE-011 alias
+	Lead               *LeadBody     `json:"lead,omitempty"`
+	Jamaah             []PilgrimBody `json:"jamaah,omitempty"`
 	Addons             []AddonBody   `json:"addons,omitempty"`
 	ListAmount         int64         `json:"list_amount,omitempty"`
 	ListCurrency       string        `json:"list_currency,omitempty"`
@@ -148,6 +162,27 @@ func (s *Server) CreateDraftBooking(c *fiber.Ctx) error {
 		Str("departure_id", body.DepartureID).
 		Str("idempotency_key", idempotencyKey).
 		Msg("")
+
+	// --- Merge nested lead/jamaah into flat fields (ISSUE-011) ---
+	// Prefer flat fields if set; fall back to nested object aliases.
+	if body.Lead != nil {
+		if body.LeadFullName == "" {
+			body.LeadFullName = body.Lead.FullName
+		}
+		if body.LeadEmail == "" {
+			body.LeadEmail = body.Lead.Email
+		}
+		if body.LeadWhatsapp == "" {
+			body.LeadWhatsapp = body.Lead.Whatsapp
+		}
+		if body.LeadDomicile == "" {
+			body.LeadDomicile = body.Lead.Domicile
+		}
+	}
+	// Merge jamaah[] alias into pilgrims if pilgrims is empty
+	if len(body.Pilgrims) == 0 && len(body.Jamaah) > 0 {
+		body.Pilgrims = body.Jamaah
+	}
 
 	// --- Map body → adapter params ---
 	params := &booking_grpc_adapter.CreateDraftBookingParams{
@@ -248,6 +283,76 @@ func (s *Server) CreateDraftBooking(c *fiber.Ctx) error {
 	}
 
 	return c.Status(httpStatus).JSON(resp)
+}
+
+// ---------------------------------------------------------------------------
+// SubmitBooking handler
+// ---------------------------------------------------------------------------
+
+// SubmitBookingResponseData is the data envelope in the SubmitBooking response.
+type SubmitBookingResponseData struct {
+	ID                 string `json:"id"`
+	Status             string `json:"status"`
+	Channel            string `json:"channel"`
+	PackageID          string `json:"package_id"`
+	DepartureID        string `json:"departure_id"`
+	RoomType           string `json:"room_type"`
+	LeadFullName       string `json:"lead_full_name"`
+	LeadWhatsapp       string `json:"lead_whatsapp"`
+	LeadDomicile       string `json:"lead_domicile"`
+	ListAmount         int64  `json:"list_amount"`
+	ListCurrency       string `json:"list_currency"`
+	SettlementCurrency string `json:"settlement_currency"`
+}
+
+// SubmitBookingResponse is the top-level response envelope.
+type SubmitBookingResponseBody struct {
+	Data SubmitBookingResponseData `json:"data"`
+}
+
+// SubmitBooking implements POST /v1/bookings/:id/submit (S2 / BL-BOOK-005).
+// Transitions a draft booking to pending_payment.
+func (s *Server) SubmitBooking(c *fiber.Ctx, bookingID string) error {
+	const op = "rest_oapi.Server.SubmitBooking"
+
+	ctx, span := s.tracer.Start(c.UserContext(), op)
+	defer span.End()
+
+	logger := logging.LogWithTrace(ctx, s.logger)
+
+	span.SetAttributes(
+		attribute.String("operation", op),
+		attribute.String("endpoint", "POST /v1/bookings/:id/submit"),
+		attribute.String("booking_id", bookingID),
+	)
+
+	logger.Info().Str("op", op).Str("booking_id", bookingID).Msg("")
+
+	result, err := s.svc.SubmitBooking(ctx, &booking_grpc_adapter.SubmitBookingParams{
+		BookingID: bookingID,
+	})
+	if err != nil {
+		logger.Error().Err(err).Str("op", op).Msg("")
+		return writeBookingError(c, span, err)
+	}
+
+	span.SetStatus(codes.Ok, "success")
+	return c.Status(fiber.StatusOK).JSON(SubmitBookingResponseBody{
+		Data: SubmitBookingResponseData{
+			ID:                 result.ID,
+			Status:             result.Status,
+			Channel:            result.Channel,
+			PackageID:          result.PackageID,
+			DepartureID:        result.DepartureID,
+			RoomType:           result.RoomType,
+			LeadFullName:       result.LeadFullName,
+			LeadWhatsapp:       result.LeadWhatsapp,
+			LeadDomicile:       result.LeadDomicile,
+			ListAmount:         result.ListAmount,
+			ListCurrency:       result.ListCurrency,
+			SettlementCurrency: result.SettlementCurrency,
+		},
+	})
 }
 
 // ---------------------------------------------------------------------------

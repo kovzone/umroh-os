@@ -21,20 +21,22 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Adapter wraps the logistics-svc gRPC client for logistics operations.
+// Adapter wraps the logistics-svc gRPC clients for logistics operations.
 type Adapter struct {
-	logger          *zerolog.Logger
-	tracer          trace.Tracer
-	logisticsClient pb.LogisticsServiceClient
+	logger                *zerolog.Logger
+	tracer                trace.Tracer
+	logisticsClient       pb.LogisticsServiceClient
+	logisticsPhase6Client pb.LogisticsPhase6Client
 }
 
 // NewAdapter creates a new logistics-svc gRPC adapter from an already-dialled conn.
 // Ownership of the conn stays with the caller (shared pool lifetime).
 func NewAdapter(logger *zerolog.Logger, tracer trace.Tracer, cc *grpc.ClientConn) *Adapter {
 	return &Adapter{
-		logger:          logger,
-		tracer:          tracer,
-		logisticsClient: pb.NewLogisticsServiceClient(cc),
+		logger:                logger,
+		tracer:                tracer,
+		logisticsClient:       pb.NewLogisticsServiceClient(cc),
+		logisticsPhase6Client: pb.NewLogisticsPhase6Client(cc),
 	}
 }
 

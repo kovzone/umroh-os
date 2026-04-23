@@ -20,22 +20,24 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Adapter is a thin wrapper over an iam.v1.IamService client.
+// Adapter is a thin wrapper over iam-svc gRPC clients.
 type Adapter struct {
 	logger *zerolog.Logger
 	tracer trace.Tracer
 
-	iamClient   pb.IamServiceClient
-	adminClient pb.IamAdminClient
+	iamClient        pb.IamServiceClient
+	adminClient      pb.IamAdminClient
+	adminPhase6Client pb.IamAdminPhase6Client
 }
 
 // NewAdapter creates a new iam-svc gRPC adapter from an already-dialled conn.
 // Ownership of the conn stays with the caller (shared pool lifetime).
 func NewAdapter(logger *zerolog.Logger, tracer trace.Tracer, cc *grpc.ClientConn) *Adapter {
 	return &Adapter{
-		logger:      logger,
-		tracer:      tracer,
-		iamClient:   pb.NewIamServiceClient(cc),
-		adminClient: pb.NewIamAdminClient(cc),
+		logger:            logger,
+		tracer:            tracer,
+		iamClient:         pb.NewIamServiceClient(cc),
+		adminClient:       pb.NewIamAdminClient(cc),
+		adminPhase6Client: pb.NewIamAdminPhase6Client(cc),
 	}
 }

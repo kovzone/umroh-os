@@ -66,6 +66,10 @@ type IPaymentService interface {
 	// or creates a new VA on the same invoice when the existing VA has expired.
 	// CS-facing (BL-PAY-020).
 	ReissuePaymentLink(ctx context.Context, params *ReissuePaymentLinkParams) (*ReissuePaymentLinkResult, error)
+
+	// GetInvoiceByID fetches a single invoice by its UUID (BL-PAY-001 / ISSUE-005).
+	// Used by gateway-svc for GET /v1/invoices/:id and the VA re-issuance flow.
+	GetInvoiceByID(ctx context.Context, params *GetInvoiceByIDParams) (*GetInvoiceByIDResult, error)
 }
 
 // PaymentService is the concrete implementation of IPaymentService.

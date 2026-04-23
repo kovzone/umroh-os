@@ -41,6 +41,18 @@ type IService interface {
 
 	// RedeemPickupQR validates and marks a pickup token as used (BL-LOG-003).
 	RedeemPickupQR(ctx context.Context, params *RedeemPickupQRParams) (*RedeemPickupQRResult, error)
+
+	// CreatePurchaseRequest creates a PR with optional budget gate (BL-LOG-010).
+	CreatePurchaseRequest(ctx context.Context, params *CreatePurchaseRequestParams) (*CreatePurchaseRequestResult, error)
+
+	// ApprovePurchaseRequest approves or rejects a pending PR (BL-LOG-010).
+	ApprovePurchaseRequest(ctx context.Context, params *ApprovePurchaseRequestParams) (*ApprovePurchaseRequestResult, error)
+
+	// RecordGRNWithQC records a GRN with QC pass/fail; posts AP journal only when qc_passed=true (BL-LOG-011).
+	RecordGRNWithQC(ctx context.Context, params *RecordGRNWithQCParams) (*RecordGRNWithQCResult, error)
+
+	// CreateKitAssembly atomically creates an idempotent kit assembly (BL-LOG-012).
+	CreateKitAssembly(ctx context.Context, params *CreateKitAssemblyParams) (*CreateKitAssemblyResult, error)
 }
 
 type Service struct {

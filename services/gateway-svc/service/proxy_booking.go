@@ -43,3 +43,29 @@ func (s *Service) CreateDraftBooking(ctx context.Context, params *booking_grpc_a
 	span.SetStatus(codes.Ok, "success")
 	return result, nil
 }
+
+// SubmitBooking proxies to booking-svc.BookingService/SubmitBooking (S2 / BL-BOOK-005).
+// Transitions a draft booking to pending_payment.
+func (s *Service) SubmitBooking(ctx context.Context, params *booking_grpc_adapter.SubmitBookingParams) (*booking_grpc_adapter.SubmitBookingResult, error) {
+	const op = "service.Service.SubmitBooking"
+
+	ctx, span := s.tracer.Start(ctx, op)
+	defer span.End()
+	span.SetAttributes(attribute.String("operation", op))
+
+	if s.adapters.bookingGrpc == nil {
+		span.SetStatus(codes.Error, "booking adapter not configured")
+		return nil, errors.Join(apperrors.ErrServiceUnavailable,
+			fmt.Errorf("booking_grpc_adapter not configured"))
+	}
+
+	result, err := s.adapters.bookingGrpc.SubmitBooking(ctx, params)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
+	}
+
+	span.SetStatus(codes.Ok, "success")
+	return result, nil
+}

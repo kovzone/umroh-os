@@ -42,6 +42,15 @@ type IService interface {
 	// ExportManifest returns structured manifest rows for a departure.
 	// Currently returns empty rows; real data wired via jamaah-svc in a later sprint.
 	ExportManifest(ctx context.Context, params *ExportManifestParams) (*ExportManifestResult, error)
+
+	// RecordScan records a scan event idempotently (BL-OPS-010).
+	RecordScan(ctx context.Context, params *RecordScanParams) (*RecordScanResult, error)
+
+	// RecordBusBoarding records a bus boarding event atomically (BL-OPS-011).
+	RecordBusBoarding(ctx context.Context, params *RecordBusBoardingParams) (*RecordBusBoardingResult, error)
+
+	// GetBoardingRoster retrieves the boarding status roster for a departure (BL-OPS-011).
+	GetBoardingRoster(ctx context.Context, params *GetBoardingRosterParams) (*GetBoardingRosterResult, error)
 }
 
 type Service struct {

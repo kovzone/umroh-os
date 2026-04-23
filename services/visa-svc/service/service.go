@@ -11,31 +11,27 @@ import (
 
 // IService is the business-layer interface for visa-svc.
 //
-// Pilot scaffold surfaces only the three standard scaffold endpoints:
-//
-//   - Liveness — process is up
-//   - Readiness — process is up AND the database is reachable
-//   - DbTxDiagnostic — writes + reads inside a WithTx, the canonical reference
-//     for how services should use transactions (per docs/04-backend-conventions)
-//
-// Real iam responsibilities (user/role/branch CRUD, auth login/refresh/logout,
-// permission checks, session lifecycle, audit writes) land in F1.5–F1.11 and
-// are deliberately out of scaffold scope.
+// Covers scaffold lifecycle checks plus the three Phase 6 visa pipeline RPCs:
+//   - TransitionStatus (BL-VISA-001) — state-machine-driven single application transition
+//   - BulkSubmit       (BL-VISA-002) — atomic all-or-nothing batch READY→SUBMITTED
+//   - GetApplications  (BL-VISA-003) — list applications for a departure with history
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
 	DbTxDiagnostic(ctx context.Context, params *DbTxDiagnosticParams) (*DbTxDiagnosticResult, error)
+
+	// Visa pipeline (BL-VISA-001..003)
+	TransitionStatus(ctx context.Context, params *TransitionStatusParams) (*TransitionStatusResult, error)
+	BulkSubmit(ctx context.Context, params *BulkSubmitParams) (*BulkSubmitResult, error)
+	GetApplications(ctx context.Context, params *GetApplicationsParams) (*GetApplicationsResult, error)
 }
 
 type Service struct {
 	logger *zerolog.Logger
 	tracer trace.Tracer
 
-	// appName is stamped on every row this service writes to the shared
-	// public.diagnostics table so debugging can attribute rows to their origin.
 	appName string
-
-	store postgres_store.IStore
+	store   postgres_store.IStore
 }
 
 func NewService(

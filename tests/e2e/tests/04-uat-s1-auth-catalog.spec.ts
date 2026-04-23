@@ -37,7 +37,7 @@ let createdDepartureId = "";
 test.describe.serial("S1 Auth — Login & Token (BL-IAM-001 / BL-IAM-018)", () => {
   test("S1-AUTH-01: login valid → 200 + PASETO token + user profile", async () => {
     const api = await createApiClient(gateway.baseURL);
-    const res = await api.post("/v1/sessions", {
+    const res = await api.post("/v1/auth/login", {
       email: UAT_ENV.adminEmail,
       password: UAT_ENV.adminPassword,
     });
@@ -56,7 +56,7 @@ test.describe.serial("S1 Auth — Login & Token (BL-IAM-001 / BL-IAM-018)", () =
 
   test("S1-AUTH-02: login password salah → 401, bukan 500", async () => {
     const api = await createApiClient(gateway.baseURL);
-    const res = await api.post("/v1/sessions", {
+    const res = await api.post("/v1/auth/login", {
       email: UAT_ENV.adminEmail,
       password: "password-yang-salah",
     });
@@ -68,7 +68,7 @@ test.describe.serial("S1 Auth — Login & Token (BL-IAM-001 / BL-IAM-018)", () =
 
   test("S1-AUTH-03: login email tidak dikenal → 401, bukan 404 (tidak leak user existence)", async () => {
     const api = await createApiClient(gateway.baseURL);
-    const res = await api.post("/v1/sessions", {
+    const res = await api.post("/v1/auth/login", {
       email: "ghost@umrohos.dev",
       password: "apapun",
     });
@@ -99,10 +99,10 @@ test.describe.serial("S1 Auth — Login & Token (BL-IAM-001 / BL-IAM-018)", () =
     expect(res.status(), "Token garbage harus 401").toBe(401);
   });
 
-  test("S1-AUTH-07: POST /v1/sessions/refresh → token baru", async () => {
+  test("S1-AUTH-07: POST /v1/auth/refresh → token baru", async () => {
     // Login dulu untuk dapat refresh token
     const api = await createApiClient(gateway.baseURL);
-    const loginRes = await api.post("/v1/sessions", {
+    const loginRes = await api.post("/v1/auth/login", {
       email: UAT_ENV.adminEmail,
       password: UAT_ENV.adminPassword,
     });
@@ -111,7 +111,7 @@ test.describe.serial("S1 Auth — Login & Token (BL-IAM-001 / BL-IAM-018)", () =
     const refreshToken = loginBody.data.refresh_token;
 
     // Gunakan refresh token
-    const refreshRes = await api.post("/v1/sessions/refresh", {
+    const refreshRes = await api.post("/v1/auth/refresh", {
       refresh_token: refreshToken,
     });
 
@@ -140,10 +140,10 @@ test.describe.serial("S1 Auth — Permissions & Protected Routes (BL-IAM-002)", 
     expect(res.status(), "Staff route tanpa token harus 401").toBe(401);
   });
 
-  test("S1-PERM-02: DELETE /v1/sessions (logout) dengan token valid → 200", async () => {
+  test("S1-PERM-02: DELETE /v1/auth/logout dengan token valid → 200", async () => {
     // Login sementara
     const api = await createApiClient(gateway.baseURL);
-    const loginRes = await api.post("/v1/sessions", {
+    const loginRes = await api.post("/v1/auth/login", {
       email: UAT_ENV.adminEmail,
       password: UAT_ENV.adminPassword,
     });
@@ -151,7 +151,7 @@ test.describe.serial("S1 Auth — Permissions & Protected Routes (BL-IAM-002)", 
     const token = (await loginRes.json()).data.access_token;
 
     const authedApi = await createApiClient(gateway.baseURL, token);
-    const logoutRes = await authedApi.delete("/v1/sessions");
+    const logoutRes = await authedApi.delete("/v1/auth/logout");
 
     expect(logoutRes.status(), "Logout harus 200 atau 204").toBeOneOf([200, 204]);
   });
@@ -159,13 +159,13 @@ test.describe.serial("S1 Auth — Permissions & Protected Routes (BL-IAM-002)", 
   test("S1-PERM-03: token yang sudah di-logout tidak bisa digunakan lagi → 401", async () => {
     // Login dan logout
     const api = await createApiClient(gateway.baseURL);
-    const loginRes = await api.post("/v1/sessions", {
+    const loginRes = await api.post("/v1/auth/login", {
       email: UAT_ENV.adminEmail,
       password: UAT_ENV.adminPassword,
     });
     const token = (await loginRes.json()).data.access_token;
     const authedApi = await createApiClient(gateway.baseURL, token);
-    await authedApi.delete("/v1/sessions");
+    await authedApi.delete("/v1/auth/logout");
 
     // Coba gunakan token yang sudah di-revoke
     const res = await authedApi.get("/v1/me");

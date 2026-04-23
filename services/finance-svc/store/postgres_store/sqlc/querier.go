@@ -6,6 +6,7 @@ package sqlc
 
 import (
 	"context"
+	"time"
 )
 
 type Querier interface {
@@ -27,6 +28,16 @@ type Querier interface {
 	// Finance depth queries — P&L and Balance Sheet (Wave 1B)
 	GetPLReportLines(ctx context.Context, arg GetPLReportLinesParams) ([]PLReportLineRow, error)
 	GetBalanceSheetLines(ctx context.Context, arg GetBalanceSheetLinesParams) ([]BalanceSheetLineRow, error)
+
+	// Disbursement batch queries (BL-FIN-010/011)
+	InsertDisbursementBatch(ctx context.Context, arg InsertDisbursementBatchParams) (DisbursementBatchRow, error)
+	InsertDisbursementItem(ctx context.Context, arg InsertDisbursementItemParams) (DisbursementItemRow, error)
+	GetDisbursementBatchByID(ctx context.Context, id string) (DisbursementBatchRow, error)
+	GetDisbursementItemsByBatchID(ctx context.Context, batchID string) ([]DisbursementItemRow, error)
+	UpdateDisbursementBatchDecision(ctx context.Context, arg UpdateDisbursementBatchDecisionParams) error
+	UpdateDisbursementItemJournal(ctx context.Context, journalEntryID string, itemID int64) error
+	GetDisbursementAgingBuckets(ctx context.Context, asOfDate time.Time) (AgingBuckets, error)
+	GetARAgingBuckets(ctx context.Context, asOfDate time.Time) (AgingBuckets, error)
 }
 
 var _ Querier = (*Queries)(nil)

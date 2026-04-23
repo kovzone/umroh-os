@@ -17,6 +17,7 @@ import (
 	"gateway-svc/adapter/logistics_grpc_adapter"
 	"gateway-svc/adapter/ops_grpc_adapter"
 	"gateway-svc/adapter/payment_grpc_adapter"
+	"gateway-svc/adapter/visa_grpc_adapter"
 	"gateway-svc/api/rest_oapi"
 	"gateway-svc/service"
 	"gateway-svc/util/config"
@@ -306,6 +307,32 @@ func start() {
 	}()
 	paymentGrpcAdapter := payment_grpc_adapter.NewAdapter(logger, tracer, paymentConn)
 
+	// --- Dial visa-svc gRPC (BL-VISA-001..003 / Phase 6) ---
+	//
+	// Per ADR-0009, gateway's /v1/visas* routes proxy to visa-svc.VisaService
+	// over gRPC via visa_grpc_adapter. Same dial + OTel handler pattern as the
+	// other service conns above.
+	visaConn, err := grpc.NewClient(
+		config.External.VisaSvc.GrpcTarget,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Dial visa-svc gRPC").
+			Str("target", config.External.VisaSvc.GrpcTarget).
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+	defer func() {
+		if err := visaConn.Close(); err != nil {
+			logger.Error().Err(err).Msg("close visa gRPC conn")
+		}
+	}()
+	visaGrpcAdapter := visa_grpc_adapter.NewAdapter(logger, tracer, visaConn)
+
 	// --- Init REST adapters (interim; retire as each backend graduates to gRPC) ---
 	// gateway-svc has no DB and no internal store; the service layer dispatches
 	// to these per-backend adapters.
@@ -338,6 +365,7 @@ func start() {
 		OpsGrpc:       opsGrpcAdapter,
 		LogisticsGrpc: logisticsGrpcAdapter,
 		PaymentGrpc:   paymentGrpcAdapter,
+		VisaGrpc:      visaGrpcAdapter,
 	})
 
 	// --- Init API layer (REST only — gateway is the edge proxy, no gRPC server) ---

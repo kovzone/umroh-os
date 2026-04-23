@@ -30,11 +30,15 @@ import (
 // ---------------------------------------------------------------------------
 
 // CreateLeadBody is the JSON body for POST /v1/leads.
+// Also accepts field aliases sent by UAT spec / landing pages (ISSUE-017):
+//   message     → merged into notes if notes is empty
+//   source_note → used as source if source is empty
 type CreateLeadBody struct {
 	Name                string `json:"name"`
 	Phone               string `json:"phone"`
 	Email               string `json:"email,omitempty"`
 	Source              string `json:"source,omitempty"`
+	SourceNote          string `json:"source_note,omitempty"` // alias for source
 	UtmSource           string `json:"utm_source,omitempty"`
 	UtmMedium           string `json:"utm_medium,omitempty"`
 	UtmCampaign         string `json:"utm_campaign,omitempty"`
@@ -43,6 +47,7 @@ type CreateLeadBody struct {
 	InterestPackageID   string `json:"interest_package_id,omitempty"`
 	InterestDepartureID string `json:"interest_departure_id,omitempty"`
 	Notes               string `json:"notes,omitempty"`
+	Message             string `json:"message,omitempty"` // alias for notes
 }
 
 // UpdateLeadBody is the JSON body for PUT /v1/leads/:id.
@@ -117,6 +122,14 @@ func (s *Server) CreateLead(c *fiber.Ctx) error {
 	}
 
 	logger.Info().Str("op", op).Str("phone", body.Phone).Msg("")
+
+	// Merge field aliases (ISSUE-017)
+	if body.Notes == "" && body.Message != "" {
+		body.Notes = body.Message
+	}
+	if body.Source == "" && body.SourceNote != "" {
+		body.Source = body.SourceNote
+	}
 
 	result, err := s.svc.CreateLead(ctx, &crm_grpc_adapter.CreateLeadParams{
 		Name:                body.Name,

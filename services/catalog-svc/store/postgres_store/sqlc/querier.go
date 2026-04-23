@@ -130,6 +130,10 @@ type Querier interface {
 	// Departure pricing upsert + get
 	UpsertDeparturePricing(ctx context.Context, arg UpsertDeparturePricingParams) (PricingRow, error)
 	GetDeparturePricingRows(ctx context.Context, departureID string) ([]PricingRow, error)
+
+	// Vendor readiness (BL-OPS-020)
+	UpsertVendorReadiness(ctx context.Context, arg UpsertVendorReadinessParams) (VendorReadinessRow, error)
+	ListVendorReadiness(ctx context.Context, departureID string) ([]VendorReadinessRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

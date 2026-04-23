@@ -28,6 +28,14 @@ type Querier interface {
 	GetPickupTokenByToken(ctx context.Context, token string) (PickupTokenRow, error)
 	GetActivePickupTokenByTaskID(ctx context.Context, taskID string) (PickupTokenRow, error)
 	MarkPickupTokenUsed(ctx context.Context, id string) (PickupTokenRow, error)
+
+	// Purchase request + kit assembly queries (BL-LOG-010..012)
+	InsertPurchaseRequest(ctx context.Context, arg InsertPurchaseRequestParams) (PurchaseRequestRow, error)
+	GetPurchaseRequestByID(ctx context.Context, id string) (PurchaseRequestRow, error)
+	UpdatePurchaseRequestDecision(ctx context.Context, arg UpdatePurchaseRequestDecisionParams) error
+	InsertKitAssemblyIdempotent(ctx context.Context, arg InsertKitAssemblyParams) (KitAssemblyRow, bool, error)
+	InsertKitAssemblyItem(ctx context.Context, arg InsertKitAssemblyItemParams) error
+	UpdateKitAssemblyStatus(ctx context.Context, newStatus, id string) error
 }
 
 var _ Querier = (*Queries)(nil)

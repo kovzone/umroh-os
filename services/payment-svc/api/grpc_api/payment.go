@@ -129,6 +129,51 @@ func (s *Server) ProcessWebhook(ctx context.Context, req *pb.ProcessWebhookReque
 	}, nil
 }
 
+// GetInvoiceByID fetches a single invoice by UUID (BL-PAY-001 / ISSUE-005).
+// Called by gateway-svc for GET /v1/invoices/:id and the VA re-issuance flow.
+func (s *Server) GetInvoiceByID(ctx context.Context, req *pb.GetInvoiceByIDRequest) (*pb.GetInvoiceByIDResponse, error) {
+	const op = "grpc_api.Server.GetInvoiceByID"
+
+	ctx, span := s.tracer.Start(ctx, op)
+	defer span.End()
+
+	logger := logging.LogWithTrace(ctx, s.logger)
+	span.SetAttributes(
+		attribute.String("operation", op),
+		attribute.String("invoice_id", req.GetInvoiceId()),
+	)
+	logger.Info().Str("op", op).Str("invoice_id", req.GetInvoiceId()).Msg("")
+
+	psvc, ok := s.svc.(service.IPaymentService)
+	if !ok {
+		err := apperrors.ErrInternal
+		span.SetStatus(codes.Error, "service does not implement IPaymentService")
+		return nil, status.Error(apperrors.GRPCCode(err), "service misconfiguration")
+	}
+
+	result, err := psvc.GetInvoiceByID(ctx, &service.GetInvoiceByIDParams{
+		InvoiceID: req.GetInvoiceId(),
+	})
+	if err != nil {
+		logger.Error().Err(err).Str("op", op).Msg("")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, status.Error(apperrors.GRPCCode(err), err.Error())
+	}
+
+	span.SetStatus(codes.Ok, "success")
+	return &pb.GetInvoiceByIDResponse{
+		Id:          result.ID,
+		BookingId:   result.BookingID,
+		Status:      result.Status,
+		AmountTotal: result.AmountTotal,
+		PaidAmount:  result.PaidAmount,
+		Currency:    result.Currency,
+		CreatedAt:   result.CreatedAt,
+		UpdatedAt:   result.UpdatedAt,
+	}, nil
+}
+
 // StartRefund initiates the refund flow for a booking.
 // Called by booking-svc's cancel saga (F4→F5 gRPC call per ADR-0006).
 func (s *Server) StartRefund(ctx context.Context, req *pb.StartRefundRequest) (*pb.StartRefundResponse, error) {

@@ -420,7 +420,7 @@ test.describe.serial("S3 Ops — Fulfillment Tasks (BL-LOG-001)", () => {
     );
 
     expect(tasks.length, "Harus ada minimal 1 fulfillment task setelah paid").toBeGreaterThan(0);
-    expect(tasks[0].status, "Fulfillment task status awal harus pending").toBe("pending");
+    expect(tasks[0].status, "Fulfillment task status awal harus queued").toBe("queued"); // ISSUE-014: DB default is 'queued', not 'pending'
   });
 
   test("S3-OPS-02: GET /console/ops → ops board tampil (staff only)", async ({ page }) => {
@@ -499,8 +499,8 @@ test.describe.serial("S3 Finance — Journal Entries (BL-FIN-001, BL-FIN-003)", 
     const entryId = entries[0].id;
 
     // Cek journal lines (double-entry: debit = kredit)
-    const lines = await dbQuery<{ debit_amount: number; credit_amount: number; account_code: string }>(
-      `SELECT debit_amount, credit_amount, account_code
+    const lines = await dbQuery<{ debit: number; credit: number; account_code: string }>(
+      `SELECT debit, credit, account_code
        FROM finance.journal_lines
        WHERE entry_id = $1`,
       [entryId]
@@ -509,14 +509,14 @@ test.describe.serial("S3 Finance — Journal Entries (BL-FIN-001, BL-FIN-003)", 
     expect(lines.length, "Harus ada 2 journal lines (Dr + Cr)").toBeGreaterThanOrEqual(2);
 
     // Debit total harus = Kredit total (balanced)
-    const totalDebit = lines.reduce((sum, l) => sum + Number(l.debit_amount || 0), 0);
-    const totalCredit = lines.reduce((sum, l) => sum + Number(l.credit_amount || 0), 0);
+    const totalDebit = lines.reduce((sum, l) => sum + Number(l.debit || 0), 0);
+    const totalCredit = lines.reduce((sum, l) => sum + Number(l.credit || 0), 0);
     expect(totalDebit, "Total debit harus sama dengan total kredit").toBe(totalCredit);
 
     // Amount harus integer (IDR), bukan float
     lines.forEach((l) => {
-      expect(Number.isInteger(Number(l.debit_amount || 0)), "Debit harus integer IDR").toBe(true);
-      expect(Number.isInteger(Number(l.credit_amount || 0)), "Credit harus integer IDR").toBe(true);
+      expect(Number.isInteger(Number(l.debit || 0)), "Debit harus integer IDR").toBe(true);
+      expect(Number.isInteger(Number(l.credit || 0)), "Credit harus integer IDR").toBe(true);
     });
   });
 

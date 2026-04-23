@@ -15,6 +15,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -499,4 +500,77 @@ func (q *Queries) GetBookingByIdempotencyKey(ctx context.Context, arg GetBooking
 		&i.ExpiresAt,
 	)
 	return i, err
+}
+
+// ---------------------------------------------------------------------------
+// GetBookingByIDAny — fetch booking regardless of status (used after submit)
+// ---------------------------------------------------------------------------
+
+const getBookingByIDAny = `-- name: GetBookingByIDAny :one
+SELECT
+    id, status,
+    channel, package_id, departure_id, room_type,
+    agent_id, staff_user_id,
+    lead_full_name, lead_email, lead_whatsapp, lead_domicile,
+    list_amount, list_currency, settlement_currency,
+    notes, idempotency_key,
+    created_at, updated_at, expires_at
+FROM booking.bookings
+WHERE id = $1`
+
+func (q *Queries) GetBookingByIDAny(ctx context.Context, id string) (BookingRow, error) {
+	row := q.db.QueryRow(ctx, getBookingByIDAny, id)
+	var i BookingRow
+	err := row.Scan(
+		&i.ID,
+		&i.Status,
+		&i.Channel,
+		&i.PackageID,
+		&i.DepartureID,
+		&i.RoomType,
+		&i.AgentID,
+		&i.StaffUserID,
+		&i.LeadFullName,
+		&i.LeadEmail,
+		&i.LeadWhatsapp,
+		&i.LeadDomicile,
+		&i.ListAmount,
+		&i.ListCurrency,
+		&i.SettlementCurrency,
+		&i.Notes,
+		&i.IdempotencyKey,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+// ---------------------------------------------------------------------------
+// UpdateBookingStatus — optimistic status transition
+// ---------------------------------------------------------------------------
+
+// UpdateBookingStatusParams is the input for UpdateBookingStatus.
+type UpdateBookingStatusParams struct {
+	ID         string        `json:"id"`
+	NewStatus  BookingStatus `json:"new_status"`
+	FromStatus BookingStatus `json:"from_status"` // guard: only update if current status matches
+}
+
+const updateBookingStatus = `-- name: UpdateBookingStatus :exec
+UPDATE booking.bookings
+SET status = $2::booking.status, updated_at = now()
+WHERE id = $1 AND status = $3::booking.status`
+
+// UpdateBookingStatus transitions status only when current status == FromStatus.
+// Returns pgx.ErrNoRows if booking not found or is in the wrong state.
+func (q *Queries) UpdateBookingStatus(ctx context.Context, arg UpdateBookingStatusParams) error {
+	ct, err := q.db.Exec(ctx, updateBookingStatus, arg.ID, string(arg.NewStatus), string(arg.FromStatus))
+	if err != nil {
+		return err
+	}
+	if ct.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
 }

@@ -22,13 +22,16 @@ import (
 
 const (
 	PaymentService_ReissuePaymentLink_FullMethodName = "/pb.PaymentService/ReissuePaymentLink"
+	PaymentService_GetInvoiceByID_FullMethodName     = "/pb.PaymentService/GetInvoiceByID"
 )
 
 // PaymentServiceWithReissueServer is implemented by the *grpc_api.Server in this service.
-// It extends PaymentServiceServer with the CS-facing ReissuePaymentLink RPC.
+// It extends PaymentServiceServer with the CS-facing ReissuePaymentLink RPC
+// and the gateway-facing GetInvoiceByID RPC (BL-PAY-001 / ISSUE-005).
 type PaymentServiceWithReissueServer interface {
 	PaymentServiceServer
 	ReissuePaymentLink(context.Context, *ReissuePaymentLinkRequest) (*ReissuePaymentLinkResponse, error)
+	GetInvoiceByID(context.Context, *GetInvoiceByIDRequest) (*GetInvoiceByIDResponse, error)
 }
 
 // UnimplementedPaymentServiceWithReissueServer provides a default no-op
@@ -39,6 +42,30 @@ type UnimplementedPaymentServiceWithReissueServer struct {
 
 func (UnimplementedPaymentServiceWithReissueServer) ReissuePaymentLink(context.Context, *ReissuePaymentLinkRequest) (*ReissuePaymentLinkResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReissuePaymentLink not implemented")
+}
+
+func (UnimplementedPaymentServiceWithReissueServer) GetInvoiceByID(context.Context, *GetInvoiceByIDRequest) (*GetInvoiceByIDResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInvoiceByID not implemented")
+}
+
+// _PaymentService_GetInvoiceByID_Handler is the gRPC handler function for
+// the GetInvoiceByID RPC.
+func _PaymentService_GetInvoiceByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetInvoiceByIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentServiceWithReissueServer).GetInvoiceByID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentService_GetInvoiceByID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentServiceWithReissueServer).GetInvoiceByID(ctx, req.(*GetInvoiceByIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 // _PaymentService_ReissuePaymentLink_Handler is the gRPC handler function for
@@ -86,6 +113,10 @@ var paymentServiceFullDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReissuePaymentLink",
 			Handler:    _PaymentService_ReissuePaymentLink_Handler,
+		},
+		{
+			MethodName: "GetInvoiceByID",
+			Handler:    _PaymentService_GetInvoiceByID_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

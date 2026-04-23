@@ -436,6 +436,10 @@ type ServerInterface interface {
 	// Hand-edited here since oapi-codegen is not available in the environment.
 	CreateDraftBooking(c *fiber.Ctx) error
 
+	// SubmitBooking — POST /v1/bookings/:id/submit (S2 / BL-BOOK-005) — bearer required.
+	// Transitions a draft booking to pending_payment.
+	SubmitBooking(c *fiber.Ctx, bookingID string) error
+
 	// CRM lead management (S4-E-02 / BL-CRM-001..003).
 	// POST /v1/leads — public (lead capture form).
 	CreateLead(c *fiber.Ctx) error
@@ -558,6 +562,22 @@ type ServerInterface interface {
 	// GET /v1/documents/:id/ocr
 	GetDocumentOCRStatus(c *fiber.Ctx, documentID string) error
 
+	// S2 invoice routes (BL-PAY-001 / ISSUE-005) — bearer required.
+	// POST /v1/invoices — create invoice + VA for a booking.
+	CreateInvoice(c *fiber.Ctx) error
+	// GET /v1/invoices/:id — fetch invoice details.
+	GetInvoiceByID(c *fiber.Ctx, invoiceID string) error
+	// POST /v1/invoices/:id/virtual-accounts — re-issue VA for existing invoice.
+	IssueVirtualAccountForInvoice(c *fiber.Ctx, invoiceID string) error
+
+	// S2 webhook routes (BL-PAY-003/004 / ISSUE-007/008) — public, signature-protected.
+	// POST /v1/webhooks/midtrans
+	WebhookMidtrans(c *fiber.Ctx) error
+	// POST /v1/webhooks/xendit
+	WebhookXendit(c *fiber.Ctx) error
+	// POST /v1/webhooks/mock/trigger (dev only)
+	WebhookMockTrigger(c *fiber.Ctx) error
+
 	// S2 payment link (BL-PAY-020) — bearer required.
 	// POST /v1/payments/link — CS re-issues VA for existing booking.
 	ReissuePaymentLink(c *fiber.Ctx) error
@@ -565,6 +585,60 @@ type ServerInterface interface {
 	// S5 finance correction (BL-FIN-006) — bearer required.
 	// POST /v1/finance/journals/:id/correct — post reversing counter-entry.
 	CorrectJournal(c *fiber.Ctx) error
+
+	// Phase 6 IAM security routes (BL-IAM-007/011/014/016) — bearer required.
+	// PUT /v1/admin/users/:id/data-scope
+	SetDataScope(c *fiber.Ctx, userID string) error
+	// POST /v1/admin/api-keys
+	CreateAPIKey(c *fiber.Ctx) error
+	// DELETE /v1/admin/api-keys/:id
+	RevokeAPIKey(c *fiber.Ctx, keyID string) error
+	// GET /v1/admin/config
+	GetGlobalConfig(c *fiber.Ctx) error
+	// PUT /v1/admin/config/:key
+	SetGlobalConfig(c *fiber.Ctx, key string) error
+	// GET /v1/admin/activity-log
+	SearchActivityLog(c *fiber.Ctx) error
+
+	// Phase 6 Finance disbursement + aging (BL-FIN-010/011) — bearer required.
+	// POST /v1/finance/disbursements
+	CreateDisbursementBatch(c *fiber.Ctx) error
+	// PUT /v1/finance/disbursements/:id/decision
+	ApproveDisbursement(c *fiber.Ctx, batchID string) error
+	// GET /v1/finance/aging
+	GetARAPAging(c *fiber.Ctx) error
+
+	// Phase 6 Ops scanning + bus boarding (BL-OPS-010/011) — bearer required.
+	// POST /v1/ops/scans
+	RecordScan(c *fiber.Ctx) error
+	// POST /v1/ops/bus-boarding
+	RecordBusBoarding(c *fiber.Ctx) error
+	// GET /v1/ops/bus-boarding/:departure_id
+	GetBoardingRoster(c *fiber.Ctx, departureID string) error
+
+	// Phase 6 Logistics procurement + GRN + kit (BL-LOG-010..012) — bearer required.
+	// POST /v1/logistics/purchase-requests
+	CreatePurchaseRequest(c *fiber.Ctx) error
+	// PUT /v1/logistics/purchase-requests/:id/decision
+	ApprovePurchaseRequest(c *fiber.Ctx, prID string) error
+	// POST /v1/logistics/grn-qc
+	RecordGRNWithQC(c *fiber.Ctx) error
+	// POST /v1/logistics/kit-assembly
+	CreateKitAssembly(c *fiber.Ctx) error
+
+	// Phase 6 Visa pipeline (BL-VISA-001..003) — bearer required.
+	// PUT /v1/visas/:id/status
+	TransitionVisaStatus(c *fiber.Ctx, applicationID string) error
+	// POST /v1/visas/bulk-submit
+	BulkSubmitVisa(c *fiber.Ctx) error
+	// GET /v1/visas
+	GetVisaApplications(c *fiber.Ctx) error
+
+	// Vendor readiness (BL-OPS-020) — bearer required.
+	// GET  /v1/departures/:id/readiness — get current readiness summary
+	// PUT  /v1/departures/:id/readiness — update one readiness kind
+	GetDepartureReadiness(c *fiber.Ctx, departureID string) error
+	UpdateDepartureReadiness(c *fiber.Ctx, departureID string) error
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -816,6 +890,13 @@ func (siw *ServerInterfaceWrapper) UpdateDepartureById(c *fiber.Ctx) error {
 // Hand-added in S1-E-03 / BL-GTW-003.
 func (siw *ServerInterfaceWrapper) CreateDraftBooking(c *fiber.Ctx) error {
 	return siw.Handler.CreateDraftBooking(c)
+}
+
+// SubmitBooking operation middleware — POST /v1/bookings/:id/submit (bearer).
+// Hand-added in S2 / BL-BOOK-005 (ISSUE-006).
+func (siw *ServerInterfaceWrapper) SubmitBooking(c *fiber.Ctx) error {
+	bookingID := c.Params("id")
+	return siw.Handler.SubmitBooking(c, bookingID)
 }
 
 // CreateLead operation middleware — POST /v1/leads (public).
@@ -1193,6 +1274,38 @@ func (siw *ServerInterfaceWrapper) GetDocumentOCRStatus(c *fiber.Ctx) error {
 	return siw.Handler.GetDocumentOCRStatus(c, documentID)
 }
 
+// CreateInvoice operation middleware — POST /v1/invoices (bearer)
+func (siw *ServerInterfaceWrapper) CreateInvoice(c *fiber.Ctx) error {
+	return siw.Handler.CreateInvoice(c)
+}
+
+// GetInvoiceByID operation middleware — GET /v1/invoices/:id (bearer)
+func (siw *ServerInterfaceWrapper) GetInvoiceByID(c *fiber.Ctx) error {
+	invoiceID := c.Params("id")
+	return siw.Handler.GetInvoiceByID(c, invoiceID)
+}
+
+// IssueVirtualAccountForInvoice operation middleware — POST /v1/invoices/:id/virtual-accounts (bearer)
+func (siw *ServerInterfaceWrapper) IssueVirtualAccountForInvoice(c *fiber.Ctx) error {
+	invoiceID := c.Params("id")
+	return siw.Handler.IssueVirtualAccountForInvoice(c, invoiceID)
+}
+
+// WebhookMidtrans operation middleware — POST /v1/webhooks/midtrans (public)
+func (siw *ServerInterfaceWrapper) WebhookMidtrans(c *fiber.Ctx) error {
+	return siw.Handler.WebhookMidtrans(c)
+}
+
+// WebhookXendit operation middleware — POST /v1/webhooks/xendit (public)
+func (siw *ServerInterfaceWrapper) WebhookXendit(c *fiber.Ctx) error {
+	return siw.Handler.WebhookXendit(c)
+}
+
+// WebhookMockTrigger operation middleware — POST /v1/webhooks/mock/trigger (dev only)
+func (siw *ServerInterfaceWrapper) WebhookMockTrigger(c *fiber.Ctx) error {
+	return siw.Handler.WebhookMockTrigger(c)
+}
+
 // ReissuePaymentLink operation middleware — POST /v1/payments/link (bearer)
 func (siw *ServerInterfaceWrapper) ReissuePaymentLink(c *fiber.Ctx) error {
 	return siw.Handler.ReissuePaymentLink(c)
@@ -1201,6 +1314,130 @@ func (siw *ServerInterfaceWrapper) ReissuePaymentLink(c *fiber.Ctx) error {
 // CorrectJournal operation middleware — POST /v1/finance/journals/:id/correct (bearer)
 func (siw *ServerInterfaceWrapper) CorrectJournal(c *fiber.Ctx) error {
 	return siw.Handler.CorrectJournal(c)
+}
+
+// Phase 6 IAM security wrappers (BL-IAM-007/011/014/016 — hand-added).
+
+// SetDataScope operation middleware — PUT /v1/admin/users/:id/data-scope (bearer)
+func (siw *ServerInterfaceWrapper) SetDataScope(c *fiber.Ctx) error {
+	userID := c.Params("id")
+	return siw.Handler.SetDataScope(c, userID)
+}
+
+// CreateAPIKey operation middleware — POST /v1/admin/api-keys (bearer)
+func (siw *ServerInterfaceWrapper) CreateAPIKey(c *fiber.Ctx) error {
+	return siw.Handler.CreateAPIKey(c)
+}
+
+// RevokeAPIKey operation middleware — DELETE /v1/admin/api-keys/:id (bearer)
+func (siw *ServerInterfaceWrapper) RevokeAPIKey(c *fiber.Ctx) error {
+	keyID := c.Params("id")
+	return siw.Handler.RevokeAPIKey(c, keyID)
+}
+
+// GetGlobalConfig operation middleware — GET /v1/admin/config (bearer)
+func (siw *ServerInterfaceWrapper) GetGlobalConfig(c *fiber.Ctx) error {
+	return siw.Handler.GetGlobalConfig(c)
+}
+
+// SetGlobalConfig operation middleware — PUT /v1/admin/config/:key (bearer)
+func (siw *ServerInterfaceWrapper) SetGlobalConfig(c *fiber.Ctx) error {
+	key := c.Params("key")
+	return siw.Handler.SetGlobalConfig(c, key)
+}
+
+// SearchActivityLog operation middleware — GET /v1/admin/activity-log (bearer)
+func (siw *ServerInterfaceWrapper) SearchActivityLog(c *fiber.Ctx) error {
+	return siw.Handler.SearchActivityLog(c)
+}
+
+// Phase 6 Finance disbursement + aging wrappers (BL-FIN-010/011 — hand-added).
+
+// CreateDisbursementBatch operation middleware — POST /v1/finance/disbursements (bearer)
+func (siw *ServerInterfaceWrapper) CreateDisbursementBatch(c *fiber.Ctx) error {
+	return siw.Handler.CreateDisbursementBatch(c)
+}
+
+// ApproveDisbursement operation middleware — PUT /v1/finance/disbursements/:id/decision (bearer)
+func (siw *ServerInterfaceWrapper) ApproveDisbursement(c *fiber.Ctx) error {
+	batchID := c.Params("id")
+	return siw.Handler.ApproveDisbursement(c, batchID)
+}
+
+// GetARAPAging operation middleware — GET /v1/finance/aging (bearer)
+func (siw *ServerInterfaceWrapper) GetARAPAging(c *fiber.Ctx) error {
+	return siw.Handler.GetARAPAging(c)
+}
+
+// Phase 6 Ops scanning + bus boarding wrappers (BL-OPS-010/011 — hand-added).
+
+// RecordScan operation middleware — POST /v1/ops/scans (bearer)
+func (siw *ServerInterfaceWrapper) RecordScan(c *fiber.Ctx) error {
+	return siw.Handler.RecordScan(c)
+}
+
+// RecordBusBoarding operation middleware — POST /v1/ops/bus-boarding (bearer)
+func (siw *ServerInterfaceWrapper) RecordBusBoarding(c *fiber.Ctx) error {
+	return siw.Handler.RecordBusBoarding(c)
+}
+
+// GetBoardingRoster operation middleware — GET /v1/ops/bus-boarding/:departure_id (bearer)
+func (siw *ServerInterfaceWrapper) GetBoardingRoster(c *fiber.Ctx) error {
+	departureID := c.Params("departure_id")
+	return siw.Handler.GetBoardingRoster(c, departureID)
+}
+
+// Phase 6 Logistics procurement + GRN + kit wrappers (BL-LOG-010..012 — hand-added).
+
+// CreatePurchaseRequest operation middleware — POST /v1/logistics/purchase-requests (bearer)
+func (siw *ServerInterfaceWrapper) CreatePurchaseRequest(c *fiber.Ctx) error {
+	return siw.Handler.CreatePurchaseRequest(c)
+}
+
+// ApprovePurchaseRequest operation middleware — PUT /v1/logistics/purchase-requests/:id/decision (bearer)
+func (siw *ServerInterfaceWrapper) ApprovePurchaseRequest(c *fiber.Ctx) error {
+	prID := c.Params("id")
+	return siw.Handler.ApprovePurchaseRequest(c, prID)
+}
+
+// RecordGRNWithQC operation middleware — POST /v1/logistics/grn-qc (bearer)
+func (siw *ServerInterfaceWrapper) RecordGRNWithQC(c *fiber.Ctx) error {
+	return siw.Handler.RecordGRNWithQC(c)
+}
+
+// CreateKitAssembly operation middleware — POST /v1/logistics/kit-assembly (bearer)
+func (siw *ServerInterfaceWrapper) CreateKitAssembly(c *fiber.Ctx) error {
+	return siw.Handler.CreateKitAssembly(c)
+}
+
+// Phase 6 Visa pipeline wrappers (BL-VISA-001..003 — hand-added).
+
+// TransitionVisaStatus operation middleware — PUT /v1/visas/:id/status (bearer)
+func (siw *ServerInterfaceWrapper) TransitionVisaStatus(c *fiber.Ctx) error {
+	applicationID := c.Params("id")
+	return siw.Handler.TransitionVisaStatus(c, applicationID)
+}
+
+// BulkSubmitVisa operation middleware — POST /v1/visas/bulk-submit (bearer)
+func (siw *ServerInterfaceWrapper) BulkSubmitVisa(c *fiber.Ctx) error {
+	return siw.Handler.BulkSubmitVisa(c)
+}
+
+// GetVisaApplications operation middleware — GET /v1/visas (bearer)
+func (siw *ServerInterfaceWrapper) GetVisaApplications(c *fiber.Ctx) error {
+	return siw.Handler.GetVisaApplications(c)
+}
+
+// GetDepartureReadiness operation middleware — GET /v1/departures/:id/readiness (bearer)
+func (siw *ServerInterfaceWrapper) GetDepartureReadiness(c *fiber.Ctx) error {
+	departureID := c.Params("id")
+	return siw.Handler.GetDepartureReadiness(c, departureID)
+}
+
+// UpdateDepartureReadiness operation middleware — PUT /v1/departures/:id/readiness (bearer)
+func (siw *ServerInterfaceWrapper) UpdateDepartureReadiness(c *fiber.Ctx) error {
+	departureID := c.Params("id")
+	return siw.Handler.UpdateDepartureReadiness(c, departureID)
 }
 
 // FiberServerOptions provides options for the Fiber server.
@@ -1792,6 +2029,10 @@ func (sh *strictHandler) CreateDraftBooking(ctx *fiber.Ctx) error {
 	return fiber.ErrNotImplemented
 }
 
+func (sh *strictHandler) SubmitBooking(ctx *fiber.Ctx, bookingID string) error {
+	return fiber.ErrNotImplemented
+}
+
 func (sh *strictHandler) CreateLead(ctx *fiber.Ctx) error {
 	return fiber.ErrNotImplemented
 }
@@ -2000,10 +2241,129 @@ func (sh *strictHandler) GetDocumentOCRStatus(ctx *fiber.Ctx, documentID string)
 	return fiber.ErrNotImplemented
 }
 
+func (sh *strictHandler) CreateInvoice(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) GetInvoiceByID(ctx *fiber.Ctx, invoiceID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) IssueVirtualAccountForInvoice(ctx *fiber.Ctx, invoiceID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) WebhookMidtrans(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) WebhookXendit(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) WebhookMockTrigger(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
 func (sh *strictHandler) ReissuePaymentLink(ctx *fiber.Ctx) error {
 	return fiber.ErrNotImplemented
 }
 
 func (sh *strictHandler) CorrectJournal(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+// Phase 6 IAM security strictHandler stubs — not used (gateway routes go through proxy_phase6_iam.go).
+
+func (sh *strictHandler) SetDataScope(ctx *fiber.Ctx, userID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) CreateAPIKey(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) RevokeAPIKey(ctx *fiber.Ctx, keyID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) GetGlobalConfig(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) SetGlobalConfig(ctx *fiber.Ctx, key string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) SearchActivityLog(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+// Phase 6 Finance disbursement + aging strictHandler stubs — not used (gateway routes go through proxy_phase6_finance.go).
+
+func (sh *strictHandler) CreateDisbursementBatch(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) ApproveDisbursement(ctx *fiber.Ctx, batchID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) GetARAPAging(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+// Phase 6 Ops scanning + bus boarding strictHandler stubs — not used (gateway routes go through proxy_phase6_ops.go).
+
+func (sh *strictHandler) RecordScan(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) RecordBusBoarding(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) GetBoardingRoster(ctx *fiber.Ctx, departureID string) error {
+	return fiber.ErrNotImplemented
+}
+
+// Phase 6 Logistics procurement + GRN + kit strictHandler stubs — not used (gateway routes go through proxy_phase6_logistics.go).
+
+func (sh *strictHandler) CreatePurchaseRequest(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) ApprovePurchaseRequest(ctx *fiber.Ctx, prID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) RecordGRNWithQC(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) CreateKitAssembly(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+// Phase 6 Visa pipeline strictHandler stubs — not used (gateway routes go through proxy_visa.go).
+
+func (sh *strictHandler) TransitionVisaStatus(ctx *fiber.Ctx, applicationID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) BulkSubmitVisa(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) GetVisaApplications(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+// Vendor readiness strictHandler stubs (BL-OPS-020) — not used (gateway routes go through proxy_readiness.go).
+func (sh *strictHandler) GetDepartureReadiness(ctx *fiber.Ctx, departureID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) UpdateDepartureReadiness(ctx *fiber.Ctx, departureID string) error {
 	return fiber.ErrNotImplemented
 }

@@ -258,3 +258,80 @@ func (x *StartRefundResponse) GetStatus() string {
 	}
 	return x.Status
 }
+
+// ---------------------------------------------------------------------------
+// GetInvoiceByID
+// ---------------------------------------------------------------------------
+
+// GetInvoiceByIDRequest fetches a single invoice by UUID.
+type GetInvoiceByIDRequest struct {
+	InvoiceId string
+}
+
+func (x *GetInvoiceByIDRequest) GetInvoiceId() string {
+	if x == nil {
+		return ""
+	}
+	return x.InvoiceId
+}
+
+// GetInvoiceByIDResponse carries the invoice details.
+type GetInvoiceByIDResponse struct {
+	Id          string
+	BookingId   string
+	Status      string
+	AmountTotal float64
+	PaidAmount  float64
+	Currency    string
+	CreatedAt   string // RFC 3339
+	UpdatedAt   string // RFC 3339
+}
+
+func (x *GetInvoiceByIDResponse) GetId() string {
+	if x == nil {
+		return ""
+	}
+	return x.Id
+}
+func (x *GetInvoiceByIDResponse) GetBookingId() string {
+	if x == nil {
+		return ""
+	}
+	return x.BookingId
+}
+func (x *GetInvoiceByIDResponse) GetStatus() string {
+	if x == nil {
+		return ""
+	}
+	return x.Status
+}
+func (x *GetInvoiceByIDResponse) GetAmountTotal() float64 {
+	if x == nil {
+		return 0
+	}
+	return x.AmountTotal
+}
+func (x *GetInvoiceByIDResponse) GetPaidAmount() float64 {
+	if x == nil {
+		return 0
+	}
+	return x.PaidAmount
+}
+func (x *GetInvoiceByIDResponse) GetCurrency() string {
+	if x == nil {
+		return ""
+	}
+	return x.Currency
+}
+func (x *GetInvoiceByIDResponse) GetCreatedAt() string {
+	if x == nil {
+		return ""
+	}
+	return x.CreatedAt
+}
+func (x *GetInvoiceByIDResponse) GetUpdatedAt() string {
+	if x == nil {
+		return ""
+	}
+	return x.UpdatedAt
+}

@@ -27,6 +27,9 @@ type IService interface {
 	// Booking draft (S1-E-03 / BL-BOOK-001..006)
 	CreateDraftBooking(ctx context.Context, params *CreateDraftBookingParams) (*DraftBookingResult, error)
 
+	// SubmitBooking transitions draft → pending_payment (S2 / BL-BOOK-005).
+	SubmitBooking(ctx context.Context, params *SubmitBookingParams) (*SubmitBookingResult, error)
+
 	// FanOutBookingPaid triggers downstream services after a booking is
 	// confirmed as paid_in_full (S3-E-02 / S3-E-03).
 	// Calls logistics-svc.OnBookingPaid and finance-svc.OnPaymentReceived

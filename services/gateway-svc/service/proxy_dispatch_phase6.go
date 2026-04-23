@@ -7,6 +7,11 @@
 //   - IAM admin (Wave 1C): user management, role management, permissions,
 //     role assignment
 //   - Jamaah manifest (Wave 1A): GetDepartureManifest
+//   - Finance disbursement + aging (BL-FIN-010/011)
+//   - Logistics procurement + GRN + kit (BL-LOG-010..012)
+//   - Ops field scanning + bus boarding (BL-OPS-010/011)
+//   - IAM security features (BL-IAM-007/011/014/016)
+//   - Visa pipeline (BL-VISA-001..003)
 //
 // Each method is a thin delegation to the appropriate adapter.
 // No business logic lives here; all logic lives in the backend services.
@@ -19,6 +24,9 @@ import (
 	"gateway-svc/adapter/finance_grpc_adapter"
 	"gateway-svc/adapter/iam_grpc_adapter"
 	"gateway-svc/adapter/jamaah_grpc_adapter"
+	"gateway-svc/adapter/logistics_grpc_adapter"
+	"gateway-svc/adapter/ops_grpc_adapter"
+	"gateway-svc/adapter/visa_grpc_adapter"
 )
 
 // ---------------------------------------------------------------------------
@@ -191,4 +199,112 @@ func (s *Service) RevokeRoleFromUser(ctx context.Context, userID, roleID string)
 
 func (s *Service) GetDepartureManifest(ctx context.Context, departureID string) (*jamaah_grpc_adapter.GetDepartureManifestResult, error) {
 	return s.adapters.jamaahGrpc.GetDepartureManifest(ctx, departureID)
+}
+
+// ---------------------------------------------------------------------------
+// Finance — disbursement + aging (BL-FIN-010/011)
+// ---------------------------------------------------------------------------
+
+func (s *Service) CreateDisbursementBatch(ctx context.Context, params *finance_grpc_adapter.CreateDisbursementBatchParams) (*finance_grpc_adapter.CreateDisbursementBatchResult, error) {
+	return s.adapters.financeGrpc.CreateDisbursementBatch(ctx, params)
+}
+
+func (s *Service) ApproveDisbursement(ctx context.Context, params *finance_grpc_adapter.ApproveDisbursementParams) (*finance_grpc_adapter.ApproveDisbursementResult, error) {
+	return s.adapters.financeGrpc.ApproveDisbursement(ctx, params)
+}
+
+func (s *Service) GetARAPAging(ctx context.Context, params *finance_grpc_adapter.GetARAPAgingParams) (*finance_grpc_adapter.GetARAPAgingResult, error) {
+	return s.adapters.financeGrpc.GetARAPAging(ctx, params)
+}
+
+// ---------------------------------------------------------------------------
+// Logistics — procurement + GRN + kit (BL-LOG-010..012)
+// ---------------------------------------------------------------------------
+
+func (s *Service) CreatePurchaseRequest(ctx context.Context, params *logistics_grpc_adapter.CreatePurchaseRequestParams) (*logistics_grpc_adapter.CreatePurchaseRequestResult, error) {
+	return s.adapters.logisticsGrpc.CreatePurchaseRequest(ctx, params)
+}
+
+func (s *Service) ApprovePurchaseRequest(ctx context.Context, params *logistics_grpc_adapter.ApprovePurchaseRequestParams) (*logistics_grpc_adapter.ApprovePurchaseRequestResult, error) {
+	return s.adapters.logisticsGrpc.ApprovePurchaseRequest(ctx, params)
+}
+
+func (s *Service) RecordGRNWithQC(ctx context.Context, params *logistics_grpc_adapter.RecordGRNWithQCParams) (*logistics_grpc_adapter.RecordGRNWithQCResult, error) {
+	return s.adapters.logisticsGrpc.RecordGRNWithQC(ctx, params)
+}
+
+func (s *Service) CreateKitAssembly(ctx context.Context, params *logistics_grpc_adapter.CreateKitAssemblyParams) (*logistics_grpc_adapter.CreateKitAssemblyResult, error) {
+	return s.adapters.logisticsGrpc.CreateKitAssembly(ctx, params)
+}
+
+// ---------------------------------------------------------------------------
+// Ops — field scanning + bus boarding (BL-OPS-010/011)
+// ---------------------------------------------------------------------------
+
+func (s *Service) RecordScan(ctx context.Context, params *ops_grpc_adapter.RecordScanParams) (*ops_grpc_adapter.RecordScanResult, error) {
+	return s.adapters.opsGrpc.RecordScan(ctx, params)
+}
+
+func (s *Service) RecordBusBoarding(ctx context.Context, params *ops_grpc_adapter.RecordBusBoardingParams) (*ops_grpc_adapter.RecordBusBoardingResult, error) {
+	return s.adapters.opsGrpc.RecordBusBoarding(ctx, params)
+}
+
+func (s *Service) GetBoardingRoster(ctx context.Context, departureID, busNumber string) (*ops_grpc_adapter.GetBoardingRosterResult, error) {
+	return s.adapters.opsGrpc.GetBoardingRoster(ctx, departureID, busNumber)
+}
+
+// ---------------------------------------------------------------------------
+// IAM — Phase 6 security features (BL-IAM-007/011/014/016)
+// ---------------------------------------------------------------------------
+
+func (s *Service) SetDataScope(ctx context.Context, params *iam_grpc_adapter.SetDataScopeParams) (*iam_grpc_adapter.SetDataScopeResult, error) {
+	return s.adapters.iamGrpc.SetDataScope(ctx, params)
+}
+
+func (s *Service) CreateAPIKey(ctx context.Context, params *iam_grpc_adapter.CreateAPIKeyParams) (*iam_grpc_adapter.CreateAPIKeyResult, error) {
+	return s.adapters.iamGrpc.CreateAPIKey(ctx, params)
+}
+
+func (s *Service) RevokeAPIKey(ctx context.Context, keyID string) (*iam_grpc_adapter.RevokeAPIKeyResult, error) {
+	return s.adapters.iamGrpc.RevokeAPIKey(ctx, keyID)
+}
+
+func (s *Service) GetGlobalConfig(ctx context.Context, keys []string) (*iam_grpc_adapter.GetGlobalConfigResult, error) {
+	return s.adapters.iamGrpc.GetGlobalConfig(ctx, keys)
+}
+
+func (s *Service) SetGlobalConfig(ctx context.Context, params *iam_grpc_adapter.SetGlobalConfigParams) (*iam_grpc_adapter.SetGlobalConfigResult, error) {
+	return s.adapters.iamGrpc.SetGlobalConfig(ctx, params)
+}
+
+func (s *Service) SearchActivityLog(ctx context.Context, params *iam_grpc_adapter.SearchActivityLogParams) (*iam_grpc_adapter.SearchActivityLogResult, error) {
+	return s.adapters.iamGrpc.SearchActivityLog(ctx, params)
+}
+
+// ---------------------------------------------------------------------------
+// Visa — pipeline (BL-VISA-001..003)
+// ---------------------------------------------------------------------------
+
+func (s *Service) TransitionVisaStatus(ctx context.Context, params *visa_grpc_adapter.TransitionStatusParams) (*visa_grpc_adapter.TransitionStatusResult, error) {
+	return s.adapters.visaGrpc.TransitionStatus(ctx, params)
+}
+
+func (s *Service) BulkSubmitVisa(ctx context.Context, params *visa_grpc_adapter.BulkSubmitParams) (*visa_grpc_adapter.BulkSubmitResult, error) {
+	return s.adapters.visaGrpc.BulkSubmit(ctx, params)
+}
+
+func (s *Service) GetVisaApplications(ctx context.Context, departureID, statusFilter string) (*visa_grpc_adapter.GetApplicationsResult, error) {
+	return s.adapters.visaGrpc.GetApplications(ctx, departureID, statusFilter)
+}
+
+// ---------------------------------------------------------------------------
+// Vendor readiness (BL-OPS-020)
+// ---------------------------------------------------------------------------
+
+func (s *Service) UpdateVendorReadiness(ctx context.Context, params *catalog_grpc_adapter.UpdateVendorReadinessParams) (*catalog_grpc_adapter.ReadinessResult, error) {
+	return s.adapters.catalogGrpc.UpdateVendorReadiness(ctx, params)
+}
+
+func (s *Service) GetDepartureReadiness(ctx context.Context, params *catalog_grpc_adapter.GetDepartureReadinessParams) (*catalog_grpc_adapter.ReadinessResult, error) {
+	return s.adapters.catalogGrpc.GetDepartureReadiness(ctx, params)
 }

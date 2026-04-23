@@ -12,6 +12,15 @@ type Querier interface {
 	GetDbTxDiagnostic(ctx context.Context, id int64) (Diagnostic, error)
 	InsertDbTxDiagnostic(ctx context.Context, arg InsertDbTxDiagnosticParams) (Diagnostic, error)
 	ReadyCheck(ctx context.Context) (int32, error)
+
+	// Visa pipeline (BL-VISA-001..003)
+	GetVisaApplication(ctx context.Context, id string) (VisaApplication, error)
+	UpdateVisaStatus(ctx context.Context, newStatus, id string) error
+	UpdateVisaStatusAndProvider(ctx context.Context, newStatus, providerID, id string) error
+	InsertStatusHistory(ctx context.Context, arg InsertStatusHistoryParams) error
+	GetVisaApplicationsForDeparture(ctx context.Context, arg GetVisaApplicationsForDepartureParams) ([]VisaApplication, error)
+	GetStatusHistoryForApplication(ctx context.Context, applicationID string) ([]StatusHistoryEntry, error)
+	GetReadyVisaForJamaahDeparture(ctx context.Context, jamaahID, departureID string) (VisaIDStatus, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"crm-svc/store/postgres_store/sqlc"
+	"crm-svc/util/apperrors"
 	"crm-svc/util/logging"
 
 	"github.com/jackc/pgx/v5"
@@ -130,24 +131,29 @@ type OnBookingPaidInFullResult struct {
 // ---------------------------------------------------------------------------
 
 // validTransition returns true if moving from `from` to `to` is allowed.
-// Per S4 contract: 'converted' and 'lost' are both terminal — no further transitions.
+// Per S4 contract: transitions must follow new → contacted → qualified → converted.
+// 'converted' and 'lost' are terminal — no further transitions allowed.
+// 'lost' is always reachable from any non-terminal state.
 func validTransition(from, to string) bool {
 	if from == to {
 		return true // idempotent
 	}
-	// Both terminal states reject any outbound transition.
+	// Terminal states: no outbound transitions.
 	if from == "converted" || from == "lost" {
-		return false // terminal
+		return false
 	}
-	// Only valid target statuses are accepted.
-	valid := map[string]bool{
-		"new":       true,
-		"contacted": true,
-		"qualified": true,
-		"converted": true,
-		"lost":      true,
+	// Define explicit allowed forward transitions (sequential + lost).
+	allowed := map[string][]string{
+		"new":       {"contacted", "lost"},
+		"contacted": {"qualified", "lost"},
+		"qualified": {"converted", "lost"},
 	}
-	return valid[to]
+	for _, validTo := range allowed[from] {
+		if to == validTo {
+			return true
+		}
+	}
+	return false
 }
 
 // ---------------------------------------------------------------------------
@@ -167,7 +173,7 @@ func (svc *Service) CreateLead(ctx context.Context, params *CreateLeadParams) (*
 
 	// Validate phone (minimal: non-empty, ≥8 chars)
 	if len(params.Phone) < 8 {
-		err := fmt.Errorf("%s: phone must be at least 8 characters", op)
+		err := errors.Join(apperrors.ErrValidation, fmt.Errorf("phone must be at least 8 characters"))
 		span.RecordError(err)
 		span.SetStatus(otelCodes.Error, err.Error())
 		return nil, err

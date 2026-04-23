@@ -56,6 +56,10 @@ type IService interface {
 
 	SetDeparturePricing(ctx context.Context, params *SetDeparturePricingParams) ([]*PricingResult, error)
 	GetDeparturePricing(ctx context.Context, params *GetDeparturePricingParams) ([]*PricingResult, error)
+
+	// Vendor readiness (BL-OPS-020)
+	UpdateVendorReadiness(ctx context.Context, params *UpdateVendorReadinessParams) (*VendorReadiness, error)
+	GetDepartureReadiness(ctx context.Context, params *GetDepartureReadinessParams) (*VendorReadiness, error)
 }
 
 type Service struct {

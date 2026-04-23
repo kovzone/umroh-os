@@ -259,8 +259,8 @@ Official F10 CSV module splits live in **6.H** (`BL-CRM-017`–`BL-CRM-066`). Ro
 
 | Phase | Feature ref | Summary                        | Priority | Exec seq | Slice | Task Code | Backlog ID | Owner | Status | Blocked by gate           | Acceptance (short)                        |
 | ----- | ----------- | ------------------------------ | -------- | -------- | ----- | --------- | ---------- | ----- | ------ | ------------------------- | ----------------------------------------- |
-| 6     | F9-W5       | AP disbursement ladder minimum | MH-V1    | 620      | S3    | S3-E-07   | BL-FIN-010 | E     | todo   | BL-JNT-009..011; BL-EGV-003 | Batch AP + approval + audit               |
-| 6     | F9-W17      | Basic AR/AP aging alerts       | MH-V1    | 621      | S3    | S3-E-07   | BL-FIN-011 | E     | todo   | BL-JNT-009..011; BL-EGV-003 | Aging buckets visible + basic alert rules |
+| 6     | F9-W5       | AP disbursement ladder minimum | MH-V1    | 620      | S3    | S3-E-07   | BL-FIN-010 | E     | done   | BL-JNT-009..011; BL-EGV-003 | Batch AP + approval + audit               |
+| 6     | F9-W17      | Basic AR/AP aging alerts       | MH-V1    | 621      | S3    | S3-E-07   | BL-FIN-011 | E     | done   | BL-JNT-009..011; BL-EGV-003 | Aging buckets visible + basic alert rules |
 
 
 ### 6.C — Warehouse / procurement depth (F8)
@@ -268,9 +268,9 @@ Official F10 CSV module splits live in **6.H** (`BL-CRM-017`–`BL-CRM-066`). Ro
 
 | Phase | Feature ref | Summary                 | Priority | Exec seq | Slice | Task Code | Backlog ID | Owner | Status | Blocked by gate           | Acceptance (short)                        |
 | ----- | ----------- | ----------------------- | -------- | -------- | ----- | --------- | ---------- | ----- | ------ | ------------------------- | ----------------------------------------- |
-| 6     | F8-W1       | PR + budget gate        | MH-V1    | 630      | S3    | S3-E-05   | BL-LOG-010 | E     | todo   | BL-JNT-009..011; BL-EGV-003 | Over-budget PR rejected                   |
-| 6     | F8-W4       | GRN + QC + auto-AP sync | MH-V1    | 631      | S3    | S3-E-05   | BL-LOG-011 | E     | todo   | BL-JNT-009..011; BL-EGV-003 | GRN rolls back when finance posting fails |
-| 6     | F8-W7       | Kit assembly atomic     | MH-V1    | 632      | S3    | S3-E-05   | BL-LOG-012 | E     | todo   | BL-JNT-009..011; BL-EGV-003 | Assembly all-or-nothing                   |
+| 6     | F8-W1       | PR + budget gate        | MH-V1    | 630      | S3    | S3-E-05   | BL-LOG-010 | E     | done   | BL-JNT-009..011; BL-EGV-003 | Over-budget PR rejected                   |
+| 6     | F8-W4       | GRN + QC + auto-AP sync | MH-V1    | 631      | S3    | S3-E-05   | BL-LOG-011 | E     | done   | BL-JNT-009..011; BL-EGV-003 | GRN rolls back when finance posting fails |
+| 6     | F8-W7       | Kit assembly atomic     | MH-V1    | 632      | S3    | S3-E-05   | BL-LOG-012 | E     | done   | BL-JNT-009..011; BL-EGV-003 | Assembly all-or-nothing                   |
 
 
 ### 6.D — Field operations depth (F7)
@@ -278,8 +278,8 @@ Official F10 CSV module splits live in **6.H** (`BL-CRM-017`–`BL-CRM-066`). Ro
 
 | Phase | Feature ref | Summary                       | Priority | Exec seq | Slice | Task Code | Backlog ID | Owner | Status | Blocked by gate           | Acceptance (short)         |
 | ----- | ----------- | ----------------------------- | -------- | -------- | ----- | --------- | ---------- | ----- | ------ | ------------------------- | -------------------------- |
-| 6     | F7-W7       | ALL system scan + idempotency | MH-V1    | 640      | S3    | S3-E-04   | BL-OPS-010 | E     | todo   | BL-JNT-009..011; BL-EGV-003 | Event scan idempotent      |
-| 6     | F7-W10      | Bus boarding scan + roster    | MH-V1    | 641      | S3    | S3-E-04   | BL-OPS-011 | E     | todo   | BL-JNT-009..011; BL-EGV-003 | Boarding roster consistent |
+| 6     | F7-W7       | ALL system scan + idempotency | MH-V1    | 640      | S3    | S3-E-04   | BL-OPS-010 | E     | done   | BL-JNT-009..011; BL-EGV-003 | Event scan idempotent      |
+| 6     | F7-W10      | Bus boarding scan + roster    | MH-V1    | 641      | S3    | S3-E-04   | BL-OPS-011 | E     | done   | BL-JNT-009..011; BL-EGV-003 | Boarding roster consistent |
 
 
 ### 6.E — Visa pipeline Must (#97) (F6)
@@ -287,9 +287,9 @@ Official F10 CSV module splits live in **6.H** (`BL-CRM-017`–`BL-CRM-066`). Ro
 
 | Phase | Feature ref | Summary                                          | Priority | Exec seq | Slice | Task Code | Backlog ID  | Owner | Status | Blocked by gate           | Acceptance (short)                      |
 | ----- | ----------- | ------------------------------------------------ | -------- | -------- | ----- | --------- | ----------- | ----- | ------ | ------------------------- | --------------------------------------- |
-| 6     | F6-W1       | Readiness auto-transition `WAITING_DOCS → READY` | MH-V1    | 650      | S3    | S3-E-06   | BL-VISA-001 | E     | todo   | BL-JNT-009..011; BL-EGV-003 | Status transition recorded + idempotent |
-| 6     | F6-W2       | Bulk submit visa all-or-nothing                  | MH-V1    | 651      | S3    | S3-E-06   | BL-VISA-002 | E     | todo   | BL-VISA-001               | Bulk submit atomic per spec             |
-| 6     | F6-W3       | Poll status provider + history                   | MH-V1    | 652      | S3    | S3-E-06   | BL-VISA-003 | E     | todo   | BL-VISA-002               | Poll history persisted                  |
+| 6     | F6-W1       | Readiness auto-transition `WAITING_DOCS → READY` | MH-V1    | 650      | S3    | S3-E-06   | BL-VISA-001 | E     | done   | BL-JNT-009..011; BL-EGV-003 | Status transition recorded + idempotent |
+| 6     | F6-W2       | Bulk submit visa all-or-nothing                  | MH-V1    | 651      | S3    | S3-E-06   | BL-VISA-002 | E     | done   | BL-VISA-001               | Bulk submit atomic per spec             |
+| 6     | F6-W3       | Poll status provider + history                   | MH-V1    | 652      | S3    | S3-E-06   | BL-VISA-003 | E     | done   | BL-VISA-002               | Poll history persisted                  |
 
 
 ### 6.G — Master product CSV modules (#71–#86) (F2)
@@ -302,7 +302,7 @@ Per-row priority defaults from `docs/Modul UmrohOS - MosCoW.csv` (`No` 71–86).
 | 6     | F2-CSV-71   | Hotel master data (hotel database)             | MH-V1    | 653      | S1    | S1-E-05   | BL-CAT-005  | E     | done   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | CRUD + hotel reference usable in product composition            |
 | 6     | F2-CSV-72   | Guide / muthawwif master data (guide database) | MH-V1    | 654      | S1    | S1-E-05   | BL-CAT-006  | E     | done   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | CRUD + consistent assignment to product/departure               |
 | 6     | F2-CSV-73   | Transport & airline masters                    | MH-V1    | 655      | S1    | S1-E-05   | BL-CAT-007  | E     | done   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Carrier/route/mode references available for product composition |
-| 6     | F2-CSV-74   | Trip product variants (template + constraints) | MH-V1    | 656      | S1    | S1-E-05   | BL-CAT-008  | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Variants do not break public read model + publish validation    |
+| 6     | F2-CSV-74   | Trip product variants (template + constraints) | MH-V1    | 656      | S1    | S1-E-05   | BL-CAT-008  | E     | done   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Variants do not break public read model + publish validation    |
 | 6     | F2-CSV-75   | Financial & retail products (non-core addons)  | SH       | 657      | S1    | S1-E-05   | BL-CAT-009  | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Addons separate from core package + clear pricing rules         |
 | 6     | F2-CSV-76   | Smart bulk import (spreadsheet + validation)   | SH       | 658      | S1    | S1-E-05   | BL-CAT-010  | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Partial import failure safe + per-row error report              |
 | 6     | F2-CSV-77   | Bulk update (guarded bulk edit)                | SH       | 659      | S1    | S1-E-05   | BL-CAT-011  | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Bulk update preview + audit + rollback policy                   |
@@ -314,7 +314,7 @@ Per-row priority defaults from `docs/Modul UmrohOS - MosCoW.csv` (`No` 71–86).
 | 6     | F2-CSV-83   | Agent auto-update (catalog version + diff)     | MH-V1    | 665      | S4    | S4-E-04   | BL-CAT-013  | E     | todo   | BL-JNT-012..013                   | Agent has version snapshot + safe upgrade path                  |
 | 6     | F2-CSV-84   | Cross-channel seat tracking (agent/B2C)        | MH-V1    | 666      | S1    | S1-E-05   | BL-BOOK-007 | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Seat state prevents double-sell across channels                 |
 | 6     | F2-CSV-85   | Dual dashboard view (role/context switch)      | SH       | 667      | S5    | S5-L-02   | BL-DASH-005 | L     | todo   | BL-JNT-014..015                   | Two display modes consistent with permissions + filters         |
-| 6     | F2-CSV-86   | Vendor readiness checklist per departure       | MH-V1    | 668      | S3    | S3-E-04   | BL-OPS-020  | E     | todo   | BL-JNT-009..011; BL-EGV-003          | Checklist item + status + minimum attachment evidence           |
+| 6     | F2-CSV-86   | Vendor readiness checklist per departure       | MH-V1    | 668      | S3    | S3-E-04   | BL-OPS-020  | E     | done   | BL-JNT-009..011; BL-EGV-003          | Checklist item + status + minimum attachment evidence           |
 
 
 ### 6.F — Dashboard Must modules (#177–#178, #187–#188) (F11)
@@ -535,16 +535,16 @@ Priority source: `docs/Modul UmrohOS - MosCoW.csv`. Domain: `docs/06-features/01
 | ----- | ----------- | --------------------------------- | -------- | -------- | ----- | --------- | ---------- | ----- | ------ | ---------------------------------- | -------------------------------------- |
 | 6     | F1-CSV-151  | Job role creation                 | MH-V1    | 820      | S1    | S1-E-06   | BL-IAM-005 | E     | done   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Job role CRUD + IAM mapping            |
 | 6     | F1-CSV-152  | Specific permission mapping       | MH-V1    | 821      | S1    | S1-E-06   | BL-IAM-006 | E     | done   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Granular permissions per route/action  |
-| 6     | F1-CSV-153  | Data visibility hierarchy         | MH-V1    | 822      | S1    | S1-E-06   | BL-IAM-007 | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Data scope hierarchy (global/branch)   |
+| 6     | F1-CSV-153  | Data visibility hierarchy         | MH-V1    | 822      | S1    | S1-E-06   | BL-IAM-007 | E     | done   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Data scope hierarchy (global/branch)   |
 | 6     | F1-CSV-154  | Staff account registration        | MH-V1    | 823      | S1    | S1-E-06   | BL-IAM-008 | E     | done   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Staff account onboarding + invite      |
 | 6     | F1-CSV-155  | User status control               | MH-V1    | 824      | S1    | S1-E-06   | BL-IAM-009 | E     | done   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Suspend/active user + audited reason   |
 | 6     | F1-CSV-156  | Account & password security       | MH-V1    | 825      | S1    | S1-E-06   | BL-IAM-010 | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Password policy + optional MFA         |
-| 6     | F1-CSV-157  | Centralized activity log          | MH-V1    | 826      | S1    | S1-E-06   | BL-IAM-011 | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Centralized searchable activity log    |
+| 6     | F1-CSV-157  | Centralized activity log          | MH-V1    | 826      | S1    | S1-E-06   | BL-IAM-011 | E     | done   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Centralized searchable activity log    |
 | 6     | F1-CSV-158  | Anomaly alerts                    | SH       | 827      | S1    | S1-E-06   | BL-IAM-012 | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Login/action anomaly alerts (SH)       |
 | 6     | F1-CSV-159  | User session history              | SH       | 828      | S1    | S1-E-06   | BL-IAM-013 | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Session history + revoke               |
-| 6     | F1-CSV-160  | API integration configuration     | MH-V1    | 829      | S1    | S1-E-06   | BL-IAM-014 | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | API key configuration + rotation       |
+| 6     | F1-CSV-160  | API integration configuration     | MH-V1    | 829      | S1    | S1-E-06   | BL-IAM-014 | E     | done   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | API key configuration + rotation       |
 | 6     | F1-CSV-161  | Communication template management | SH       | 830      | S1    | S1-E-06   | BL-IAM-015 | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Centralized WA/email templates         |
-| 6     | F1-CSV-162  | Global variable configuration     | MH-V1    | 831      | S1    | S1-E-06   | BL-IAM-016 | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Global config key-value + audit        |
+| 6     | F1-CSV-162  | Global variable configuration     | MH-V1    | 831      | S1    | S1-E-06   | BL-IAM-016 | E     | done   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | Global config key-value + audit        |
 | 6     | F1-CSV-163  | Database backup                   | MH-V1    | 832      | S1    | S1-E-06   | BL-IAM-017 | E     | todo   | BL-JNT-001..004; BL-EGV-001; BL-LGV-001 | DB backup schedule/restore (procedure) |
 
 

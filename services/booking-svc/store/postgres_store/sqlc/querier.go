@@ -23,9 +23,12 @@ type Querier interface {
 	InsertBookingItem(ctx context.Context, arg InsertBookingItemParams) (BookingItemRow, error)
 	InsertBookingAddon(ctx context.Context, arg InsertBookingAddonParams) error
 	GetBookingByID(ctx context.Context, id string) (BookingRow, error)
+	GetBookingByIDAny(ctx context.Context, id string) (BookingRow, error)
 	ListBookingItems(ctx context.Context, bookingID string) ([]BookingItemRow, error)
 	ListBookingAddons(ctx context.Context, bookingID string) ([]BookingAddonRow, error)
 	GetBookingByIdempotencyKey(ctx context.Context, arg GetBookingByIdempotencyKeyParams) (BookingRow, error)
+	// Booking status transition (S2 / BL-BOOK-005)
+	UpdateBookingStatus(ctx context.Context, arg UpdateBookingStatusParams) error
 }
 
 var _ Querier = (*Queries)(nil)

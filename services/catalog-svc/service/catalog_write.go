@@ -142,6 +142,76 @@ type ReleaseSeatsResult struct {
 }
 
 // ---------------------------------------------------------------------------
+// BL-CAT-008: Package variant kind helpers
+// ---------------------------------------------------------------------------
+
+// travelKinds are the package kinds that require transport + accommodation.
+// Financial and retail kinds are product-only and do not carry itinerary data.
+var travelKinds = map[string]bool{
+	"umrah_reguler": true,
+	"umrah_plus":    true,
+	"hajj_furoda":   true,
+	"hajj_khusus":   true,
+	"badal":         true,
+}
+
+// isTravelKind reports whether kind is a travel (itinerary-bearing) package.
+func isTravelKind(kind string) bool { return travelKinds[kind] }
+
+// validKinds is the full set of accepted package kinds.
+var validKinds = map[string]bool{
+	"umrah_reguler": true,
+	"umrah_plus":    true,
+	"hajj_furoda":   true,
+	"hajj_khusus":   true,
+	"badal":         true,
+	"financial":     true,
+	"retail":        true,
+}
+
+// validateKindOnCreate enforces BL-CAT-008 constraints at creation time.
+//
+// Rules:
+//   - kind must be a valid CatalogPackageKind.
+//   - Travel-kind packages being published (status = "active") must have
+//     airline_id set — a departure cannot be created without a carrier.
+//   - Non-travel kinds (financial, retail) never require airline_id.
+func validateKindOnCreate(params *CreatePackageParams) error {
+	if !validKinds[params.Kind] {
+		return errors.Join(apperrors.ErrValidation, fmt.Errorf(
+			"kind %q is not valid; accepted: umrah_reguler, umrah_plus, hajj_furoda, hajj_khusus, badal, financial, retail",
+			params.Kind,
+		))
+	}
+	if isTravelKind(params.Kind) && params.Status == "active" && params.AirlineID == "" {
+		return errors.Join(apperrors.ErrValidation, fmt.Errorf(
+			"travel-kind package cannot be published (status=active) without an airline_id; "+
+				"set airline_id or create as draft first",
+		))
+	}
+	return nil
+}
+
+// validateKindOnPublish enforces BL-CAT-008 constraints when a package is
+// transitioned to active during an update. Called when params.Status == "active".
+func validateKindOnPublish(pkg sqlc.GetActivePackageByIDRow, newAirlineID string) error {
+	if !isTravelKind(string(pkg.Kind)) {
+		return nil
+	}
+	effectiveAirline := newAirlineID
+	if effectiveAirline == "" && pkg.AirlineID.Valid {
+		effectiveAirline = pkg.AirlineID.String
+	}
+	if effectiveAirline == "" {
+		return errors.Join(apperrors.ErrValidation, fmt.Errorf(
+			"travel-kind package cannot be published without an airline_id; "+
+				"set airline_id before activating",
+		))
+	}
+	return nil
+}
+
+// ---------------------------------------------------------------------------
 // CreatePackage
 // ---------------------------------------------------------------------------
 
@@ -167,6 +237,11 @@ func (s *Service) CreatePackage(ctx context.Context, params *CreatePackageParams
 	}
 	if params.Name == "" {
 		return nil, errors.Join(apperrors.ErrValidation, fmt.Errorf("name is required"))
+	}
+
+	// BL-CAT-008: validate kind constraints (variant type + publish gate).
+	if err := validateKindOnCreate(params); err != nil {
+		return nil, err
 	}
 
 	status := sqlc.CatalogPackageStatusDraft
@@ -255,11 +330,19 @@ func (s *Service) UpdatePackage(ctx context.Context, params *UpdatePackageParams
 		return nil, errors.Join(apperrors.ErrValidation, fmt.Errorf("id is required"))
 	}
 
-	if _, err := s.store.GetPackageByIDForStaff(ctx, params.ID); err != nil {
+	existing, err := s.store.GetPackageByIDForStaff(ctx, params.ID)
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, errors.Join(apperrors.ErrNotFound, fmt.Errorf("package %q not found", params.ID))
 		}
 		return nil, fmt.Errorf("get package: %w", postgres_store.WrapDBError(err))
+	}
+
+	// BL-CAT-008: publish-gate — travel-kind packages need airline_id before activating.
+	if params.Status == "active" {
+		if err := validateKindOnPublish(&existing, params.AirlineID); err != nil {
+			return nil, err
+		}
 	}
 
 	arg := sqlc.UpdatePackageFieldsParams{ID: params.ID}

@@ -104,6 +104,13 @@ func runRestServer(port int, api rest_oapi.ServerInterface, iamValidator middlew
 		// CRM lead capture (S4-E-02 / BL-CRM-001) — public.
 		// POST /v1/leads — submitting a lead from a landing page or B2C form.
 		v1.Post("/leads", wrapper.CreateLead)
+
+		// S2 webhook routes (BL-PAY-003/004 / ISSUE-007/008) — public, signature-protected.
+		// payment-svc performs signature verification; no bearer required at gateway.
+		v1.Post("/webhooks/midtrans", wrapper.WebhookMidtrans)
+		v1.Post("/webhooks/xendit", wrapper.WebhookXendit)
+		// Mock trigger — dev only (always registered; payment-svc skips signature for "mock").
+		v1.Post("/webhooks/mock/trigger", wrapper.WebhookMockTrigger)
 	}
 
 	// IAM auth public routes (BL-IAM-018 / S1-E-12) — no bearer required.
@@ -141,6 +148,10 @@ func runRestServer(port int, api rest_oapi.ServerInterface, iamValidator middlew
 		v1Protected.Delete("/packages/:id", wrapper.DeletePackageById)
 		v1Protected.Post("/packages/:id/departures", wrapper.CreateDeparture)
 		v1Protected.Put("/departures/:id", wrapper.UpdateDepartureById)
+
+		// S2 booking submit (BL-BOOK-005 / ISSUE-006) — bearer required.
+		// CS/admin action: transitions draft → pending_payment.
+		v1Protected.Post("/bookings/:id/submit", wrapper.SubmitBooking)
 
 		// CRM lead management (S4-E-02 / BL-CRM-002..003) — bearer required.
 		// GET  /v1/leads     — list leads (cs/admin)
@@ -217,6 +228,11 @@ func runRestServer(port int, api rest_oapi.ServerInterface, iamValidator middlew
 		v1Protected.Post("/documents/:id/ocr", wrapper.TriggerDocumentOCR)
 		v1Protected.Get("/documents/:id/ocr", wrapper.GetDocumentOCRStatus)
 
+		// S2 invoice routes (BL-PAY-001 / ISSUE-005) — bearer required.
+		v1Protected.Post("/invoices", wrapper.CreateInvoice)
+		v1Protected.Get("/invoices/:id", wrapper.GetInvoiceByID)
+		v1Protected.Post("/invoices/:id/virtual-accounts", wrapper.IssueVirtualAccountForInvoice)
+
 		// S2 payment link (BL-PAY-020) — bearer required.
 		// CS closing tool: re-issue VA for an existing booking.
 		v1Protected.Post("/payments/link", wrapper.ReissuePaymentLink)
@@ -224,6 +240,39 @@ func runRestServer(port int, api rest_oapi.ServerInterface, iamValidator middlew
 		// S5 finance correction (BL-FIN-006) — bearer required.
 		// POST /v1/finance/journals/:id/correct — reverse a journal entry.
 		v1Protected.Post("/finance/journals/:id/correct", wrapper.CorrectJournal)
+
+		// Phase 6 IAM security routes (BL-IAM-007/011/014/016) — bearer required.
+		v1Protected.Put("/admin/users/:id/data-scope", wrapper.SetDataScope)
+		v1Protected.Post("/admin/api-keys", wrapper.CreateAPIKey)
+		v1Protected.Delete("/admin/api-keys/:id", wrapper.RevokeAPIKey)
+		v1Protected.Get("/admin/config", wrapper.GetGlobalConfig)
+		v1Protected.Put("/admin/config/:key", wrapper.SetGlobalConfig)
+		v1Protected.Get("/admin/activity-log", wrapper.SearchActivityLog)
+
+		// Phase 6 Finance disbursement + aging (BL-FIN-010/011) — bearer required.
+		v1Protected.Post("/finance/disbursements", wrapper.CreateDisbursementBatch)
+		v1Protected.Put("/finance/disbursements/:id/decision", wrapper.ApproveDisbursement)
+		v1Protected.Get("/finance/aging", wrapper.GetARAPAging)
+
+		// Phase 6 Ops scanning + bus boarding (BL-OPS-010/011) — bearer required.
+		v1Protected.Post("/ops/scans", wrapper.RecordScan)
+		v1Protected.Post("/ops/bus-boarding", wrapper.RecordBusBoarding)
+		v1Protected.Get("/ops/bus-boarding/:departure_id", wrapper.GetBoardingRoster)
+
+		// Phase 6 Logistics procurement + GRN + kit (BL-LOG-010..012) — bearer required.
+		v1Protected.Post("/logistics/purchase-requests", wrapper.CreatePurchaseRequest)
+		v1Protected.Put("/logistics/purchase-requests/:id/decision", wrapper.ApprovePurchaseRequest)
+		v1Protected.Post("/logistics/grn-qc", wrapper.RecordGRNWithQC)
+		v1Protected.Post("/logistics/kit-assembly", wrapper.CreateKitAssembly)
+
+		// Phase 6 Visa pipeline (BL-VISA-001..003) — bearer required.
+		v1Protected.Put("/visas/:id/status", wrapper.TransitionVisaStatus)
+		v1Protected.Post("/visas/bulk-submit", wrapper.BulkSubmitVisa)
+		v1Protected.Get("/visas", wrapper.GetVisaApplications)
+
+		// Vendor readiness (BL-OPS-020) — bearer required.
+		v1Protected.Get("/departures/:id/readiness", wrapper.GetDepartureReadiness)
+		v1Protected.Put("/departures/:id/readiness", wrapper.UpdateDepartureReadiness)
 	}
 
 	go func() {

@@ -78,6 +78,27 @@ type BookingItemResult struct {
 	DocumentWarning string // advisory (BL-BOOK-005), empty = no warning
 }
 
+// SubmitBookingParams is the adapter-side input for SubmitBooking.
+type SubmitBookingParams struct {
+	BookingID string
+}
+
+// SubmitBookingResult is the adapter-side output for SubmitBooking.
+type SubmitBookingResult struct {
+	ID                 string
+	Status             string
+	Channel            string
+	PackageID          string
+	DepartureID        string
+	RoomType           string
+	LeadFullName       string
+	LeadWhatsapp       string
+	LeadDomicile       string
+	ListAmount         int64
+	ListCurrency       string
+	SettlementCurrency string
+}
+
 // CreateDraftBookingResult is the adapter-side output for CreateDraftBooking.
 type CreateDraftBookingResult struct {
 	ID                 string

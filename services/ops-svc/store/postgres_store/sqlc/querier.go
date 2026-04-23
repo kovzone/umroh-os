@@ -23,6 +23,12 @@ type Querier interface {
 	// ID card issuance queries (BL-OPS-003)
 	UpsertIDCardIssuance(ctx context.Context, arg UpsertIDCardIssuanceParams) (IDCardIssuance, error)
 	GetIDCardIssuanceByToken(ctx context.Context, token string) (IDCardIssuance, error)
+
+	// Scan events + bus boarding (BL-OPS-010/011)
+	InsertScanEventIdempotent(ctx context.Context, arg InsertScanEventIdempotentParams) (string, bool, error)
+	GetBoardingByDepartureJamaah(ctx context.Context, departureID, jamaahID string) (BusBoardingRow, error)
+	InsertBusBoarding(ctx context.Context, arg InsertBusBoardingParams) (BusBoardingRow, error)
+	GetBoardingRoster(ctx context.Context, arg GetBoardingRosterParams) ([]BusBoardingRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

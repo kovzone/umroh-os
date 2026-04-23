@@ -70,6 +70,27 @@ type IService interface {
 	ListPermissionsAdmin(ctx context.Context, params *ListPermissionsAdminParams) (*ListPermissionsAdminResult, error)
 	AssignRoleToUserAdmin(ctx context.Context, params *AssignRoleToUserAdminParams) (*AssignRoleToUserAdminResult, error)
 	RevokeRoleFromUserAdmin(ctx context.Context, params *RevokeRoleFromUserAdminParams) (*RevokeRoleFromUserAdminResult, error)
+
+	// IAM Phase 6 admin/security depth (implemented in service/iam_admin.go).
+
+	// SetDataScope upserts the data-visibility scope for a user (BL-IAM-007).
+	SetDataScope(ctx context.Context, params *SetDataScopeParams) (*SetDataScopeResult, error)
+
+	// CreateAPIKey generates a new API key, stores only the hash, and returns
+	// the plaintext key exactly once (BL-IAM-014).
+	CreateAPIKey(ctx context.Context, params *CreateAPIKeyParams) (*CreateAPIKeyResult, error)
+
+	// RevokeAPIKey marks an API key as revoked. Idempotent (BL-IAM-014).
+	RevokeAPIKey(ctx context.Context, params *RevokeAPIKeyParams) (*RevokeAPIKeyResult, error)
+
+	// GetGlobalConfig retrieves one, several, or all global config entries (BL-IAM-016).
+	GetGlobalConfig(ctx context.Context, params *GetGlobalConfigParams) (*GetGlobalConfigResult, error)
+
+	// SetGlobalConfig creates or updates a global config entry (upsert) (BL-IAM-016).
+	SetGlobalConfig(ctx context.Context, params *SetGlobalConfigParams) (*SetGlobalConfigResult, error)
+
+	// SearchActivityLog returns a paginated, filtered view of iam.audit_logs (BL-IAM-011).
+	SearchActivityLog(ctx context.Context, params *SearchActivityLogParams) (*SearchActivityLogResult, error)
 }
 
 type Service struct {

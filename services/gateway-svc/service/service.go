@@ -14,6 +14,7 @@ import (
 	"gateway-svc/adapter/logistics_grpc_adapter"
 	"gateway-svc/adapter/ops_grpc_adapter"
 	"gateway-svc/adapter/payment_grpc_adapter"
+	"gateway-svc/adapter/visa_grpc_adapter"
 
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel/trace"
@@ -88,6 +89,10 @@ type IService interface {
 	// booking_grpc_adapter. Public in S1 (auth arrives with F4).
 	CreateDraftBooking(ctx context.Context, params *booking_grpc_adapter.CreateDraftBookingParams) (*booking_grpc_adapter.CreateDraftBookingResult, error)
 
+	// SubmitBooking transitions draft → pending_payment (S2 / BL-BOOK-005).
+	// Bearer required (CS/admin action).
+	SubmitBooking(ctx context.Context, params *booking_grpc_adapter.SubmitBookingParams) (*booking_grpc_adapter.SubmitBookingResult, error)
+
 	// CRM lead management (S4-E-02 / BL-CRM-001..003) — proxied via crm_grpc_adapter.
 	// POST /v1/leads — public (lead capture from landing pages, B2C forms).
 	CreateLead(ctx context.Context, params *crm_grpc_adapter.CreateLeadParams) (*crm_grpc_adapter.LeadResult, error)
@@ -161,6 +166,49 @@ type IService interface {
 	// S2 payment link (BL-PAY-020) — bearer required.
 	// POST /v1/payments/link — CS re-issues VA for existing booking.
 	ReissuePaymentLink(ctx context.Context, params *payment_grpc_adapter.ReissuePaymentLinkParams) (*payment_grpc_adapter.ReissuePaymentLinkResult, error)
+
+	// S2 invoice routes (BL-PAY-001 / ISSUE-005) — bearer required.
+	// POST /v1/invoices — create invoice + VA for a booking.
+	IssueVirtualAccount(ctx context.Context, params *payment_grpc_adapter.IssueVirtualAccountParams) (*payment_grpc_adapter.IssueVirtualAccountResult, error)
+	// GET /v1/invoices/:id — fetch invoice details by UUID.
+	GetInvoiceByID(ctx context.Context, params *payment_grpc_adapter.GetInvoiceByIDParams) (*payment_grpc_adapter.GetInvoiceByIDResult, error)
+
+	// S2 webhook routes (BL-PAY-003/004 / ISSUE-007/008) — public, signature-protected.
+	// POST /v1/webhooks/:gateway — forward raw webhook payload to payment-svc.
+	ProcessWebhook(ctx context.Context, params *payment_grpc_adapter.ProcessWebhookParams) (*payment_grpc_adapter.ProcessWebhookResult, error)
+
+	// Phase 6 finance disbursement + aging (BL-FIN-010/011) — bearer required.
+	CreateDisbursementBatch(ctx context.Context, params *finance_grpc_adapter.CreateDisbursementBatchParams) (*finance_grpc_adapter.CreateDisbursementBatchResult, error)
+	ApproveDisbursement(ctx context.Context, params *finance_grpc_adapter.ApproveDisbursementParams) (*finance_grpc_adapter.ApproveDisbursementResult, error)
+	GetARAPAging(ctx context.Context, params *finance_grpc_adapter.GetARAPAgingParams) (*finance_grpc_adapter.GetARAPAgingResult, error)
+
+	// Phase 6 logistics procurement + GRN + kit (BL-LOG-010..012) — bearer required.
+	CreatePurchaseRequest(ctx context.Context, params *logistics_grpc_adapter.CreatePurchaseRequestParams) (*logistics_grpc_adapter.CreatePurchaseRequestResult, error)
+	ApprovePurchaseRequest(ctx context.Context, params *logistics_grpc_adapter.ApprovePurchaseRequestParams) (*logistics_grpc_adapter.ApprovePurchaseRequestResult, error)
+	RecordGRNWithQC(ctx context.Context, params *logistics_grpc_adapter.RecordGRNWithQCParams) (*logistics_grpc_adapter.RecordGRNWithQCResult, error)
+	CreateKitAssembly(ctx context.Context, params *logistics_grpc_adapter.CreateKitAssemblyParams) (*logistics_grpc_adapter.CreateKitAssemblyResult, error)
+
+	// Phase 6 ops field scanning + bus boarding (BL-OPS-010/011) — bearer required.
+	RecordScan(ctx context.Context, params *ops_grpc_adapter.RecordScanParams) (*ops_grpc_adapter.RecordScanResult, error)
+	RecordBusBoarding(ctx context.Context, params *ops_grpc_adapter.RecordBusBoardingParams) (*ops_grpc_adapter.RecordBusBoardingResult, error)
+	GetBoardingRoster(ctx context.Context, departureID, busNumber string) (*ops_grpc_adapter.GetBoardingRosterResult, error)
+
+	// Phase 6 IAM security features (BL-IAM-007/011/014/016) — bearer required.
+	SetDataScope(ctx context.Context, params *iam_grpc_adapter.SetDataScopeParams) (*iam_grpc_adapter.SetDataScopeResult, error)
+	CreateAPIKey(ctx context.Context, params *iam_grpc_adapter.CreateAPIKeyParams) (*iam_grpc_adapter.CreateAPIKeyResult, error)
+	RevokeAPIKey(ctx context.Context, keyID string) (*iam_grpc_adapter.RevokeAPIKeyResult, error)
+	GetGlobalConfig(ctx context.Context, keys []string) (*iam_grpc_adapter.GetGlobalConfigResult, error)
+	SetGlobalConfig(ctx context.Context, params *iam_grpc_adapter.SetGlobalConfigParams) (*iam_grpc_adapter.SetGlobalConfigResult, error)
+	SearchActivityLog(ctx context.Context, params *iam_grpc_adapter.SearchActivityLogParams) (*iam_grpc_adapter.SearchActivityLogResult, error)
+
+	// Phase 6 visa pipeline (BL-VISA-001..003) — bearer required.
+	TransitionVisaStatus(ctx context.Context, params *visa_grpc_adapter.TransitionStatusParams) (*visa_grpc_adapter.TransitionStatusResult, error)
+	BulkSubmitVisa(ctx context.Context, params *visa_grpc_adapter.BulkSubmitParams) (*visa_grpc_adapter.BulkSubmitResult, error)
+	GetVisaApplications(ctx context.Context, departureID, statusFilter string) (*visa_grpc_adapter.GetApplicationsResult, error)
+
+	// Vendor readiness (BL-OPS-020) — bearer required.
+	UpdateVendorReadiness(ctx context.Context, params *catalog_grpc_adapter.UpdateVendorReadinessParams) (*catalog_grpc_adapter.ReadinessResult, error)
+	GetDepartureReadiness(ctx context.Context, params *catalog_grpc_adapter.GetDepartureReadinessParams) (*catalog_grpc_adapter.ReadinessResult, error)
 }
 
 // Adapters bundles the adapters this service can dispatch through.
@@ -179,6 +227,7 @@ type Adapters struct {
 	opsGrpc       *ops_grpc_adapter.Adapter
 	logisticsGrpc *logistics_grpc_adapter.Adapter
 	paymentGrpc   *payment_grpc_adapter.Adapter
+	visaGrpc      *visa_grpc_adapter.Adapter
 }
 
 type Service struct {
@@ -205,6 +254,7 @@ type NewServiceParams struct {
 	OpsGrpc       *ops_grpc_adapter.Adapter
 	LogisticsGrpc *logistics_grpc_adapter.Adapter
 	PaymentGrpc   *payment_grpc_adapter.Adapter
+	VisaGrpc      *visa_grpc_adapter.Adapter
 }
 
 func NewService(p NewServiceParams) IService {
@@ -224,6 +274,7 @@ func NewService(p NewServiceParams) IService {
 			opsGrpc:       p.OpsGrpc,
 			logisticsGrpc: p.LogisticsGrpc,
 			paymentGrpc:   p.PaymentGrpc,
+			visaGrpc:      p.VisaGrpc,
 		},
 	}
 }

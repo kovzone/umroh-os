@@ -11,7 +11,7 @@ import { createApiClient, ApiClient } from "./api-client";
 // ─── Environment ─────────────────────────────────────────────────────────────
 
 export const UAT_ENV = {
-  gatewayUrl: process.env.GATEWAY_SVC_URL || "http://216.176.238.161:4000",
+  gatewayUrl: process.env.GATEWAY_SVC_URL || "http://216.176.238.161",
   coreWebUrl: process.env.CORE_WEB_URL || "http://216.176.238.161",
   pgUrl:
     process.env.PG_URL ||
@@ -53,7 +53,7 @@ export async function loginAdmin(): Promise<{
   api: ApiClient;
 }> {
   const api = await createApiClient(UAT_ENV.gatewayUrl);
-  const res = await api.post("/v1/sessions", {
+  const res = await api.post("/v1/auth/login", {
     email: UAT_ENV.adminEmail,
     password: UAT_ENV.adminPassword,
   });
@@ -337,7 +337,7 @@ export async function cleanupUatData(): Promise<void> {
     await client.query(
       `DELETE FROM finance.journal_lines WHERE entry_id IN (
         SELECT je.id FROM finance.journal_entries je
-        WHERE je.source_ref IN (
+        WHERE je.source_id::text IN (
           SELECT pi.id::text FROM payment.invoices pi
           JOIN booking.bookings b ON b.id = pi.booking_id
           WHERE b.notes ILIKE '%[UAT]%'
@@ -345,7 +345,7 @@ export async function cleanupUatData(): Promise<void> {
       )`
     );
     await client.query(
-      `DELETE FROM finance.journal_entries WHERE source_ref IN (
+      `DELETE FROM finance.journal_entries WHERE source_id::text IN (
         SELECT pi.id::text FROM payment.invoices pi
         JOIN booking.bookings b ON b.id = pi.booking_id
         WHERE b.notes ILIKE '%[UAT]%'

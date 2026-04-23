@@ -6,6 +6,7 @@ package sqlc
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -84,6 +85,16 @@ type Querier interface {
 	// stay a single index-backed join.
 	//
 	UserHasPermission(ctx context.Context, arg UserHasPermissionParams) (bool, error)
+
+	// IAM Phase 6 admin tables (BL-IAM-007/010/011/014/016)
+	UpsertDataScope(ctx context.Context, arg UpsertDataScopeParams) (IamDataScope, error)
+	InsertAPIKey(ctx context.Context, arg InsertAPIKeyParams) (IamAPIKey, error)
+	GetAPIKeyByID(ctx context.Context, id string) (IamAPIKey, error)
+	RevokeAPIKeyByID(ctx context.Context, id string, revokedAt time.Time) error
+	GetAllGlobalConfig(ctx context.Context) ([]IamGlobalConfig, error)
+	GetGlobalConfigByKeys(ctx context.Context, keys []string) ([]IamGlobalConfig, error)
+	UpsertGlobalConfig(ctx context.Context, arg UpsertGlobalConfigParams) (IamGlobalConfig, error)
+	SearchActivityLog(ctx context.Context, arg SearchActivityLogParams) ([]IamAuditLog, error)
 }
 
 var _ Querier = (*Queries)(nil)
