@@ -3,7 +3,15 @@
   import type { SubmitFunction } from '@sveltejs/kit';
   import type { ActionData, PageData } from './$types';
 
+  interface FormErrors {
+    departure_date?: string;
+    return_date?: string;
+    total_seats?: string;
+    status?: string;
+  }
+
   let { data, form }: { data: PageData; form: ActionData } = $props();
+  const errors = $derived((form?.errors ?? {}) as FormErrors);
 
   let submitting = $state(false);
 
@@ -67,10 +75,10 @@
                 type="date"
                 required
                 value={currentDepartureDate}
-                class:input-error={!!form?.errors?.departure_date}
+                class:input-error={!!errors.departure_date}
               />
-              {#if form?.errors?.departure_date}
-                <span class="error-hint">{form.errors.departure_date}</span>
+              {#if errors.departure_date}
+                <span class="error-hint">{errors.departure_date}</span>
               {/if}
             </label>
 
@@ -82,10 +90,10 @@
                 type="date"
                 required
                 value={currentReturnDate}
-                class:input-error={!!form?.errors?.return_date}
+                class:input-error={!!errors.return_date}
               />
-              {#if form?.errors?.return_date}
-                <span class="error-hint">{form.errors.return_date}</span>
+              {#if errors.return_date}
+                <span class="error-hint">{errors.return_date}</span>
               {/if}
             </label>
           </div>
@@ -102,10 +110,10 @@
                 required
                 placeholder="40"
                 value={currentSeats}
-                class:input-error={!!form?.errors?.total_seats}
+                class:input-error={!!errors.total_seats}
               />
-              {#if form?.errors?.total_seats}
-                <span class="error-hint">{form.errors.total_seats}</span>
+              {#if errors.total_seats}
+                <span class="error-hint">{errors.total_seats}</span>
               {:else if dep}
                 <span class="field-hint">
                   Saat ini: {dep.total_seats} total, {dep.remaining_seats} tersisa
