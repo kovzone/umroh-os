@@ -21,6 +21,10 @@ import (
 //   - FinancePing — BL-IAM-002 authenticated placeholder
 //   - OnPaymentReceived — creates (or returns existing) double-entry journal
 //     for a payment received event (S3-E-03 / BL-FIN-001..003)
+//   - RecognizeRevenue — posts Dr 2001 / Cr 4001 journal when departure departs
+//     or completes (Wave 1B / BL-FIN-006).
+//   - GetPLReport — P&L report for a date range (Wave 1B / BL-FIN-007).
+//   - GetBalanceSheet — balance sheet as of a date (Wave 1B / BL-FIN-008).
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
@@ -41,6 +45,20 @@ type IService interface {
 	// ListJournalEntries returns a cursor-paginated list of journal entries
 	// with their lines, ordered by posted_at DESC (S5-E-01 / BL-FIN-005).
 	ListJournalEntries(ctx context.Context, params *ListJournalEntriesParams) (*ListJournalEntriesResult, error)
+
+	// RecognizeRevenue posts a double-entry journal for revenue recognition
+	// (Dr 2001 Pilgrim Liability / Cr 4001 Revenue).
+	// Idempotent on idempotency_key = "revenue:<departure_id>".
+	// Called when departure status transitions to departed or completed.
+	RecognizeRevenue(ctx context.Context, params *RecognizeRevenueParams) (*RecognizeRevenueResult, error)
+
+	// GetPLReport returns a Profit & Loss report for the given date range.
+	// Aggregates revenue (4xxx) and expense (5xxx) account lines.
+	GetPLReport(ctx context.Context, params *GetPLReportParams) (*PLReport, error)
+
+	// GetBalanceSheet returns a balance sheet as of the given date.
+	// Aggregates asset (1xxx), liability (2xxx), and equity (3xxx) account lines.
+	GetBalanceSheet(ctx context.Context, params *GetBalanceSheetParams) (*BalanceSheet, error)
 }
 
 type Service struct {

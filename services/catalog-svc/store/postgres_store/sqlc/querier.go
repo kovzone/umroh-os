@@ -93,6 +93,43 @@ type Querier interface {
 	GetSeatReservation(ctx context.Context, reservationID string) (SeatReservationRow, error)
 	ReleaseSeatsAtomic(ctx context.Context, arg ReleaseSeatsAtomicParams) (ReleaseSeatsAtomicRow, error)
 	MarkReservationReleased(ctx context.Context, reservationID string) (SeatReservationRow, error)
+
+	// ---- Master data CRUD (Wave-1A) ----
+
+	// Hotel CRUD
+	InsertHotel(ctx context.Context, arg InsertHotelParams) (HotelRow, error)
+	UpdateHotelFields(ctx context.Context, arg UpdateHotelFieldsParams) (HotelRow, error)
+	DeleteHotel(ctx context.Context, id string) error
+	GetHotelByID(ctx context.Context, id string) (HotelRow, error)
+	ListHotels(ctx context.Context, cursor string, limit int32) ([]HotelRow, error)
+	CountHotelPackageRefs(ctx context.Context, hotelID string) (int64, error)
+
+	// Airline CRUD
+	InsertAirline(ctx context.Context, arg InsertAirlineParams) (AirlineRow, error)
+	UpdateAirlineFields(ctx context.Context, arg UpdateAirlineFieldsParams) (AirlineRow, error)
+	DeleteAirline(ctx context.Context, id string) error
+	GetAirlineByIDForStaff(ctx context.Context, id string) (AirlineRow, error)
+	ListAirlines(ctx context.Context, cursor string, limit int32) ([]AirlineRow, error)
+	CountAirlinePackageRefs(ctx context.Context, airlineID string) (int64, error)
+
+	// Muthawwif CRUD
+	InsertMuthawwif(ctx context.Context, arg InsertMuthawwifParams) (MuthawwifRow, error)
+	UpdateMuthawwifFields(ctx context.Context, arg UpdateMuthawwifFieldsParams) (MuthawwifRow, error)
+	DeleteMuthawwif(ctx context.Context, id string) error
+	GetMuthawwifByIDForStaff(ctx context.Context, id string) (MuthawwifRow, error)
+	ListMuthawwif(ctx context.Context, cursor string, limit int32) ([]MuthawwifRow, error)
+	CountMuthawwifPackageRefs(ctx context.Context, muthawwifID string) (int64, error)
+
+	// Addon CRUD
+	InsertAddon(ctx context.Context, arg InsertAddonParams) (AddonRow, error)
+	UpdateAddonFields(ctx context.Context, arg UpdateAddonFieldsParams) (AddonRow, error)
+	DeleteAddon(ctx context.Context, id string) error
+	GetAddonByID(ctx context.Context, id string) (AddonRow, error)
+	ListAddons(ctx context.Context, cursor string, limit int32) ([]AddonRow, error)
+
+	// Departure pricing upsert + get
+	UpsertDeparturePricing(ctx context.Context, arg UpsertDeparturePricingParams) (PricingRow, error)
+	GetDeparturePricingRows(ctx context.Context, departureID string) ([]PricingRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

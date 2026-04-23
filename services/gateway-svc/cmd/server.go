@@ -155,6 +155,48 @@ func runRestServer(port int, api rest_oapi.ServerInterface, iamValidator middlew
 		// GET /v1/finance/journals — paginated journal entries + lines
 		v1Protected.Get("/finance/summary", wrapper.GetFinanceSummary)
 		v1Protected.Get("/finance/journals", wrapper.ListJournals)
+
+		// Finance depth routes (Phase 6 / Wave 1B) — bearer required.
+		v1Protected.Post("/finance/recognize-revenue", wrapper.RecognizeRevenue)
+		v1Protected.Get("/finance/pl", wrapper.GetPLReport)
+		v1Protected.Get("/finance/balance-sheet", wrapper.GetBalanceSheet)
+
+		// Catalog master data (Phase 6 / Wave 1A) — bearer required.
+		v1Protected.Get("/masters/hotels", wrapper.ListHotels)
+		v1Protected.Post("/masters/hotels", wrapper.CreateHotel)
+		v1Protected.Put("/masters/hotels/:id", wrapper.UpdateHotel)
+		v1Protected.Delete("/masters/hotels/:id", wrapper.DeleteHotel)
+		v1Protected.Get("/masters/airlines", wrapper.ListAirlines)
+		v1Protected.Post("/masters/airlines", wrapper.CreateAirline)
+		v1Protected.Put("/masters/airlines/:id", wrapper.UpdateAirline)
+		v1Protected.Delete("/masters/airlines/:id", wrapper.DeleteAirline)
+		v1Protected.Get("/masters/muthawwif", wrapper.ListMuthawwif)
+		v1Protected.Post("/masters/muthawwif", wrapper.CreateMuthawwif)
+		v1Protected.Put("/masters/muthawwif/:id", wrapper.UpdateMuthawwif)
+		v1Protected.Delete("/masters/muthawwif/:id", wrapper.DeleteMuthawwif)
+		v1Protected.Get("/masters/addons", wrapper.ListAddons)
+		v1Protected.Post("/masters/addons", wrapper.CreateAddon)
+		v1Protected.Put("/masters/addons/:id", wrapper.UpdateAddon)
+		v1Protected.Delete("/masters/addons/:id", wrapper.DeleteAddon)
+		v1Protected.Put("/departures/:id/pricing", wrapper.SetDeparturePricing)
+		v1Protected.Get("/departures/:id/pricing", wrapper.GetDeparturePricing)
+
+		// IAM admin routes (Phase 6 / Wave 1C) — bearer required.
+		v1Protected.Get("/admin/users", wrapper.ListUsers)
+		v1Protected.Post("/admin/users", wrapper.CreateUser)
+		v1Protected.Get("/admin/users/:id", wrapper.GetUser)
+		v1Protected.Put("/admin/users/:id", wrapper.UpdateUser)
+		v1Protected.Post("/admin/users/:id/reset-password", wrapper.ResetUserPassword)
+		v1Protected.Get("/admin/roles", wrapper.ListRoles)
+		v1Protected.Post("/admin/roles", wrapper.CreateRole)
+		v1Protected.Put("/admin/roles/:id", wrapper.UpdateRole)
+		v1Protected.Delete("/admin/roles/:id", wrapper.DeleteRole)
+		v1Protected.Get("/admin/permissions", wrapper.ListPermissions)
+		v1Protected.Post("/admin/users/:id/roles/:role_id", wrapper.AssignRoleToUser)
+		v1Protected.Delete("/admin/users/:id/roles/:role_id", wrapper.RevokeRoleFromUser)
+
+		// Jamaah manifest (Phase 6 / Wave 1A) — bearer required.
+		v1Protected.Get("/manifest/:departure_id", wrapper.GetDepartureManifest)
 	}
 
 	go func() {

@@ -54,6 +54,22 @@ type IService interface {
 
 	// Audit producer — BL-IAM-004 (implemented in service/audit.go).
 	RecordAudit(ctx context.Context, params *RecordAuditParams) (*RecordAuditResult, error)
+
+	// User management — S1-E-06 depth (implemented in service/users_admin.go).
+	ListUsers(ctx context.Context, params *ListUsersParams) (*ListUsersResult, error)
+	CreateUserAdmin(ctx context.Context, params *CreateUserAdminParams) (*CreateUserAdminResult, error)
+	UpdateUser(ctx context.Context, params *UpdateUserParams) (*UpdateUserResult, error)
+	GetUser(ctx context.Context, params *GetUserParams) (*GetUserResult, error)
+	ResetUserPassword(ctx context.Context, params *ResetUserPasswordParams) (*ResetUserPasswordResult, error)
+
+	// Role management — S1-E-06 depth (implemented in service/roles_admin.go).
+	ListRolesAdmin(ctx context.Context, params *ListRolesAdminParams) (*ListRolesAdminResult, error)
+	CreateRoleAdmin(ctx context.Context, params *CreateRoleAdminParams) (*CreateRoleAdminResult, error)
+	UpdateRoleAdmin(ctx context.Context, params *UpdateRoleAdminParams) (*UpdateRoleAdminResult, error)
+	DeleteRoleAdmin(ctx context.Context, params *DeleteRoleAdminParams) (*DeleteRoleAdminResult, error)
+	ListPermissionsAdmin(ctx context.Context, params *ListPermissionsAdminParams) (*ListPermissionsAdminResult, error)
+	AssignRoleToUserAdmin(ctx context.Context, params *AssignRoleToUserAdminParams) (*AssignRoleToUserAdminResult, error)
+	RevokeRoleFromUserAdmin(ctx context.Context, params *RevokeRoleFromUserAdminParams) (*RevokeRoleFromUserAdminResult, error)
 }
 
 type Service struct {

@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	JamaahService_UploadDocument_FullMethodName = "/pb.JamaahService/UploadDocument"
-	JamaahService_ReviewDocument_FullMethodName = "/pb.JamaahService/ReviewDocument"
+	JamaahService_UploadDocument_FullMethodName      = "/pb.JamaahService/UploadDocument"
+	JamaahService_ReviewDocument_FullMethodName      = "/pb.JamaahService/ReviewDocument"
+	JamaahService_GetDepartureManifest_FullMethodName = "/pb.JamaahService/GetDepartureManifest"
 )
 
 // DocumentHandler is the server-side interface for the document RPCs.
@@ -32,6 +33,18 @@ func (UnimplementedDocumentHandler) UploadDocument(context.Context, *UploadDocum
 }
 func (UnimplementedDocumentHandler) ReviewDocument(context.Context, *ReviewDocumentRequest) (*ReviewDocumentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReviewDocument not implemented")
+}
+
+// ManifestHandler is the server-side interface for manifest RPCs.
+type ManifestHandler interface {
+	GetDepartureManifest(context.Context, *GetDepartureManifestRequest) (*GetDepartureManifestResponse, error)
+}
+
+// UnimplementedManifestHandler provides safe defaults.
+type UnimplementedManifestHandler struct{}
+
+func (UnimplementedManifestHandler) GetDepartureManifest(context.Context, *GetDepartureManifestRequest) (*GetDepartureManifestResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDepartureManifest not implemented")
 }
 
 func _JamaahService_UploadDocument_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -64,10 +77,26 @@ func _JamaahService_ReviewDocument_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _JamaahService_GetDepartureManifest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDepartureManifestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManifestHandler).GetDepartureManifest(ctx, req.(*GetDepartureManifestRequest))
+	}
+	if interceptor == nil {
+		return handler(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: JamaahService_GetDepartureManifest_FullMethodName}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RegisterJamaahServiceServerWithExtensions registers the combined JamaahService.
 func RegisterJamaahServiceServerWithExtensions(s grpc.ServiceRegistrar, srv interface {
 	JamaahServiceServer
 	DocumentHandler
+	ManifestHandler
 }) {
 	desc := grpc.ServiceDesc{
 		ServiceName: "pb.JamaahService",
@@ -97,6 +126,10 @@ func RegisterJamaahServiceServerWithExtensions(s grpc.ServiceRegistrar, srv inte
 			{
 				MethodName: "ReviewDocument",
 				Handler:    _JamaahService_ReviewDocument_Handler,
+			},
+			{
+				MethodName: "GetDepartureManifest",
+				Handler:    _JamaahService_GetDepartureManifest_Handler,
 			},
 		},
 		Streams:  []grpc.StreamDesc{},

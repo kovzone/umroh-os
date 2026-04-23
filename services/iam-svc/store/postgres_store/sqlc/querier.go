@@ -11,6 +11,17 @@ import (
 )
 
 type Querier interface {
+	// Admin user management (S1-E-06)
+	AdminListUsers(ctx context.Context, arg AdminListUsersParams) ([]AdminListUsersRow, error)
+	AdminGetUser(ctx context.Context, id pgtype.UUID) (AdminGetUserRow, error)
+	AdminUpdateUserNameStatus(ctx context.Context, arg AdminUpdateUserNameStatusParams) (AdminUpdateUserNameStatusRow, error)
+	RevokeAllSessionsForUserAdmin(ctx context.Context, userID pgtype.UUID) error
+
+	// Admin role management (S1-E-06)
+	AdminListRoles(ctx context.Context, arg AdminListRolesParams) ([]AdminRoleRow, error)
+	AdminGetRoleWithPermissions(ctx context.Context, id pgtype.UUID) (AdminRoleRow, error)
+	CountUserRolesForRole(ctx context.Context, roleID pgtype.UUID) (int64, error)
+
 	AssignRoleToUser(ctx context.Context, arg AssignRoleToUserParams) error
 	CreateBranch(ctx context.Context, arg CreateBranchParams) (IamBranch, error)
 	CreatePermission(ctx context.Context, arg CreatePermissionParams) (IamPermission, error)

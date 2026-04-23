@@ -451,6 +451,82 @@ type ServerInterface interface {
 	GetFinanceSummary(c *fiber.Ctx) error
 	// GET /v1/finance/journals — paginated journal entries + lines.
 	ListJournals(c *fiber.Ctx) error
+
+	// Finance depth routes (Phase 6 / Wave 1B) — bearer required.
+	// POST /v1/finance/recognize-revenue
+	RecognizeRevenue(c *fiber.Ctx) error
+	// GET /v1/finance/pl
+	GetPLReport(c *fiber.Ctx) error
+	// GET /v1/finance/balance-sheet
+	GetBalanceSheet(c *fiber.Ctx) error
+
+	// Catalog master data (Phase 6 / Wave 1A) — bearer required.
+	// GET /v1/masters/hotels
+	ListHotels(c *fiber.Ctx) error
+	// POST /v1/masters/hotels
+	CreateHotel(c *fiber.Ctx) error
+	// PUT /v1/masters/hotels/:id
+	UpdateHotel(c *fiber.Ctx, id string) error
+	// DELETE /v1/masters/hotels/:id
+	DeleteHotel(c *fiber.Ctx, id string) error
+	// GET /v1/masters/airlines
+	ListAirlines(c *fiber.Ctx) error
+	// POST /v1/masters/airlines
+	CreateAirline(c *fiber.Ctx) error
+	// PUT /v1/masters/airlines/:id
+	UpdateAirline(c *fiber.Ctx, id string) error
+	// DELETE /v1/masters/airlines/:id
+	DeleteAirline(c *fiber.Ctx, id string) error
+	// GET /v1/masters/muthawwif
+	ListMuthawwif(c *fiber.Ctx) error
+	// POST /v1/masters/muthawwif
+	CreateMuthawwif(c *fiber.Ctx) error
+	// PUT /v1/masters/muthawwif/:id
+	UpdateMuthawwif(c *fiber.Ctx, id string) error
+	// DELETE /v1/masters/muthawwif/:id
+	DeleteMuthawwif(c *fiber.Ctx, id string) error
+	// GET /v1/masters/addons
+	ListAddons(c *fiber.Ctx) error
+	// POST /v1/masters/addons
+	CreateAddon(c *fiber.Ctx) error
+	// PUT /v1/masters/addons/:id
+	UpdateAddon(c *fiber.Ctx, id string) error
+	// DELETE /v1/masters/addons/:id
+	DeleteAddon(c *fiber.Ctx, id string) error
+	// PUT /v1/departures/:id/pricing
+	SetDeparturePricing(c *fiber.Ctx, departureID string) error
+	// GET /v1/departures/:id/pricing
+	GetDeparturePricing(c *fiber.Ctx, departureID string) error
+
+	// IAM admin routes (Phase 6 / Wave 1C) — bearer required.
+	// GET /v1/admin/users
+	ListUsers(c *fiber.Ctx) error
+	// POST /v1/admin/users
+	CreateUser(c *fiber.Ctx) error
+	// PUT /v1/admin/users/:id
+	UpdateUser(c *fiber.Ctx, id string) error
+	// GET /v1/admin/users/:id
+	GetUser(c *fiber.Ctx, id string) error
+	// POST /v1/admin/users/:id/reset-password
+	ResetUserPassword(c *fiber.Ctx, id string) error
+	// GET /v1/admin/roles
+	ListRoles(c *fiber.Ctx) error
+	// POST /v1/admin/roles
+	CreateRole(c *fiber.Ctx) error
+	// PUT /v1/admin/roles/:id
+	UpdateRole(c *fiber.Ctx, id string) error
+	// DELETE /v1/admin/roles/:id
+	DeleteRole(c *fiber.Ctx, id string) error
+	// GET /v1/admin/permissions
+	ListPermissions(c *fiber.Ctx) error
+	// POST /v1/admin/users/:id/roles/:roleID
+	AssignRoleToUser(c *fiber.Ctx, userID string, roleID string) error
+	// DELETE /v1/admin/users/:id/roles/:roleID
+	RevokeRoleFromUser(c *fiber.Ctx, userID string, roleID string) error
+
+	// Jamaah manifest (Phase 6 / Wave 1A) — bearer required.
+	// GET /v1/manifest/:departure_id
+	GetDepartureManifest(c *fiber.Ctx, departureID string) error
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -744,6 +820,278 @@ func (siw *ServerInterfaceWrapper) UpdateLeadByID(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
 	}
 	return siw.Handler.UpdateLeadByID(c, id)
+}
+
+// Phase 6 wrappers — hand-added (oapi-codegen not available in this environment).
+
+// RecognizeRevenue operation middleware — POST /v1/finance/recognize-revenue (bearer)
+func (siw *ServerInterfaceWrapper) RecognizeRevenue(c *fiber.Ctx) error {
+	return siw.Handler.RecognizeRevenue(c)
+}
+
+// GetPLReport operation middleware — GET /v1/finance/pl (bearer)
+func (siw *ServerInterfaceWrapper) GetPLReport(c *fiber.Ctx) error {
+	return siw.Handler.GetPLReport(c)
+}
+
+// GetBalanceSheet operation middleware — GET /v1/finance/balance-sheet (bearer)
+func (siw *ServerInterfaceWrapper) GetBalanceSheet(c *fiber.Ctx) error {
+	return siw.Handler.GetBalanceSheet(c)
+}
+
+// ListHotels operation middleware — GET /v1/masters/hotels (bearer)
+func (siw *ServerInterfaceWrapper) ListHotels(c *fiber.Ctx) error {
+	return siw.Handler.ListHotels(c)
+}
+
+// CreateHotel operation middleware — POST /v1/masters/hotels (bearer)
+func (siw *ServerInterfaceWrapper) CreateHotel(c *fiber.Ctx) error {
+	return siw.Handler.CreateHotel(c)
+}
+
+// UpdateHotel operation middleware — PUT /v1/masters/hotels/:id (bearer)
+func (siw *ServerInterfaceWrapper) UpdateHotel(c *fiber.Ctx) error {
+	var id string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.UpdateHotel(c, id)
+}
+
+// DeleteHotel operation middleware — DELETE /v1/masters/hotels/:id (bearer)
+func (siw *ServerInterfaceWrapper) DeleteHotel(c *fiber.Ctx) error {
+	var id string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.DeleteHotel(c, id)
+}
+
+// ListAirlines operation middleware — GET /v1/masters/airlines (bearer)
+func (siw *ServerInterfaceWrapper) ListAirlines(c *fiber.Ctx) error {
+	return siw.Handler.ListAirlines(c)
+}
+
+// CreateAirline operation middleware — POST /v1/masters/airlines (bearer)
+func (siw *ServerInterfaceWrapper) CreateAirline(c *fiber.Ctx) error {
+	return siw.Handler.CreateAirline(c)
+}
+
+// UpdateAirline operation middleware — PUT /v1/masters/airlines/:id (bearer)
+func (siw *ServerInterfaceWrapper) UpdateAirline(c *fiber.Ctx) error {
+	var id string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.UpdateAirline(c, id)
+}
+
+// DeleteAirline operation middleware — DELETE /v1/masters/airlines/:id (bearer)
+func (siw *ServerInterfaceWrapper) DeleteAirline(c *fiber.Ctx) error {
+	var id string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.DeleteAirline(c, id)
+}
+
+// ListMuthawwif operation middleware — GET /v1/masters/muthawwif (bearer)
+func (siw *ServerInterfaceWrapper) ListMuthawwif(c *fiber.Ctx) error {
+	return siw.Handler.ListMuthawwif(c)
+}
+
+// CreateMuthawwif operation middleware — POST /v1/masters/muthawwif (bearer)
+func (siw *ServerInterfaceWrapper) CreateMuthawwif(c *fiber.Ctx) error {
+	return siw.Handler.CreateMuthawwif(c)
+}
+
+// UpdateMuthawwif operation middleware — PUT /v1/masters/muthawwif/:id (bearer)
+func (siw *ServerInterfaceWrapper) UpdateMuthawwif(c *fiber.Ctx) error {
+	var id string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.UpdateMuthawwif(c, id)
+}
+
+// DeleteMuthawwif operation middleware — DELETE /v1/masters/muthawwif/:id (bearer)
+func (siw *ServerInterfaceWrapper) DeleteMuthawwif(c *fiber.Ctx) error {
+	var id string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.DeleteMuthawwif(c, id)
+}
+
+// ListAddons operation middleware — GET /v1/masters/addons (bearer)
+func (siw *ServerInterfaceWrapper) ListAddons(c *fiber.Ctx) error {
+	return siw.Handler.ListAddons(c)
+}
+
+// CreateAddon operation middleware — POST /v1/masters/addons (bearer)
+func (siw *ServerInterfaceWrapper) CreateAddon(c *fiber.Ctx) error {
+	return siw.Handler.CreateAddon(c)
+}
+
+// UpdateAddon operation middleware — PUT /v1/masters/addons/:id (bearer)
+func (siw *ServerInterfaceWrapper) UpdateAddon(c *fiber.Ctx) error {
+	var id string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.UpdateAddon(c, id)
+}
+
+// DeleteAddon operation middleware — DELETE /v1/masters/addons/:id (bearer)
+func (siw *ServerInterfaceWrapper) DeleteAddon(c *fiber.Ctx) error {
+	var id string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.DeleteAddon(c, id)
+}
+
+// SetDeparturePricing operation middleware — PUT /v1/departures/:id/pricing (bearer)
+func (siw *ServerInterfaceWrapper) SetDeparturePricing(c *fiber.Ctx) error {
+	var departureID string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &departureID, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.SetDeparturePricing(c, departureID)
+}
+
+// GetDeparturePricing operation middleware — GET /v1/departures/:id/pricing (bearer)
+func (siw *ServerInterfaceWrapper) GetDeparturePricing(c *fiber.Ctx) error {
+	var departureID string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &departureID, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.GetDeparturePricing(c, departureID)
+}
+
+// ListUsers operation middleware — GET /v1/admin/users (bearer)
+func (siw *ServerInterfaceWrapper) ListUsers(c *fiber.Ctx) error {
+	return siw.Handler.ListUsers(c)
+}
+
+// CreateUser operation middleware — POST /v1/admin/users (bearer)
+func (siw *ServerInterfaceWrapper) CreateUser(c *fiber.Ctx) error {
+	return siw.Handler.CreateUser(c)
+}
+
+// UpdateUser operation middleware — PUT /v1/admin/users/:id (bearer)
+func (siw *ServerInterfaceWrapper) UpdateUser(c *fiber.Ctx) error {
+	var id string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.UpdateUser(c, id)
+}
+
+// GetUser operation middleware — GET /v1/admin/users/:id (bearer)
+func (siw *ServerInterfaceWrapper) GetUser(c *fiber.Ctx) error {
+	var id string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.GetUser(c, id)
+}
+
+// ResetUserPassword operation middleware — POST /v1/admin/users/:id/reset-password (bearer)
+func (siw *ServerInterfaceWrapper) ResetUserPassword(c *fiber.Ctx) error {
+	var id string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.ResetUserPassword(c, id)
+}
+
+// ListRoles operation middleware — GET /v1/admin/roles (bearer)
+func (siw *ServerInterfaceWrapper) ListRoles(c *fiber.Ctx) error {
+	return siw.Handler.ListRoles(c)
+}
+
+// CreateRole operation middleware — POST /v1/admin/roles (bearer)
+func (siw *ServerInterfaceWrapper) CreateRole(c *fiber.Ctx) error {
+	return siw.Handler.CreateRole(c)
+}
+
+// UpdateRole operation middleware — PUT /v1/admin/roles/:id (bearer)
+func (siw *ServerInterfaceWrapper) UpdateRole(c *fiber.Ctx) error {
+	var id string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.UpdateRole(c, id)
+}
+
+// DeleteRole operation middleware — DELETE /v1/admin/roles/:id (bearer)
+func (siw *ServerInterfaceWrapper) DeleteRole(c *fiber.Ctx) error {
+	var id string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	return siw.Handler.DeleteRole(c, id)
+}
+
+// ListPermissions operation middleware — GET /v1/admin/permissions (bearer)
+func (siw *ServerInterfaceWrapper) ListPermissions(c *fiber.Ctx) error {
+	return siw.Handler.ListPermissions(c)
+}
+
+// AssignRoleToUser operation middleware — POST /v1/admin/users/:id/roles/:roleID (bearer)
+func (siw *ServerInterfaceWrapper) AssignRoleToUser(c *fiber.Ctx) error {
+	var userID string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &userID, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	var roleID string
+	err = runtime.BindStyledParameterWithOptions("simple", "role_id", c.Params("role_id"), &roleID, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter role_id: %w", err).Error())
+	}
+	return siw.Handler.AssignRoleToUser(c, userID, roleID)
+}
+
+// RevokeRoleFromUser operation middleware — DELETE /v1/admin/users/:id/roles/:role_id (bearer)
+func (siw *ServerInterfaceWrapper) RevokeRoleFromUser(c *fiber.Ctx) error {
+	var userID string
+	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &userID, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+	var roleID string
+	err = runtime.BindStyledParameterWithOptions("simple", "role_id", c.Params("role_id"), &roleID, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter role_id: %w", err).Error())
+	}
+	return siw.Handler.RevokeRoleFromUser(c, userID, roleID)
+}
+
+// GetDepartureManifest operation middleware — GET /v1/manifest/:departure_id (bearer)
+func (siw *ServerInterfaceWrapper) GetDepartureManifest(c *fiber.Ctx) error {
+	var departureID string
+	err := runtime.BindStyledParameterWithOptions("simple", "departure_id", c.Params("departure_id"), &departureID, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter departure_id: %w", err).Error())
+	}
+	return siw.Handler.GetDepartureManifest(c, departureID)
 }
 
 // FiberServerOptions provides options for the Fiber server.
@@ -1356,5 +1704,143 @@ func (sh *strictHandler) GetFinanceSummary(ctx *fiber.Ctx) error {
 }
 
 func (sh *strictHandler) ListJournals(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+// Phase 6 strictHandler stubs — not used (gateway routes go through proxy_*.go directly).
+
+func (sh *strictHandler) RecognizeRevenue(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) GetPLReport(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) GetBalanceSheet(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) ListHotels(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) CreateHotel(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) UpdateHotel(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) DeleteHotel(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) ListAirlines(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) CreateAirline(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) UpdateAirline(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) DeleteAirline(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) ListMuthawwif(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) CreateMuthawwif(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) UpdateMuthawwif(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) DeleteMuthawwif(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) ListAddons(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) CreateAddon(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) UpdateAddon(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) DeleteAddon(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) SetDeparturePricing(ctx *fiber.Ctx, departureID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) GetDeparturePricing(ctx *fiber.Ctx, departureID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) ListUsers(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) CreateUser(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) UpdateUser(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) GetUser(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) ResetUserPassword(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) ListRoles(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) CreateRole(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) UpdateRole(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) DeleteRole(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) ListPermissions(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) AssignRoleToUser(ctx *fiber.Ctx, userID string, roleID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) RevokeRoleFromUser(ctx *fiber.Ctx, userID string, roleID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) GetDepartureManifest(ctx *fiber.Ctx, departureID string) error {
 	return fiber.ErrNotImplemented
 }

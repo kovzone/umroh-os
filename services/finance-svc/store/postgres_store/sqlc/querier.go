@@ -22,6 +22,10 @@ type Querier interface {
 	GetFinanceSummary(ctx context.Context) ([]AccountSummaryRow, error)
 	ListJournalEntries(ctx context.Context, arg ListJournalEntriesParams) ([]JournalEntryRow, error)
 	GetJournalLines(ctx context.Context, entryIDs []string) ([]JournalLineRow, error)
+
+	// Finance depth queries — P&L and Balance Sheet (Wave 1B)
+	GetPLReportLines(ctx context.Context, arg GetPLReportLinesParams) ([]PLReportLineRow, error)
+	GetBalanceSheetLines(ctx context.Context, arg GetBalanceSheetLinesParams) ([]BalanceSheetLineRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

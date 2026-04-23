@@ -26,15 +26,17 @@ type Adapter struct {
 	logger *zerolog.Logger
 	tracer trace.Tracer
 
-	catalogClient pb.CatalogServiceClient
+	catalogClient        pb.CatalogServiceClient
+	catalogMastersClient pb.CatalogMastersClient
 }
 
 // NewAdapter creates a new catalog-svc gRPC adapter from an already-dialled
 // conn. Ownership of the conn stays with the caller (shared pool lifetime).
 func NewAdapter(logger *zerolog.Logger, tracer trace.Tracer, cc *grpc.ClientConn) *Adapter {
 	return &Adapter{
-		logger:        logger,
-		tracer:        tracer,
-		catalogClient: pb.NewCatalogServiceClient(cc),
+		logger:               logger,
+		tracer:               tracer,
+		catalogClient:        pb.NewCatalogServiceClient(cc),
+		catalogMastersClient: pb.NewCatalogMastersClient(cc),
 	}
 }

@@ -25,7 +25,7 @@ import (
 func runGrpcServer(address string, apiServer *grpc_api.Server) *grpc.Server {
 	grpcServer := grpc.NewServer()
 
-	pb.RegisterCatalogServiceServer(grpcServer, apiServer)
+	pb.RegisterCatalogServiceServerWithMasters(grpcServer, apiServer)
 
 	healthServer := health.NewServer()
 	health_pb.RegisterHealthServer(grpcServer, healthServer)

@@ -28,6 +28,9 @@ type IService interface {
 	UploadDocument(ctx context.Context, params *UploadDocumentParams) (*UploadDocumentResult, error)
 	// Document review (S3-E-02 / F3-W3 / BL-DOC-003)
 	ReviewDocument(ctx context.Context, params *ReviewDocumentParams) (*ReviewDocumentResult, error)
+
+	// Departure manifest (Wave-1A)
+	GetDepartureManifest(ctx context.Context, params *GetDepartureManifestParams) (*GetDepartureManifestResult, error)
 }
 
 type Service struct {

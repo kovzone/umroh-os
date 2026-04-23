@@ -10,6 +10,7 @@ import (
 	"gateway-svc/adapter/finance_rest_adapter"
 	"gateway-svc/adapter/iam_grpc_adapter"
 	"gateway-svc/adapter/iam_rest_adapter"
+	"gateway-svc/adapter/jamaah_grpc_adapter"
 
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel/trace"
@@ -75,6 +76,11 @@ type IService interface {
 	// GET /v1/finance/journals — bearer; paginated journal entries + lines.
 	ListJournalEntries(ctx context.Context, params *finance_grpc_adapter.ListJournalEntriesParams) (*finance_grpc_adapter.ListJournalEntriesResult, error)
 
+	// Finance depth routes (Phase 6 / Wave 1B) — bearer required.
+	RecognizeRevenue(ctx context.Context, departureID string, totalAmountIdr int64) (*finance_grpc_adapter.RecognizeRevenueResult, error)
+	GetPLReport(ctx context.Context, from, to string) (*finance_grpc_adapter.PLReportResult, error)
+	GetBalanceSheet(ctx context.Context, asOf string) (*finance_grpc_adapter.BalanceSheetResult, error)
+
 	// Booking draft (BL-BOOK-001..006 / S1-E-03 / BL-GTW-003) — proxied via
 	// booking_grpc_adapter. Public in S1 (auth arrives with F4).
 	CreateDraftBooking(ctx context.Context, params *booking_grpc_adapter.CreateDraftBookingParams) (*booking_grpc_adapter.CreateDraftBookingResult, error)
@@ -88,6 +94,43 @@ type IService interface {
 	GetLead(ctx context.Context, id string) (*crm_grpc_adapter.LeadResult, error)
 	// PUT /v1/leads/:id — bearer.
 	UpdateLead(ctx context.Context, params *crm_grpc_adapter.UpdateLeadParams) (*crm_grpc_adapter.LeadResult, error)
+
+	// Catalog master data (Phase 6 / Wave 1A) — bearer required.
+	ListHotels(ctx context.Context, params *catalog_grpc_adapter.ListMastersParams) (*catalog_grpc_adapter.ListHotelsResult, error)
+	CreateHotel(ctx context.Context, params *catalog_grpc_adapter.CreateHotelParams) (*catalog_grpc_adapter.HotelResult, error)
+	UpdateHotel(ctx context.Context, params *catalog_grpc_adapter.UpdateHotelParams) (*catalog_grpc_adapter.HotelResult, error)
+	DeleteHotel(ctx context.Context, id string) error
+	ListAirlines(ctx context.Context, params *catalog_grpc_adapter.ListMastersParams) (*catalog_grpc_adapter.ListAirlinesResult, error)
+	CreateAirline(ctx context.Context, params *catalog_grpc_adapter.CreateAirlineParams) (*catalog_grpc_adapter.AirlineResult, error)
+	UpdateAirline(ctx context.Context, params *catalog_grpc_adapter.UpdateAirlineParams) (*catalog_grpc_adapter.AirlineResult, error)
+	DeleteAirline(ctx context.Context, id string) error
+	ListMuthawwif(ctx context.Context, params *catalog_grpc_adapter.ListMastersParams) (*catalog_grpc_adapter.ListMuthawwifResult, error)
+	CreateMuthawwif(ctx context.Context, params *catalog_grpc_adapter.CreateMuthawwifParams) (*catalog_grpc_adapter.MuthawwifResult, error)
+	UpdateMuthawwif(ctx context.Context, params *catalog_grpc_adapter.UpdateMuthawwifParams) (*catalog_grpc_adapter.MuthawwifResult, error)
+	DeleteMuthawwif(ctx context.Context, id string) error
+	ListAddons(ctx context.Context, params *catalog_grpc_adapter.ListMastersParams) (*catalog_grpc_adapter.ListAddonsResult, error)
+	CreateAddon(ctx context.Context, params *catalog_grpc_adapter.CreateAddonParams) (*catalog_grpc_adapter.AddonResult, error)
+	UpdateAddon(ctx context.Context, params *catalog_grpc_adapter.UpdateAddonParams) (*catalog_grpc_adapter.AddonResult, error)
+	DeleteAddon(ctx context.Context, id string) error
+	SetDeparturePricing(ctx context.Context, departureID string, pricings []*catalog_grpc_adapter.PricingUpsertInput) (*catalog_grpc_adapter.PricingResult, error)
+	GetDeparturePricing(ctx context.Context, departureID string) (*catalog_grpc_adapter.PricingResult, error)
+
+	// IAM admin routes (Phase 6 / Wave 1C) — bearer required.
+	ListUsers(ctx context.Context, params *iam_grpc_adapter.ListUsersParams) (*iam_grpc_adapter.ListUsersResult, error)
+	CreateUser(ctx context.Context, params *iam_grpc_adapter.CreateUserParams) (*iam_grpc_adapter.AdminUserResult, error)
+	UpdateUser(ctx context.Context, id string, params *iam_grpc_adapter.UpdateUserParams) (*iam_grpc_adapter.AdminUserResult, error)
+	GetUser(ctx context.Context, id string) (*iam_grpc_adapter.AdminUserResult, error)
+	ResetUserPassword(ctx context.Context, id, newPassword string) error
+	ListRoles(ctx context.Context) (*iam_grpc_adapter.ListRolesResult, error)
+	CreateRole(ctx context.Context, params *iam_grpc_adapter.CreateRoleParams) (*iam_grpc_adapter.AdminRoleResult, error)
+	UpdateRole(ctx context.Context, id string, params *iam_grpc_adapter.UpdateRoleParams) (*iam_grpc_adapter.AdminRoleResult, error)
+	DeleteRole(ctx context.Context, id string) error
+	ListPermissions(ctx context.Context) (*iam_grpc_adapter.ListPermissionsResult, error)
+	AssignRoleToUser(ctx context.Context, userID, roleID string) error
+	RevokeRoleFromUser(ctx context.Context, userID, roleID string) error
+
+	// Jamaah manifest (Phase 6 / Wave 1A) — bearer required.
+	GetDepartureManifest(ctx context.Context, departureID string) (*jamaah_grpc_adapter.GetDepartureManifestResult, error)
 }
 
 // Adapters bundles the adapters this service can dispatch through.
@@ -102,6 +145,7 @@ type Adapters struct {
 	financeGrpc *finance_grpc_adapter.Adapter
 	bookingGrpc *booking_grpc_adapter.Adapter
 	crmGrpc     *crm_grpc_adapter.Adapter
+	jamaahGrpc  *jamaah_grpc_adapter.Adapter
 }
 
 type Service struct {
@@ -124,6 +168,7 @@ type NewServiceParams struct {
 	FinanceGrpc *finance_grpc_adapter.Adapter
 	BookingGrpc *booking_grpc_adapter.Adapter
 	CrmGrpc     *crm_grpc_adapter.Adapter
+	JamaahGrpc  *jamaah_grpc_adapter.Adapter
 }
 
 func NewService(p NewServiceParams) IService {
@@ -139,6 +184,7 @@ func NewService(p NewServiceParams) IService {
 			financeGrpc: p.FinanceGrpc,
 			bookingGrpc: p.BookingGrpc,
 			crmGrpc:     p.CrmGrpc,
+			jamaahGrpc:  p.JamaahGrpc,
 		},
 	}
 }

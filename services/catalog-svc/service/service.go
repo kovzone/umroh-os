@@ -32,6 +32,30 @@ type IService interface {
 	// Inventory (§ Inventory / S1-J-03)
 	ReserveSeats(ctx context.Context, params *ReserveSeatsParams) (*ReserveSeatsResult, error)
 	ReleaseSeats(ctx context.Context, params *ReleaseSeatsParams) (*ReleaseSeatsResult, error)
+
+	// Master data CRUD (Wave-1A)
+	CreateHotel(ctx context.Context, params *CreateHotelParams) (*HotelResult, error)
+	UpdateHotel(ctx context.Context, params *UpdateHotelParams) (*HotelResult, error)
+	DeleteHotel(ctx context.Context, params *DeleteMasterParams) error
+	ListHotels(ctx context.Context, params *ListMasterParams) (*ListHotelsResult, error)
+
+	CreateAirline(ctx context.Context, params *CreateAirlineParams) (*AirlineResult, error)
+	UpdateAirline(ctx context.Context, params *UpdateAirlineParams) (*AirlineResult, error)
+	DeleteAirline(ctx context.Context, params *DeleteMasterParams) error
+	ListAirlines(ctx context.Context, params *ListMasterParams) (*ListAirlinesResult, error)
+
+	CreateMuthawwif(ctx context.Context, params *CreateMuthawwifParams) (*MuthawwifResult, error)
+	UpdateMuthawwif(ctx context.Context, params *UpdateMuthawwifParams) (*MuthawwifResult, error)
+	DeleteMuthawwif(ctx context.Context, params *DeleteMasterParams) error
+	ListMuthawwif(ctx context.Context, params *ListMasterParams) (*ListMuthawwifResult, error)
+
+	CreateAddon(ctx context.Context, params *CreateAddonParams) (*AddonResult, error)
+	UpdateAddon(ctx context.Context, params *UpdateAddonParams) (*AddonResult, error)
+	DeleteAddon(ctx context.Context, params *DeleteMasterParams) error
+	ListAddons(ctx context.Context, params *ListMasterParams) (*ListAddonsResult, error)
+
+	SetDeparturePricing(ctx context.Context, params *SetDeparturePricingParams) ([]*PricingResult, error)
+	GetDeparturePricing(ctx context.Context, params *GetDeparturePricingParams) ([]*PricingResult, error)
 }
 
 type Service struct {

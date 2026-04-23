@@ -13,6 +13,7 @@ import (
 	"gateway-svc/adapter/finance_rest_adapter"
 	"gateway-svc/adapter/iam_grpc_adapter"
 	"gateway-svc/adapter/iam_rest_adapter"
+	"gateway-svc/adapter/jamaah_grpc_adapter"
 	"gateway-svc/api/rest_oapi"
 	"gateway-svc/service"
 	"gateway-svc/util/config"
@@ -202,6 +203,31 @@ func start() {
 	}()
 	financeGrpcAdapter := finance_grpc_adapter.NewAdapter(logger, tracer, financeConn)
 
+	// --- Dial jamaah-svc gRPC (Phase 6 / Wave 1A) ---
+	//
+	// Per ADR-0009, gateway's /v1/manifest/:departure_id proxies to
+	// jamaah-svc.JamaahService over gRPC via jamaah_grpc_adapter.
+	jamaahConn, err := grpc.NewClient(
+		config.External.JamaahSvc.GrpcTarget,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Dial jamaah-svc gRPC").
+			Str("target", config.External.JamaahSvc.GrpcTarget).
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+	defer func() {
+		if err := jamaahConn.Close(); err != nil {
+			logger.Error().Err(err).Msg("close jamaah gRPC conn")
+		}
+	}()
+	jamaahGrpcAdapter := jamaah_grpc_adapter.NewAdapter(logger, tracer, jamaahConn)
+
 	// --- Init REST adapters (interim; retire as each backend graduates to gRPC) ---
 	// gateway-svc has no DB and no internal store; the service layer dispatches
 	// to these per-backend adapters.
@@ -230,6 +256,7 @@ func start() {
 		FinanceGrpc: financeGrpcAdapter,
 		BookingGrpc: bookingGrpcAdapter,
 		CrmGrpc:     crmGrpcAdapter,
+		JamaahGrpc:  jamaahGrpcAdapter,
 	})
 
 	// --- Init API layer (REST only — gateway is the edge proxy, no gRPC server) ---

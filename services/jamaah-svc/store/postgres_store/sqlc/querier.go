@@ -18,6 +18,9 @@ type Querier interface {
 	GetPilgrimDocumentByID(ctx context.Context, id string) (PilgrimDocumentRow, error)
 	ApprovePilgrimDocument(ctx context.Context, arg ApprovePilgrimDocumentParams) (PilgrimDocumentRow, error)
 	RejectPilgrimDocument(ctx context.Context, arg RejectPilgrimDocumentParams) (PilgrimDocumentRow, error)
+
+	// Departure manifest query (Wave-1A)
+	GetDepartureManifest(ctx context.Context, departureID string) ([]GetDepartureManifestRow, error)
 }
 
 var _ Querier = (*Queries)(nil)
