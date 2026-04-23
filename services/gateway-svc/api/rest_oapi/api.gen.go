@@ -7,10 +7,15 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
+)
+
+const (
+	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
 // Defines values for AddonRefSettlementCurrency.
@@ -59,6 +64,13 @@ const (
 	Triple RoomType = "triple"
 )
 
+// Defines values for UserProfileStatus.
+const (
+	Active    UserProfileStatus = "active"
+	Pending   UserProfileStatus = "pending"
+	Suspended UserProfileStatus = "suspended"
+)
+
 // Defines values for VendorReadinessState.
 const (
 	Blocked    VendorReadinessState = "blocked"
@@ -103,17 +115,6 @@ type CatalogErrorResponse struct {
 	} `json:"error"`
 }
 
-// DbTxDiagnosticResponse defines model for DbTxDiagnosticResponse.
-type DbTxDiagnosticResponse struct {
-	Data struct {
-		// DiagnosticId ID of the row inserted by iam-svc.
-		DiagnosticId int64 `json:"diagnostic_id"`
-
-		// Message Echo of the message received from the client.
-		Message string `json:"message"`
-	} `json:"data"`
-}
-
 // DepartureDetail defines model for DepartureDetail.
 type DepartureDetail struct {
 	DepartureDate   openapi_types.Date `json:"departure_date"`
@@ -139,9 +140,25 @@ type DepartureSummary struct {
 	Status         DepartureStatus    `json:"status"`
 }
 
+// EnrollTotpResponse defines model for EnrollTotpResponse.
+type EnrollTotpResponse struct {
+	Data struct {
+		// OtpauthUrl otpauth:// URL — render as QR code in the UI.
+		OtpauthUrl string `json:"otpauth_url"`
+
+		// Secret Plaintext base32 secret. Shown exactly once; discard after display.
+		Secret string `json:"secret"`
+	} `json:"data"`
+}
+
 // ErrorResponse defines model for ErrorResponse.
 type ErrorResponse struct {
 	Error struct {
+		// Code UPPER_SNAKE error code emitted by the central error middleware.
+		// Matches iam-svc's legacy REST envelope so existing clients /
+		// e2e bodies are unaffected. Common values: `VALIDATION_ERROR`,
+		// `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`,
+		// `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR`.
 		Code    string `json:"code"`
 		Message string `json:"message"`
 	} `json:"error"`
@@ -150,6 +167,18 @@ type ErrorResponse struct {
 // GetDepartureResponse defines model for GetDepartureResponse.
 type GetDepartureResponse struct {
 	Departure DepartureDetail `json:"departure"`
+}
+
+// GetMeResponse defines model for GetMeResponse.
+type GetMeResponse struct {
+	Data struct {
+		// TotpEnrolled True once the user has called POST /v1/me/2fa/enroll at least once.
+		TotpEnrolled bool `json:"totp_enrolled"`
+
+		// TotpVerified True once the user has successfully verified an enrolled secret.
+		TotpVerified bool        `json:"totp_verified"`
+		User         UserProfile `json:"user"`
+	} `json:"data"`
 }
 
 // GetPackageResponse defines model for GetPackageResponse.
@@ -191,6 +220,35 @@ type ListPackagesResponse struct {
 type LiveResponse struct {
 	Data struct {
 		Ok bool `json:"ok"`
+	} `json:"data"`
+}
+
+// LoginRequest defines model for LoginRequest.
+type LoginRequest struct {
+	Email openapi_types.Email `json:"email"`
+
+	// Password Plaintext password; bcrypt-compared server-side. Never logged.
+	Password string `json:"password"`
+
+	// TotpCode Six-digit TOTP code. Accepted but unused in BL-IAM-001 (login-time
+	// TOTP enforcement lands in S1-E-06). Clients should still send the
+	// code after enrollment so they don't need to adapt when enforcement
+	// flips on.
+	TotpCode *string `json:"totp_code,omitempty"`
+}
+
+// LoginResponse defines model for LoginResponse.
+type LoginResponse struct {
+	Data struct {
+		AccessExpiresAt time.Time `json:"access_expires_at"`
+
+		// AccessToken PASETO-signed access token. Short-lived.
+		AccessToken      string    `json:"access_token"`
+		RefreshExpiresAt time.Time `json:"refresh_expires_at"`
+
+		// RefreshToken Opaque refresh token (hex-encoded). Store client-side; only its SHA-256 digest persists server-side.
+		RefreshToken string      `json:"refresh_token"`
+		User         UserProfile `json:"user"`
 	} `json:"data"`
 }
 
@@ -276,8 +334,47 @@ type ReadyResponse struct {
 	} `json:"data"`
 }
 
+// RefreshSessionRequest defines model for RefreshSessionRequest.
+type RefreshSessionRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+// RefreshSessionResponse defines model for RefreshSessionResponse.
+type RefreshSessionResponse struct {
+	Data struct {
+		AccessExpiresAt  time.Time `json:"access_expires_at"`
+		AccessToken      string    `json:"access_token"`
+		RefreshExpiresAt time.Time `json:"refresh_expires_at"`
+		RefreshToken     string    `json:"refresh_token"`
+	} `json:"data"`
+}
+
 // RoomType defines model for RoomType.
 type RoomType string
+
+// SuspendUserResponse defines model for SuspendUserResponse.
+type SuspendUserResponse struct {
+	Data struct {
+		User UserProfile `json:"user"`
+	} `json:"data"`
+}
+
+// UserProfile defines model for UserProfile.
+type UserProfile struct {
+	// BranchId Home-branch UUID. Empty for branch-less staff (super_admin seed).
+	BranchId *openapi_types.UUID `json:"branch_id,omitempty"`
+	Email    openapi_types.Email `json:"email"`
+	Name     string              `json:"name"`
+
+	// Status Matches iam.users.status enum.
+	Status UserProfileStatus `json:"status"`
+
+	// UserId User UUID.
+	UserId openapi_types.UUID `json:"user_id"`
+}
+
+// UserProfileStatus Matches iam.users.status enum.
+type UserProfileStatus string
 
 // VendorReadiness defines model for VendorReadiness.
 type VendorReadiness struct {
@@ -289,10 +386,17 @@ type VendorReadiness struct {
 // VendorReadinessState defines model for VendorReadinessState.
 type VendorReadinessState string
 
-// GetIamSystemDbTxDiagnosticParams defines parameters for GetIamSystemDbTxDiagnostic.
-type GetIamSystemDbTxDiagnosticParams struct {
-	// Message Message to store and echo back.
-	Message *string `form:"message,omitempty" json:"message,omitempty"`
+// VerifyTotpRequest defines model for VerifyTotpRequest.
+type VerifyTotpRequest struct {
+	// Code Six-digit TOTP code from the user's authenticator.
+	Code string `json:"code"`
+}
+
+// VerifyTotpResponse defines model for VerifyTotpResponse.
+type VerifyTotpResponse struct {
+	Data struct {
+		VerifiedAt time.Time `json:"verified_at"`
+	} `json:"data"`
 }
 
 // ListPackagesParams defines parameters for ListPackages.
@@ -306,6 +410,15 @@ type ListPackagesParams struct {
 	Limit         *int                `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// VerifyTotpJSONRequestBody defines body for VerifyTotp for application/json ContentType.
+type VerifyTotpJSONRequestBody = VerifyTotpRequest
+
+// LoginJSONRequestBody defines body for Login for application/json ContentType.
+type LoginJSONRequestBody = LoginRequest
+
+// RefreshSessionJSONRequestBody defines body for RefreshSession for application/json ContentType.
+type RefreshSessionJSONRequestBody = RefreshSessionRequest
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Liveness probe
@@ -317,12 +430,15 @@ type ServerInterface interface {
 	// Proxy finance-svc liveness
 	// (GET /v1/finance/system/live)
 	GetFinanceSystemLive(c *fiber.Ctx) error
-	// Proxy iam-svc DB transaction diagnostic
-	// (GET /v1/iam/system/diagnostics/db-tx)
-	GetIamSystemDbTxDiagnostic(c *fiber.Ctx, params GetIamSystemDbTxDiagnosticParams) error
-	// Proxy iam-svc liveness
-	// (GET /v1/iam/system/live)
-	GetIamSystemLive(c *fiber.Ctx) error
+	// Current user profile
+	// (GET /v1/me)
+	GetMe(c *fiber.Ctx) error
+	// Begin TOTP enrollment — generate a secret + otpauth URL
+	// (POST /v1/me/2fa/enroll)
+	EnrollTotp(c *fiber.Ctx) error
+	// Verify TOTP code and mark enrollment complete
+	// (POST /v1/me/2fa/verify)
+	VerifyTotp(c *fiber.Ctx) error
 	// Active package-departure detail
 	// (GET /v1/package-departures/{id})
 	GetPackageDepartureById(c *fiber.Ctx, id string) error
@@ -332,6 +448,18 @@ type ServerInterface interface {
 	// Active package detail
 	// (GET /v1/packages/{id})
 	GetPackageById(c *fiber.Ctx, id string) error
+	// Logout — revoke the current session row
+	// (DELETE /v1/sessions)
+	Logout(c *fiber.Ctx) error
+	// Login — exchange credentials for an access + refresh pair
+	// (POST /v1/sessions)
+	Login(c *fiber.Ctx) error
+	// Rotate refresh token — issue a new access + refresh pair
+	// (POST /v1/sessions/refresh)
+	RefreshSession(c *fiber.Ctx) error
+	// Suspend a user and revoke every active session
+	// (POST /v1/users/{id}/suspend)
+	SuspendUser(c *fiber.Ctx, id openapi_types.UUID) error
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -359,34 +487,28 @@ func (siw *ServerInterfaceWrapper) GetFinanceSystemLive(c *fiber.Ctx) error {
 	return siw.Handler.GetFinanceSystemLive(c)
 }
 
-// GetIamSystemDbTxDiagnostic operation middleware
-func (siw *ServerInterfaceWrapper) GetIamSystemDbTxDiagnostic(c *fiber.Ctx) error {
+// GetMe operation middleware
+func (siw *ServerInterfaceWrapper) GetMe(c *fiber.Ctx) error {
 
-	var err error
+	c.Context().SetUserValue(BearerAuthScopes, []string{})
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params GetIamSystemDbTxDiagnosticParams
-
-	var query url.Values
-	query, err = url.ParseQuery(string(c.Request().URI().QueryString()))
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for query string: %w", err).Error())
-	}
-
-	// ------------- Optional query parameter "message" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "message", query, &params.Message)
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter message: %w", err).Error())
-	}
-
-	return siw.Handler.GetIamSystemDbTxDiagnostic(c, params)
+	return siw.Handler.GetMe(c)
 }
 
-// GetIamSystemLive operation middleware
-func (siw *ServerInterfaceWrapper) GetIamSystemLive(c *fiber.Ctx) error {
+// EnrollTotp operation middleware
+func (siw *ServerInterfaceWrapper) EnrollTotp(c *fiber.Ctx) error {
 
-	return siw.Handler.GetIamSystemLive(c)
+	c.Context().SetUserValue(BearerAuthScopes, []string{})
+
+	return siw.Handler.EnrollTotp(c)
+}
+
+// VerifyTotp operation middleware
+func (siw *ServerInterfaceWrapper) VerifyTotp(c *fiber.Ctx) error {
+
+	c.Context().SetUserValue(BearerAuthScopes, []string{})
+
+	return siw.Handler.VerifyTotp(c)
 }
 
 // GetPackageDepartureById operation middleware
@@ -487,6 +609,44 @@ func (siw *ServerInterfaceWrapper) GetPackageById(c *fiber.Ctx) error {
 	return siw.Handler.GetPackageById(c, id)
 }
 
+// Logout operation middleware
+func (siw *ServerInterfaceWrapper) Logout(c *fiber.Ctx) error {
+
+	c.Context().SetUserValue(BearerAuthScopes, []string{})
+
+	return siw.Handler.Logout(c)
+}
+
+// Login operation middleware
+func (siw *ServerInterfaceWrapper) Login(c *fiber.Ctx) error {
+
+	return siw.Handler.Login(c)
+}
+
+// RefreshSession operation middleware
+func (siw *ServerInterfaceWrapper) RefreshSession(c *fiber.Ctx) error {
+
+	return siw.Handler.RefreshSession(c)
+}
+
+// SuspendUser operation middleware
+func (siw *ServerInterfaceWrapper) SuspendUser(c *fiber.Ctx) error {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
+	}
+
+	c.Context().SetUserValue(BearerAuthScopes, []string{})
+
+	return siw.Handler.SuspendUser(c, id)
+}
+
 // FiberServerOptions provides options for the Fiber server.
 type FiberServerOptions struct {
 	BaseURL     string
@@ -514,15 +674,25 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 
 	router.Get(options.BaseURL+"/v1/finance/system/live", wrapper.GetFinanceSystemLive)
 
-	router.Get(options.BaseURL+"/v1/iam/system/diagnostics/db-tx", wrapper.GetIamSystemDbTxDiagnostic)
+	router.Get(options.BaseURL+"/v1/me", wrapper.GetMe)
 
-	router.Get(options.BaseURL+"/v1/iam/system/live", wrapper.GetIamSystemLive)
+	router.Post(options.BaseURL+"/v1/me/2fa/enroll", wrapper.EnrollTotp)
+
+	router.Post(options.BaseURL+"/v1/me/2fa/verify", wrapper.VerifyTotp)
 
 	router.Get(options.BaseURL+"/v1/package-departures/:id", wrapper.GetPackageDepartureById)
 
 	router.Get(options.BaseURL+"/v1/packages", wrapper.ListPackages)
 
 	router.Get(options.BaseURL+"/v1/packages/:id", wrapper.GetPackageById)
+
+	router.Delete(options.BaseURL+"/v1/sessions", wrapper.Logout)
+
+	router.Post(options.BaseURL+"/v1/sessions", wrapper.Login)
+
+	router.Post(options.BaseURL+"/v1/sessions/refresh", wrapper.RefreshSession)
+
+	router.Post(options.BaseURL+"/v1/users/:id/suspend", wrapper.SuspendUser)
 
 }
 
@@ -583,51 +753,139 @@ func (response GetFinanceSystemLive502JSONResponse) VisitGetFinanceSystemLiveRes
 	return ctx.JSON(&response)
 }
 
-type GetIamSystemDbTxDiagnosticRequestObject struct {
-	Params GetIamSystemDbTxDiagnosticParams
+type GetMeRequestObject struct {
 }
 
-type GetIamSystemDbTxDiagnosticResponseObject interface {
-	VisitGetIamSystemDbTxDiagnosticResponse(ctx *fiber.Ctx) error
+type GetMeResponseObject interface {
+	VisitGetMeResponse(ctx *fiber.Ctx) error
 }
 
-type GetIamSystemDbTxDiagnostic200JSONResponse DbTxDiagnosticResponse
+type GetMe200JSONResponse GetMeResponse
 
-func (response GetIamSystemDbTxDiagnostic200JSONResponse) VisitGetIamSystemDbTxDiagnosticResponse(ctx *fiber.Ctx) error {
+func (response GetMe200JSONResponse) VisitGetMeResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(200)
 
 	return ctx.JSON(&response)
 }
 
-type GetIamSystemDbTxDiagnostic502JSONResponse ErrorResponse
+type GetMe401JSONResponse ErrorResponse
 
-func (response GetIamSystemDbTxDiagnostic502JSONResponse) VisitGetIamSystemDbTxDiagnosticResponse(ctx *fiber.Ctx) error {
+func (response GetMe401JSONResponse) VisitGetMeResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type GetMe404JSONResponse ErrorResponse
+
+func (response GetMe404JSONResponse) VisitGetMeResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type GetMe502JSONResponse ErrorResponse
+
+func (response GetMe502JSONResponse) VisitGetMeResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(502)
 
 	return ctx.JSON(&response)
 }
 
-type GetIamSystemLiveRequestObject struct {
+type EnrollTotpRequestObject struct {
 }
 
-type GetIamSystemLiveResponseObject interface {
-	VisitGetIamSystemLiveResponse(ctx *fiber.Ctx) error
+type EnrollTotpResponseObject interface {
+	VisitEnrollTotpResponse(ctx *fiber.Ctx) error
 }
 
-type GetIamSystemLive200JSONResponse LiveResponse
+type EnrollTotp200JSONResponse EnrollTotpResponse
 
-func (response GetIamSystemLive200JSONResponse) VisitGetIamSystemLiveResponse(ctx *fiber.Ctx) error {
+func (response EnrollTotp200JSONResponse) VisitEnrollTotpResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(200)
 
 	return ctx.JSON(&response)
 }
 
-type GetIamSystemLive502JSONResponse ErrorResponse
+type EnrollTotp401JSONResponse ErrorResponse
 
-func (response GetIamSystemLive502JSONResponse) VisitGetIamSystemLiveResponse(ctx *fiber.Ctx) error {
+func (response EnrollTotp401JSONResponse) VisitEnrollTotpResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type EnrollTotp409JSONResponse ErrorResponse
+
+func (response EnrollTotp409JSONResponse) VisitEnrollTotpResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(409)
+
+	return ctx.JSON(&response)
+}
+
+type EnrollTotp502JSONResponse ErrorResponse
+
+func (response EnrollTotp502JSONResponse) VisitEnrollTotpResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(502)
+
+	return ctx.JSON(&response)
+}
+
+type VerifyTotpRequestObject struct {
+	Body *VerifyTotpJSONRequestBody
+}
+
+type VerifyTotpResponseObject interface {
+	VisitVerifyTotpResponse(ctx *fiber.Ctx) error
+}
+
+type VerifyTotp200JSONResponse VerifyTotpResponse
+
+func (response VerifyTotp200JSONResponse) VisitVerifyTotpResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type VerifyTotp400JSONResponse ErrorResponse
+
+func (response VerifyTotp400JSONResponse) VisitVerifyTotpResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type VerifyTotp401JSONResponse ErrorResponse
+
+func (response VerifyTotp401JSONResponse) VisitVerifyTotpResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type VerifyTotp422JSONResponse ErrorResponse
+
+func (response VerifyTotp422JSONResponse) VisitVerifyTotpResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(422)
+
+	return ctx.JSON(&response)
+}
+
+type VerifyTotp502JSONResponse ErrorResponse
+
+func (response VerifyTotp502JSONResponse) VisitVerifyTotpResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(502)
 
@@ -766,6 +1024,207 @@ func (response GetPackageById502JSONResponse) VisitGetPackageByIdResponse(ctx *f
 	return ctx.JSON(&response)
 }
 
+type LogoutRequestObject struct {
+}
+
+type LogoutResponseObject interface {
+	VisitLogoutResponse(ctx *fiber.Ctx) error
+}
+
+type Logout204Response struct {
+}
+
+func (response Logout204Response) VisitLogoutResponse(ctx *fiber.Ctx) error {
+	ctx.Status(204)
+	return nil
+}
+
+type Logout401JSONResponse ErrorResponse
+
+func (response Logout401JSONResponse) VisitLogoutResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type Logout502JSONResponse ErrorResponse
+
+func (response Logout502JSONResponse) VisitLogoutResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(502)
+
+	return ctx.JSON(&response)
+}
+
+type LoginRequestObject struct {
+	Body *LoginJSONRequestBody
+}
+
+type LoginResponseObject interface {
+	VisitLoginResponse(ctx *fiber.Ctx) error
+}
+
+type Login200JSONResponse LoginResponse
+
+func (response Login200JSONResponse) VisitLoginResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type Login400JSONResponse ErrorResponse
+
+func (response Login400JSONResponse) VisitLoginResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type Login401JSONResponse ErrorResponse
+
+func (response Login401JSONResponse) VisitLoginResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type Login403JSONResponse ErrorResponse
+
+func (response Login403JSONResponse) VisitLoginResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type Login502JSONResponse ErrorResponse
+
+func (response Login502JSONResponse) VisitLoginResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(502)
+
+	return ctx.JSON(&response)
+}
+
+type RefreshSessionRequestObject struct {
+	Body *RefreshSessionJSONRequestBody
+}
+
+type RefreshSessionResponseObject interface {
+	VisitRefreshSessionResponse(ctx *fiber.Ctx) error
+}
+
+type RefreshSession200JSONResponse RefreshSessionResponse
+
+func (response RefreshSession200JSONResponse) VisitRefreshSessionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type RefreshSession400JSONResponse ErrorResponse
+
+func (response RefreshSession400JSONResponse) VisitRefreshSessionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type RefreshSession401JSONResponse ErrorResponse
+
+func (response RefreshSession401JSONResponse) VisitRefreshSessionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type RefreshSession403JSONResponse ErrorResponse
+
+func (response RefreshSession403JSONResponse) VisitRefreshSessionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type RefreshSession502JSONResponse ErrorResponse
+
+func (response RefreshSession502JSONResponse) VisitRefreshSessionResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(502)
+
+	return ctx.JSON(&response)
+}
+
+type SuspendUserRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type SuspendUserResponseObject interface {
+	VisitSuspendUserResponse(ctx *fiber.Ctx) error
+}
+
+type SuspendUser200JSONResponse SuspendUserResponse
+
+func (response SuspendUser200JSONResponse) VisitSuspendUserResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
+type SuspendUser400JSONResponse ErrorResponse
+
+func (response SuspendUser400JSONResponse) VisitSuspendUserResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(400)
+
+	return ctx.JSON(&response)
+}
+
+type SuspendUser401JSONResponse ErrorResponse
+
+func (response SuspendUser401JSONResponse) VisitSuspendUserResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type SuspendUser403JSONResponse ErrorResponse
+
+func (response SuspendUser403JSONResponse) VisitSuspendUserResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type SuspendUser404JSONResponse ErrorResponse
+
+func (response SuspendUser404JSONResponse) VisitSuspendUserResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(404)
+
+	return ctx.JSON(&response)
+}
+
+type SuspendUser502JSONResponse ErrorResponse
+
+func (response SuspendUser502JSONResponse) VisitSuspendUserResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(502)
+
+	return ctx.JSON(&response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// Liveness probe
@@ -777,12 +1236,15 @@ type StrictServerInterface interface {
 	// Proxy finance-svc liveness
 	// (GET /v1/finance/system/live)
 	GetFinanceSystemLive(ctx context.Context, request GetFinanceSystemLiveRequestObject) (GetFinanceSystemLiveResponseObject, error)
-	// Proxy iam-svc DB transaction diagnostic
-	// (GET /v1/iam/system/diagnostics/db-tx)
-	GetIamSystemDbTxDiagnostic(ctx context.Context, request GetIamSystemDbTxDiagnosticRequestObject) (GetIamSystemDbTxDiagnosticResponseObject, error)
-	// Proxy iam-svc liveness
-	// (GET /v1/iam/system/live)
-	GetIamSystemLive(ctx context.Context, request GetIamSystemLiveRequestObject) (GetIamSystemLiveResponseObject, error)
+	// Current user profile
+	// (GET /v1/me)
+	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
+	// Begin TOTP enrollment — generate a secret + otpauth URL
+	// (POST /v1/me/2fa/enroll)
+	EnrollTotp(ctx context.Context, request EnrollTotpRequestObject) (EnrollTotpResponseObject, error)
+	// Verify TOTP code and mark enrollment complete
+	// (POST /v1/me/2fa/verify)
+	VerifyTotp(ctx context.Context, request VerifyTotpRequestObject) (VerifyTotpResponseObject, error)
 	// Active package-departure detail
 	// (GET /v1/package-departures/{id})
 	GetPackageDepartureById(ctx context.Context, request GetPackageDepartureByIdRequestObject) (GetPackageDepartureByIdResponseObject, error)
@@ -792,6 +1254,18 @@ type StrictServerInterface interface {
 	// Active package detail
 	// (GET /v1/packages/{id})
 	GetPackageById(ctx context.Context, request GetPackageByIdRequestObject) (GetPackageByIdResponseObject, error)
+	// Logout — revoke the current session row
+	// (DELETE /v1/sessions)
+	Logout(ctx context.Context, request LogoutRequestObject) (LogoutResponseObject, error)
+	// Login — exchange credentials for an access + refresh pair
+	// (POST /v1/sessions)
+	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
+	// Rotate refresh token — issue a new access + refresh pair
+	// (POST /v1/sessions/refresh)
+	RefreshSession(ctx context.Context, request RefreshSessionRequestObject) (RefreshSessionResponseObject, error)
+	// Suspend a user and revoke every active session
+	// (POST /v1/users/{id}/suspend)
+	SuspendUser(ctx context.Context, request SuspendUserRequestObject) (SuspendUserResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx *fiber.Ctx, args interface{}) (interface{}, error)
@@ -882,25 +1356,23 @@ func (sh *strictHandler) GetFinanceSystemLive(ctx *fiber.Ctx) error {
 	return nil
 }
 
-// GetIamSystemDbTxDiagnostic operation middleware
-func (sh *strictHandler) GetIamSystemDbTxDiagnostic(ctx *fiber.Ctx, params GetIamSystemDbTxDiagnosticParams) error {
-	var request GetIamSystemDbTxDiagnosticRequestObject
-
-	request.Params = params
+// GetMe operation middleware
+func (sh *strictHandler) GetMe(ctx *fiber.Ctx) error {
+	var request GetMeRequestObject
 
 	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetIamSystemDbTxDiagnostic(ctx.UserContext(), request.(GetIamSystemDbTxDiagnosticRequestObject))
+		return sh.ssi.GetMe(ctx.UserContext(), request.(GetMeRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetIamSystemDbTxDiagnostic")
+		handler = middleware(handler, "GetMe")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(GetIamSystemDbTxDiagnosticResponseObject); ok {
-		if err := validResponse.VisitGetIamSystemDbTxDiagnosticResponse(ctx); err != nil {
+	} else if validResponse, ok := response.(GetMeResponseObject); ok {
+		if err := validResponse.VisitGetMeResponse(ctx); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
 	} else if response != nil {
@@ -909,23 +1381,54 @@ func (sh *strictHandler) GetIamSystemDbTxDiagnostic(ctx *fiber.Ctx, params GetIa
 	return nil
 }
 
-// GetIamSystemLive operation middleware
-func (sh *strictHandler) GetIamSystemLive(ctx *fiber.Ctx) error {
-	var request GetIamSystemLiveRequestObject
+// EnrollTotp operation middleware
+func (sh *strictHandler) EnrollTotp(ctx *fiber.Ctx) error {
+	var request EnrollTotpRequestObject
 
 	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetIamSystemLive(ctx.UserContext(), request.(GetIamSystemLiveRequestObject))
+		return sh.ssi.EnrollTotp(ctx.UserContext(), request.(EnrollTotpRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetIamSystemLive")
+		handler = middleware(handler, "EnrollTotp")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(GetIamSystemLiveResponseObject); ok {
-		if err := validResponse.VisitGetIamSystemLiveResponse(ctx); err != nil {
+	} else if validResponse, ok := response.(EnrollTotpResponseObject); ok {
+		if err := validResponse.VisitEnrollTotpResponse(ctx); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// VerifyTotp operation middleware
+func (sh *strictHandler) VerifyTotp(ctx *fiber.Ctx) error {
+	var request VerifyTotpRequestObject
+
+	var body VerifyTotpJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.VerifyTotp(ctx.UserContext(), request.(VerifyTotpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "VerifyTotp")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	} else if validResponse, ok := response.(VerifyTotpResponseObject); ok {
+		if err := validResponse.VisitVerifyTotpResponse(ctx); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
 	} else if response != nil {
@@ -1007,6 +1510,120 @@ func (sh *strictHandler) GetPackageById(ctx *fiber.Ctx, id string) error {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else if validResponse, ok := response.(GetPackageByIdResponseObject); ok {
 		if err := validResponse.VisitGetPackageByIdResponse(ctx); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// Logout operation middleware
+func (sh *strictHandler) Logout(ctx *fiber.Ctx) error {
+	var request LogoutRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.Logout(ctx.UserContext(), request.(LogoutRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "Logout")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	} else if validResponse, ok := response.(LogoutResponseObject); ok {
+		if err := validResponse.VisitLogoutResponse(ctx); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// Login operation middleware
+func (sh *strictHandler) Login(ctx *fiber.Ctx) error {
+	var request LoginRequestObject
+
+	var body LoginJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.Login(ctx.UserContext(), request.(LoginRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "Login")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	} else if validResponse, ok := response.(LoginResponseObject); ok {
+		if err := validResponse.VisitLoginResponse(ctx); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// RefreshSession operation middleware
+func (sh *strictHandler) RefreshSession(ctx *fiber.Ctx) error {
+	var request RefreshSessionRequestObject
+
+	var body RefreshSessionJSONRequestBody
+	if err := ctx.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	request.Body = &body
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.RefreshSession(ctx.UserContext(), request.(RefreshSessionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RefreshSession")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	} else if validResponse, ok := response.(RefreshSessionResponseObject); ok {
+		if err := validResponse.VisitRefreshSessionResponse(ctx); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// SuspendUser operation middleware
+func (sh *strictHandler) SuspendUser(ctx *fiber.Ctx, id openapi_types.UUID) error {
+	var request SuspendUserRequestObject
+
+	request.Id = id
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.SuspendUser(ctx.UserContext(), request.(SuspendUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SuspendUser")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	} else if validResponse, ok := response.(SuspendUserResponseObject); ok {
+		if err := validResponse.VisitSuspendUserResponse(ctx); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
 	} else if response != nil {

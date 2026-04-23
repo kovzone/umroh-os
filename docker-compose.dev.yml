@@ -284,8 +284,7 @@ services:
     container_name: iam-svc
     restart: unless-stopped
     ports:
-      - "4001:4001" # REST
-      - "50051:50051" # gRPC
+      - "50051:50051" # gRPC (REST retired BL-IAM-018 / S1-E-12)
     volumes:
       - ./services/iam-svc/config.json:/app/config.json
     environment:

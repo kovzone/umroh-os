@@ -1,11 +1,11 @@
 # Prometheus scrape config for local/dev.
 #
-# The seven pure-scaffold backends (booking/crm/jamaah/logistics/ops/payment/
-# visa) push metrics via OTLP to the otel-collector (per ADR 0009 /
-# BL-REFACTOR-002..008); their series appear in the otel-collector job
-# labeled with service_name="<svc>-svc". catalog-svc uses the same mechanism
-# (BL-REFACTOR-001). The remaining direct-scrape jobs are for services whose
-# REST surface is still in place: gateway-svc, iam-svc, and finance-svc.
+# The eight gRPC-only backends (booking/crm/jamaah/logistics/ops/payment/visa
+# per BL-REFACTOR-002..008, catalog per BL-REFACTOR-001, iam per BL-IAM-018)
+# push metrics via OTLP to the otel-collector — their series appear in the
+# otel-collector job labeled with service_name="<svc>-svc". The remaining
+# direct-scrape jobs are for services whose REST surface is still in place:
+# gateway-svc and finance-svc (finance moves off REST in BL-IAM-019 / S1-E-14).
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
@@ -16,18 +16,13 @@ scrape_configs:
       - targets: ["gateway-svc:4000"]
     metrics_path: /metrics
 
-  - job_name: iam-svc
-    static_configs:
-      - targets: ["iam-svc:4001"]
-    metrics_path: /metrics
-
   - job_name: finance-svc
     static_configs:
       - targets: ["finance-svc:4009"]
     metrics_path: /metrics
 
-  # catalog-svc + the seven G9 backends push metrics via OTLP; their series
-  # appear here labeled with service_name="<svc>".
+  # catalog-svc, iam-svc, and the seven pure-scaffold backends push metrics
+  # via OTLP; their series appear here labeled with service_name="<svc>".
   - job_name: otel-collector
     static_configs:
       - targets: ["otel-collector:8889"]

@@ -10,17 +10,19 @@ info:
     Current surface:
 
       - 2 own probes: /system/live, /system/ready
-      - Per-backend liveness proxies for the backends whose REST surface is
-        still in place: /v1/iam/system/live, /v1/finance/system/live. The 8
-        other backends retired their REST surface in BL-REFACTOR-001..008 /
-        S1-E-11..13 (catalog went first in G7; the 7 pure-scaffold backends
-        followed in G9); operators probe those over gRPC via grpc_health_probe.
-      - /v1/iam/system/diagnostics/db-tx — traced WithTx diagnostic (retires
-        with BL-IAM-018 / S1-E-12).
+      - Per-backend liveness proxies for backends whose REST surface is still
+        in place: /v1/finance/system/live. The other 9 backends retired their
+        REST surfaces in BL-REFACTOR-001..008 / BL-IAM-018 (S1-E-11..13);
+        operators probe those over gRPC via grpc_health_probe.
       - Public catalog reads: /v1/packages, /v1/packages/{id},
         /v1/package-departures/{id} (BL-GTW-002 / S1-E-10).
+      - Client-facing auth (BL-IAM-018 / S1-E-12): /v1/sessions (login +
+        refresh + logout), /v1/me (profile + TOTP enroll/verify),
+        /v1/users/{id}/suspend (admin). Protected routes carry the
+        `bearerAuth` security scheme; the gateway enforces it once at the edge
+        via `iam-svc.ValidateToken` (gRPC).
 
-    Real per-route proxies (auth, bookings, ...) land alongside each
+    Real per-route proxies (bookings, payments, ...) land alongside each
     backend's first feature work.
 
 servers:
@@ -56,55 +58,277 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ReadyResponse" }
 
-  /v1/iam/system/live:
-    get:
-      tags: [Proxy / iam]
-      summary: Proxy iam-svc liveness
-      operationId: getIamSystemLive
+  # ── Client-facing auth (BL-IAM-018 / S1-E-12) ──────────────────────────
+  # gateway REST → iam-svc gRPC via iam_grpc_adapter. iam-svc's own REST
+  # port was retired in this card; these gateway routes are the sole
+  # client-facing auth surface. Protected routes carry `security:
+  # [bearerAuth]`; gateway mounts `RequireBearerToken()` middleware per
+  # protected route in cmd/server.go. Unauthenticated transport failures
+  # (iam-svc unreachable) emit SERVICE_UNAVAILABLE (502), fail-closed.
+
+  /v1/sessions:
+    post:
+      tags: [Sessions]
+      summary: Login — exchange credentials for an access + refresh pair
+      description: |
+        Authenticates a staff user by email + password and returns a PASETO
+        access token plus an opaque refresh token. Public endpoint (no bearer).
+        TOTP enforcement at login is deferred to S1-E-06; `totp_code` is
+        accepted but ignored today.
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
       responses:
         "200":
-          description: Upstream OK
+          description: Login successful
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/LiveResponse" }
+              schema: { $ref: "#/components/schemas/LoginResponse" }
+        "400":
+          description: Malformed request body
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Account suspended or pending activation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
         "502":
-          description: Upstream call failed
+          description: iam-svc unreachable (fail-closed)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+    delete:
+      tags: [Sessions]
+      summary: Logout — revoke the current session row
+      description: |
+        Revokes the refresh-token row identified by the session-id claim baked
+        into the bearer access token. Idempotent — a second call on an
+        already-revoked session still returns 204.
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Session revoked
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "502":
+          description: iam-svc unreachable
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
 
-  /v1/iam/system/diagnostics/db-tx:
-    get:
-      tags: [Proxy / iam]
-      summary: Proxy iam-svc DB transaction diagnostic
+  /v1/sessions/refresh:
+    post:
+      tags: [Sessions]
+      summary: Rotate refresh token — issue a new access + refresh pair
       description: |
-        Traced cross-service verification path. Proxies to iam-svc's
-        state-mutating `/system/diagnostics/db-tx` diagnostic, which inserts a
-        row into `public.diagnostics` inside a WithTx and echoes the message
-        back. Used by the `S0-J-05` observability acceptance check: a single
-        request through this endpoint must produce one trace in Tempo whose
-        spans span gateway-svc and iam-svc, and matching `trace_id`-tagged log
-        lines in Loki for both containers.
-
-        Pilot-scope endpoint; not for health/readiness probes. Gate with auth
-        / a header secret before promoting past pilot.
-      operationId: getIamSystemDbTxDiagnostic
-      parameters:
-        - name: message
-          in: query
-          required: false
-          schema:
-            type: string
-            default: "no message"
-          description: Message to store and echo back.
+        Validates the supplied refresh token, rotates it (revokes the old row,
+        creates a new row) and returns a new pair. Refresh-token replay
+        (presenting a token already seen as revoked) triggers revocation of
+        every active session for the user.
+      operationId: refreshSession
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RefreshSessionRequest" }
       responses:
         "200":
-          description: Upstream OK
+          description: New token pair issued
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/DbTxDiagnosticResponse" }
+              schema: { $ref: "#/components/schemas/RefreshSessionResponse" }
+        "400":
+          description: Malformed request body
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Refresh token unknown, expired, or revoked (replay)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: User no longer active
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
         "502":
-          description: Upstream call failed
+          description: iam-svc unreachable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/me:
+    get:
+      tags: [Me]
+      summary: Current user profile
+      description: Returns the user profile resolved from the bearer access token.
+      operationId: getMe
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profile returned
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GetMeResponse" }
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: User not found (soft-deleted after token issuance)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "502":
+          description: iam-svc unreachable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/me/2fa/enroll:
+    post:
+      tags: [Me]
+      summary: Begin TOTP enrollment — generate a secret + otpauth URL
+      description: |
+        Generates a fresh TOTP secret, persists it encrypted at rest on the
+        current user's row, and returns the plaintext base32 secret plus the
+        `otpauth://` URL the client renders as a QR code. Returned exactly once.
+      operationId: enrollTotp
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Enrollment started
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EnrollTotpResponse" }
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "409":
+          description: TOTP already verified for this user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "502":
+          description: iam-svc unreachable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/me/2fa/verify:
+    post:
+      tags: [Me]
+      summary: Verify TOTP code and mark enrollment complete
+      description: |
+        Accepts a six-digit code from the authenticator app and, on success,
+        stamps `users.totp_verified_at` with now().
+      operationId: verifyTotp
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VerifyTotpRequest" }
+      responses:
+        "200":
+          description: Verification successful
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VerifyTotpResponse" }
+        "400":
+          description: Malformed request body
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Invalid TOTP code or missing/invalid bearer token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "422":
+          description: TOTP not yet enrolled
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "502":
+          description: iam-svc unreachable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /v1/users/{id}/suspend:
+    post:
+      tags: [Admin]
+      summary: Suspend a user and revoke every active session
+      description: |
+        Flips `iam.users.status` for the target from `active` to `suspended`
+        and revokes every non-revoked row in `iam.sessions` for that user
+        inside one transaction. Requires the bearer's user to hold the
+        `iam.users/suspend/global` permission (granted to `super_admin` by
+        migration `000006`). Idempotent. An admin cannot suspend themselves.
+      operationId: suspendUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Target user UUID.
+      responses:
+        "200":
+          description: User suspended (echoes the post-suspend profile)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SuspendUserResponse" }
+        "400":
+          description: Malformed user id OR actor equals target (self-suspend)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Bearer's user lacks the `iam.users/suspend/global` permission
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Target user not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "502":
+          description: iam-svc unreachable
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
@@ -295,22 +519,6 @@ components:
           properties:
             ok: { type: boolean, example: true }
 
-    DbTxDiagnosticResponse:
-      type: object
-      required: [data]
-      properties:
-        data:
-          type: object
-          required: [diagnostic_id, message]
-          properties:
-            diagnostic_id:
-              type: integer
-              format: int64
-              description: ID of the row inserted by iam-svc.
-            message:
-              type: string
-              description: Echo of the message received from the client.
-
     ErrorResponse:
       type: object
       required: [error]
@@ -319,8 +527,156 @@ components:
           type: object
           required: [code, message]
           properties:
-            code:    { type: string, example: BAD_GATEWAY }
-            message: { type: string, example: upstream service unavailable }
+            code:
+              type: string
+              description: |
+                UPPER_SNAKE error code emitted by the central error middleware.
+                Matches iam-svc's legacy REST envelope so existing clients /
+                e2e bodies are unaffected. Common values: `VALIDATION_ERROR`,
+                `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`,
+                `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR`.
+              example: UNAUTHORIZED
+            message: { type: string, example: invalid credentials }
+
+    # ── Auth / IAM schemas (BL-IAM-018 / S1-E-12) ──────────────────────────
+    # Mirror of the retired services/iam-svc/api/rest_oapi/openapi.yaml body
+    # shapes 1:1 so existing clients and e2e bodies keep working unchanged.
+
+    UserProfile:
+      type: object
+      required: [user_id, email, name, status]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: User UUID.
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        branch_id:
+          type: string
+          format: uuid
+          description: Home-branch UUID. Empty for branch-less staff (super_admin seed).
+        status:
+          type: string
+          enum: [active, suspended, pending]
+          description: Matches iam.users.status enum.
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          description: Plaintext password; bcrypt-compared server-side. Never logged.
+        totp_code:
+          type: string
+          description: |
+            Six-digit TOTP code. Accepted but unused in BL-IAM-001 (login-time
+            TOTP enforcement lands in S1-E-06). Clients should still send the
+            code after enrollment so they don't need to adapt when enforcement
+            flips on.
+
+    LoginResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [access_token, refresh_token, access_expires_at, refresh_expires_at, user]
+          properties:
+            access_token:
+              type: string
+              description: PASETO-signed access token. Short-lived.
+            refresh_token:
+              type: string
+              description: Opaque refresh token (hex-encoded). Store client-side; only its SHA-256 digest persists server-side.
+            access_expires_at: { type: string, format: date-time }
+            refresh_expires_at: { type: string, format: date-time }
+            user: { $ref: "#/components/schemas/UserProfile" }
+
+    RefreshSessionRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token: { type: string }
+
+    RefreshSessionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [access_token, refresh_token, access_expires_at, refresh_expires_at]
+          properties:
+            access_token: { type: string }
+            refresh_token: { type: string }
+            access_expires_at: { type: string, format: date-time }
+            refresh_expires_at: { type: string, format: date-time }
+
+    GetMeResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [user, totp_enrolled, totp_verified]
+          properties:
+            user: { $ref: "#/components/schemas/UserProfile" }
+            totp_enrolled:
+              type: boolean
+              description: True once the user has called POST /v1/me/2fa/enroll at least once.
+            totp_verified:
+              type: boolean
+              description: True once the user has successfully verified an enrolled secret.
+
+    EnrollTotpResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [secret, otpauth_url]
+          properties:
+            secret:
+              type: string
+              description: Plaintext base32 secret. Shown exactly once; discard after display.
+            otpauth_url:
+              type: string
+              description: otpauth:// URL — render as QR code in the UI.
+
+    VerifyTotpRequest:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          description: Six-digit TOTP code from the user's authenticator.
+
+    VerifyTotpResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [verified_at]
+          properties:
+            verified_at: { type: string, format: date-time }
+
+    SuspendUserResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [user]
+          properties:
+            user: { $ref: "#/components/schemas/UserProfile" }
 
     # ── Catalog error envelope (BL-GTW-002 / S1-E-10) ──────────────────
     # Mirror of services/catalog-svc/api/rest_oapi/openapi.yaml

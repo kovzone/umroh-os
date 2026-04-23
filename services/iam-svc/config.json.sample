@@ -3,15 +3,8 @@
     "name": "iam-svc"
   },
   "api": {
-    "rest": {
-      "host": "0.0.0.0",
-      "port": 4001
-    },
     "grpc": {
       "address": "0.0.0.0:50051"
-    },
-    "metrics": {
-      "enabled": true
     }
   },
   "store": {

@@ -23,6 +23,13 @@ const (
 	IamService_ValidateToken_FullMethodName   = "/pb.IamService/ValidateToken"
 	IamService_CheckPermission_FullMethodName = "/pb.IamService/CheckPermission"
 	IamService_RecordAudit_FullMethodName     = "/pb.IamService/RecordAudit"
+	IamService_Login_FullMethodName           = "/pb.IamService/Login"
+	IamService_RefreshSession_FullMethodName  = "/pb.IamService/RefreshSession"
+	IamService_Logout_FullMethodName          = "/pb.IamService/Logout"
+	IamService_GetMe_FullMethodName           = "/pb.IamService/GetMe"
+	IamService_EnrollTotp_FullMethodName      = "/pb.IamService/EnrollTotp"
+	IamService_VerifyTotp_FullMethodName      = "/pb.IamService/VerifyTotp"
+	IamService_SuspendUser_FullMethodName     = "/pb.IamService/SuspendUser"
 )
 
 // IamServiceClient is the client API for IamService service.
@@ -39,7 +46,15 @@ const (
 // service record one append-only row in iam.audit_logs:
 //   - RecordAudit — insert one row into iam.audit_logs for a state-changing action
 //
-// GetUser remains planned (S1-E-06) — not part of this contract yet.
+// BL-IAM-018 (S1-E-12) moves the client-facing REST surface onto gateway-svc.
+// These RPCs mirror the operations that used to live on iam-svc's REST port.
+// They are gateway-to-iam-svc only — never exposed directly to browsers.
+// Auth extraction (bearer → user_id / session_id) happens once at the gateway's
+// bearer middleware per ADR 0009; iam-svc handlers trust the user_id /
+// session_id fields and do not re-validate the bearer.
+//   - Login / RefreshSession / Logout
+//   - GetMe / EnrollTotp / VerifyTotp
+//   - SuspendUser (gateway enforces bearer + permission gate)
 type IamServiceClient interface {
 	// Healthz returns ok=true if the service process is alive.
 	// Placeholder for the pilot; real health checks go through gRPC health protocol.
@@ -67,6 +82,34 @@ type IamServiceClient interface {
 	// Returns InvalidArgument when resource / action are empty, or when user_id /
 	// branch_id are set but not valid UUIDs.
 	RecordAudit(ctx context.Context, in *RecordAuditRequest, opts ...grpc.CallOption) (*RecordAuditResponse, error)
+	// Login exchanges email + password for a PASETO access + opaque refresh pair.
+	// Public from the gateway's perspective (no bearer required on the REST route
+	// that fronts it). TOTP enforcement at login is deferred to S1-E-06.
+	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
+	// RefreshSession rotates a refresh token and returns a new pair. Replay
+	// (presenting a revoked refresh token) revokes every active session for the
+	// user and fails Unauthenticated.
+	RefreshSession(ctx context.Context, in *RefreshSessionRequest, opts ...grpc.CallOption) (*RefreshSessionResponse, error)
+	// Logout revokes the session row identified by session_id (the gateway
+	// forwards the id from the bearer's payload after ValidateToken). Idempotent:
+	// a second logout on the same session_id returns ok.
+	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error)
+	// GetMe returns the profile for the user_id carried in the validated bearer
+	// (forwarded by the gateway). NotFound when the user was soft-deleted after
+	// token issuance.
+	GetMe(ctx context.Context, in *GetMeRequest, opts ...grpc.CallOption) (*GetMeResponse, error)
+	// EnrollTotp generates a fresh TOTP secret, persists it encrypted at rest on
+	// the user's row, and returns the plaintext secret + otpauth URL exactly once.
+	// AlreadyExists when the user already has a verified TOTP.
+	EnrollTotp(ctx context.Context, in *EnrollTotpRequest, opts ...grpc.CallOption) (*EnrollTotpResponse, error)
+	// VerifyTotp accepts a six-digit code from the user's authenticator and, on
+	// success, stamps users.totp_verified_at. Unauthenticated for a bad code.
+	VerifyTotp(ctx context.Context, in *VerifyTotpRequest, opts ...grpc.CallOption) (*VerifyTotpResponse, error)
+	// SuspendUser flips the target user's status to `suspended` and revokes every
+	// active session for that user in one transaction. Gateway validates the
+	// bearer; this handler enforces the iam.users/suspend/global permission gate
+	// via an inline CheckPermission call and refuses self-suspend.
+	SuspendUser(ctx context.Context, in *SuspendUserRequest, opts ...grpc.CallOption) (*SuspendUserResponse, error)
 }
 
 type iamServiceClient struct {
@@ -117,6 +160,76 @@ func (c *iamServiceClient) RecordAudit(ctx context.Context, in *RecordAuditReque
 	return out, nil
 }
 
+func (c *iamServiceClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LoginResponse)
+	err := c.cc.Invoke(ctx, IamService_Login_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *iamServiceClient) RefreshSession(ctx context.Context, in *RefreshSessionRequest, opts ...grpc.CallOption) (*RefreshSessionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RefreshSessionResponse)
+	err := c.cc.Invoke(ctx, IamService_RefreshSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *iamServiceClient) Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LogoutResponse)
+	err := c.cc.Invoke(ctx, IamService_Logout_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *iamServiceClient) GetMe(ctx context.Context, in *GetMeRequest, opts ...grpc.CallOption) (*GetMeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMeResponse)
+	err := c.cc.Invoke(ctx, IamService_GetMe_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *iamServiceClient) EnrollTotp(ctx context.Context, in *EnrollTotpRequest, opts ...grpc.CallOption) (*EnrollTotpResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EnrollTotpResponse)
+	err := c.cc.Invoke(ctx, IamService_EnrollTotp_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *iamServiceClient) VerifyTotp(ctx context.Context, in *VerifyTotpRequest, opts ...grpc.CallOption) (*VerifyTotpResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VerifyTotpResponse)
+	err := c.cc.Invoke(ctx, IamService_VerifyTotp_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *iamServiceClient) SuspendUser(ctx context.Context, in *SuspendUserRequest, opts ...grpc.CallOption) (*SuspendUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SuspendUserResponse)
+	err := c.cc.Invoke(ctx, IamService_SuspendUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // IamServiceServer is the server API for IamService service.
 // All implementations must embed UnimplementedIamServiceServer
 // for forward compatibility.
@@ -131,7 +244,15 @@ func (c *iamServiceClient) RecordAudit(ctx context.Context, in *RecordAuditReque
 // service record one append-only row in iam.audit_logs:
 //   - RecordAudit — insert one row into iam.audit_logs for a state-changing action
 //
-// GetUser remains planned (S1-E-06) — not part of this contract yet.
+// BL-IAM-018 (S1-E-12) moves the client-facing REST surface onto gateway-svc.
+// These RPCs mirror the operations that used to live on iam-svc's REST port.
+// They are gateway-to-iam-svc only — never exposed directly to browsers.
+// Auth extraction (bearer → user_id / session_id) happens once at the gateway's
+// bearer middleware per ADR 0009; iam-svc handlers trust the user_id /
+// session_id fields and do not re-validate the bearer.
+//   - Login / RefreshSession / Logout
+//   - GetMe / EnrollTotp / VerifyTotp
+//   - SuspendUser (gateway enforces bearer + permission gate)
 type IamServiceServer interface {
 	// Healthz returns ok=true if the service process is alive.
 	// Placeholder for the pilot; real health checks go through gRPC health protocol.
@@ -159,6 +280,34 @@ type IamServiceServer interface {
 	// Returns InvalidArgument when resource / action are empty, or when user_id /
 	// branch_id are set but not valid UUIDs.
 	RecordAudit(context.Context, *RecordAuditRequest) (*RecordAuditResponse, error)
+	// Login exchanges email + password for a PASETO access + opaque refresh pair.
+	// Public from the gateway's perspective (no bearer required on the REST route
+	// that fronts it). TOTP enforcement at login is deferred to S1-E-06.
+	Login(context.Context, *LoginRequest) (*LoginResponse, error)
+	// RefreshSession rotates a refresh token and returns a new pair. Replay
+	// (presenting a revoked refresh token) revokes every active session for the
+	// user and fails Unauthenticated.
+	RefreshSession(context.Context, *RefreshSessionRequest) (*RefreshSessionResponse, error)
+	// Logout revokes the session row identified by session_id (the gateway
+	// forwards the id from the bearer's payload after ValidateToken). Idempotent:
+	// a second logout on the same session_id returns ok.
+	Logout(context.Context, *LogoutRequest) (*LogoutResponse, error)
+	// GetMe returns the profile for the user_id carried in the validated bearer
+	// (forwarded by the gateway). NotFound when the user was soft-deleted after
+	// token issuance.
+	GetMe(context.Context, *GetMeRequest) (*GetMeResponse, error)
+	// EnrollTotp generates a fresh TOTP secret, persists it encrypted at rest on
+	// the user's row, and returns the plaintext secret + otpauth URL exactly once.
+	// AlreadyExists when the user already has a verified TOTP.
+	EnrollTotp(context.Context, *EnrollTotpRequest) (*EnrollTotpResponse, error)
+	// VerifyTotp accepts a six-digit code from the user's authenticator and, on
+	// success, stamps users.totp_verified_at. Unauthenticated for a bad code.
+	VerifyTotp(context.Context, *VerifyTotpRequest) (*VerifyTotpResponse, error)
+	// SuspendUser flips the target user's status to `suspended` and revokes every
+	// active session for that user in one transaction. Gateway validates the
+	// bearer; this handler enforces the iam.users/suspend/global permission gate
+	// via an inline CheckPermission call and refuses self-suspend.
+	SuspendUser(context.Context, *SuspendUserRequest) (*SuspendUserResponse, error)
 	mustEmbedUnimplementedIamServiceServer()
 }
 
@@ -180,6 +329,27 @@ func (UnimplementedIamServiceServer) CheckPermission(context.Context, *CheckPerm
 }
 func (UnimplementedIamServiceServer) RecordAudit(context.Context, *RecordAuditRequest) (*RecordAuditResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RecordAudit not implemented")
+}
+func (UnimplementedIamServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+}
+func (UnimplementedIamServiceServer) RefreshSession(context.Context, *RefreshSessionRequest) (*RefreshSessionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RefreshSession not implemented")
+}
+func (UnimplementedIamServiceServer) Logout(context.Context, *LogoutRequest) (*LogoutResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
+}
+func (UnimplementedIamServiceServer) GetMe(context.Context, *GetMeRequest) (*GetMeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMe not implemented")
+}
+func (UnimplementedIamServiceServer) EnrollTotp(context.Context, *EnrollTotpRequest) (*EnrollTotpResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EnrollTotp not implemented")
+}
+func (UnimplementedIamServiceServer) VerifyTotp(context.Context, *VerifyTotpRequest) (*VerifyTotpResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method VerifyTotp not implemented")
+}
+func (UnimplementedIamServiceServer) SuspendUser(context.Context, *SuspendUserRequest) (*SuspendUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SuspendUser not implemented")
 }
 func (UnimplementedIamServiceServer) mustEmbedUnimplementedIamServiceServer() {}
 func (UnimplementedIamServiceServer) testEmbeddedByValue()                    {}
@@ -274,6 +444,132 @@ func _IamService_RecordAudit_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _IamService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoginRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IamServiceServer).Login(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IamService_Login_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IamServiceServer).Login(ctx, req.(*LoginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IamService_RefreshSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefreshSessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IamServiceServer).RefreshSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IamService_RefreshSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IamServiceServer).RefreshSession(ctx, req.(*RefreshSessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IamService_Logout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LogoutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IamServiceServer).Logout(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IamService_Logout_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IamServiceServer).Logout(ctx, req.(*LogoutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IamService_GetMe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IamServiceServer).GetMe(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IamService_GetMe_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IamServiceServer).GetMe(ctx, req.(*GetMeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IamService_EnrollTotp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnrollTotpRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IamServiceServer).EnrollTotp(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IamService_EnrollTotp_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IamServiceServer).EnrollTotp(ctx, req.(*EnrollTotpRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IamService_VerifyTotp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyTotpRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IamServiceServer).VerifyTotp(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IamService_VerifyTotp_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IamServiceServer).VerifyTotp(ctx, req.(*VerifyTotpRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IamService_SuspendUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SuspendUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IamServiceServer).SuspendUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IamService_SuspendUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IamServiceServer).SuspendUser(ctx, req.(*SuspendUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // IamService_ServiceDesc is the grpc.ServiceDesc for IamService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -296,6 +592,34 @@ var IamService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RecordAudit",
 			Handler:    _IamService_RecordAudit_Handler,
+		},
+		{
+			MethodName: "Login",
+			Handler:    _IamService_Login_Handler,
+		},
+		{
+			MethodName: "RefreshSession",
+			Handler:    _IamService_RefreshSession_Handler,
+		},
+		{
+			MethodName: "Logout",
+			Handler:    _IamService_Logout_Handler,
+		},
+		{
+			MethodName: "GetMe",
+			Handler:    _IamService_GetMe_Handler,
+		},
+		{
+			MethodName: "EnrollTotp",
+			Handler:    _IamService_EnrollTotp_Handler,
+		},
+		{
+			MethodName: "VerifyTotp",
+			Handler:    _IamService_VerifyTotp_Handler,
+		},
+		{
+			MethodName: "SuspendUser",
+			Handler:    _IamService_SuspendUser_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

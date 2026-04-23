@@ -12,7 +12,7 @@
     }
   },
   "external": {
-    "iam_svc":       { "name": "iam-svc",       "address": "http://iam-svc:4001",       "grpc_target": "iam-svc:50051" },
+    "iam_svc":       { "name": "iam-svc",                                               "grpc_target": "iam-svc:50051" },
     "catalog_svc":   { "name": "catalog-svc",                                           "grpc_target": "catalog-svc:50052" },
     "booking_svc":   { "name": "booking-svc",                                           "grpc_target": "booking-svc:50053" },
     "jamaah_svc":    { "name": "jamaah-svc",                                            "grpc_target": "jamaah-svc:50054" },

@@ -9,7 +9,6 @@ import (
 	"gateway-svc/adapter/catalog_grpc_adapter"
 	"gateway-svc/adapter/finance_rest_adapter"
 	"gateway-svc/adapter/iam_grpc_adapter"
-	"gateway-svc/adapter/iam_rest_adapter"
 	"gateway-svc/api/rest_oapi"
 	"gateway-svc/service"
 	"gateway-svc/util/config"
@@ -126,16 +125,14 @@ func start() {
 	// gateway-svc has no DB and no internal store; the service layer dispatches
 	// to these per-backend adapters.
 	//
-	// - iam_rest_adapter: still serves the interim /v1/iam/system/live and
-	//   /v1/iam/system/diagnostics/db-tx probes. Retires with BL-IAM-018 / S1-E-12.
 	// - finance_rest_adapter: still serves /v1/finance/system/live and
 	//   /v1/finance/ping (BL-IAM-002 permission-gate demo). Retires with
 	//   BL-IAM-019 / S1-E-14.
 	//
-	// The seven pure-scaffold backends (booking/crm/jamaah/logistics/ops/
-	// payment/visa) retired their REST surfaces in BL-REFACTOR-002..008 /
-	// S1-E-13 — gateway has no adapters for them.
-	iamAdapter := iam_rest_adapter.NewAdapter(logger, tracer, config.External.IamSvc.Address)
+	// iam-svc retired its REST port in BL-IAM-018 / S1-E-12 — the
+	// iam_grpc_adapter (dialled above) is the only iam surface now. The
+	// seven pure-scaffold backends retired their REST in
+	// BL-REFACTOR-002..008 / S1-E-13. catalog-svc did the same in G7.
 	financeAdapter := finance_rest_adapter.NewAdapter(logger, tracer, config.External.FinanceSvc.Address)
 
 	// --- Init service layer ---
@@ -143,7 +140,7 @@ func start() {
 		Logger:      logger,
 		Tracer:      tracer,
 		AppName:     config.App.Name,
-		IamRest:     iamAdapter,
+		IamGrpc:     iamGrpcAdapter,
 		CatalogGrpc: catalogGrpcAdapter,
 		FinanceRest: financeAdapter,
 	})

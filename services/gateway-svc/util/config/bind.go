@@ -18,8 +18,8 @@ func bindEnvironmentVariables() {
 
 	// External backends (one block per backend the gateway calls).
 
+	// iam-svc is gRPC-only (per ADR 0009 / BL-IAM-018) — no REST address.
 	viper.BindEnv("external.iam_svc.name", "IAM_SVC_NAME")
-	viper.BindEnv("external.iam_svc.address", "IAM_SVC_ADDRESS")
 	viper.BindEnv("external.iam_svc.grpc_target", "IAM_SVC_GRPC_TARGET")
 
 	// catalog-svc is gRPC-only (per ADR 0009 / BL-REFACTOR-001) — no REST address.

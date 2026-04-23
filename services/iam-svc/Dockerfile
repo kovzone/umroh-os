@@ -47,8 +47,8 @@ COPY --from=build-env /app/api/main main
 # Note: config.json is mounted via docker-compose volume
 # This allows for different configs (local vs docker) without rebuilding
 
-# Expose REST (4001) and gRPC (50051)
-EXPOSE 4001 50051
+# Expose gRPC (50051). REST retired BL-IAM-018 / S1-E-12; iam-svc is gRPC-only.
+EXPOSE 50051
 
 # Run the executable with 'start' argument
 ENTRYPOINT [ "./main", "start" ]

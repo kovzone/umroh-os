@@ -20,26 +20,15 @@ type App struct {
 	Name string `mapstructure:"name"`
 }
 
-// API config
-
-type Rest struct {
-	Host string `mapstructure:"host"`
-	Port int    `mapstructure:"port"`
-}
+// API config — iam-svc is gRPC-only post BL-IAM-018 / S1-E-12. Metrics flow
+// via OTLP push (see util/monitoring) — no local /metrics HTTP endpoint.
 
 type Grpc struct {
 	Address string `mapstructure:"address"`
 }
 
 type Api struct {
-	Rest    Rest    `mapstructure:"rest"`
-	Grpc    Grpc    `mapstructure:"grpc"`
-	Metrics Metrics `mapstructure:"metrics"`
-}
-
-// Metrics config (Prometheus). Opt-in: set enabled to true to expose /metrics.
-type Metrics struct {
-	Enabled bool `mapstructure:"enabled"`
+	Grpc Grpc `mapstructure:"grpc"`
 }
 
 // Store config
