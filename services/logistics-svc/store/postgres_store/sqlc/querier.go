@@ -15,7 +15,19 @@ type Querier interface {
 
 	// Fulfillment task queries (S3-E-02 / BL-LOG-001)
 	GetFulfillmentTaskByBookingID(ctx context.Context, bookingID string) (FulfillmentTaskRow, error)
+	GetFulfillmentTaskByID(ctx context.Context, id string) (FulfillmentTaskRow, error)
 	InsertFulfillmentTask(ctx context.Context, arg InsertFulfillmentTaskParams) (FulfillmentTaskRow, error)
+
+	// Shipment queries (BL-LOG-002 / migration 000019)
+	InsertShipment(ctx context.Context, arg InsertShipmentParams) (ShipmentRow, error)
+	GetShipmentByTaskID(ctx context.Context, taskID string) (ShipmentRow, error)
+	UpdateFulfillmentTaskStatus(ctx context.Context, arg UpdateFulfillmentTaskStatusParams) error
+
+	// Pickup token queries (BL-LOG-003 / migration 000019)
+	InsertPickupToken(ctx context.Context, arg InsertPickupTokenParams) (PickupTokenRow, error)
+	GetPickupTokenByToken(ctx context.Context, token string) (PickupTokenRow, error)
+	GetActivePickupTokenByTaskID(ctx context.Context, taskID string) (PickupTokenRow, error)
+	MarkPickupTokenUsed(ctx context.Context, id string) (PickupTokenRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

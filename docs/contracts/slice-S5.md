@@ -278,6 +278,120 @@ P2 and P3 bugs discovered during UAT do **not** block S5 completion — they are
 
 ---
 
+## § UAT Scenario Checklists (BL-QA-002 / BL-QA-003)
+
+*(Landed with `S2-J-05` / `S5-J-02`. Evidence rows correspond to `docs/UAT-Checklist-S1-S4.docx`.)*
+
+These checklists define the **minimum passing criteria** for S5 to be declared done. Each row is a scenario the designated executor runs manually (or via the Playwright E2E suite in `tests/e2e/tests/`). Status is recorded in `docs/UAT-Checklist-S1-S4.docx` — this document is the *definition*; the `.docx` is the *evidence*.
+
+**Legend:** ✅ Pass | ❌ Fail | ⏭ Skip (reason required) | 🔁 Re-test after fix
+
+---
+
+### BL-QA-002 — Core checklist: Auth, Catalog, Booking, Permission & Audit
+
+*Executor: Lutfi | Task code: `S5-L-01`*
+
+| # | Scenario | Endpoint / Action | Expected result | Priority |
+|---|---|---|---|---|
+| C-01 | Login valid (admin) | `POST /v1/auth/login` | 200, PASETO `v2.local.*` access token + 64-char refresh token | P0 |
+| C-02 | Login invalid password | `POST /v1/auth/login` | 401 `invalid_credentials` | P0 |
+| C-03 | Refresh session | `POST /v1/auth/refresh` | 200, new access + refresh token pair | P0 |
+| C-04 | Logout (invalidate token) | `DELETE /v1/auth/logout` | 204; subsequent `/v1/me` with old token → 401 | P0 |
+| C-05 | `GET /v1/me` with valid token | Bearer auth | 200, correct `user_id`, `email`, `roles` | P0 |
+| C-06 | `GET /v1/me` with no token | No Authorization header | 401 `unauthorized` | P0 |
+| C-07 | Browse catalog public (no auth) | `GET /v1/packages` | 200, at least 1 active package; draft/archived excluded | P0 |
+| C-08 | Package detail — active | `GET /v1/packages/{id}` | 200, pricing array non-empty, departures array present | P0 |
+| C-09 | Package detail — draft → 404 | `GET /v1/packages/{draft_id}` | 404 `package_not_found` | P0 |
+| C-10 | Draft booking (B2C, no auth) | `POST /v1/bookings` | 201/200, `status: "draft"`, booking_id returned | P0 |
+| C-11 | Booking without required fields | `POST /v1/bookings` (missing email) | 400/422, error object present | P1 |
+| C-12 | Booking with cancelled departure | `POST /v1/bookings` | 400/404, booking rejected | P1 |
+| C-13 | Create package (staff) | `POST /v1/packages` with valid token | 201, package returned | P0 |
+| C-14 | Create package (no permission) | `POST /v1/packages` with non-staff token | 403 `forbidden` | P0 |
+| C-15 | Suspend user (super_admin) | `POST /v1/users/{id}/suspend` | 200, user status becomes `suspended` | P1 |
+| C-16 | Suspended user cannot login | `POST /v1/auth/login` | 401 or 403 `account_suspended` | P0 |
+| C-17 | Audit log created on state change | DB query `iam.audit_logs` after C-13 | At least 1 audit row for `resource=package action=create` | P1 |
+| C-18 | Permission gate: `catalog.package.manage` | Staff with correct permission creates; staff without → 403 | Permission enforced correctly | P0 |
+| C-19 | 2FA TOTP enroll | `POST /v1/me/2fa/enroll` | 200, TOTP URI returned | P2 |
+| C-20 | TOTP verify | `POST /v1/me/2fa/verify` with valid OTP | 200 `verified: true` | P2 |
+
+**Regression scenarios (permission + audit trail):**
+
+| # | Regression | What to verify |
+|---|---|---|
+| R-01 | All protected routes require bearer | Hit each `v1Protected` route without token → every one returns 401 |
+| R-02 | Audit log not writable by client | `POST /iam/audit_logs` (if such route existed) should be 404 or 403 |
+| R-03 | `RequireBearerToken` middleware blocks all protected groups | Manually hit `/v1/me`, `/v1/leads`, `/v1/finance/summary` without auth → all 401 |
+| R-04 | Token from service A not accepted by service B | Token issued by iam-svc validated by gateway middleware correctly |
+
+---
+
+### BL-QA-003 — Payment, Finance & Logistics checklist
+
+*Executor: Elda | Task code: `S5-E-01`*
+
+#### Payment (S2)
+
+| # | Scenario | Endpoint / Action | Expected result | Priority |
+|---|---|---|---|---|
+| P-01 | Issue VA (mock gateway) | `POST /v1/invoices` + `POST /v1/invoices/{id}/virtual-accounts` | 200/201; `account_number`, `bank_code`, `amount`, `expires_at` present | P0 |
+| P-02 | VA idempotent on same booking | Repeat `POST /v1/invoices` same `booking_id` | Same `invoice_id` returned, no duplicate invoice | P0 |
+| P-03 | Mock webhook: paid full amount | `POST /v1/webhooks/mock/trigger` `status=paid amount=full` | 200; booking transitions to `paid_in_full` within 1 s | P0 |
+| P-04 | Mock webhook: underpayment | `POST /v1/webhooks/mock/trigger` `amount < invoice.amount` | Booking stays `pending_payment` | P0 |
+| P-05 | Duplicate webhook idempotent | Same `invoice_id` trigger twice | 200 both times; only 1 row in `payment.payment_events` | P0 |
+| P-06 | Midtrans webhook without auth header | `POST /v1/webhooks/midtrans` no `X-Callback-Token` | 401/403 | P0 |
+| P-07 | ReissuePaymentLink (CS closing) | `POST /v1/payments/link` with `booking_id` + bearer | 200; new VA issued if old expired (`is_new: true`); idempotent if still active | P1 |
+| P-08 | ReissuePaymentLink — booking not found | `POST /v1/payments/link` bad `booking_id` | 404 `booking_not_found` | P1 |
+| P-09 | VA already paid → reissue returns existing | `POST /v1/payments/link` on `paid_in_full` booking | 200, `is_new: false`, same VA details | P1 |
+
+#### Finance (S3 + S5)
+
+| # | Scenario | Endpoint / Action | Expected result | Priority |
+|---|---|---|---|---|
+| F-01 | Journal posted after payment | DB query `finance.journal_entries` after P-03 | At least 1 entry with `idempotency_key LIKE 'payment:%'` | P0 |
+| F-02 | Double-entry balance invariant | `SELECT SUM(debit_idr) - SUM(credit_idr) FROM finance.journal_lines WHERE journal_entry_id = {id}` | Result = 0 for every entry | P0 |
+| F-03 | Finance summary endpoint | `GET /v1/finance/summary` (with finance-role bearer) | 200; `accounts` array non-empty; every `net_idr = total_debit_idr - total_credit_idr` | P0 |
+| F-04 | Finance summary: trial balance | Sum all `net_idr` across all accounts after seeded test runs | Total ≈ 0 (balanced ledger) | P0 |
+| F-05 | Journal list — first page | `GET /v1/finance/journals` | 200; `entries` non-empty; each entry has ≥2 lines | P0 |
+| F-06 | Journal list — date filter | `GET /v1/finance/journals?from=2026-01-01&to=2026-12-31` | Only entries within range returned | P1 |
+| F-07 | Journal list — invalid date format | `GET /v1/finance/journals?from=bad-date` | 400 `invalid_date_format` | P1 |
+| F-08 | Journal delete is forbidden | `DELETE /v1/finance/journals/{id}` (any bearer) | 403 `forbidden` — use CorrectJournal instead | P0 |
+| F-09 | CorrectJournal: reversal posted | `POST /v1/finance/journals/{id}/correct` | 200; `correction_entry_id` returned; new journal lines reverse Dr/Cr of original | P0 |
+| F-10 | CorrectJournal: idempotent second call | Same `{id}` corrected twice | 200 both times; `idempotent: true` on second call; only 1 correction entry in DB | P0 |
+| F-11 | CorrectJournal: not found | `POST /v1/finance/journals/je_nonexistent/correct` | 404 `not_found` | P1 |
+| F-12 | Finance summary: unauthorized | `GET /v1/finance/summary` no token | 401 | P0 |
+| F-13 | P&L report | `GET /v1/finance/pl` with bearer | 200; `revenues`, `expenses`, `net_profit` fields present | P1 |
+| F-14 | Balance sheet | `GET /v1/finance/balance-sheet` with bearer | 200; `assets`, `liabilities`, `equity` fields present | P1 |
+| F-15 | GRN auto-journal | `POST /v1/finance/grn` → DB `finance.journal_entries` | Entry posted with `idempotency_key LIKE 'grn:%'` | P1 |
+
+#### Logistics (S3)
+
+| # | Scenario | Endpoint / Action | Expected result | Priority |
+|---|---|---|---|---|
+| L-01 | Ship fulfillment task | `POST /v1/logistics/ship` (bearer, paid booking) | 200; `shipment_id` returned; carrier + tracking_number present | P1 |
+| L-02 | Generate pickup QR | `POST /v1/logistics/pickup-qr` (bearer) | 200; `qr_url` or `qr_token` returned | P1 |
+| L-03 | Redeem pickup QR | `POST /v1/logistics/pickup-qr/redeem` (valid token) | 200; task marked as collected | P1 |
+| L-04 | Redeem QR: invalid token | `POST /v1/logistics/pickup-qr/redeem` (bad token) | 400/401 `invalid_token` | P1 |
+| L-05 | Room allocation | `POST /v1/ops/room-allocation` (bearer) | 200; rooms assigned; no conflict | P1 |
+| L-06 | Export manifest | `GET /v1/ops/manifest/{departure_id}/export` | 200; downloadable; contains jamaah rows | P1 |
+
+#### Finance / Payment end-to-end trace
+
+This composite scenario verifies the full chain: booking → invoice → VA → webhook → journal → summary.
+
+| Step | Action | Verify |
+|---|---|---|
+| E2E-01 | Create draft booking | `status: "draft"` |
+| E2E-02 | Issue VA (mock) | `account_number` non-empty, `expires_at` in future |
+| E2E-03 | Trigger mock webhook `paid` | Booking `status: "paid_in_full"` |
+| E2E-04 | Confirm journal entry exists | `finance.journal_entries` has `payment:{invoice_id}` |
+| E2E-05 | Confirm double-entry balance | `SUM(debit) = SUM(credit)` for entry from E2E-04 |
+| E2E-06 | Pull finance summary | `1001 Bank net_idr > 0`; `2001 Pilgrim Liability net_idr < 0` |
+
+This trace is **automated** in `tests/e2e/tests/05-uat-s2-booking-payment.spec.ts` and must pass before S5 is declared done.
+
+---
+
 ## § Error envelope (S5 additions)
 
 All S5 REST error responses use the shared envelope established in S1–S4:
@@ -299,3 +413,4 @@ All S5 REST error responses use the shared envelope established in S1–S4:
 ## § Changelog
 
 - **2026-04-23** — Initial version drafted via tasks `S5-J-01` and `S5-J-02`. Covers: `GET /v1/finance/summary` account balance aggregation endpoint (S5-J-01); `GET /v1/finance/journals` paginated journal entry list with date filter and keyset cursor pagination (S5-J-01); bug severity matrix P0–P3 with fix SLA and triage rules (S5-J-02); UAT completion gates referencing `docs/UAT-Checklist-S1-S4.docx` (S5-J-01).
+- **2026-04-23** — UAT scenario checklists added (BL-QA-002 / BL-QA-003): core auth/catalog/booking/permission/audit regression matrix (C-01..C-20, R-01..R-04); payment/finance/logistics pass criteria (P-01..P-09, F-01..F-15, L-01..L-06); end-to-end payment-to-journal trace (E2E-01..E2E-06).

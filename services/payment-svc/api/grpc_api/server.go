@@ -11,9 +11,12 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Server implements pb.PaymentServiceServer by delegating to the service layer.
+// Server implements pb.PaymentServiceWithReissueServer by delegating to the service layer.
+// Embeds UnimplementedPaymentServiceWithReissueServer so all RPCs have safe defaults;
+// actual implementations are in payment.go (IssueVirtualAccount, ProcessWebhook, StartRefund)
+// and payment_reissue.go (ReissuePaymentLink).
 type Server struct {
-	pb.UnimplementedPaymentServiceServer
+	pb.UnimplementedPaymentServiceWithReissueServer
 
 	logger *zerolog.Logger
 	tracer trace.Tracer

@@ -24,12 +24,15 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Adapter wraps finance-svc's FinanceReportsClient and FinanceDepthClient.
+// Adapter wraps finance-svc's FinanceReportsClient, FinanceDepthClient, FinanceGRNClient,
+// and FinanceCorrectionClient.
 type Adapter struct {
 	logger             *zerolog.Logger
 	tracer             trace.Tracer
 	financeClient      pb.FinanceReportsClient
 	financeDepthClient pb.FinanceDepthClient
+	grnClient          pb.FinanceGRNClient
+	correctionClient   pb.FinanceCorrectionClient
 }
 
 // NewAdapter creates a finance gRPC adapter from an already-dialled conn.
@@ -39,6 +42,8 @@ func NewAdapter(logger *zerolog.Logger, tracer trace.Tracer, cc *grpc.ClientConn
 		tracer:             tracer,
 		financeClient:      pb.NewFinanceReportsClient(cc),
 		financeDepthClient: pb.NewFinanceDepthClient(cc),
+		grnClient:          pb.NewFinanceGRNClient(cc),
+		correctionClient:   pb.NewFinanceCorrectionClient(cc),
 	}
 }
 

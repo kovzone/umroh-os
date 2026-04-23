@@ -20,7 +20,10 @@ import (
 func runGrpcServer(address string, apiServer *grpc_api.Server) *grpc.Server {
 	grpcServer := grpc.NewServer()
 
-	pb.RegisterOpsServiceServer(grpcServer, apiServer)
+	// RegisterOpsServiceServerFull registers Healthz (generated) + all hand-written
+	// ops RPCs: RunRoomAllocation, GetRoomAllocation, GenerateIDCard, VerifyIDCard,
+	// ExportManifest.
+	pb.RegisterOpsServiceServerFull(grpcServer, apiServer)
 
 	healthServer := health.NewServer()
 	health_pb.RegisterHealthServer(grpcServer, healthServer)

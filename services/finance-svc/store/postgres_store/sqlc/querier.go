@@ -15,6 +15,7 @@ type Querier interface {
 
 	// Journal entry queries (S3-E-03 / BL-FIN-001..003)
 	GetJournalEntryByIdempotencyKey(ctx context.Context, idempotencyKey string) (JournalEntryRow, error)
+	GetJournalEntryByID(ctx context.Context, id string) (JournalEntryRow, error)
 	InsertJournalEntry(ctx context.Context, arg InsertJournalEntryParams) (JournalEntryRow, error)
 	InsertJournalLine(ctx context.Context, arg InsertJournalLineParams) (JournalLineRow, error)
 

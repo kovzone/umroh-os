@@ -20,7 +20,9 @@ import (
 func runGrpcServer(address string, apiServer *grpc_api.Server) *grpc.Server {
 	grpcServer := grpc.NewServer()
 
-	pb.RegisterPaymentServiceServer(grpcServer, apiServer)
+	// RegisterPaymentServiceServerFull combines the original 4 RPCs with the
+	// new ReissuePaymentLink RPC added in BL-PAY-020.
+	pb.RegisterPaymentServiceServerFull(grpcServer, apiServer)
 
 	healthServer := health.NewServer()
 	health_pb.RegisterHealthServer(grpcServer, healthServer)

@@ -19,6 +19,8 @@ import (
 //   - DbTxDiagnostic — canonical WithTx reference
 //   - UploadDocument — store a document record in status='pending' (F3-W1 / BL-DOC-001)
 //   - ReviewDocument — approve or reject a document (F3-W3 / BL-DOC-003)
+//   - TriggerOCR — run stub OCR on a document (BL-DOC-002)
+//   - GetOCRStatus — retrieve OCR results for a document (BL-DOC-002)
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
@@ -31,6 +33,10 @@ type IService interface {
 
 	// Departure manifest (Wave-1A)
 	GetDepartureManifest(ctx context.Context, params *GetDepartureManifestParams) (*GetDepartureManifestResult, error)
+
+	// OCR stub (BL-DOC-002 / migration 000020)
+	TriggerOCR(ctx context.Context, params *TriggerOCRParams) (*TriggerOCRResult, error)
+	GetOCRStatus(ctx context.Context, params *GetOCRStatusParams) (*GetOCRStatusResult, error)
 }
 
 type Service struct {

@@ -842,6 +842,90 @@ Every state-changing call in S2 MUST emit an `iam.audit_logs` row via `iam.v1.Ia
 
 ---
 
+## § Checkout UI — VA Display & Polling (BL-LGV-002)
+
+*(Landed with `S2-L-01`.)*
+
+This section specifies the frontend contract for the checkout page that is displayed after a booking is submitted and a Virtual Account is issued. The page must satisfy the acceptance criteria in `docs/06-features/F5-payment.md` §UI and the E2E check in `tests/e2e/tests/05-uat-s2-booking-payment.spec.ts` `S2-UI-02`.
+
+### Page route
+
+```
+/checkout/{booking_id}
+```
+
+The `booking_id` is the ULID returned by `POST /v1/bookings`. Navigating to this route with a booking that has `status = "draft"` (no VA yet) is allowed — the page renders a loading state until `status` transitions to `"pending_payment"`.
+
+### Data fetch sequence
+
+```
+1. GET /v1/bookings/{booking_id}          → initial booking snapshot
+2. GET /v1/invoices?booking_id={id}       → resolve active invoice_id
+3. GET /v1/invoices/{invoice_id}/va       → resolve VA (account_number, bank_code,
+                                            amount, expires_at)
+```
+
+Steps 2 and 3 are merged into a single composite state object on the client. All three endpoints require a valid bearer token in the `Authorization` header. The client stores the token in memory (not `localStorage`) per the UmrohOS secure session policy.
+
+### VA display fields
+
+The checkout page MUST show all of the following once the VA is available:
+
+| Field | Source | Display |
+| --- | --- | --- |
+| Bank name | `bank_code` → lookup table | e.g. "BCA", "Mandiri", "BNI" |
+| Account number | `account_number` | Large monospace, visually prominent |
+| Amount (IDR) | `amount` | Formatted with thousand separators, e.g. "Rp 25.000.000" |
+| Expiry countdown | `expires_at` | Live countdown: `HH:MM:SS` or `Xh Ym` depending on time remaining |
+| Payment status | derived from `booking.status` | Badge: "Menunggu Pembayaran" → "Lunas" |
+
+**Copy-to-clipboard button:** an icon button next to `account_number` copies the number to the clipboard and shows a transient "Disalin!" tooltip (auto-dismiss after 2 s). `data-testid="copy-va-number"` is required for Playwright targeting.
+
+### 5-second polling loop
+
+After the page mounts and the VA is displayed, the frontend starts a polling loop against the booking status endpoint:
+
+```
+GET /v1/bookings/{booking_id}
+Interval: 5 000 ms
+Stop condition: booking.status === "paid_in_full"
+Max duration: until expires_at + 60 s (keep polling briefly after VA expiry to catch late webhooks)
+```
+
+**Implementation note:** use `setInterval` (or SvelteKit's `onMount` + `onDestroy`). Cancel the interval on component unmount to avoid memory leaks. Do **not** poll the invoice endpoint in the loop — the booking status is the authoritative signal.
+
+**On `paid_in_full`:** stop polling, update the badge to "Lunas ✓", and after 2 s redirect to `/bookings/{booking_id}/confirmation`.
+
+**On VA expiry (`expires_at` passed and still `pending_payment`):** show a "VA kadaluarsa" state with a "Minta VA baru" button. Clicking that button calls `POST /v1/payments/link` (BL-PAY-020 `ReissuePaymentLink`) and refreshes the display with the new VA details.
+
+### Expiry countdown timer
+
+```
+remaining = expires_at - now()   // recalculated every tick
+if remaining > 3600:  display "Xj Ym"       // hours + minutes
+elif remaining > 60:  display "Xm Ys"       // minutes + seconds
+elif remaining > 0:   display "Ys" + red    // seconds, red text
+else:                 display "VA kadaluarsa"
+```
+
+The countdown is driven by a 1-second `setInterval` on the client — no server polling for time.
+
+### Error states
+
+| Condition | Display |
+| --- | --- |
+| `GET /v1/bookings/{id}` returns `404` | "Booking tidak ditemukan" + link to `/` |
+| `GET /v1/bookings/{id}` returns `401` | Redirect to `/login?next=/checkout/{id}` |
+| Booking `status === "cancelled"` | "Booking dibatalkan" + CTA to rebooking |
+| Network error during polling | Silent retry next tick; after 3 consecutive failures: show "Koneksi terputus" banner |
+
+### Accessibility
+
+- The countdown timer MUST NOT use an ARIA live region with `aria-live="assertive"` (avoid screen reader spam). Use `aria-live="off"` or update a hidden, non-live element with the remaining time.
+- The copy button MUST have `aria-label="Salin nomor rekening"`.
+
+---
+
 ## § Changelog
 
 - **2026-04-23** — Initial version merged via task `S2-J-01..04`. Covers: invoice + VA issuance REST + gRPC (S2-J-01); Midtrans + Xendit webhook contracts, `payment_events` schema, 500ms latency budget (S2-J-02); `MarkBookingPaid` gRPC callback + booking state machine additions (S2-J-03); `MOCK_GATEWAY` dev toggle + `/v1/webhooks/mock/trigger` (S2-J-04).

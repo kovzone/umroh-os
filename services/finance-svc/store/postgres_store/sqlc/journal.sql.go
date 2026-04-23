@@ -88,6 +88,31 @@ func (q *Queries) GetJournalEntryByIdempotencyKey(ctx context.Context, idempoten
 	return r, err
 }
 
+const getJournalEntryByID = `-- name: GetJournalEntryByID :one
+SELECT id, idempotency_key, source_type, source_id, posted_at, description
+FROM finance.journal_entries
+WHERE id = $1
+LIMIT 1`
+
+// GetJournalEntryByID returns a journal entry for the given UUID string ID,
+// or pgx.ErrNoRows if none exists.
+func (q *Queries) GetJournalEntryByID(ctx context.Context, id string) (JournalEntryRow, error) {
+	row := q.db.QueryRow(ctx, getJournalEntryByID, id)
+	var r JournalEntryRow
+	err := row.Scan(
+		&r.ID,
+		&r.IdempotencyKey,
+		&r.SourceType,
+		&r.SourceID,
+		&r.PostedAt,
+		&r.Description,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return JournalEntryRow{}, pgx.ErrNoRows
+	}
+	return r, err
+}
+
 const insertJournalEntry = `-- name: InsertJournalEntry :one
 INSERT INTO finance.journal_entries (
     idempotency_key,

@@ -76,6 +76,35 @@ func (q *Queries) GetFulfillmentTaskByBookingID(ctx context.Context, bookingID s
 	return r, err
 }
 
+const getFulfillmentTaskByID = `-- name: GetFulfillmentTaskByID :one
+SELECT id, booking_id, departure_id, status, tracking_number,
+       shipped_at, delivered_at, created_at, updated_at
+FROM logistics.fulfillment_tasks
+WHERE id = $1
+LIMIT 1`
+
+// GetFulfillmentTaskByID returns the fulfillment task for the given id,
+// or pgx.ErrNoRows if none exists.
+func (q *Queries) GetFulfillmentTaskByID(ctx context.Context, id string) (FulfillmentTaskRow, error) {
+	row := q.db.QueryRow(ctx, getFulfillmentTaskByID, id)
+	var r FulfillmentTaskRow
+	err := row.Scan(
+		&r.ID,
+		&r.BookingID,
+		&r.DepartureID,
+		&r.Status,
+		&r.TrackingNumber,
+		&r.ShippedAt,
+		&r.DeliveredAt,
+		&r.CreatedAt,
+		&r.UpdatedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return FulfillmentTaskRow{}, pgx.ErrNoRows
+	}
+	return r, err
+}
+
 const insertFulfillmentTask = `-- name: InsertFulfillmentTask :one
 INSERT INTO logistics.fulfillment_tasks (
     booking_id,

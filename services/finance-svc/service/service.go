@@ -11,9 +11,6 @@ import (
 
 // IService is the business-layer interface for finance-svc.
 //
-// Pilot scaffold surfaces the three standard scaffold endpoints plus the
-// S3-E-03 journal engine:
-//
 //   - Liveness — process is up
 //   - Readiness — process is up AND the database is reachable
 //   - DbTxDiagnostic — writes + reads inside a WithTx, the canonical reference
@@ -25,6 +22,8 @@ import (
 //     or completes (Wave 1B / BL-FIN-006).
 //   - GetPLReport — P&L report for a date range (Wave 1B / BL-FIN-007).
 //   - GetBalanceSheet — balance sheet as of a date (Wave 1B / BL-FIN-008).
+//   - OnGRNReceived — posts Dr 5001 (COGS) / Cr 2001 (AP) when GRN received
+//     (BL-FIN-002). Idempotent on grn_id.
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
@@ -59,6 +58,20 @@ type IService interface {
 	// GetBalanceSheet returns a balance sheet as of the given date.
 	// Aggregates asset (1xxx), liability (2xxx), and equity (3xxx) account lines.
 	GetBalanceSheet(ctx context.Context, params *GetBalanceSheetParams) (*BalanceSheet, error)
+
+	// OnGRNReceived posts Dr 5001 (COGS/Inventory Expense) / Cr 2001 (AP/Pilgrim
+	// Liability) when a Goods Receipt Note is received (BL-FIN-002).
+	// Idempotent on idempotency_key = "grn:<grn_id>".
+	OnGRNReceived(ctx context.Context, params *OnGRNReceivedParams) (*OnGRNReceivedResult, error)
+
+	// CorrectJournal posts a reversing counter-entry for an existing journal
+	// entry (BL-FIN-006). The original entry is never deleted; only a new
+	// reversal entry is inserted. Idempotent on "correction:<entry_id>".
+	CorrectJournal(ctx context.Context, params *CorrectJournalParams) (*CorrectJournalResult, error)
+
+	// DeleteJournalEntry always returns ErrForbidden (BL-FIN-006 anti-delete
+	// guard). Corrections must use CorrectJournal instead.
+	DeleteJournalEntry(ctx context.Context, entryID string) error
 }
 
 type Service struct {

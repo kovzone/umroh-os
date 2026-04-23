@@ -197,6 +197,33 @@ func runRestServer(port int, api rest_oapi.ServerInterface, iamValidator middlew
 
 		// Jamaah manifest (Phase 6 / Wave 1A) — bearer required.
 		v1Protected.Get("/manifest/:departure_id", wrapper.GetDepartureManifest)
+
+		// S3 ops routes (S3 Wave 2) — bearer required.
+		v1Protected.Post("/ops/room-allocation", wrapper.RunRoomAllocation)
+		v1Protected.Get("/ops/room-allocation/:departure_id", wrapper.GetRoomAllocation)
+		v1Protected.Post("/ops/id-cards", wrapper.GenerateIDCard)
+		v1Protected.Post("/ops/id-cards/verify", wrapper.VerifyIDCard)
+		v1Protected.Get("/ops/manifest/:departure_id/export", wrapper.ExportManifest)
+
+		// S3 logistics routes (S3 Wave 2) — bearer required.
+		v1Protected.Post("/logistics/ship", wrapper.ShipFulfillmentTask)
+		v1Protected.Post("/logistics/pickup-qr", wrapper.GeneratePickupQR)
+		v1Protected.Post("/logistics/pickup-qr/redeem", wrapper.RedeemPickupQR)
+
+		// S3 finance GRN (S3 Wave 2) — bearer required.
+		v1Protected.Post("/finance/grn", wrapper.OnGRNReceived)
+
+		// S3 jamaah OCR (S3 Wave 2) — bearer required.
+		v1Protected.Post("/documents/:id/ocr", wrapper.TriggerDocumentOCR)
+		v1Protected.Get("/documents/:id/ocr", wrapper.GetDocumentOCRStatus)
+
+		// S2 payment link (BL-PAY-020) — bearer required.
+		// CS closing tool: re-issue VA for an existing booking.
+		v1Protected.Post("/payments/link", wrapper.ReissuePaymentLink)
+
+		// S5 finance correction (BL-FIN-006) — bearer required.
+		// POST /v1/finance/journals/:id/correct — reverse a journal entry.
+		v1Protected.Post("/finance/journals/:id/correct", wrapper.CorrectJournal)
 	}
 
 	go func() {

@@ -21,6 +21,10 @@ type Querier interface {
 
 	// Departure manifest query (Wave-1A)
 	GetDepartureManifest(ctx context.Context, departureID string) ([]GetDepartureManifestRow, error)
+
+	// OCR queries (BL-DOC-002 / migration 000020)
+	UpdateDocumentOCR(ctx context.Context, arg UpdateDocumentOCRParams) (PilgrimDocumentOCRRow, error)
+	GetDocumentWithOCR(ctx context.Context, id string) (PilgrimDocumentOCRRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

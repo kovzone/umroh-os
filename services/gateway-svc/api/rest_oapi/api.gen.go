@@ -527,6 +527,44 @@ type ServerInterface interface {
 	// Jamaah manifest (Phase 6 / Wave 1A) — bearer required.
 	// GET /v1/manifest/:departure_id
 	GetDepartureManifest(c *fiber.Ctx, departureID string) error
+
+	// S3 ops routes (S3 Wave 2) — bearer required.
+	// POST /v1/ops/room-allocation
+	RunRoomAllocation(c *fiber.Ctx) error
+	// GET /v1/ops/room-allocation/:departure_id
+	GetRoomAllocation(c *fiber.Ctx, departureID string) error
+	// POST /v1/ops/id-cards
+	GenerateIDCard(c *fiber.Ctx) error
+	// POST /v1/ops/id-cards/verify
+	VerifyIDCard(c *fiber.Ctx) error
+	// GET /v1/ops/manifest/:departure_id/export
+	ExportManifest(c *fiber.Ctx, departureID string) error
+
+	// S3 logistics routes (S3 Wave 2) — bearer required.
+	// POST /v1/logistics/ship
+	ShipFulfillmentTask(c *fiber.Ctx) error
+	// POST /v1/logistics/pickup-qr
+	GeneratePickupQR(c *fiber.Ctx) error
+	// POST /v1/logistics/pickup-qr/redeem
+	RedeemPickupQR(c *fiber.Ctx) error
+
+	// S3 finance GRN (S3 Wave 2) — bearer required.
+	// POST /v1/finance/grn
+	OnGRNReceived(c *fiber.Ctx) error
+
+	// S3 jamaah OCR (S3 Wave 2) — bearer required.
+	// POST /v1/documents/:id/ocr
+	TriggerDocumentOCR(c *fiber.Ctx, documentID string) error
+	// GET /v1/documents/:id/ocr
+	GetDocumentOCRStatus(c *fiber.Ctx, documentID string) error
+
+	// S2 payment link (BL-PAY-020) — bearer required.
+	// POST /v1/payments/link — CS re-issues VA for existing booking.
+	ReissuePaymentLink(c *fiber.Ctx) error
+
+	// S5 finance correction (BL-FIN-006) — bearer required.
+	// POST /v1/finance/journals/:id/correct — post reversing counter-entry.
+	CorrectJournal(c *fiber.Ctx) error
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -1092,6 +1130,77 @@ func (siw *ServerInterfaceWrapper) GetDepartureManifest(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter departure_id: %w", err).Error())
 	}
 	return siw.Handler.GetDepartureManifest(c, departureID)
+}
+
+// S3 Wave 2 wrappers — hand-added (oapi-codegen not available in this environment).
+
+// RunRoomAllocation operation middleware — POST /v1/ops/room-allocation (bearer)
+func (siw *ServerInterfaceWrapper) RunRoomAllocation(c *fiber.Ctx) error {
+	return siw.Handler.RunRoomAllocation(c)
+}
+
+// GetRoomAllocation operation middleware — GET /v1/ops/room-allocation/:departure_id (bearer)
+func (siw *ServerInterfaceWrapper) GetRoomAllocation(c *fiber.Ctx) error {
+	departureID := c.Params("departure_id")
+	return siw.Handler.GetRoomAllocation(c, departureID)
+}
+
+// GenerateIDCard operation middleware — POST /v1/ops/id-cards (bearer)
+func (siw *ServerInterfaceWrapper) GenerateIDCard(c *fiber.Ctx) error {
+	return siw.Handler.GenerateIDCard(c)
+}
+
+// VerifyIDCard operation middleware — POST /v1/ops/id-cards/verify (bearer)
+func (siw *ServerInterfaceWrapper) VerifyIDCard(c *fiber.Ctx) error {
+	return siw.Handler.VerifyIDCard(c)
+}
+
+// ExportManifest operation middleware — GET /v1/ops/manifest/:departure_id/export (bearer)
+func (siw *ServerInterfaceWrapper) ExportManifest(c *fiber.Ctx) error {
+	departureID := c.Params("departure_id")
+	return siw.Handler.ExportManifest(c, departureID)
+}
+
+// ShipFulfillmentTask operation middleware — POST /v1/logistics/ship (bearer)
+func (siw *ServerInterfaceWrapper) ShipFulfillmentTask(c *fiber.Ctx) error {
+	return siw.Handler.ShipFulfillmentTask(c)
+}
+
+// GeneratePickupQR operation middleware — POST /v1/logistics/pickup-qr (bearer)
+func (siw *ServerInterfaceWrapper) GeneratePickupQR(c *fiber.Ctx) error {
+	return siw.Handler.GeneratePickupQR(c)
+}
+
+// RedeemPickupQR operation middleware — POST /v1/logistics/pickup-qr/redeem (bearer)
+func (siw *ServerInterfaceWrapper) RedeemPickupQR(c *fiber.Ctx) error {
+	return siw.Handler.RedeemPickupQR(c)
+}
+
+// OnGRNReceived operation middleware — POST /v1/finance/grn (bearer)
+func (siw *ServerInterfaceWrapper) OnGRNReceived(c *fiber.Ctx) error {
+	return siw.Handler.OnGRNReceived(c)
+}
+
+// TriggerDocumentOCR operation middleware — POST /v1/documents/:id/ocr (bearer)
+func (siw *ServerInterfaceWrapper) TriggerDocumentOCR(c *fiber.Ctx) error {
+	documentID := c.Params("id")
+	return siw.Handler.TriggerDocumentOCR(c, documentID)
+}
+
+// GetDocumentOCRStatus operation middleware — GET /v1/documents/:id/ocr (bearer)
+func (siw *ServerInterfaceWrapper) GetDocumentOCRStatus(c *fiber.Ctx) error {
+	documentID := c.Params("id")
+	return siw.Handler.GetDocumentOCRStatus(c, documentID)
+}
+
+// ReissuePaymentLink operation middleware — POST /v1/payments/link (bearer)
+func (siw *ServerInterfaceWrapper) ReissuePaymentLink(c *fiber.Ctx) error {
+	return siw.Handler.ReissuePaymentLink(c)
+}
+
+// CorrectJournal operation middleware — POST /v1/finance/journals/:id/correct (bearer)
+func (siw *ServerInterfaceWrapper) CorrectJournal(c *fiber.Ctx) error {
+	return siw.Handler.CorrectJournal(c)
 }
 
 // FiberServerOptions provides options for the Fiber server.
@@ -1842,5 +1951,59 @@ func (sh *strictHandler) RevokeRoleFromUser(ctx *fiber.Ctx, userID string, roleI
 }
 
 func (sh *strictHandler) GetDepartureManifest(ctx *fiber.Ctx, departureID string) error {
+	return fiber.ErrNotImplemented
+}
+
+// S3 Wave 2 strictHandler stubs — not used (gateway routes go through proxy_*.go directly).
+
+func (sh *strictHandler) RunRoomAllocation(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) GetRoomAllocation(ctx *fiber.Ctx, departureID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) GenerateIDCard(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) VerifyIDCard(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) ExportManifest(ctx *fiber.Ctx, departureID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) ShipFulfillmentTask(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) GeneratePickupQR(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) RedeemPickupQR(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) OnGRNReceived(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) TriggerDocumentOCR(ctx *fiber.Ctx, documentID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) GetDocumentOCRStatus(ctx *fiber.Ctx, documentID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) ReissuePaymentLink(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) CorrectJournal(ctx *fiber.Ctx) error {
 	return fiber.ErrNotImplemented
 }

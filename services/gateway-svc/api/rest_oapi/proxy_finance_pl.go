@@ -234,3 +234,50 @@ func (s *Server) GetBalanceSheet(c *fiber.Ctx) error {
 		},
 	})
 }
+
+// ---------------------------------------------------------------------------
+// OnGRNReceived — POST /v1/finance/grn (bearer)
+// ---------------------------------------------------------------------------
+
+// OnGRNReceivedBody is the JSON body for POST /v1/finance/grn.
+type OnGRNReceivedBody struct {
+	GrnID       string `json:"grn_id"`
+	DepartureID string `json:"departure_id"`
+	AmountIDR   int64  `json:"amount_idr"`
+}
+
+// OnGRNReceivedResponseData is the response for OnGRNReceived.
+type OnGRNReceivedResponseData struct {
+	EntryID    string `json:"entry_id"`
+	Idempotent bool   `json:"idempotent"`
+}
+
+func (s *Server) OnGRNReceived(c *fiber.Ctx) error {
+	const op = "rest_oapi.Server.OnGRNReceived"
+
+	ctx, span := s.tracer.Start(c.UserContext(), op)
+	defer span.End()
+
+	logger := logging.LogWithTrace(ctx, s.logger)
+	span.SetAttributes(attribute.String("endpoint", "POST /v1/finance/grn"))
+	logger.Info().Str("op", op).Msg("")
+
+	var body OnGRNReceivedBody
+	if err := c.BodyParser(&body); err != nil {
+		return writeFinanceError(c, span, errors.Join(apperrors.ErrValidation, err))
+	}
+
+	result, err := s.svc.OnGRNReceived(ctx, body.GrnID, body.DepartureID, body.AmountIDR)
+	if err != nil {
+		logger.Error().Err(err).Str("op", op).Msg("")
+		return writeFinanceError(c, span, err)
+	}
+
+	span.SetStatus(codes.Ok, "ok")
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"data": OnGRNReceivedResponseData{
+			EntryID:    result.EntryID,
+			Idempotent: result.Idempotent,
+		},
+	})
+}

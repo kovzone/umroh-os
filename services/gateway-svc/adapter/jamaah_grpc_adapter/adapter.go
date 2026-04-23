@@ -21,11 +21,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Adapter wraps the jamaah-svc gRPC client for manifest operations.
+// Adapter wraps the jamaah-svc gRPC client for manifest and OCR operations.
 type Adapter struct {
 	logger         *zerolog.Logger
 	tracer         trace.Tracer
 	manifestClient pb.ManifestClient
+	ocrClient      pb.JamaahOCRClient
 }
 
 // NewAdapter creates a new jamaah-svc gRPC adapter from an already-dialled conn.
@@ -35,6 +36,7 @@ func NewAdapter(logger *zerolog.Logger, tracer trace.Tracer, cc *grpc.ClientConn
 		logger:         logger,
 		tracer:         tracer,
 		manifestClient: pb.NewManifestClient(cc),
+		ocrClient:      pb.NewJamaahOCRClient(cc),
 	}
 }
 

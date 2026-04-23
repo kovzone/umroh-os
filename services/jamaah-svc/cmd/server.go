@@ -20,12 +20,12 @@ import (
 func runGrpcServer(address string, apiServer *grpc_api.Server) *grpc.Server {
 	grpcServer := grpc.NewServer()
 
-	// RegisterJamaahServiceServerWithExtensions registers both the generated
-	// Healthz RPC and the hand-written UploadDocument + ReviewDocument RPCs
-	// (S3-E-02 / BL-DOC-001..003).
+	// RegisterJamaahServiceServerFull registers the generated Healthz RPC and
+	// all hand-written RPCs: UploadDocument, ReviewDocument, GetDepartureManifest,
+	// TriggerOCR, GetOCRStatus (S3-E-02 / BL-DOC-001..003, BL-DOC-002).
 	// Replace with pb.RegisterJamaahServiceServer once `make genpb` includes
 	// those RPCs from jamaah.proto.
-	pb.RegisterJamaahServiceServerWithExtensions(grpcServer, apiServer)
+	pb.RegisterJamaahServiceServerFull(grpcServer, apiServer)
 
 	healthServer := health.NewServer()
 	health_pb.RegisterHealthServer(grpcServer, healthServer)

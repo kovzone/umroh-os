@@ -61,6 +61,11 @@ type IPaymentService interface {
 	// Blocks until ctx is cancelled — must be called as `go svc.StartReconcileCron(ctx)` or
 	// via a method that itself starts the goroutine.
 	StartReconcileCron(ctx context.Context)
+
+	// ReissuePaymentLink retrieves the active VA for an existing booking's invoice,
+	// or creates a new VA on the same invoice when the existing VA has expired.
+	// CS-facing (BL-PAY-020).
+	ReissuePaymentLink(ctx context.Context, params *ReissuePaymentLinkParams) (*ReissuePaymentLinkResult, error)
 }
 
 // PaymentService is the concrete implementation of IPaymentService.

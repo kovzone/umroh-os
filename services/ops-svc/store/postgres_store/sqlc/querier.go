@@ -12,6 +12,17 @@ type Querier interface {
 	GetDbTxDiagnostic(ctx context.Context, id int64) (Diagnostic, error)
 	InsertDbTxDiagnostic(ctx context.Context, arg InsertDbTxDiagnosticParams) (Diagnostic, error)
 	ReadyCheck(ctx context.Context) (int32, error)
+
+	// Room allocation queries (BL-OPS-002)
+	InsertRoomAllocation(ctx context.Context, departureID string) (RoomAllocation, error)
+	GetRoomAllocationByDepartureID(ctx context.Context, departureID string) (RoomAllocation, error)
+	DeleteRoomAssignmentsByAllocationID(ctx context.Context, allocationID string) error
+	InsertRoomAssignment(ctx context.Context, arg InsertRoomAssignmentParams) (RoomAssignment, error)
+	ListRoomAssignmentsByAllocationID(ctx context.Context, allocationID string) ([]RoomAssignment, error)
+
+	// ID card issuance queries (BL-OPS-003)
+	UpsertIDCardIssuance(ctx context.Context, arg UpsertIDCardIssuanceParams) (IDCardIssuance, error)
+	GetIDCardIssuanceByToken(ctx context.Context, token string) (IDCardIssuance, error)
 }
 
 var _ Querier = (*Queries)(nil)

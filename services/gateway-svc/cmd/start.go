@@ -14,6 +14,9 @@ import (
 	"gateway-svc/adapter/iam_grpc_adapter"
 	"gateway-svc/adapter/iam_rest_adapter"
 	"gateway-svc/adapter/jamaah_grpc_adapter"
+	"gateway-svc/adapter/logistics_grpc_adapter"
+	"gateway-svc/adapter/ops_grpc_adapter"
+	"gateway-svc/adapter/payment_grpc_adapter"
 	"gateway-svc/api/rest_oapi"
 	"gateway-svc/service"
 	"gateway-svc/util/config"
@@ -228,6 +231,81 @@ func start() {
 	}()
 	jamaahGrpcAdapter := jamaah_grpc_adapter.NewAdapter(logger, tracer, jamaahConn)
 
+	// --- Dial ops-svc gRPC (S3 Wave 2) ---
+	//
+	// Per ADR-0009, gateway's /v1/ops/* routes proxy to ops-svc.OpsService over
+	// gRPC via ops_grpc_adapter.
+	opsConn, err := grpc.NewClient(
+		config.External.OpsSvc.GrpcTarget,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Dial ops-svc gRPC").
+			Str("target", config.External.OpsSvc.GrpcTarget).
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+	defer func() {
+		if err := opsConn.Close(); err != nil {
+			logger.Error().Err(err).Msg("close ops gRPC conn")
+		}
+	}()
+	opsGrpcAdapter := ops_grpc_adapter.NewAdapter(logger, tracer, opsConn)
+
+	// --- Dial logistics-svc gRPC (S3 Wave 2) ---
+	//
+	// Per ADR-0009, gateway's /v1/logistics/* routes proxy to
+	// logistics-svc.LogisticsService over gRPC via logistics_grpc_adapter.
+	logisticsConn, err := grpc.NewClient(
+		config.External.LogisticsSvc.GrpcTarget,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Dial logistics-svc gRPC").
+			Str("target", config.External.LogisticsSvc.GrpcTarget).
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+	defer func() {
+		if err := logisticsConn.Close(); err != nil {
+			logger.Error().Err(err).Msg("close logistics gRPC conn")
+		}
+	}()
+	logisticsGrpcAdapter := logistics_grpc_adapter.NewAdapter(logger, tracer, logisticsConn)
+
+	// --- Dial payment-svc gRPC (BL-PAY-020) ---
+	//
+	// Per ADR-0009, gateway's /v1/payments/link route proxies to
+	// payment-svc.PaymentService over gRPC via payment_grpc_adapter.
+	paymentConn, err := grpc.NewClient(
+		config.External.PaymentSvc.GrpcTarget,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Dial payment-svc gRPC").
+			Str("target", config.External.PaymentSvc.GrpcTarget).
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+	defer func() {
+		if err := paymentConn.Close(); err != nil {
+			logger.Error().Err(err).Msg("close payment gRPC conn")
+		}
+	}()
+	paymentGrpcAdapter := payment_grpc_adapter.NewAdapter(logger, tracer, paymentConn)
+
 	// --- Init REST adapters (interim; retire as each backend graduates to gRPC) ---
 	// gateway-svc has no DB and no internal store; the service layer dispatches
 	// to these per-backend adapters.
@@ -246,17 +324,20 @@ func start() {
 
 	// --- Init service layer ---
 	svc := service.NewService(service.NewServiceParams{
-		Logger:      logger,
-		Tracer:      tracer,
-		AppName:     config.App.Name,
-		IamRest:     iamAdapter,
-		IamGrpc:     iamGrpcAdapter,
-		CatalogGrpc: catalogGrpcAdapter,
-		FinanceRest: financeAdapter,
-		FinanceGrpc: financeGrpcAdapter,
-		BookingGrpc: bookingGrpcAdapter,
-		CrmGrpc:     crmGrpcAdapter,
-		JamaahGrpc:  jamaahGrpcAdapter,
+		Logger:        logger,
+		Tracer:        tracer,
+		AppName:       config.App.Name,
+		IamRest:       iamAdapter,
+		IamGrpc:       iamGrpcAdapter,
+		CatalogGrpc:   catalogGrpcAdapter,
+		FinanceRest:   financeAdapter,
+		FinanceGrpc:   financeGrpcAdapter,
+		BookingGrpc:   bookingGrpcAdapter,
+		CrmGrpc:       crmGrpcAdapter,
+		JamaahGrpc:    jamaahGrpcAdapter,
+		OpsGrpc:       opsGrpcAdapter,
+		LogisticsGrpc: logisticsGrpcAdapter,
+		PaymentGrpc:   paymentGrpcAdapter,
 	})
 
 	// --- Init API layer (REST only — gateway is the edge proxy, no gRPC server) ---
