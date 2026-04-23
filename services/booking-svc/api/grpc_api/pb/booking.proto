@@ -4,22 +4,131 @@ package pb;
 
 option go_package="./pb";
 
-// BookingService — internal gRPC surface for Identity, Access, Audit.
+// BookingService — gRPC surface for booking-svc (ADR-0009 / pure gRPC).
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// S1-E-03 / BL-BOOK-001..006:
+//   - CreateDraftBooking — creates a draft booking with seat reservation via catalog-svc.
+//
+// Per ADR-0009, all external traffic flows through gateway-svc → gRPC.
+// Clients do not call booking-svc directly.
 service BookingService {
   // Healthz returns ok=true if the service process is alive.
   // Placeholder for the pilot; real health checks go through gRPC health protocol.
   rpc Healthz(HealthzRequest) returns (HealthzResponse) {}
+
+  // CreateDraftBooking — creates a draft booking (BL-BOOK-001..006).
+  // Validates departure, reserves seats atomically via catalog-svc.ReserveSeats,
+  // persists the booking with status="draft", and returns the booking data.
+  // Idempotent via idempotency_key: same key + same body hash returns the stored booking.
+  rpc CreateDraftBooking(CreateDraftBookingRequest) returns (CreateDraftBookingResponse) {}
 }
 
 message HealthzRequest {}
 
 message HealthzResponse {
   bool ok = 1;
+}
+
+// -----------------------------------------------------------------------------
+// CreateDraftBooking (S1-E-03 / BL-BOOK-001..006)
+// -----------------------------------------------------------------------------
+
+// PilgrimInput is one jamaah in the booking.
+message PilgrimInput {
+  string full_name    = 1; // required
+  string email        = 2; // optional
+  string whatsapp     = 3; // optional
+  string domicile     = 4; // optional
+  bool   is_lead      = 5; // true for the contact/lead pilgrim
+
+  // BL-BOOK-005 (DRAFT assumption): KTP + passport required per Q006.
+  // Missing docs → advisory warning in response (not a hard fail in MVP).
+  bool has_ktp      = 6;
+  bool has_passport = 7;
+}
+
+// AddonInput is a selected add-on.
+message AddonInput {
+  string addon_id             = 1;
+  string addon_name           = 2;
+  int64  list_amount          = 3;
+  string list_currency        = 4;
+  string settlement_currency  = 5;
+}
+
+message CreateDraftBookingRequest {
+  // Channel attribution (BL-BOOK-002).
+  // One of: "b2c_self" | "b2b_agent" | "cs".
+  string channel       = 1; // required
+  string agent_id      = 2; // required when channel = "b2b_agent"
+  string staff_user_id = 3; // required when channel = "cs"
+
+  // Catalog references.
+  string package_id   = 4; // required — ULID of the package
+  string departure_id = 5; // required — ULID of the departure
+  string room_type    = 6; // required — "double" | "triple" | "quad"
+
+  // Lead pilgrim contact fields.
+  string lead_full_name = 7;  // required
+  string lead_email     = 8;  // optional
+  string lead_whatsapp  = 9;  // required
+  string lead_domicile  = 10; // required
+
+  // Pilgrims (including the lead).
+  repeated PilgrimInput pilgrims = 11;
+
+  // Optional add-ons.
+  repeated AddonInput addons = 12;
+
+  // Pricing snapshot.
+  int64  list_amount          = 13;
+  string list_currency        = 14; // "IDR" | "USD"
+  string settlement_currency  = 15; // always "IDR" in MVP
+
+  string notes = 16; // optional free-form notes
+
+  // Idempotency (optional). When provided, a duplicate call with the same key
+  // and request body returns the existing draft (Replayed=true in response).
+  string idempotency_key = 17;
+
+  // Mahram validation result (BL-BOOK-006) — non-blocking.
+  string mahram_warning = 18; // empty = no warning
+}
+
+// BookingItemResult is one pilgrim in the response.
+message BookingItemResult {
+  string id               = 1;
+  string full_name        = 2;
+  bool   is_lead          = 3;
+  // Advisory document warning (BL-BOOK-005). Empty = no issues.
+  string document_warning = 4;
+}
+
+message CreateDraftBookingResponse {
+  string id                  = 1;
+  string status              = 2; // "draft"
+  string channel             = 3;
+  string package_id          = 4;
+  string departure_id        = 5;
+  string room_type           = 6;
+  string agent_id            = 7;
+  string staff_user_id       = 8;
+  string lead_full_name      = 9;
+  string lead_email          = 10;
+  string lead_whatsapp       = 11;
+  string lead_domicile       = 12;
+  int64  list_amount         = 13;
+  string list_currency       = 14;
+  string settlement_currency = 15;
+  string notes               = 16;
+  string idempotency_key     = 17;
+  string created_at          = 18; // RFC 3339
+  string expires_at          = 19; // RFC 3339
+
+  repeated BookingItemResult items = 20;
+
+  // Mahram warning (BL-BOOK-006) — non-empty = advisory only.
+  string mahram_warning = 21;
+  // Replayed is true when this is an idempotency dedup hit.
+  bool replayed = 22;
 }

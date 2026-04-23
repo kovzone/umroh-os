@@ -90,21 +90,38 @@ Di repo GitHub → Settings → Secrets and variables → Actions → New reposi
 | `PROD_SSH_KEY` | Isi private key SSH (`~/.ssh/lutfi_id_ed25519` atau deploy key baru) |
 | `PROD_HOST` | `216.176.238.161` |
 
-### 2. Clone repo ke server
+### 2. Clone repo ke server (sumber kanon: **kovzone/umroh-os**)
+
+**Remote resmi** untuk produksi: `https://github.com/kovzone/umroh-os.git` (atau `git@github.com:kovzone/umroh-os.git` jika SSH).
 
 ```bash
 ssh -i ~/.ssh/lutfi_id_ed25519 infra@216.176.238.161
 # Di server:
-git clone https://github.com/<org>/umroh-os.git /home/infra/umrohos
+cd /home/infra
+git clone https://github.com/kovzone/umroh-os.git umrohos
 cd /home/infra/umrohos
 ```
 
-Atau gunakan deploy key jika repo private:
+**Sudah pernah `git clone` dari org/repo lain?** Arahkan `origin` ke kovzone, lalu pull (cabang sesuai kebiasaan, mis. `dev` atau `main`):
+
 ```bash
-# Generate deploy key di server
-ssh-keygen -t ed25519 -C "deploy@216.176.238.161" -f ~/.ssh/deploy_key -N ""
+cd /home/infra/umrohos
+git remote -v
+git remote set-url origin https://github.com/kovzone/umroh-os.git
+# SSH (kalau deploy key / user key sudah ke kovzone):
+#   git remote set-url origin git@github.com:kovzone/umroh-os.git
+git fetch origin
+git checkout dev   # atau: main
+git pull origin dev
+```
+
+Deploy key / PAT wajib terdaftar di **repo** `kovzone/umroh-os` (bukan repo lama). Admin org/repo `kovzone` yang menambah deploy key bila perlu.
+
+```bash
+# Contoh: generate deploy key khusus server (opsional, repo private)
+ssh-keygen -t ed25519 -C "prod@umroh-os" -f ~/.ssh/deploy_key -N ""
 cat ~/.ssh/deploy_key.pub
-# Tambahkan public key sebagai Deploy Key di GitHub repo (read-only)
+# Tempel .pub ke: kovzone/umroh-os → Settings → Deploy keys (perlu peran Admin repo)
 ```
 
 ### 3. Buat file `.env.prod`
@@ -295,7 +312,7 @@ Dashboard tersedia di folder `grafana/dashboards/` di repo. Grafana di-provision
 
 **First time di server (ringkas):**
 
-1. `git clone` repo ke `/home/infra/umrohos` (sudut akses `git pull` = deploy key atau HTTPS).
+1. `git clone` **`kovzone/umroh-os`** ke `/home/infra/umrohos` (HTTPS/PAT atau SSH; deploy key di **repo** kovzone).
 2. `cp env.prod.sample .env.prod` → edit secret.
 3. `chmod +x docs/deployment/deploy-prod.sh && ./docs/deployment/deploy-prod.sh`
 

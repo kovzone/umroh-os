@@ -34,6 +34,7 @@ import (
 // S1-E-11: /v1/catalog/system/live removed (catalog-svc is gRPC-only).
 // S1-E-12: /v1/iam/system/live + /v1/iam/system/diagnostics/db-tx removed (iam-svc is gRPC-only).
 //          IAM client-facing auth routes moved here from iam-svc REST.
+// S1-E-03: POST /v1/bookings added (public in S1; proxied to booking-svc gRPC).
 //
 // iamValidator is the *iam_grpc_adapter.Adapter produced in start.go; it is
 // passed as the interface type so unit tests can substitute a stub.
@@ -94,6 +95,10 @@ func runRestServer(port int, api rest_oapi.ServerInterface, iamValidator middlew
 		v1.Get("/packages", wrapper.ListPackages)
 		v1.Get("/packages/:id", wrapper.GetPackageById)
 		v1.Get("/package-departures/:id", wrapper.GetPackageDepartureById)
+
+		// Booking draft (BL-GTW-003 / S1-E-03) — public in S1; auth arrives with F4.
+		// Proxied to booking-svc.BookingService/CreateDraftBooking via gRPC.
+		v1.Post("/bookings", wrapper.CreateDraftBooking)
 	}
 
 	// IAM auth public routes (BL-IAM-018 / S1-E-12) — no bearer required.

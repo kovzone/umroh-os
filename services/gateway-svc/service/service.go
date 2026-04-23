@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"gateway-svc/adapter/booking_grpc_adapter"
 	"gateway-svc/adapter/catalog_grpc_adapter"
 	"gateway-svc/adapter/finance_rest_adapter"
 	"gateway-svc/adapter/iam_grpc_adapter"
@@ -65,6 +66,10 @@ type IService interface {
 	// Finance liveness proxy — interim REST adapter; retires with
 	// BL-IAM-019 / S1-E-14 when /v1/finance/* moves to gRPC.
 	GetFinanceSystemLive(ctx context.Context) (*finance_rest_adapter.LivenessResult, error)
+
+	// Booking draft (BL-BOOK-001..006 / S1-E-03 / BL-GTW-003) — proxied via
+	// booking_grpc_adapter. Public in S1 (auth arrives with F4).
+	CreateDraftBooking(ctx context.Context, params *booking_grpc_adapter.CreateDraftBookingParams) (*booking_grpc_adapter.CreateDraftBookingResult, error)
 }
 
 // Adapters bundles the adapters this service can dispatch through.
@@ -76,6 +81,7 @@ type Adapters struct {
 	iamGrpc     *iam_grpc_adapter.Adapter
 	catalogGrpc *catalog_grpc_adapter.Adapter
 	financeRest *finance_rest_adapter.Adapter
+	bookingGrpc *booking_grpc_adapter.Adapter
 }
 
 type Service struct {
@@ -95,6 +101,7 @@ type NewServiceParams struct {
 	IamGrpc     *iam_grpc_adapter.Adapter
 	CatalogGrpc *catalog_grpc_adapter.Adapter
 	FinanceRest *finance_rest_adapter.Adapter
+	BookingGrpc *booking_grpc_adapter.Adapter
 }
 
 func NewService(p NewServiceParams) IService {
@@ -107,6 +114,7 @@ func NewService(p NewServiceParams) IService {
 			iamGrpc:     p.IamGrpc,
 			catalogGrpc: p.CatalogGrpc,
 			financeRest: p.FinanceRest,
+			bookingGrpc: p.BookingGrpc,
 		},
 	}
 }

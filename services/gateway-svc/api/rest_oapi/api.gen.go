@@ -430,6 +430,11 @@ type ServerInterface interface {
 	CreateDeparture(c *fiber.Ctx, packageID string) error
 	// PUT /v1/departures/{id}
 	UpdateDepartureById(c *fiber.Ctx, id string) error
+
+	// Booking draft (BL-BOOK-001..006 / S1-E-03 / BL-GTW-003) — public in S1.
+	// POST /v1/bookings — no auth required in S1 (auth arrives with F4).
+	// Hand-edited here since oapi-codegen is not available in the environment.
+	CreateDraftBooking(c *fiber.Ctx) error
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -675,6 +680,12 @@ func (siw *ServerInterfaceWrapper) UpdateDepartureById(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter id: %w", err).Error())
 	}
 	return siw.Handler.UpdateDepartureById(c, id)
+}
+
+// CreateDraftBooking operation middleware — POST /v1/bookings (public in S1).
+// Hand-added in S1-E-03 / BL-GTW-003.
+func (siw *ServerInterfaceWrapper) CreateDraftBooking(c *fiber.Ctx) error {
+	return siw.Handler.CreateDraftBooking(c)
 }
 
 // FiberServerOptions provides options for the Fiber server.
@@ -1208,4 +1219,60 @@ func (sh *strictHandler) GetPackageById(ctx *fiber.Ctx, id string) error {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}
 	return nil
+}
+
+// --- Hand-added stubs: NewStrictHandler is not used in this codebase (gateway
+// routes are registered directly via RegisterHandlers + proxy_*.go handlers).
+// These satisfy the ServerInterface constraint so the package compiles. ---
+
+func (sh *strictHandler) Login(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) RefreshSession(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) Logout(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) GetMe(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) EnrollTOTP(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) VerifyTOTP(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) SuspendUser(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) CreatePackage(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) UpdatePackageById(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) DeletePackageById(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) CreateDeparture(ctx *fiber.Ctx, packageID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) UpdateDepartureById(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) CreateDraftBooking(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
 }

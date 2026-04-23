@@ -3,6 +3,10 @@
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v6.32.1
 // source: booking.proto
+//
+// Hand-extended in S1-E-03 / BL-BOOK-001..006: CreateDraftBooking added to
+// the interface and service descriptor. Run `make genpb` to regenerate cleanly
+// from booking.proto once protoc is available in the build environment.
 
 package pb
 
@@ -19,25 +23,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	BookingService_Healthz_FullMethodName = "/pb.BookingService/Healthz"
+	BookingService_Healthz_FullMethodName             = "/pb.BookingService/Healthz"
+	BookingService_CreateDraftBooking_FullMethodName  = "/pb.BookingService/CreateDraftBooking"
 )
 
 // BookingServiceClient is the client API for BookingService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// BookingService — internal gRPC surface for Identity, Access, Audit.
-//
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// BookingService — gRPC surface for booking-svc (ADR-0009 / pure gRPC).
 type BookingServiceClient interface {
 	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
 	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
+	// CreateDraftBooking — creates a draft booking (BL-BOOK-001..006).
+	CreateDraftBooking(ctx context.Context, in *CreateDraftBookingRequest, opts ...grpc.CallOption) (*CreateDraftBookingResponse, error)
 }
 
 type bookingServiceClient struct {
@@ -58,22 +57,24 @@ func (c *bookingServiceClient) Healthz(ctx context.Context, in *HealthzRequest, 
 	return out, nil
 }
 
+func (c *bookingServiceClient) CreateDraftBooking(ctx context.Context, in *CreateDraftBookingRequest, opts ...grpc.CallOption) (*CreateDraftBookingResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateDraftBookingResponse)
+	err := c.cc.Invoke(ctx, BookingService_CreateDraftBooking_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BookingServiceServer is the server API for BookingService service.
 // All implementations must embed UnimplementedBookingServiceServer
 // for forward compatibility.
-//
-// BookingService — internal gRPC surface for Identity, Access, Audit.
-//
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
 type BookingServiceServer interface {
 	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
 	Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error)
+	// CreateDraftBooking — creates a draft booking (BL-BOOK-001..006).
+	CreateDraftBooking(context.Context, *CreateDraftBookingRequest) (*CreateDraftBookingResponse, error)
 	mustEmbedUnimplementedBookingServiceServer()
 }
 
@@ -87,6 +88,9 @@ type UnimplementedBookingServiceServer struct{}
 func (UnimplementedBookingServiceServer) Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Healthz not implemented")
 }
+func (UnimplementedBookingServiceServer) CreateDraftBooking(context.Context, *CreateDraftBookingRequest) (*CreateDraftBookingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateDraftBooking not implemented")
+}
 func (UnimplementedBookingServiceServer) mustEmbedUnimplementedBookingServiceServer() {}
 func (UnimplementedBookingServiceServer) testEmbeddedByValue()                        {}
 
@@ -98,7 +102,7 @@ type UnsafeBookingServiceServer interface {
 }
 
 func RegisterBookingServiceServer(s grpc.ServiceRegistrar, srv BookingServiceServer) {
-	// If the following call pancis, it indicates UnimplementedBookingServiceServer was
+	// If the following call panics, it indicates UnimplementedBookingServiceServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
@@ -126,6 +130,24 @@ func _BookingService_Healthz_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BookingService_CreateDraftBooking_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateDraftBookingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BookingServiceServer).CreateDraftBooking(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BookingService_CreateDraftBooking_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BookingServiceServer).CreateDraftBooking(ctx, req.(*CreateDraftBookingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // BookingService_ServiceDesc is the grpc.ServiceDesc for BookingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -136,6 +158,10 @@ var BookingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Healthz",
 			Handler:    _BookingService_Healthz_Handler,
+		},
+		{
+			MethodName: "CreateDraftBooking",
+			Handler:    _BookingService_CreateDraftBooking_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
