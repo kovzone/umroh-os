@@ -3,15 +3,8 @@
     "name": "ops-svc"
   },
   "api": {
-    "rest": {
-      "host": "0.0.0.0",
-      "port": 4007
-    },
     "grpc": {
       "address": "0.0.0.0:50057"
-    },
-    "metrics": {
-      "enabled": true
     }
   },
   "store": {

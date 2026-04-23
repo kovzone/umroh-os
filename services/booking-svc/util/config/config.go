@@ -6,9 +6,9 @@ import (
 
 // Config holds all configuration for the application.
 //
-// Pilot scaffold scope: app name, REST + gRPC ports, Postgres pool, OTel
-// tracer. Token (auth) config returns with F1.5 when real login/refresh/logout
-// handlers land.
+// Post-ADR 0009: booking-svc is gRPC-only. Metrics push via OTLP to the
+// OpenTelemetry Collector using the OtelTracer.Endpoint; there is no local
+// /metrics HTTP endpoint and no opt-in knob.
 type Config struct {
 	App        App        `mapstructure:"app"`
 	Api        Api        `mapstructure:"api"`
@@ -34,24 +34,12 @@ type App struct {
 
 // API config
 
-type Rest struct {
-	Host string `mapstructure:"host"`
-	Port int    `mapstructure:"port"`
-}
-
 type Grpc struct {
 	Address string `mapstructure:"address"`
 }
 
 type Api struct {
-	Rest    Rest    `mapstructure:"rest"`
-	Grpc    Grpc    `mapstructure:"grpc"`
-	Metrics Metrics `mapstructure:"metrics"`
-}
-
-// Metrics config (Prometheus). Opt-in: set enabled to true to expose /metrics.
-type Metrics struct {
-	Enabled bool `mapstructure:"enabled"`
+	Grpc Grpc `mapstructure:"grpc"`
 }
 
 // Store config

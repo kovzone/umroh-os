@@ -14,14 +14,14 @@
   "external": {
     "iam_svc":       { "name": "iam-svc",       "address": "http://iam-svc:4001",       "grpc_target": "iam-svc:50051" },
     "catalog_svc":   { "name": "catalog-svc",                                           "grpc_target": "catalog-svc:50052" },
-    "booking_svc":   { "name": "booking-svc",   "address": "http://booking-svc:4003",   "grpc_target": "booking-svc:50053" },
-    "jamaah_svc":    { "name": "jamaah-svc",    "address": "http://jamaah-svc:4004",    "grpc_target": "jamaah-svc:50054" },
-    "payment_svc":   { "name": "payment-svc",   "address": "http://payment-svc:4005",   "grpc_target": "payment-svc:50055" },
-    "visa_svc":      { "name": "visa-svc",      "address": "http://visa-svc:4006",      "grpc_target": "visa-svc:50056" },
-    "ops_svc":       { "name": "ops-svc",       "address": "http://ops-svc:4007",       "grpc_target": "ops-svc:50057" },
-    "logistics_svc": { "name": "logistics-svc", "address": "http://logistics-svc:4008", "grpc_target": "logistics-svc:50058" },
+    "booking_svc":   { "name": "booking-svc",                                           "grpc_target": "booking-svc:50053" },
+    "jamaah_svc":    { "name": "jamaah-svc",                                            "grpc_target": "jamaah-svc:50054" },
+    "payment_svc":   { "name": "payment-svc",                                           "grpc_target": "payment-svc:50055" },
+    "visa_svc":      { "name": "visa-svc",                                              "grpc_target": "visa-svc:50056" },
+    "ops_svc":       { "name": "ops-svc",                                               "grpc_target": "ops-svc:50057" },
+    "logistics_svc": { "name": "logistics-svc",                                         "grpc_target": "logistics-svc:50058" },
     "finance_svc":   { "name": "finance-svc",   "address": "http://finance-svc:4009",   "grpc_target": "finance-svc:50059" },
-    "crm_svc":       { "name": "crm-svc",       "address": "http://crm-svc:4010",       "grpc_target": "crm-svc:50060" }
+    "crm_svc":       { "name": "crm-svc",                                               "grpc_target": "crm-svc:50060" }
   },
   "otel_tracer": {
     "name": "gateway-svc-tracer",

@@ -4,6 +4,7 @@
 
 - [ ] Scaffolded
 - [ ] Wired into compose
+- [ ] **ADR 0009 realignment** — REST + local bearer-auth middleware + local `iam_grpc_adapter` removed; `/v1/finance/ping` migrated to gateway REST with `RequirePermission` middleware; `FinancePing` gRPC RPC added; `02b`/`02c` e2e specs routed through `gateway-svc:4000` (`BL-IAM-019` / S1-E-14 — fenced off G9 sweep to keep BL-IAM-002 coverage intact)
 - [ ] DDL with double-entry check
 - [ ] Initial chart of accounts seed (PSAK-aligned)
 - [ ] sqlc queries

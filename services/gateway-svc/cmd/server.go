@@ -16,13 +16,11 @@ import (
 )
 
 // runRestServer runs the REST server using the OpenAPI-generated routes and handler.
-// gateway-svc scaffold exposes 12 endpoints:
-//
-//   - GET /system/live, /system/ready (own probes)
-//   - GET /v1/<svc>/system/live for each of the 10 backends (proxies via REST adapters)
-//
-// Real per-route proxies (auth, packages, bookings, ...) land alongside each
-// backend's first feature work.
+// gateway-svc currently exposes own probes + per-backend liveness proxies for
+// the two interim REST surfaces (iam, finance) plus the BL-GTW-002 public
+// catalog read. As each remaining backend graduates to gRPC-only, its adapter
+// and route disappear; real per-route proxies (auth, bookings, ...) land
+// alongside each backend's first feature work.
 func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool, serviceName string) {
 	app := fiber.New()
 
@@ -68,17 +66,12 @@ func runRestServer(port int, api rest_oapi.ServerInterface, metricsEnabled bool,
 	{
 		// System-probe proxies (REST adapters; retire with each BL-REFACTOR-* card).
 		// catalog-svc's proxy was removed in G7 (BL-REFACTOR-001) — catalog is
-		// gRPC-only; operators probe via grpc_health_probe.
+		// gRPC-only; operators probe via grpc_health_probe. The seven
+		// pure-scaffold backends (booking/crm/jamaah/logistics/ops/payment/visa)
+		// retired their REST surfaces in BL-REFACTOR-002..008 / S1-E-13.
 		v1.Get("/iam/system/live", wrapper.GetIamSystemLive)
 		v1.Get("/iam/system/diagnostics/db-tx", wrapper.GetIamSystemDbTxDiagnostic)
-		v1.Get("/booking/system/live", wrapper.GetBookingSystemLive)
-		v1.Get("/jamaah/system/live", wrapper.GetJamaahSystemLive)
-		v1.Get("/payment/system/live", wrapper.GetPaymentSystemLive)
-		v1.Get("/visa/system/live", wrapper.GetVisaSystemLive)
-		v1.Get("/ops/system/live", wrapper.GetOpsSystemLive)
-		v1.Get("/logistics/system/live", wrapper.GetLogisticsSystemLive)
 		v1.Get("/finance/system/live", wrapper.GetFinanceSystemLive)
-		v1.Get("/crm/system/live", wrapper.GetCrmSystemLive)
 
 		// Public catalog read (BL-GTW-002 / S1-E-10) — gRPC adapter.
 		v1.Get("/packages", wrapper.ListPackages)
