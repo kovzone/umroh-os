@@ -10,7 +10,7 @@
 - [x] **`catalog_grpc_adapter`** + public REST routes (`GET /v1/packages`, `GET /v1/packages/{id}`, `GET /v1/package-departures/{id}`); e2e migrated to `gateway-svc:4000` — `BL-GTW-002` / S1-E-10 (merged 2026-04-22, PR #48)
 - [x] **`catalog_rest_adapter` retired** + `/v1/catalog/system/live` removed + `external.catalog_svc.address` dropped from config — `BL-REFACTOR-001` / S1-E-11 (2026-04-23). catalog-svc is now gRPC-only; operators probe via `grpc_health_probe`.
 - [x] **Seven scaffold REST adapters retired** (`booking/crm/jamaah/logistics/ops/payment/visa`) + seven `/v1/<svc>/system/live` routes removed + seven `external.<svc>_svc.address` fields dropped — `BL-REFACTOR-002..008` / S1-E-13 (2026-04-23). The 7 backends now run gRPC-only; operators probe via `grpc_health_probe`.
-- [ ] **Iam client-facing REST** (`/v1/sessions*`, `/v1/me*`, `/v1/users*`) proxied to iam gRPC — `BL-IAM-018` / S1-E-12
+- [x] **Iam client-facing REST** (`/v1/sessions*`, `/v1/me*`, `/v1/users/{id}/suspend`) proxied to iam gRPC via `iam_grpc_adapter` + bearer middleware mounted on every protected route — `BL-IAM-018` / S1-E-12 (2026-04-23). `iam_rest_adapter` + `/v1/iam/system/live` + `/v1/iam/system/diagnostics/db-tx` + `external.iam_svc.address` all removed.
 - [ ] **finance-svc ADR 0009 realignment** — `/v1/finance/ping` + `/v1/finance/system/live` move to gateway with `RequirePermission` middleware + `finance_grpc_adapter` — `BL-IAM-019` / S1-E-14
 - [ ] Per-backend gRPC adapters for the remaining services (booking, jamaah, payment, visa, ops, logistics, finance, crm) — opened as each consumer slice lands
 - [ ] **Trust contract (gateway↔backend)** — signed header or mTLS, closes the defense-in-depth gap — `BL-GTW-100` (deferred, later slice)

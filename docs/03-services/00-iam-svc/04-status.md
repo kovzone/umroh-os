@@ -20,7 +20,7 @@
 - [ ] Role CRUD endpoints — `S1-E-06`
 - [ ] Branch CRUD endpoints — `S1-E-06`
 - [ ] Login-time TOTP enforcement — `S1-E-06`
-- [ ] **ADR 0009 refactor** — client-facing REST (`/v1/sessions*`, `/v1/me*`, `/v1/users*`, `/v1/roles`, `/v1/permissions`, `/v1/branches`, `/v1/audit-logs`) moves to `gateway-svc`; `iam.proto` adds matching `Login` / `RefreshSession` / `Logout` / `GetMe` / `EnrollTotp` / `VerifyTotp` / `ListUsers` / `SuspendUser` RPCs; `services/iam-svc/api/rest_oapi/` deleted — `BL-IAM-018` / S1-E-12
+- [x] **ADR 0009 refactor** — client-facing REST moved to `gateway-svc`; iam.proto gained 7 new RPCs (`Login` / `RefreshSession` / `Logout` / `GetMe` / `EnrollTotp` / `VerifyTotp` / `SuspendUser`); `services/iam-svc/api/rest_oapi/` deleted; monitoring migrated to OTLP push — **BL-IAM-018** / S1-E-12 (2026-04-23). iam-svc is gRPC-only on `:50051`. The `/v1/iam/system/diagnostics/db-tx` probe was deleted (not migrated) per G7 precedent — WithTx coverage stays in service-layer unit tests.
 - [ ] Verified by reviewer in `testing-guide.md`
 
 ## Current status

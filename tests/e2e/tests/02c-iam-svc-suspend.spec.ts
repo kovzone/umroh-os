@@ -1,7 +1,9 @@
-// iam-svc admin suspend end-to-end (BL-IAM-003).
+// iam admin suspend end-to-end (BL-IAM-003 + BL-IAM-018 / S1-E-12).
 //
 // Closes F1-W5 acceptance ("Suspended user cannot access again") across the
-// three load-bearing code paths:
+// three load-bearing code paths. Post BL-IAM-018 every iam HTTP call goes
+// through gateway-svc:4000; finance-svc's REST surface is still direct until
+// BL-IAM-019 retires it.
 //
 //   1. Downstream bearer validation — a suspended user's still-decryptable
 //      access token is rejected by iam-svc ValidateToken over gRPC (session
@@ -21,17 +23,14 @@
 //   - Self-suspend rejection: admin cannot suspend their own account.
 //
 // Prereqs (make dev-bootstrap handles all):
-//   1. docker compose dev stack up (iam-svc :4001, finance-svc :4009)
+//   1. docker compose dev stack up (gateway-svc :4000, finance-svc :4009)
 //   2. migrations 000004 + 000005 + 000006 applied (the sacrifice user
 //      `suspend-target@umrohos.dev` + the `iam.users/suspend/global`
 //      permission + grant to super_admin are in 000006).
 
 import { test, expect } from "@playwright/test";
 import { createApiClient } from "../lib/api-client";
-import { backendServices } from "../lib/services";
-
-const iam = backendServices.find((s) => s.name === "iam-svc");
-if (!iam) throw new Error("iam-svc not in backendServices registry");
+import { backendServices, gateway } from "../lib/services";
 
 const finance = backendServices.find((s) => s.name === "finance-svc");
 if (!finance) throw new Error("finance-svc not in backendServices registry");
@@ -49,7 +48,7 @@ const SHARED_PASSWORD = "password123";
 type LoginResult = { accessToken: string; refreshToken: string };
 
 async function login(email: string): Promise<LoginResult> {
-  const api = await createApiClient(iam!.baseURL);
+  const api = await createApiClient(gateway.baseURL);
   const res = await api.post("/v1/sessions", {
     email,
     password: SHARED_PASSWORD,
@@ -62,7 +61,7 @@ async function login(email: string): Promise<LoginResult> {
   };
 }
 
-test.describe.serial("iam-svc admin suspend + revoke-all (BL-IAM-003)", () => {
+test.describe.serial("iam admin suspend via gateway + revoke-all (BL-IAM-003 + BL-IAM-018)", () => {
   let adminAccess = "";
   let targetAccess = "";
   let targetRefresh = "";
@@ -96,7 +95,7 @@ test.describe.serial("iam-svc admin suspend + revoke-all (BL-IAM-003)", () => {
   });
 
   test("admin suspends sacrifice — 200 echoes profile with status=suspended", async () => {
-    const api = await createApiClient(iam.baseURL, adminAccess);
+    const api = await createApiClient(gateway.baseURL, adminAccess);
     const res = await api.post(`/v1/users/${TARGET_USER_ID}/suspend`);
     expect(res.status()).toBe(200);
 
@@ -131,7 +130,7 @@ test.describe.serial("iam-svc admin suspend + revoke-all (BL-IAM-003)", () => {
   });
 
   test("sacrifice cannot log in anymore — 403 FORBIDDEN (status gate in service.Login)", async () => {
-    const api = await createApiClient(iam.baseURL);
+    const api = await createApiClient(gateway.baseURL);
     const res = await api.post("/v1/sessions", {
       email: TARGET_EMAIL,
       password: SHARED_PASSWORD,
@@ -145,7 +144,7 @@ test.describe.serial("iam-svc admin suspend + revoke-all (BL-IAM-003)", () => {
     // RefreshSession's first failure is the session-row check (revoked →
     // ErrUnauthorized), which fires before the status gate. Either way the
     // caller gets 401.
-    const api = await createApiClient(iam.baseURL);
+    const api = await createApiClient(gateway.baseURL);
     const res = await api.post("/v1/sessions/refresh", {
       refresh_token: targetRefresh,
     });
@@ -156,7 +155,7 @@ test.describe.serial("iam-svc admin suspend + revoke-all (BL-IAM-003)", () => {
 
   test("finance_admin cannot call the suspend endpoint — 403 (permission gate)", async () => {
     const { accessToken: financeAccess } = await login(FINANCE_EMAIL);
-    const api = await createApiClient(iam.baseURL, financeAccess);
+    const api = await createApiClient(gateway.baseURL, financeAccess);
     const res = await api.post(`/v1/users/${TARGET_USER_ID}/suspend`);
     expect(res.status()).toBe(403);
     const body = await res.json();
@@ -164,7 +163,7 @@ test.describe.serial("iam-svc admin suspend + revoke-all (BL-IAM-003)", () => {
   });
 
   test("re-suspending the already-suspended sacrifice is a 200 no-op (idempotent)", async () => {
-    const api = await createApiClient(iam.baseURL, adminAccess);
+    const api = await createApiClient(gateway.baseURL, adminAccess);
     const res = await api.post(`/v1/users/${TARGET_USER_ID}/suspend`);
     expect(res.status()).toBe(200);
     const body = await res.json();
@@ -172,7 +171,7 @@ test.describe.serial("iam-svc admin suspend + revoke-all (BL-IAM-003)", () => {
   });
 
   test("admin cannot suspend themselves — 400 VALIDATION_ERROR", async () => {
-    const api = await createApiClient(iam.baseURL, adminAccess);
+    const api = await createApiClient(gateway.baseURL, adminAccess);
     const res = await api.post(`/v1/users/${ADMIN_USER_ID}/suspend`);
     expect(res.status()).toBe(400);
     const body = await res.json();
@@ -180,7 +179,7 @@ test.describe.serial("iam-svc admin suspend + revoke-all (BL-IAM-003)", () => {
   });
 
   test("no bearer on the suspend endpoint — 401 UNAUTHORIZED", async () => {
-    const api = await createApiClient(iam.baseURL);
+    const api = await createApiClient(gateway.baseURL);
     const res = await api.post(`/v1/users/${TARGET_USER_ID}/suspend`);
     expect(res.status()).toBe(401);
     const body = await res.json();

@@ -1,16 +1,18 @@
-// iam-svc audit-emit end-to-end (BL-IAM-004).
+// iam audit-emit end-to-end (BL-IAM-004 + BL-IAM-018 / S1-E-12).
 //
 // Closes F1 § AC acceptance ("Every state-changing call in every service
 // produces an audit log entry") for the first in-process emitter: the admin
-// suspend action. BL-IAM-004 adds the iam.v1.IamService.RecordAudit gRPC
-// surface for cross-service callers AND wires iam-svc.service.SuspendUser to
-// call q.InsertAuditLog inside its existing WithTx so business-success ↔
+// suspend action. BL-IAM-004 wires iam-svc.service.SuspendUser to call
+// q.InsertAuditLog inside its existing WithTx so business-success ↔
 // audit-success are atomic.
 //
-// This spec covers the in-process emit end-to-end:
+// Post BL-IAM-018 / S1-E-12 all iam HTTP calls go through gateway-svc:4000
+// (iam-svc is gRPC-only). This spec still asserts the audit row is written
+// synchronously inside iam-svc's service.SuspendUser WithTx — the gateway
+// hop is a transparent proxy.
 //
-//   1. Admin suspends sacrifice via POST /v1/users/{id}/suspend (same surface
-//      exercised by 02c).
+//   1. Admin suspends sacrifice via POST /v1/users/{id}/suspend on the
+//      gateway (same surface exercised by 02c).
 //   2. One new row lands in iam.audit_logs with the shape the spec pins:
 //      resource="user", action="suspend", actor=admin, resource_id=target,
 //      old_value.status ∈ {"active","suspended"}, new_value.status="suspended".
@@ -25,17 +27,14 @@
 // which will exercise the RPC end-to-end via its new iam_grpc_adapter.
 //
 // Prereqs (make dev-bootstrap handles all):
-//   1. docker compose dev stack up (iam-svc :4001, postgres :5432)
+//   1. docker compose dev stack up (gateway-svc :4000, postgres :5432)
 //   2. migrations 000004..000006 applied (fixture admin + sacrifice target)
 //   3. pg host access on localhost:5432 with postgres/changeme
 
 import { test, expect } from "@playwright/test";
 import { createApiClient } from "../lib/api-client";
-import { backendServices } from "../lib/services";
+import { gateway } from "../lib/services";
 import { withPg } from "../lib/pg-client";
-
-const iam = backendServices.find((s) => s.name === "iam-svc");
-if (!iam) throw new Error("iam-svc not in backendServices registry");
 
 const ADMIN_EMAIL = "admin@umrohos.dev";
 const ADMIN_USER_ID = "33333333-3333-3333-3333-333333333333";
@@ -45,7 +44,7 @@ const TARGET_USER_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const SHARED_PASSWORD = "password123";
 
 async function loginAdmin(): Promise<string> {
-  const api = await createApiClient(iam!.baseURL);
+  const api = await createApiClient(gateway.baseURL);
   const res = await api.post("/v1/sessions", {
     email: ADMIN_EMAIL,
     password: SHARED_PASSWORD,
@@ -89,7 +88,7 @@ async function countSuspendAudits(targetUserID: string): Promise<number> {
   });
 }
 
-test.describe.serial("iam-svc audit emit on suspend (BL-IAM-004)", () => {
+test.describe.serial("iam audit emit on suspend via gateway (BL-IAM-004 + BL-IAM-018)", () => {
   let adminAccess = "";
   let baselineCount = 0;
 
@@ -99,7 +98,7 @@ test.describe.serial("iam-svc audit emit on suspend (BL-IAM-004)", () => {
   });
 
   test("admin suspends target — audit row lands inside the same tx", async () => {
-    const api = await createApiClient(iam.baseURL, adminAccess);
+    const api = await createApiClient(gateway.baseURL, adminAccess);
     const res = await api.post(`/v1/users/${TARGET_USER_ID}/suspend`);
     expect(res.status()).toBe(200);
 
@@ -136,7 +135,7 @@ test.describe.serial("iam-svc audit emit on suspend (BL-IAM-004)", () => {
   test("re-suspending the already-suspended target still writes a second audit row (every admin action is auditable)", async () => {
     const beforeCount = await countSuspendAudits(TARGET_USER_ID);
 
-    const api = await createApiClient(iam.baseURL, adminAccess);
+    const api = await createApiClient(gateway.baseURL, adminAccess);
     const res = await api.post(`/v1/users/${TARGET_USER_ID}/suspend`);
     expect(res.status()).toBe(200);
 
