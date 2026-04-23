@@ -17,6 +17,11 @@ type Querier interface {
 	GetJournalEntryByIdempotencyKey(ctx context.Context, idempotencyKey string) (JournalEntryRow, error)
 	InsertJournalEntry(ctx context.Context, arg InsertJournalEntryParams) (JournalEntryRow, error)
 	InsertJournalLine(ctx context.Context, arg InsertJournalLineParams) (JournalLineRow, error)
+
+	// Finance report queries (S5-E-01 / BL-FIN-004..005)
+	GetFinanceSummary(ctx context.Context) ([]AccountSummaryRow, error)
+	ListJournalEntries(ctx context.Context, arg ListJournalEntriesParams) ([]JournalEntryRow, error)
+	GetJournalLines(ctx context.Context, entryIDs []string) ([]JournalLineRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -149,6 +149,12 @@ func runRestServer(port int, api rest_oapi.ServerInterface, iamValidator middlew
 		v1Protected.Get("/leads", wrapper.ListLeads)
 		v1Protected.Get("/leads/:id", wrapper.GetLeadByID)
 		v1Protected.Put("/leads/:id", wrapper.UpdateLeadByID)
+
+		// Finance report routes (S5-E-01 / BL-FIN-004..005) — bearer required.
+		// GET /v1/finance/summary  — aggregate per-account balances
+		// GET /v1/finance/journals — paginated journal entries + lines
+		v1Protected.Get("/finance/summary", wrapper.GetFinanceSummary)
+		v1Protected.Get("/finance/journals", wrapper.ListJournals)
 	}
 
 	go func() {

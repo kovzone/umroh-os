@@ -445,6 +445,12 @@ type ServerInterface interface {
 	GetLeadByID(c *fiber.Ctx, id string) error
 	// PUT /v1/leads/:id — bearer.
 	UpdateLeadByID(c *fiber.Ctx, id string) error
+
+	// Finance report routes (S5-E-01 / BL-FIN-004..005) — bearer required.
+	// GET /v1/finance/summary  — aggregate per-account balances.
+	GetFinanceSummary(c *fiber.Ctx) error
+	// GET /v1/finance/journals — paginated journal entries + lines.
+	ListJournals(c *fiber.Ctx) error
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -723,6 +729,14 @@ func (siw *ServerInterfaceWrapper) GetLeadByID(c *fiber.Ctx) error {
 
 // UpdateLeadByID operation middleware — PUT /v1/leads/:id (bearer).
 // Hand-added in S4-E-02 / BL-CRM-003.
+func (siw *ServerInterfaceWrapper) GetFinanceSummary(c *fiber.Ctx) error {
+	return siw.Handler.GetFinanceSummary(c)
+}
+
+func (siw *ServerInterfaceWrapper) ListJournals(c *fiber.Ctx) error {
+	return siw.Handler.ListJournals(c)
+}
+
 func (siw *ServerInterfaceWrapper) UpdateLeadByID(c *fiber.Ctx) error {
 	var id string
 	err := runtime.BindStyledParameterWithOptions("simple", "id", c.Params("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
@@ -1334,5 +1348,13 @@ func (sh *strictHandler) GetLeadByID(ctx *fiber.Ctx, id string) error {
 }
 
 func (sh *strictHandler) UpdateLeadByID(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) GetFinanceSummary(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) ListJournals(ctx *fiber.Ctx) error {
 	return fiber.ErrNotImplemented
 }

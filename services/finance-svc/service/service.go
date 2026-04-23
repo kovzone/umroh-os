@@ -33,6 +33,14 @@ type IService interface {
 	// event. Idempotent on idempotency_key = "payment:<invoice_id>".
 	// Dr 1001 (Bank) / Cr 2001 (Pilgrim Liability).
 	OnPaymentReceived(ctx context.Context, params *OnPaymentReceivedParams) (*OnPaymentReceivedResult, error)
+
+	// GetFinanceSummary returns per-account aggregated debit/credit balances
+	// from finance.journal_lines (S5-E-01 / BL-FIN-004).
+	GetFinanceSummary(ctx context.Context) (*GetFinanceSummaryResult, error)
+
+	// ListJournalEntries returns a cursor-paginated list of journal entries
+	// with their lines, ordered by posted_at DESC (S5-E-01 / BL-FIN-005).
+	ListJournalEntries(ctx context.Context, params *ListJournalEntriesParams) (*ListJournalEntriesResult, error)
 }
 
 type Service struct {

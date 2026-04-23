@@ -99,11 +99,12 @@ func runRestServer(port int, api rest_oapi.ServerInterface, iamAdapter *iam_grpc
 func runGrpcServer(address string, apiServer *grpc_api.Server) *grpc.Server {
 	grpcServer := grpc.NewServer()
 
-	// RegisterFinanceServiceServerWithExtensions registers both the generated
-	// Healthz RPC and the hand-written OnPaymentReceived RPC (S3-E-03).
+	// RegisterFinanceServiceServerWithAllExtensions registers the generated
+	// Healthz RPC plus the hand-written OnPaymentReceived (S3-E-03) and the
+	// report RPCs GetFinanceSummary + ListJournalEntries (S5-E-01).
 	// Replace with pb.RegisterFinanceServiceServer once `make genpb` includes
-	// OnPaymentReceived from finance.proto.
-	pb.RegisterFinanceServiceServerWithExtensions(grpcServer, apiServer)
+	// all RPCs from finance.proto.
+	pb.RegisterFinanceServiceServerWithAllExtensions(grpcServer, apiServer)
 
 	healthServer := health.NewServer()
 	health_pb.RegisterHealthServer(grpcServer, healthServer)

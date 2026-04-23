@@ -6,6 +6,7 @@ import (
 	"gateway-svc/adapter/booking_grpc_adapter"
 	"gateway-svc/adapter/catalog_grpc_adapter"
 	"gateway-svc/adapter/crm_grpc_adapter"
+	"gateway-svc/adapter/finance_grpc_adapter"
 	"gateway-svc/adapter/finance_rest_adapter"
 	"gateway-svc/adapter/iam_grpc_adapter"
 	"gateway-svc/adapter/iam_rest_adapter"
@@ -68,6 +69,12 @@ type IService interface {
 	// BL-IAM-019 / S1-E-14 when /v1/finance/* moves to gRPC.
 	GetFinanceSystemLive(ctx context.Context) (*finance_rest_adapter.LivenessResult, error)
 
+	// Finance report routes (S5-E-01 / BL-FIN-004..005) — proxied via finance_grpc_adapter.
+	// GET /v1/finance/summary  — bearer; aggregate per-account balances.
+	GetFinanceSummary(ctx context.Context) (*finance_grpc_adapter.GetFinanceSummaryResult, error)
+	// GET /v1/finance/journals — bearer; paginated journal entries + lines.
+	ListJournalEntries(ctx context.Context, params *finance_grpc_adapter.ListJournalEntriesParams) (*finance_grpc_adapter.ListJournalEntriesResult, error)
+
 	// Booking draft (BL-BOOK-001..006 / S1-E-03 / BL-GTW-003) — proxied via
 	// booking_grpc_adapter. Public in S1 (auth arrives with F4).
 	CreateDraftBooking(ctx context.Context, params *booking_grpc_adapter.CreateDraftBookingParams) (*booking_grpc_adapter.CreateDraftBookingResult, error)
@@ -92,6 +99,7 @@ type Adapters struct {
 	iamGrpc     *iam_grpc_adapter.Adapter
 	catalogGrpc *catalog_grpc_adapter.Adapter
 	financeRest *finance_rest_adapter.Adapter
+	financeGrpc *finance_grpc_adapter.Adapter
 	bookingGrpc *booking_grpc_adapter.Adapter
 	crmGrpc     *crm_grpc_adapter.Adapter
 }
@@ -113,6 +121,7 @@ type NewServiceParams struct {
 	IamGrpc     *iam_grpc_adapter.Adapter
 	CatalogGrpc *catalog_grpc_adapter.Adapter
 	FinanceRest *finance_rest_adapter.Adapter
+	FinanceGrpc *finance_grpc_adapter.Adapter
 	BookingGrpc *booking_grpc_adapter.Adapter
 	CrmGrpc     *crm_grpc_adapter.Adapter
 }
@@ -127,6 +136,7 @@ func NewService(p NewServiceParams) IService {
 			iamGrpc:     p.IamGrpc,
 			catalogGrpc: p.CatalogGrpc,
 			financeRest: p.FinanceRest,
+			financeGrpc: p.FinanceGrpc,
 			bookingGrpc: p.BookingGrpc,
 			crmGrpc:     p.CrmGrpc,
 		},

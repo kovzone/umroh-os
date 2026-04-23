@@ -9,6 +9,7 @@ import (
 	"gateway-svc/adapter/booking_grpc_adapter"
 	"gateway-svc/adapter/catalog_grpc_adapter"
 	"gateway-svc/adapter/crm_grpc_adapter"
+	"gateway-svc/adapter/finance_grpc_adapter"
 	"gateway-svc/adapter/finance_rest_adapter"
 	"gateway-svc/adapter/iam_grpc_adapter"
 	"gateway-svc/adapter/iam_rest_adapter"
@@ -175,6 +176,32 @@ func start() {
 	}()
 	crmGrpcAdapter := crm_grpc_adapter.NewAdapter(logger, tracer, crmConn)
 
+	// --- Dial finance-svc gRPC (S5-E-01) ---
+	//
+	// Per ADR-0009, gateway's /v1/finance/summary and /v1/finance/journals
+	// proxy to finance-svc.FinanceService over gRPC via finance_grpc_adapter.
+	// Same dial + OTel handler pattern as the other conns above.
+	financeConn, err := grpc.NewClient(
+		config.External.FinanceSvc.GrpcTarget,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Dial finance-svc gRPC").
+			Str("target", config.External.FinanceSvc.GrpcTarget).
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+	defer func() {
+		if err := financeConn.Close(); err != nil {
+			logger.Error().Err(err).Msg("close finance gRPC conn")
+		}
+	}()
+	financeGrpcAdapter := finance_grpc_adapter.NewAdapter(logger, tracer, financeConn)
+
 	// --- Init REST adapters (interim; retire as each backend graduates to gRPC) ---
 	// gateway-svc has no DB and no internal store; the service layer dispatches
 	// to these per-backend adapters.
@@ -200,6 +227,7 @@ func start() {
 		IamGrpc:     iamGrpcAdapter,
 		CatalogGrpc: catalogGrpcAdapter,
 		FinanceRest: financeAdapter,
+		FinanceGrpc: financeGrpcAdapter,
 		BookingGrpc: bookingGrpcAdapter,
 		CrmGrpc:     crmGrpcAdapter,
 	})

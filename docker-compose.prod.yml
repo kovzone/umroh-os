@@ -375,6 +375,7 @@ services:
     environment:
       APP_NAME: core-web
       IAM_API_BASE_URL: http://gateway-svc:4000
+      ORIGIN: ${CORE_WEB_ORIGIN:-http://216.176.238.161}
     depends_on:
       gateway-svc: {condition: service_healthy}
     restart: unless-stopped
