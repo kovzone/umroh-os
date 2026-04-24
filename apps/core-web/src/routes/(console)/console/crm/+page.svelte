@@ -29,6 +29,51 @@
       badge: 'BL-CRM-016'
     }
   ];
+
+  const agencyPortal = [
+    {
+      href: '/console/crm/agency',
+      icon: 'storefront',
+      title: 'Agen & Onboarding',
+      desc: 'Daftarkan & kelola agen, proses KYC dan MoU.',
+      badge: 'BL-CRM-010'
+    },
+    {
+      href: '/console/crm/agency/content',
+      icon: 'perm_media',
+      title: 'Konten & Pemasaran',
+      desc: 'Bank konten, watermark flyer, UTM, kalender, dan analitik.',
+      badge: 'BL-CRM-021'
+    },
+    {
+      href: '/console/crm/agency/leads',
+      icon: 'person_search',
+      title: 'CRM Leads Agen',
+      desc: 'Kelola leads agen, drip sequence, segmen, broadcast.',
+      badge: 'BL-CRM-027'
+    },
+    {
+      href: '/console/crm/agency/commission',
+      icon: 'account_balance_wallet',
+      title: 'Komisi & Wallet',
+      desc: 'Saldo komisi, riwayat transaksi, dan permintaan payout.',
+      badge: 'BL-CRM-012'
+    },
+    {
+      href: '/console/crm/agency/academy',
+      icon: 'school',
+      title: 'Akademi Agen',
+      desc: 'Modul pelatihan, leaderboard, skrip penjualan, dan badge.',
+      badge: 'BL-CRM-032'
+    },
+    {
+      href: '/console/crm/agency/team',
+      icon: 'group',
+      title: 'Tim & Downline',
+      desc: 'Struktur downline, tier leveling, kalkulator zakat.',
+      badge: 'BL-CRM-037'
+    }
+  ];
 </script>
 
 <main class="page-shell">
@@ -64,6 +109,29 @@
             <div class="tool-header">
               <span class="tool-title">{tool.title}</span>
               <span class="tool-badge">{tool.badge}</span>
+            </div>
+            <p class="tool-desc">{tool.desc}</p>
+          </div>
+          <span class="material-symbols-outlined tool-arrow">arrow_forward</span>
+        </a>
+      {/each}
+    </div>
+
+    <div class="section-divider">
+      <span class="material-symbols-outlined">storefront</span>
+      <span>Portal Agen</span>
+    </div>
+
+    <div class="tools-grid">
+      {#each agencyPortal as tool}
+        <a href={tool.href} class="tool-card tool-card--agency">
+          <div class="tool-icon tool-icon--agency">
+            <span class="material-symbols-outlined">{tool.icon}</span>
+          </div>
+          <div class="tool-body">
+            <div class="tool-header">
+              <span class="tool-title">{tool.title}</span>
+              <span class="tool-badge tool-badge--agency">{tool.badge}</span>
             </div>
             <p class="tool-desc">{tool.desc}</p>
           </div>
@@ -166,6 +234,20 @@
     color: #434655;
   }
 
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #434655;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin: 1.5rem 0 1rem;
+  }
+
+  .section-divider .material-symbols-outlined { font-size: 1rem; color: #059669; }
+
   .tools-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -195,6 +277,11 @@
     box-shadow: 0 2px 8px rgb(37 99 235 / 0.1);
   }
 
+  .tool-card--agency:hover {
+    border-color: #059669;
+    box-shadow: 0 2px 8px rgb(5 150 105 / 0.1);
+  }
+
   .tool-icon {
     width: 3rem;
     height: 3rem;
@@ -204,6 +291,11 @@
     display: grid;
     place-items: center;
     flex-shrink: 0;
+  }
+
+  .tool-icon--agency {
+    background: #d1fae5;
+    color: #065f46;
   }
 
   .tool-icon .material-symbols-outlined { font-size: 1.5rem; }
@@ -235,6 +327,11 @@
     border-radius: 0.2rem;
   }
 
+  .tool-badge--agency {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
   .tool-desc {
     margin: 0;
     font-size: 0.78rem;
@@ -250,6 +347,7 @@
   }
 
   .tool-card:hover .tool-arrow { color: #2563eb; }
+  .tool-card--agency:hover .tool-arrow { color: #059669; }
 
   .leads-shortcut {
     display: flex;
