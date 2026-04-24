@@ -742,6 +742,120 @@ type ServerInterface interface {
 	GetAgingAlerts(c *fiber.Ctx) error
 	// GET /v1/finance/audit-log
 	SearchFinanceAuditLog(c *fiber.Ctx) error
+
+	// ---------------------------------------------------------------------------
+	// Wave 5 Ops depth — BL-OPS-021..042 (hand-added)
+	// ---------------------------------------------------------------------------
+
+	// POST /v1/ops/collective-docs
+	StoreCollectiveDocument(c *fiber.Ctx) error
+	// GET /v1/ops/collective-docs
+	GetCollectiveDocuments(c *fiber.Ctx) error
+	// PUT /v1/ops/collective-docs/:id/acl
+	SetDocumentACL(c *fiber.Ctx, documentID string) error
+	// POST /v1/ops/passport-ocr
+	ExtractPassportOCR(c *fiber.Ctx) error
+	// POST /v1/ops/mahram
+	SetMahramRelation(c *fiber.Ctx) error
+	// GET /v1/ops/mahram
+	GetMahramRelations(c *fiber.Ctx) error
+	// GET /v1/ops/document-progress
+	GetDocumentProgress(c *fiber.Ctx) error
+	// GET /v1/ops/expiry-alerts
+	GetExpiryAlerts(c *fiber.Ctx) error
+	// POST /v1/ops/official-letters
+	GenerateOfficialLetter(c *fiber.Ctx) error
+	// POST /v1/ops/immigration-manifest
+	GenerateImmigrationManifest(c *fiber.Ctx) error
+	// POST /v1/ops/transport-assignments
+	AssignTransport(c *fiber.Ctx) error
+	// GET /v1/ops/transport-assignments
+	GetTransportAssignments(c *fiber.Ctx) error
+	// POST /v1/ops/manifest-delta
+	PublishManifestDelta(c *fiber.Ctx) error
+	// POST /v1/ops/staff-assignments
+	AssignStaff(c *fiber.Ctx) error
+	// POST /v1/ops/passport-handover
+	RecordPassportHandover(c *fiber.Ctx) error
+	// GET /v1/ops/passport-log
+	GetPassportLog(c *fiber.Ctx) error
+	// GET /v1/ops/visa-progress
+	GetVisaProgress(c *fiber.Ctx) error
+	// POST /v1/ops/e-visa
+	StoreEVisa(c *fiber.Ctx) error
+	// GET /v1/ops/e-visa/:pilgrim_id
+	GetEVisa(c *fiber.Ctx, pilgrimID string) error
+	// POST /v1/ops/external-provider
+	TriggerExternalProvider(c *fiber.Ctx) error
+	// POST /v1/ops/refunds
+	CreateRefund(c *fiber.Ctx) error
+	// PUT /v1/ops/refunds/:id/approve
+	ApproveRefund(c *fiber.Ctx, refundID string) error
+	// POST /v1/ops/penalties
+	RecordPenalty(c *fiber.Ctx) error
+	// POST /v1/ops/luggage-scan
+	RecordLuggageScan(c *fiber.Ctx) error
+	// GET /v1/ops/luggage-count
+	GetLuggageCount(c *fiber.Ctx) error
+	// POST /v1/ops/broadcast
+	BroadcastSchedule(c *fiber.Ctx) error
+	// POST /v1/ops/tasreh
+	IssueDigitalTasreh(c *fiber.Ctx) error
+	// POST /v1/ops/raudhah
+	RecordRaudhahEntry(c *fiber.Ctx) error
+	// POST /v1/ops/audio-devices
+	RegisterAudioDevice(c *fiber.Ctx) error
+	// PUT /v1/ops/audio-devices/:id/status
+	UpdateAudioDeviceStatus(c *fiber.Ctx, deviceID string) error
+	// POST /v1/ops/zamzam
+	RecordZamzamDistribution(c *fiber.Ctx) error
+	// POST /v1/ops/room-checkin
+	RecordRoomCheckIn(c *fiber.Ctx) error
+
+	// ---------------------------------------------------------------------------
+	// Wave 5 Logistics depth — BL-LOG-013..029 (hand-added)
+	// ---------------------------------------------------------------------------
+
+	// GET /v1/logistics/purchase-requests
+	ListPurchaseRequests(c *fiber.Ctx) error
+	// GET /v1/logistics/budget-sync/:departure_id
+	GetBudgetSyncStatus(c *fiber.Ctx, departureID string) error
+	// GET /v1/logistics/tiered-approvals
+	GetTieredApprovals(c *fiber.Ctx) error
+	// PUT /v1/logistics/tiered-approvals/:id/decision
+	DecideTieredApproval(c *fiber.Ctx, id string) error
+	// POST /v1/logistics/auto-vendor
+	AutoSelectVendor(c *fiber.Ctx) error
+	// POST /v1/logistics/partial-grn
+	RecordPartialGRN(c *fiber.Ctx) error
+	// POST /v1/logistics/reverse-grn
+	ReverseGRN(c *fiber.Ctx) error
+	// POST /v1/logistics/barcode
+	GenerateBarcode(c *fiber.Ctx) error
+	// POST /v1/logistics/sku-labels
+	PrintSKULabel(c *fiber.Ctx) error
+	// POST /v1/logistics/warehouses
+	CreateWarehouse(c *fiber.Ctx) error
+	// POST /v1/logistics/stock-transfer
+	TransferStock(c *fiber.Ctx) error
+	// GET /v1/logistics/stock-alerts
+	GetStockAlerts(c *fiber.Ctx) error
+	// PUT /v1/logistics/reorder-levels
+	SetReorderLevel(c *fiber.Ctx) error
+	// POST /v1/logistics/stocktake
+	StartStocktake(c *fiber.Ctx) error
+	// POST /v1/logistics/stocktake/:id/count
+	RecordStocktakeCount(c *fiber.Ctx, id string) error
+	// PUT /v1/logistics/stocktake/:id/finalize
+	FinalizeStocktake(c *fiber.Ctx, id string) error
+	// POST /v1/logistics/size-sync
+	SyncFulfillmentSizes(c *fiber.Ctx) error
+	// POST /v1/logistics/courier-tracking
+	RecordCourierTracking(c *fiber.Ctx) error
+	// POST /v1/logistics/returns
+	RecordReturn(c *fiber.Ctx) error
+	// POST /v1/logistics/exchanges
+	ProcessExchange(c *fiber.Ctx) error
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -2797,5 +2911,345 @@ func (sh *strictHandler) GetAgingAlerts(ctx *fiber.Ctx) error {
 	return fiber.ErrNotImplemented
 }
 func (sh *strictHandler) SearchFinanceAuditLog(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+// ---------------------------------------------------------------------------
+// Wave 5 Ops depth wrappers (BL-OPS-021..042 — hand-added)
+// ---------------------------------------------------------------------------
+
+func (siw *ServerInterfaceWrapper) StoreCollectiveDocument(c *fiber.Ctx) error {
+	return siw.Handler.StoreCollectiveDocument(c)
+}
+func (siw *ServerInterfaceWrapper) GetCollectiveDocuments(c *fiber.Ctx) error {
+	return siw.Handler.GetCollectiveDocuments(c)
+}
+func (siw *ServerInterfaceWrapper) SetDocumentACL(c *fiber.Ctx) error {
+	documentID := c.Params("id")
+	return siw.Handler.SetDocumentACL(c, documentID)
+}
+func (siw *ServerInterfaceWrapper) ExtractPassportOCR(c *fiber.Ctx) error {
+	return siw.Handler.ExtractPassportOCR(c)
+}
+func (siw *ServerInterfaceWrapper) SetMahramRelation(c *fiber.Ctx) error {
+	return siw.Handler.SetMahramRelation(c)
+}
+func (siw *ServerInterfaceWrapper) GetMahramRelations(c *fiber.Ctx) error {
+	return siw.Handler.GetMahramRelations(c)
+}
+func (siw *ServerInterfaceWrapper) GetDocumentProgress(c *fiber.Ctx) error {
+	return siw.Handler.GetDocumentProgress(c)
+}
+func (siw *ServerInterfaceWrapper) GetExpiryAlerts(c *fiber.Ctx) error {
+	return siw.Handler.GetExpiryAlerts(c)
+}
+func (siw *ServerInterfaceWrapper) GenerateOfficialLetter(c *fiber.Ctx) error {
+	return siw.Handler.GenerateOfficialLetter(c)
+}
+func (siw *ServerInterfaceWrapper) GenerateImmigrationManifest(c *fiber.Ctx) error {
+	return siw.Handler.GenerateImmigrationManifest(c)
+}
+func (siw *ServerInterfaceWrapper) AssignTransport(c *fiber.Ctx) error {
+	return siw.Handler.AssignTransport(c)
+}
+func (siw *ServerInterfaceWrapper) GetTransportAssignments(c *fiber.Ctx) error {
+	return siw.Handler.GetTransportAssignments(c)
+}
+func (siw *ServerInterfaceWrapper) PublishManifestDelta(c *fiber.Ctx) error {
+	return siw.Handler.PublishManifestDelta(c)
+}
+func (siw *ServerInterfaceWrapper) AssignStaff(c *fiber.Ctx) error {
+	return siw.Handler.AssignStaff(c)
+}
+func (siw *ServerInterfaceWrapper) RecordPassportHandover(c *fiber.Ctx) error {
+	return siw.Handler.RecordPassportHandover(c)
+}
+func (siw *ServerInterfaceWrapper) GetPassportLog(c *fiber.Ctx) error {
+	return siw.Handler.GetPassportLog(c)
+}
+func (siw *ServerInterfaceWrapper) GetVisaProgress(c *fiber.Ctx) error {
+	return siw.Handler.GetVisaProgress(c)
+}
+func (siw *ServerInterfaceWrapper) StoreEVisa(c *fiber.Ctx) error {
+	return siw.Handler.StoreEVisa(c)
+}
+func (siw *ServerInterfaceWrapper) GetEVisa(c *fiber.Ctx) error {
+	pilgrimID := c.Params("pilgrim_id")
+	return siw.Handler.GetEVisa(c, pilgrimID)
+}
+func (siw *ServerInterfaceWrapper) TriggerExternalProvider(c *fiber.Ctx) error {
+	return siw.Handler.TriggerExternalProvider(c)
+}
+func (siw *ServerInterfaceWrapper) CreateRefund(c *fiber.Ctx) error {
+	return siw.Handler.CreateRefund(c)
+}
+func (siw *ServerInterfaceWrapper) ApproveRefund(c *fiber.Ctx) error {
+	refundID := c.Params("id")
+	return siw.Handler.ApproveRefund(c, refundID)
+}
+func (siw *ServerInterfaceWrapper) RecordPenalty(c *fiber.Ctx) error {
+	return siw.Handler.RecordPenalty(c)
+}
+func (siw *ServerInterfaceWrapper) RecordLuggageScan(c *fiber.Ctx) error {
+	return siw.Handler.RecordLuggageScan(c)
+}
+func (siw *ServerInterfaceWrapper) GetLuggageCount(c *fiber.Ctx) error {
+	return siw.Handler.GetLuggageCount(c)
+}
+func (siw *ServerInterfaceWrapper) BroadcastSchedule(c *fiber.Ctx) error {
+	return siw.Handler.BroadcastSchedule(c)
+}
+func (siw *ServerInterfaceWrapper) IssueDigitalTasreh(c *fiber.Ctx) error {
+	return siw.Handler.IssueDigitalTasreh(c)
+}
+func (siw *ServerInterfaceWrapper) RecordRaudhahEntry(c *fiber.Ctx) error {
+	return siw.Handler.RecordRaudhahEntry(c)
+}
+func (siw *ServerInterfaceWrapper) RegisterAudioDevice(c *fiber.Ctx) error {
+	return siw.Handler.RegisterAudioDevice(c)
+}
+func (siw *ServerInterfaceWrapper) UpdateAudioDeviceStatus(c *fiber.Ctx) error {
+	deviceID := c.Params("id")
+	return siw.Handler.UpdateAudioDeviceStatus(c, deviceID)
+}
+func (siw *ServerInterfaceWrapper) RecordZamzamDistribution(c *fiber.Ctx) error {
+	return siw.Handler.RecordZamzamDistribution(c)
+}
+func (siw *ServerInterfaceWrapper) RecordRoomCheckIn(c *fiber.Ctx) error {
+	return siw.Handler.RecordRoomCheckIn(c)
+}
+
+// ---------------------------------------------------------------------------
+// Wave 5 Logistics depth wrappers (BL-LOG-013..029 — hand-added)
+// ---------------------------------------------------------------------------
+
+func (siw *ServerInterfaceWrapper) ListPurchaseRequests(c *fiber.Ctx) error {
+	return siw.Handler.ListPurchaseRequests(c)
+}
+func (siw *ServerInterfaceWrapper) GetBudgetSyncStatus(c *fiber.Ctx) error {
+	departureID := c.Params("departure_id")
+	return siw.Handler.GetBudgetSyncStatus(c, departureID)
+}
+func (siw *ServerInterfaceWrapper) GetTieredApprovals(c *fiber.Ctx) error {
+	return siw.Handler.GetTieredApprovals(c)
+}
+func (siw *ServerInterfaceWrapper) DecideTieredApproval(c *fiber.Ctx) error {
+	id := c.Params("id")
+	return siw.Handler.DecideTieredApproval(c, id)
+}
+func (siw *ServerInterfaceWrapper) AutoSelectVendor(c *fiber.Ctx) error {
+	return siw.Handler.AutoSelectVendor(c)
+}
+func (siw *ServerInterfaceWrapper) RecordPartialGRN(c *fiber.Ctx) error {
+	return siw.Handler.RecordPartialGRN(c)
+}
+func (siw *ServerInterfaceWrapper) ReverseGRN(c *fiber.Ctx) error {
+	return siw.Handler.ReverseGRN(c)
+}
+func (siw *ServerInterfaceWrapper) GenerateBarcode(c *fiber.Ctx) error {
+	return siw.Handler.GenerateBarcode(c)
+}
+func (siw *ServerInterfaceWrapper) PrintSKULabel(c *fiber.Ctx) error {
+	return siw.Handler.PrintSKULabel(c)
+}
+func (siw *ServerInterfaceWrapper) CreateWarehouse(c *fiber.Ctx) error {
+	return siw.Handler.CreateWarehouse(c)
+}
+func (siw *ServerInterfaceWrapper) TransferStock(c *fiber.Ctx) error {
+	return siw.Handler.TransferStock(c)
+}
+func (siw *ServerInterfaceWrapper) GetStockAlerts(c *fiber.Ctx) error {
+	return siw.Handler.GetStockAlerts(c)
+}
+func (siw *ServerInterfaceWrapper) SetReorderLevel(c *fiber.Ctx) error {
+	return siw.Handler.SetReorderLevel(c)
+}
+func (siw *ServerInterfaceWrapper) StartStocktake(c *fiber.Ctx) error {
+	return siw.Handler.StartStocktake(c)
+}
+func (siw *ServerInterfaceWrapper) RecordStocktakeCount(c *fiber.Ctx) error {
+	id := c.Params("id")
+	return siw.Handler.RecordStocktakeCount(c, id)
+}
+func (siw *ServerInterfaceWrapper) FinalizeStocktake(c *fiber.Ctx) error {
+	id := c.Params("id")
+	return siw.Handler.FinalizeStocktake(c, id)
+}
+func (siw *ServerInterfaceWrapper) SyncFulfillmentSizes(c *fiber.Ctx) error {
+	return siw.Handler.SyncFulfillmentSizes(c)
+}
+func (siw *ServerInterfaceWrapper) RecordCourierTracking(c *fiber.Ctx) error {
+	return siw.Handler.RecordCourierTracking(c)
+}
+func (siw *ServerInterfaceWrapper) RecordReturn(c *fiber.Ctx) error {
+	return siw.Handler.RecordReturn(c)
+}
+func (siw *ServerInterfaceWrapper) ProcessExchange(c *fiber.Ctx) error {
+	return siw.Handler.ProcessExchange(c)
+}
+
+// ---------------------------------------------------------------------------
+// Wave 5 Ops depth strictHandler stubs — not used (routes go through proxy_ops_depth.go)
+// ---------------------------------------------------------------------------
+
+func (sh *strictHandler) StoreCollectiveDocument(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetCollectiveDocuments(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) SetDocumentACL(ctx *fiber.Ctx, documentID string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ExtractPassportOCR(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) SetMahramRelation(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetMahramRelations(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetDocumentProgress(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetExpiryAlerts(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GenerateOfficialLetter(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GenerateImmigrationManifest(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) AssignTransport(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetTransportAssignments(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) PublishManifestDelta(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) AssignStaff(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RecordPassportHandover(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetPassportLog(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetVisaProgress(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) StoreEVisa(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetEVisa(ctx *fiber.Ctx, pilgrimID string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) TriggerExternalProvider(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) CreateRefund(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ApproveRefund(ctx *fiber.Ctx, refundID string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RecordPenalty(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RecordLuggageScan(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetLuggageCount(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) BroadcastSchedule(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) IssueDigitalTasreh(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RecordRaudhahEntry(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RegisterAudioDevice(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) UpdateAudioDeviceStatus(ctx *fiber.Ctx, deviceID string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RecordZamzamDistribution(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RecordRoomCheckIn(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+// ---------------------------------------------------------------------------
+// Wave 5 Logistics depth strictHandler stubs — not used (routes go through proxy_logistics_depth.go)
+// ---------------------------------------------------------------------------
+
+func (sh *strictHandler) ListPurchaseRequests(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetBudgetSyncStatus(ctx *fiber.Ctx, departureID string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetTieredApprovals(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) DecideTieredApproval(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) AutoSelectVendor(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RecordPartialGRN(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ReverseGRN(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GenerateBarcode(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) PrintSKULabel(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) CreateWarehouse(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) TransferStock(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetStockAlerts(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) SetReorderLevel(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) StartStocktake(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RecordStocktakeCount(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) FinalizeStocktake(ctx *fiber.Ctx, id string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) SyncFulfillmentSizes(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RecordCourierTracking(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RecordReturn(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ProcessExchange(ctx *fiber.Ctx) error {
 	return fiber.ErrNotImplemented
 }

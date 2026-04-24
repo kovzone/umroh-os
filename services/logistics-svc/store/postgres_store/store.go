@@ -17,6 +17,10 @@ type IStore interface {
 	WithTx(ctx context.Context, args *WithTxArgs) (*WithTxData, error)
 	WithTxOptions(ctx context.Context, args *WithTxOptionsArgs) (*WithTxOptionsData, error)
 	ExecRawSQL(ctx context.Context, sql string) error
+
+	// DB returns the underlying pgxpool connection pool for inline queries
+	// that don't have generated sqlc stubs (e.g. Wave 5 depth RPCs).
+	DB() *pgxpool.Pool
 }
 
 type Store struct {
@@ -47,4 +51,10 @@ func (store *Store) ExecRawSQL(ctx context.Context, sql string) error {
 	_, err := store.pool.Exec(ctx, sql)
 
 	return err
+}
+
+// DB returns the underlying pgxpool connection pool for inline queries
+// that don't have generated sqlc stubs (e.g. Wave 5 depth RPCs).
+func (store *Store) DB() *pgxpool.Pool {
+	return store.pool
 }

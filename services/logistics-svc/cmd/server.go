@@ -20,11 +20,12 @@ import (
 func runGrpcServer(address string, apiServer *grpc_api.Server) *grpc.Server {
 	grpcServer := grpc.NewServer()
 
-	// RegisterLogisticsServiceServerWithExtensions registers both the generated
-	// Healthz RPC and the hand-written OnBookingPaid RPC (S3-E-02).
+	// RegisterLogisticsServiceServerWithDepth registers the full LogisticsService
+	// surface: Healthz, Wave 3 RPCs, BL-LOG-010..012 procurement, and
+	// Wave 5 depth RPCs (BL-LOG-013..029).
 	// Replace with pb.RegisterLogisticsServiceServer once `make genpb` includes
-	// OnBookingPaid from logistics.proto.
-	pb.RegisterLogisticsServiceServerWithExtensions(grpcServer, apiServer)
+	// all RPCs from logistics.proto.
+	pb.RegisterLogisticsServiceServerWithDepth(grpcServer, apiServer)
 
 	healthServer := health.NewServer()
 	health_pb.RegisterHealthServer(grpcServer, healthServer)

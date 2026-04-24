@@ -20,10 +20,10 @@ import (
 func runGrpcServer(address string, apiServer *grpc_api.Server) *grpc.Server {
 	grpcServer := grpc.NewServer()
 
-	// RegisterOpsServiceServerFull registers Healthz (generated) + all hand-written
-	// ops RPCs: RunRoomAllocation, GetRoomAllocation, GenerateIDCard, VerifyIDCard,
-	// ExportManifest.
-	pb.RegisterOpsServiceServerFull(grpcServer, apiServer)
+	// RegisterOpsServiceServerWithDepth registers Healthz + all hand-written ops RPCs:
+	// room allocation, ID card, manifest, scan/boarding (Phase 6), and all Wave 5
+	// depth RPCs (BL-OPS-021..042).
+	pb.RegisterOpsServiceServerWithDepth(grpcServer, apiServer)
 
 	healthServer := health.NewServer()
 	health_pb.RegisterHealthServer(grpcServer, healthServer)

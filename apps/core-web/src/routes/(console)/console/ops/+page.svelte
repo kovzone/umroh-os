@@ -151,6 +151,74 @@
       </div>
     </div>
 
+    <!-- Sub-page navigation cards -->
+    <div class="subpage-grid">
+      <a href="/console/ops/documents" class="subpage-card">
+        <span class="material-symbols-outlined sp-icon">folder_open</span>
+        <div class="sp-text">
+          <div class="sp-label">Manajemen Dokumen</div>
+          <div class="sp-desc">Upload kolektif, OCR paspor, progress &amp; kedaluwarsa</div>
+        </div>
+        <span class="material-symbols-outlined sp-arrow">arrow_forward</span>
+      </a>
+      <a href="/console/ops/mahram" class="subpage-card">
+        <span class="material-symbols-outlined sp-icon">group</span>
+        <div class="sp-text">
+          <div class="sp-label">Hubungan Mahram</div>
+          <div class="sp-desc">Kelola relasi mahram antar jamaah</div>
+        </div>
+        <span class="material-symbols-outlined sp-arrow">arrow_forward</span>
+      </a>
+      <a href="/console/ops/letters" class="subpage-card">
+        <span class="material-symbols-outlined sp-icon">description</span>
+        <div class="sp-text">
+          <div class="sp-label">Surat &amp; Manifest Imigrasi</div>
+          <div class="sp-desc">Surat resmi &amp; manifest keberangkatan</div>
+        </div>
+        <span class="material-symbols-outlined sp-arrow">arrow_forward</span>
+      </a>
+      <a href="/console/ops/transport" class="subpage-card">
+        <span class="material-symbols-outlined sp-icon">directions_bus</span>
+        <div class="sp-text">
+          <div class="sp-label">Akomodasi &amp; Transportasi</div>
+          <div class="sp-desc">Penempatan kamar, transportasi, delta manifest</div>
+        </div>
+        <span class="material-symbols-outlined sp-arrow">arrow_forward</span>
+      </a>
+      <a href="/console/ops/passport" class="subpage-card">
+        <span class="material-symbols-outlined sp-icon">badge</span>
+        <div class="sp-text">
+          <div class="sp-label">Penugasan Staf &amp; Log Paspor</div>
+          <div class="sp-desc">Assign staf &amp; serah terima paspor</div>
+        </div>
+        <span class="material-symbols-outlined sp-arrow">arrow_forward</span>
+      </a>
+      <a href="/console/ops/visa" class="subpage-card">
+        <span class="material-symbols-outlined sp-icon">travel_explore</span>
+        <div class="sp-text">
+          <div class="sp-label">Tracking Visa &amp; E-Visa</div>
+          <div class="sp-desc">Progress visa, repositori e-visa, integrasi</div>
+        </div>
+        <span class="material-symbols-outlined sp-arrow">arrow_forward</span>
+      </a>
+      <a href="/console/ops/refunds" class="subpage-card">
+        <span class="material-symbols-outlined sp-icon">currency_exchange</span>
+        <div class="sp-text">
+          <div class="sp-label">Refund &amp; Penalti</div>
+          <div class="sp-desc">Proses refund dan pencatatan penalti</div>
+        </div>
+        <span class="material-symbols-outlined sp-arrow">arrow_forward</span>
+      </a>
+      <a href="/console/ops/field" class="subpage-card">
+        <span class="material-symbols-outlined sp-icon">location_on</span>
+        <div class="sp-text">
+          <div class="sp-label">Operasional Lapangan</div>
+          <div class="sp-desc">Koper, broadcast, tasreh, audio, zamzam, check-in</div>
+        </div>
+        <span class="material-symbols-outlined sp-arrow">arrow_forward</span>
+      </a>
+    </div>
+
     <!-- Summary bar -->
     <div class="summary-bar">
       {#each FULFILLMENT_STATUSES as s}
@@ -484,6 +552,63 @@
     font-size: 0.82rem;
     color: #434655;
   }
+
+  /* ---- sub-page navigation ---- */
+  .subpage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .subpage-card {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem 1rem;
+    background: #fff;
+    border: 1px solid rgb(195 198 215 / 0.45);
+    border-radius: 0.4rem;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .subpage-card:hover {
+    border-color: #93c5fd;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.06);
+  }
+
+  .sp-icon {
+    font-size: 1.4rem;
+    color: #004ac6;
+    flex-shrink: 0;
+  }
+
+  .sp-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .sp-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #191c1e;
+  }
+
+  .sp-desc {
+    font-size: 0.68rem;
+    color: #737686;
+    margin-top: 0.1rem;
+  }
+
+  .sp-arrow {
+    font-size: 0.95rem;
+    color: #b0b3c1;
+    flex-shrink: 0;
+  }
+
+  .subpage-card:hover .sp-arrow { color: #2563eb; }
 
   /* ---- summary bar ---- */
   .summary-bar {

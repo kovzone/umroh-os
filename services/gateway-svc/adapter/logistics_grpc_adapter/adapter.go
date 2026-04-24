@@ -27,6 +27,7 @@ type Adapter struct {
 	tracer                trace.Tracer
 	logisticsClient       pb.LogisticsServiceClient
 	logisticsPhase6Client pb.LogisticsPhase6Client
+	depthClient           pb.LogisticsDepthClient
 }
 
 // NewAdapter creates a new logistics-svc gRPC adapter from an already-dialled conn.
@@ -37,6 +38,7 @@ func NewAdapter(logger *zerolog.Logger, tracer trace.Tracer, cc *grpc.ClientConn
 		tracer:                tracer,
 		logisticsClient:       pb.NewLogisticsServiceClient(cc),
 		logisticsPhase6Client: pb.NewLogisticsPhase6Client(cc),
+		depthClient:           pb.NewLogisticsDepthClient(cc),
 	}
 }
 

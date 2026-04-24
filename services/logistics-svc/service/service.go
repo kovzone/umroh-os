@@ -56,6 +56,68 @@ type IService interface {
 
 	// ListFulfillmentTasks returns a paginated, filtered list of fulfillment tasks (ISSUE-018).
 	ListFulfillmentTasks(ctx context.Context, params *ListFulfillmentTasksParams) (*ListFulfillmentTasksResult, error)
+
+	// Wave 5 depth (BL-LOG-013..029)
+
+	// ListPurchaseRequests returns a paginated list of purchase requests (BL-LOG-013).
+	ListPurchaseRequests(ctx context.Context, params *ListPurchaseRequestsParams) (*ListPurchaseRequestsResult, error)
+
+	// GetBudgetSyncStatus returns budget vs committed vs actual for a departure (BL-LOG-014).
+	GetBudgetSyncStatus(ctx context.Context, params *GetBudgetSyncStatusParams) (*GetBudgetSyncStatusResult, error)
+
+	// GetTieredApprovals returns tiered approval rows with optional level/status filter (BL-LOG-015).
+	GetTieredApprovals(ctx context.Context, params *GetTieredApprovalsParams) (*GetTieredApprovalsResult, error)
+
+	// DecideTieredApproval approves or rejects a tiered approval record (BL-LOG-015).
+	DecideTieredApproval(ctx context.Context, params *DecideTieredApprovalParams) (*DecideTieredApprovalResult, error)
+
+	// AutoSelectVendor auto-selects the best matching vendor for a category (BL-LOG-016).
+	AutoSelectVendor(ctx context.Context, params *AutoSelectVendorParams) (*AutoSelectVendorResult, error)
+
+	// RecordPartialGRN records a partial goods receipt note with item details (BL-LOG-017).
+	RecordPartialGRN(ctx context.Context, params *RecordPartialGRNParams) (*RecordPartialGRNResult, error)
+
+	// ReverseGRN marks a GRN as reversed (BL-LOG-017).
+	ReverseGRN(ctx context.Context, params *ReverseGRNParams) (*ReverseGRNResult, error)
+
+	// GenerateBarcode generates barcode data and label URL for a SKU (BL-LOG-020).
+	GenerateBarcode(ctx context.Context, params *GenerateBarcodeParams) (*GenerateBarcodeResult, error)
+
+	// PrintSKULabel returns a label URL for printing SKU labels (BL-LOG-020).
+	PrintSKULabel(ctx context.Context, params *PrintSKULabelParams) (*PrintSKULabelResult, error)
+
+	// CreateWarehouse creates a new warehouse record (BL-LOG-021).
+	CreateWarehouse(ctx context.Context, params *CreateWarehouseParams) (*CreateWarehouseResult, error)
+
+	// TransferStock records a stock transfer between warehouses (BL-LOG-021).
+	TransferStock(ctx context.Context, params *TransferStockParams) (*TransferStockResult, error)
+
+	// GetStockAlerts returns inventory items below reorder level (BL-LOG-022).
+	GetStockAlerts(ctx context.Context, params *GetStockAlertsParams) (*GetStockAlertsResult, error)
+
+	// SetReorderLevel sets or updates the reorder level for a SKU/warehouse (BL-LOG-022).
+	SetReorderLevel(ctx context.Context, params *SetReorderLevelParams) (*SetReorderLevelResult, error)
+
+	// StartStocktake begins a stocktake session for a warehouse (BL-LOG-024).
+	StartStocktake(ctx context.Context, params *StartStocktakeParams) (*StartStocktakeResult, error)
+
+	// RecordStocktakeCount records a counted quantity for a SKU in a stocktake (BL-LOG-024).
+	RecordStocktakeCount(ctx context.Context, params *RecordStocktakeCountParams) (*RecordStocktakeCountResult, error)
+
+	// FinalizeStocktake completes a stocktake and returns variance lines (BL-LOG-024).
+	FinalizeStocktake(ctx context.Context, params *FinalizeStocktakeParams) (*FinalizeStocktakeResult, error)
+
+	// SyncFulfillmentSizes syncs pilgrim size data for a departure (BL-LOG-025).
+	SyncFulfillmentSizes(ctx context.Context, params *SyncFulfillmentSizesParams) (*SyncFulfillmentSizesResult, error)
+
+	// RecordCourierTracking records a courier tracking update for a fulfillment task (BL-LOG-027).
+	RecordCourierTracking(ctx context.Context, params *RecordCourierTrackingParams) (*RecordCourierTrackingResult, error)
+
+	// RecordReturn records a return for a fulfillment task (BL-LOG-029).
+	RecordReturn(ctx context.Context, params *RecordReturnParams) (*RecordReturnResult, error)
+
+	// ProcessExchange processes an exchange for a previously recorded return (BL-LOG-029).
+	ProcessExchange(ctx context.Context, params *ProcessExchangeParams) (*ProcessExchangeResult, error)
 }
 
 type Service struct {

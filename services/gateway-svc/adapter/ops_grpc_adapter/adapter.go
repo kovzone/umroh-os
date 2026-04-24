@@ -22,10 +22,11 @@ import (
 
 // Adapter wraps the ops-svc gRPC clients for ops operations.
 type Adapter struct {
-	logger         *zerolog.Logger
-	tracer         trace.Tracer
-	opsClient      pb.OpsServiceClient
+	logger          *zerolog.Logger
+	tracer          trace.Tracer
+	opsClient       pb.OpsServiceClient
 	opsPhase6Client pb.OpsPhase6Client
+	depthClient     pb.OpsDepthClient
 }
 
 // NewAdapter creates a new ops-svc gRPC adapter from an already-dialled conn.
@@ -36,6 +37,7 @@ func NewAdapter(logger *zerolog.Logger, tracer trace.Tracer, cc *grpc.ClientConn
 		tracer:          tracer,
 		opsClient:       pb.NewOpsServiceClient(cc),
 		opsPhase6Client: pb.NewOpsPhase6Client(cc),
+		depthClient:     pb.NewOpsDepthClient(cc),
 	}
 }
 
