@@ -3,15 +3,8 @@
     "name": "finance-svc"
   },
   "api": {
-    "rest": {
-      "host": "0.0.0.0",
-      "port": 4009
-    },
     "grpc": {
       "address": "0.0.0.0:50059"
-    },
-    "metrics": {
-      "enabled": true
     }
   },
   "store": {
@@ -29,8 +22,5 @@
   "otel_tracer": {
     "name": "finance-svc-tracer",
     "endpoint": "otel-collector:4317"
-  },
-  "iam": {
-    "grpc_target": "iam-svc:50051"
   }
 }

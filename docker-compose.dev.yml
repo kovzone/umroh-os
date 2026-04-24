@@ -532,7 +532,6 @@ services:
     container_name: finance-svc
     restart: unless-stopped
     ports:
-      - "4009:4009"
       - "50059:50059"
     volumes:
       - ./services/finance-svc/config.json:/app/config.json

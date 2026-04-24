@@ -6,24 +6,16 @@ import (
 
 // Config holds all configuration for the application.
 //
-// Pilot scaffold scope: app name, REST + gRPC ports, Postgres pool, OTel
-// tracer. Token (auth) config returns with F1.5 when real login/refresh/logout
-// handlers land.
+// Post BL-IAM-019 / S1-E-14: finance-svc is gRPC-only (ADR 0009). REST port
+// + Prometheus metrics are retired — metrics push via OTLP to the
+// OpenTelemetry Collector using OtelTracer.Endpoint. Token (auth) config
+// returns with F1.5 if per-service auth is ever needed; the current design
+// has the gateway as the sole authority.
 type Config struct {
 	App        App        `mapstructure:"app"`
 	Api        Api        `mapstructure:"api"`
 	Store      Store      `mapstructure:"store"`
 	OtelTracer OtelTracer `mapstructure:"otel_tracer"`
-	Iam        Iam        `mapstructure:"iam"`
-}
-
-// Iam config — how finance-svc reaches iam-svc's internal gRPC surface.
-//
-// The target is a plain host:port (no scheme); BL-IAM-002 adapter dials with
-// insecure credentials because the traffic stays inside the docker-compose
-// network. TLS-terminated ingress lands with the gateway-svc hardening card.
-type Iam struct {
-	GrpcTarget string `mapstructure:"grpc_target"`
 }
 
 // App config
@@ -34,24 +26,12 @@ type App struct {
 
 // API config
 
-type Rest struct {
-	Host string `mapstructure:"host"`
-	Port int    `mapstructure:"port"`
-}
-
 type Grpc struct {
 	Address string `mapstructure:"address"`
 }
 
 type Api struct {
-	Rest    Rest    `mapstructure:"rest"`
-	Grpc    Grpc    `mapstructure:"grpc"`
-	Metrics Metrics `mapstructure:"metrics"`
-}
-
-// Metrics config (Prometheus). Opt-in: set enabled to true to expose /metrics.
-type Metrics struct {
-	Enabled bool `mapstructure:"enabled"`
+	Grpc Grpc `mapstructure:"grpc"`
 }
 
 // Store config

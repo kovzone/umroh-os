@@ -47,8 +47,9 @@ COPY --from=build-env /app/api/main main
 # Note: config.json is mounted via docker-compose volume
 # This allows for different configs (local vs docker) without rebuilding
 
-# Expose REST (4009) and gRPC (50059)
-EXPOSE 4009 50059
+# Expose gRPC (50059). REST port (4009) was retired in BL-IAM-019 / S1-E-14;
+# finance-svc is gRPC-only per ADR 0009.
+EXPOSE 50059
 
 # Run the executable with 'start' argument
 ENTRYPOINT [ "./main", "start" ]

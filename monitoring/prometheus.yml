@@ -1,11 +1,10 @@
 # Prometheus scrape config for local/dev.
 #
-# The eight gRPC-only backends (booking/crm/jamaah/logistics/ops/payment/visa
-# per BL-REFACTOR-002..008, catalog per BL-REFACTOR-001, iam per BL-IAM-018)
-# push metrics via OTLP to the otel-collector — their series appear in the
-# otel-collector job labeled with service_name="<svc>-svc". The remaining
-# direct-scrape jobs are for services whose REST surface is still in place:
-# gateway-svc and finance-svc (finance moves off REST in BL-IAM-019 / S1-E-14).
+# Post BL-IAM-019 / S1-E-14 every downstream backend is gRPC-only and pushes
+# metrics via OTLP to the otel-collector — their series appear in the
+# otel-collector job labeled with service_name="<svc>-svc". The only remaining
+# direct-scrape target is gateway-svc, which still exposes Fiber /metrics
+# (REST is the edge there).
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
@@ -16,13 +15,9 @@ scrape_configs:
       - targets: ["gateway-svc:4000"]
     metrics_path: /metrics
 
-  - job_name: finance-svc
-    static_configs:
-      - targets: ["finance-svc:4009"]
-    metrics_path: /metrics
-
-  # catalog-svc, iam-svc, and the seven pure-scaffold backends push metrics
-  # via OTLP; their series appear here labeled with service_name="<svc>".
+  # catalog-svc, iam-svc, finance-svc, and the seven pure-scaffold backends
+  # push metrics via OTLP; their series appear here labeled with
+  # service_name="<svc>".
   - job_name: otel-collector
     static_configs:
       - targets: ["otel-collector:8889"]
