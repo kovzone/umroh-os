@@ -17,6 +17,8 @@ type IStore interface {
 	WithTx(ctx context.Context, args *WithTxArgs) (*WithTxData, error)
 	WithTxOptions(ctx context.Context, args *WithTxOptionsArgs) (*WithTxOptionsData, error)
 	ExecRawSQL(ctx context.Context, sql string) error
+	// Pool returns the underlying pgxpool for inline SQL in depth service methods.
+	Pool() *pgxpool.Pool
 }
 
 type Store struct {
@@ -47,4 +49,9 @@ func (store *Store) ExecRawSQL(ctx context.Context, sql string) error {
 	_, err := store.pool.Exec(ctx, sql)
 
 	return err
+}
+
+// Pool returns the underlying pgxpool for inline SQL in depth service methods.
+func (store *Store) Pool() *pgxpool.Pool {
+	return store.pool
 }

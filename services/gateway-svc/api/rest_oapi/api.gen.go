@@ -856,6 +856,72 @@ type ServerInterface interface {
 	RecordReturn(c *fiber.Ctx) error
 	// POST /v1/logistics/exchanges
 	ProcessExchange(c *fiber.Ctx) error
+
+	// Wave 7 CRM depth — BL-CRM-010..012, 017..066 (hand-added)
+	// Agency Registration
+	RegisterAgent(c *fiber.Ctx) error
+	SubmitAgentKyc(c *fiber.Ctx) error
+	SignAgentMoU(c *fiber.Ctx) error
+	GetAgentProfile(c *fiber.Ctx, agentId string) error
+	GetReplicaSite(c *fiber.Ctx, agentId string) error
+	UpdateReplicaSite(c *fiber.Ctx) error
+	// Content
+	GetSocialShareLink(c *fiber.Ctx) error
+	GenerateBusinessCard(c *fiber.Ctx) error
+	ListContentBank(c *fiber.Ctx) error
+	CreateContentAsset(c *fiber.Ctx) error
+	WatermarkFlyer(c *fiber.Ctx) error
+	ListProgramGallery(c *fiber.Ctx) error
+	SetTrackingCode(c *fiber.Ctx) error
+	GetAdsManagerStats(c *fiber.Ctx, agentId string) error
+	CreateUtmLink(c *fiber.Ctx) error
+	ListUtmLinks(c *fiber.Ctx, agentId string) error
+	CreateLandingPage(c *fiber.Ctx) error
+	ListLandingPages(c *fiber.Ctx, agentId string) error
+	ScheduleContent(c *fiber.Ctx) error
+	ListScheduledContent(c *fiber.Ctx, agentId string) error
+	GetContentAnalytics(c *fiber.Ctx, agentId string) error
+	// CRM / Leads
+	CreateAgentLead(c *fiber.Ctx) error
+	ListAgentLeads(c *fiber.Ctx, agentId string) error
+	SetLeadReminder(c *fiber.Ctx) error
+	ListLeadReminders(c *fiber.Ctx, leadId string) error
+	FilterBotLeads(c *fiber.Ctx, agentId string) error
+	CreateDripSequence(c *fiber.Ctx) error
+	ListDripSequences(c *fiber.Ctx, agentId string) error
+	CreateMomentTrigger(c *fiber.Ctx) error
+	CreateSegment(c *fiber.Ctx) error
+	ListSegments(c *fiber.Ctx, agentId string) error
+	SendBroadcast(c *fiber.Ctx) error
+	AssignLeadFair(c *fiber.Ctx) error
+	CreateSlaRule(c *fiber.Ctx) error
+	GetLeadTrail(c *fiber.Ctx, leadId string) error
+	TagLead(c *fiber.Ctx) error
+	GenerateQuote(c *fiber.Ctx) error
+	GetQuote(c *fiber.Ctx, quoteId string) error
+	BuildPaymentLink(c *fiber.Ctx) error
+	RequestDiscount(c *fiber.Ctx) error
+	ApproveDiscount(c *fiber.Ctx, discountId string) error
+	GetStaleProspects(c *fiber.Ctx, agentId string) error
+	// Commission
+	GetCommissionBalance(c *fiber.Ctx, agentId string) error
+	GetCommissionEvents(c *fiber.Ctx, agentId string) error
+	RequestPayout(c *fiber.Ctx) error
+	GetPayoutHistory(c *fiber.Ctx, agentId string) error
+	ComputeOverrideCommission(c *fiber.Ctx) error
+	GetRoasReport(c *fiber.Ctx, agentId string) error
+	// Academy
+	ListAcademyCourses(c *fiber.Ctx) error
+	GetCourseProgress(c *fiber.Ctx, agentId string) error
+	SubmitQuiz(c *fiber.Ctx) error
+	ListSalesScripts(c *fiber.Ctx) error
+	GetLeaderboard(c *fiber.Ctx) error
+	GetAgentTier(c *fiber.Ctx, agentId string) error
+	// Alumni / Other
+	GetAlumniReferrals(c *fiber.Ctx, agentId string) error
+	GetReturnIntentSavings(c *fiber.Ctx, agentId string) error
+	CalculateZakat(c *fiber.Ctx) error
+	RecordCharity(c *fiber.Ctx) error
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -3251,5 +3317,381 @@ func (sh *strictHandler) RecordReturn(ctx *fiber.Ctx) error {
 	return fiber.ErrNotImplemented
 }
 func (sh *strictHandler) ProcessExchange(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+
+// Wave 7 CRM depth wrappers (BL-CRM-010..012, 017..066 — hand-added)
+func (siw *ServerInterfaceWrapper) RegisterAgent(c *fiber.Ctx) error {
+	return siw.Handler.RegisterAgent(c)
+}
+func (siw *ServerInterfaceWrapper) SubmitAgentKyc(c *fiber.Ctx) error {
+	return siw.Handler.SubmitAgentKyc(c)
+}
+func (siw *ServerInterfaceWrapper) SignAgentMoU(c *fiber.Ctx) error {
+	return siw.Handler.SignAgentMoU(c)
+}
+func (siw *ServerInterfaceWrapper) GetAgentProfile(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.GetAgentProfile(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) GetReplicaSite(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.GetReplicaSite(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) UpdateReplicaSite(c *fiber.Ctx) error {
+	return siw.Handler.UpdateReplicaSite(c)
+}
+func (siw *ServerInterfaceWrapper) GetSocialShareLink(c *fiber.Ctx) error {
+	return siw.Handler.GetSocialShareLink(c)
+}
+func (siw *ServerInterfaceWrapper) GenerateBusinessCard(c *fiber.Ctx) error {
+	return siw.Handler.GenerateBusinessCard(c)
+}
+func (siw *ServerInterfaceWrapper) ListContentBank(c *fiber.Ctx) error {
+	return siw.Handler.ListContentBank(c)
+}
+func (siw *ServerInterfaceWrapper) CreateContentAsset(c *fiber.Ctx) error {
+	return siw.Handler.CreateContentAsset(c)
+}
+func (siw *ServerInterfaceWrapper) WatermarkFlyer(c *fiber.Ctx) error {
+	return siw.Handler.WatermarkFlyer(c)
+}
+func (siw *ServerInterfaceWrapper) ListProgramGallery(c *fiber.Ctx) error {
+	return siw.Handler.ListProgramGallery(c)
+}
+func (siw *ServerInterfaceWrapper) SetTrackingCode(c *fiber.Ctx) error {
+	return siw.Handler.SetTrackingCode(c)
+}
+func (siw *ServerInterfaceWrapper) GetAdsManagerStats(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.GetAdsManagerStats(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) CreateUtmLink(c *fiber.Ctx) error {
+	return siw.Handler.CreateUtmLink(c)
+}
+func (siw *ServerInterfaceWrapper) ListUtmLinks(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.ListUtmLinks(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) CreateLandingPage(c *fiber.Ctx) error {
+	return siw.Handler.CreateLandingPage(c)
+}
+func (siw *ServerInterfaceWrapper) ListLandingPages(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.ListLandingPages(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) ScheduleContent(c *fiber.Ctx) error {
+	return siw.Handler.ScheduleContent(c)
+}
+func (siw *ServerInterfaceWrapper) ListScheduledContent(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.ListScheduledContent(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) GetContentAnalytics(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.GetContentAnalytics(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) CreateAgentLead(c *fiber.Ctx) error {
+	return siw.Handler.CreateAgentLead(c)
+}
+func (siw *ServerInterfaceWrapper) ListAgentLeads(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.ListAgentLeads(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) SetLeadReminder(c *fiber.Ctx) error {
+	return siw.Handler.SetLeadReminder(c)
+}
+func (siw *ServerInterfaceWrapper) ListLeadReminders(c *fiber.Ctx) error {
+	leadId := c.Params("lead_id")
+	return siw.Handler.ListLeadReminders(c, leadId)
+}
+func (siw *ServerInterfaceWrapper) FilterBotLeads(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.FilterBotLeads(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) CreateDripSequence(c *fiber.Ctx) error {
+	return siw.Handler.CreateDripSequence(c)
+}
+func (siw *ServerInterfaceWrapper) ListDripSequences(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.ListDripSequences(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) CreateMomentTrigger(c *fiber.Ctx) error {
+	return siw.Handler.CreateMomentTrigger(c)
+}
+func (siw *ServerInterfaceWrapper) CreateSegment(c *fiber.Ctx) error {
+	return siw.Handler.CreateSegment(c)
+}
+func (siw *ServerInterfaceWrapper) ListSegments(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.ListSegments(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) SendBroadcast(c *fiber.Ctx) error {
+	return siw.Handler.SendBroadcast(c)
+}
+func (siw *ServerInterfaceWrapper) AssignLeadFair(c *fiber.Ctx) error {
+	return siw.Handler.AssignLeadFair(c)
+}
+func (siw *ServerInterfaceWrapper) CreateSlaRule(c *fiber.Ctx) error {
+	return siw.Handler.CreateSlaRule(c)
+}
+func (siw *ServerInterfaceWrapper) GetLeadTrail(c *fiber.Ctx) error {
+	leadId := c.Params("lead_id")
+	return siw.Handler.GetLeadTrail(c, leadId)
+}
+func (siw *ServerInterfaceWrapper) TagLead(c *fiber.Ctx) error {
+	return siw.Handler.TagLead(c)
+}
+func (siw *ServerInterfaceWrapper) GenerateQuote(c *fiber.Ctx) error {
+	return siw.Handler.GenerateQuote(c)
+}
+func (siw *ServerInterfaceWrapper) GetQuote(c *fiber.Ctx) error {
+	quoteId := c.Params("quote_id")
+	return siw.Handler.GetQuote(c, quoteId)
+}
+func (siw *ServerInterfaceWrapper) BuildPaymentLink(c *fiber.Ctx) error {
+	return siw.Handler.BuildPaymentLink(c)
+}
+func (siw *ServerInterfaceWrapper) RequestDiscount(c *fiber.Ctx) error {
+	return siw.Handler.RequestDiscount(c)
+}
+func (siw *ServerInterfaceWrapper) ApproveDiscount(c *fiber.Ctx) error {
+	discountId := c.Params("discount_id")
+	return siw.Handler.ApproveDiscount(c, discountId)
+}
+func (siw *ServerInterfaceWrapper) GetStaleProspects(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.GetStaleProspects(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) GetCommissionBalance(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.GetCommissionBalance(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) GetCommissionEvents(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.GetCommissionEvents(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) RequestPayout(c *fiber.Ctx) error {
+	return siw.Handler.RequestPayout(c)
+}
+func (siw *ServerInterfaceWrapper) GetPayoutHistory(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.GetPayoutHistory(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) ComputeOverrideCommission(c *fiber.Ctx) error {
+	return siw.Handler.ComputeOverrideCommission(c)
+}
+func (siw *ServerInterfaceWrapper) GetRoasReport(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.GetRoasReport(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) ListAcademyCourses(c *fiber.Ctx) error {
+	return siw.Handler.ListAcademyCourses(c)
+}
+func (siw *ServerInterfaceWrapper) GetCourseProgress(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.GetCourseProgress(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) SubmitQuiz(c *fiber.Ctx) error {
+	return siw.Handler.SubmitQuiz(c)
+}
+func (siw *ServerInterfaceWrapper) ListSalesScripts(c *fiber.Ctx) error {
+	return siw.Handler.ListSalesScripts(c)
+}
+func (siw *ServerInterfaceWrapper) GetLeaderboard(c *fiber.Ctx) error {
+	return siw.Handler.GetLeaderboard(c)
+}
+func (siw *ServerInterfaceWrapper) GetAgentTier(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.GetAgentTier(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) GetAlumniReferrals(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.GetAlumniReferrals(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) GetReturnIntentSavings(c *fiber.Ctx) error {
+	agentId := c.Params("agent_id")
+	return siw.Handler.GetReturnIntentSavings(c, agentId)
+}
+func (siw *ServerInterfaceWrapper) CalculateZakat(c *fiber.Ctx) error {
+	return siw.Handler.CalculateZakat(c)
+}
+func (siw *ServerInterfaceWrapper) RecordCharity(c *fiber.Ctx) error {
+	return siw.Handler.RecordCharity(c)
+}
+
+// Wave 7 CRM depth strictHandler stubs — not used (routes go through proxy_crm_depth.go)
+func (sh *strictHandler) RegisterAgent(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) SubmitAgentKyc(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) SignAgentMoU(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetAgentProfile(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetReplicaSite(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) UpdateReplicaSite(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetSocialShareLink(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GenerateBusinessCard(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ListContentBank(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) CreateContentAsset(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) WatermarkFlyer(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ListProgramGallery(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) SetTrackingCode(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetAdsManagerStats(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) CreateUtmLink(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ListUtmLinks(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) CreateLandingPage(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ListLandingPages(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ScheduleContent(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ListScheduledContent(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetContentAnalytics(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) CreateAgentLead(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ListAgentLeads(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) SetLeadReminder(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ListLeadReminders(ctx *fiber.Ctx, leadId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) FilterBotLeads(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) CreateDripSequence(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ListDripSequences(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) CreateMomentTrigger(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) CreateSegment(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ListSegments(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) SendBroadcast(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) AssignLeadFair(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) CreateSlaRule(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetLeadTrail(ctx *fiber.Ctx, leadId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) TagLead(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GenerateQuote(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetQuote(ctx *fiber.Ctx, quoteId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) BuildPaymentLink(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RequestDiscount(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ApproveDiscount(ctx *fiber.Ctx, discountId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetStaleProspects(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetCommissionBalance(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetCommissionEvents(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RequestPayout(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetPayoutHistory(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ComputeOverrideCommission(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetRoasReport(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ListAcademyCourses(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetCourseProgress(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) SubmitQuiz(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ListSalesScripts(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetLeaderboard(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetAgentTier(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetAlumniReferrals(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetReturnIntentSavings(ctx *fiber.Ctx, agentId string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) CalculateZakat(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RecordCharity(ctx *fiber.Ctx) error {
 	return fiber.ErrNotImplemented
 }

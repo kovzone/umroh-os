@@ -21,6 +21,7 @@ func runGrpcServer(address string, apiServer *grpc_api.Server) *grpc.Server {
 	grpcServer := grpc.NewServer()
 
 	pb.RegisterCrmServiceServer(grpcServer, apiServer)
+	pb.RegisterCrmServiceServerWithDepth(grpcServer, apiServer)
 
 	healthServer := health.NewServer()
 	health_pb.RegisterHealthServer(grpcServer, healthServer)

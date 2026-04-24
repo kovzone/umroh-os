@@ -23,19 +23,21 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Adapter wraps crm-svc's CrmServiceClient.
+// Adapter wraps crm-svc's CrmServiceClient and CrmDepthClient.
 type Adapter struct {
-	logger    *zerolog.Logger
-	tracer    trace.Tracer
-	crmClient pb.CrmServiceClient
+	logger      *zerolog.Logger
+	tracer      trace.Tracer
+	crmClient   pb.CrmServiceClient
+	depthClient pb.CrmDepthClient
 }
 
 // NewAdapter creates a crm adapter from an already-dialled conn.
 func NewAdapter(logger *zerolog.Logger, tracer trace.Tracer, cc *grpc.ClientConn) *Adapter {
 	return &Adapter{
-		logger:    logger,
-		tracer:    tracer,
-		crmClient: pb.NewCrmServiceClient(cc),
+		logger:      logger,
+		tracer:      tracer,
+		crmClient:   pb.NewCrmServiceClient(cc),
+		depthClient: pb.NewCrmDepthClient(cc),
 	}
 }
 
