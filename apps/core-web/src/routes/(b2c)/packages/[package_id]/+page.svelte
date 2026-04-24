@@ -44,6 +44,32 @@
   const faqs = $derived(pkg.faqs ?? []);
   const whatsappHref = $derived(pkg.whatsappHref ?? 'https://wa.me/6281200000000');
 
+  // BL-B2C-012: Accommodation specs
+  const accommodations = $derived(pkg.accommodations ?? [
+    { city: 'Makkah', name: 'Hotel Bintang 5 (setaraf Hilton/Marriott)', distance: '50–200m dari Masjidil Haram', roomType: 'Twin sharing', mealPlan: 'Full board' },
+    { city: 'Madinah', name: 'Hotel Bintang 5 (setaraf Movenpick)', distance: '200–300m dari Masjid Nabawi', roomType: 'Twin sharing', mealPlan: 'Full board' }
+  ]);
+
+  // BL-B2C-013: Guide/muthawwif profile
+  const guides = $derived(pkg.guides ?? [
+    { name: 'Ustadz Ahmad Fauzi, Lc.', credentials: 'Lulusan Al-Azhar Kairo, Hafidz 30 Juz', experience: '12 tahun memandu jamaah umroh', photo: '', specialty: 'Bimbingan manasik & sejarah Islam' },
+    { name: 'Ustadzah Siti Rahmah, M.Ag.', credentials: 'Magister Agama, Sertifikat KBIH', experience: '8 tahun, khusus jamaah wanita', photo: '', specialty: 'Pendampingan jamaah wanita & lansia' }
+  ]);
+
+  // BL-B2C-021: Logistics/kitting info
+  const kittingItems = $derived(pkg.kittingItems ?? [
+    { icon: 'luggage', name: 'Koper 24 inch', description: 'Koper berkualitas dengan kunci TSA' },
+    { icon: 'backpack', name: 'Tas Sandang', description: 'Tas jinjing untuk kebutuhan sehari-hari di tanah suci' },
+    { icon: 'checkroom', name: 'Seragam Ihram (Pria)', description: '2 set kain ihram berkualitas' },
+    { icon: 'dry_cleaning', name: 'Mukena & Baju Seragam', description: '2 set baju seragam + mukena premium (wanita)' },
+    { icon: 'book_2', name: 'Buku Panduan Manasik', description: 'Buku doa dan panduan lengkap perjalanan' },
+    { icon: 'id_card', name: 'ID Card & Gelang Jamaah', description: 'Identitas resmi selama perjalanan' },
+    { icon: 'medication', name: 'Tas Kesehatan Dasar', description: 'P3K, masker, hand sanitizer, dan obat umum' },
+    { icon: 'sim_card', name: 'SIM Card Arab Saudi', description: 'Data 5GB untuk komunikasi selama di sana' }
+  ]);
+
+  let activeTab = $state<'ringkasan' | 'itinerari' | 'akomodasi' | 'muthawwif' | 'perlengkapan' | 'fasilitas' | 'snk'>('ringkasan');
+
   const firstOpenDeparture = $derived(
     pkg.departures.find((d) => d.status === 'open') ?? pkg.departures[0] ?? null
   );
@@ -169,44 +195,16 @@
       </section>
 
       <nav class="section-tabs" aria-label="Bagian halaman">
-        <a href="#ringkasan">Ringkasan</a>
-        <a href="#itinerari">Itinerari</a>
-        <a href="#fasilitas">Fasilitas</a>
-        <a href="#snk">Syarat & Ketentuan</a>
+        <button type="button" class:tab-active={activeTab === 'ringkasan'} onclick={() => activeTab = 'ringkasan'}>Ringkasan</button>
+        <button type="button" class:tab-active={activeTab === 'itinerari'} onclick={() => activeTab = 'itinerari'}>Itinerari</button>
+        <button type="button" class:tab-active={activeTab === 'akomodasi'} onclick={() => activeTab = 'akomodasi'}>Akomodasi</button>
+        <button type="button" class:tab-active={activeTab === 'muthawwif'} onclick={() => activeTab = 'muthawwif'}>Muthawwif</button>
+        <button type="button" class:tab-active={activeTab === 'perlengkapan'} onclick={() => activeTab = 'perlengkapan'}>Perlengkapan</button>
+        <button type="button" class:tab-active={activeTab === 'fasilitas'} onclick={() => activeTab = 'fasilitas'}>Fasilitas</button>
+        <button type="button" class:tab-active={activeTab === 'snk'} onclick={() => activeTab = 'snk'}>Syarat & Ketentuan</button>
       </nav>
 
-      <section id="ringkasan" class="section-block two-col">
-        <div>
-          <h2>Yang sudah termasuk</h2>
-          <div class="inclusion-grid">
-            {#each inclusions as item (item.title)}
-              <article class="inclusion-card">
-                <div class="inclusion-icon">
-                  <span class="material-symbols-outlined">{item.icon}</span>
-                </div>
-                <div>
-                  <h3>{item.title}</h3>
-                  {#if item.description}
-                    <p>{item.description}</p>
-                  {/if}
-                </div>
-              </article>
-            {/each}
-          </div>
-        </div>
-        <aside class="notes-card">
-          <h2>Poin penting perjalanan</h2>
-          <ul>
-            {#each importantNotes as note (note)}
-              <li>
-                <span class="material-symbols-outlined note-ic">check_circle</span>
-                {note}
-              </li>
-            {/each}
-          </ul>
-        </aside>
-      </section>
-
+      <!-- Always-visible departure picker -->
       <section class="section-block">
         <h2>Jadwal keberangkatan</h2>
         <p class="section-lede">
@@ -219,42 +217,211 @@
         />
       </section>
 
-      <section id="itinerari" class="section-block">
-        <h2>Rencana perjalanan</h2>
-        <div class="timeline">
-          {#each itineraryDays as day, idx (day.dayLabel + idx)}
-            <div class="timeline-item">
-              <div class="timeline-badge" class:timeline-badge--first={idx === 0}>{day.dayLabel}</div>
-              <div class="timeline-body">
-                <h3>{day.title}</h3>
-                <p>{day.body}</p>
+      <!-- Tab panels -->
+      {#if activeTab === 'ringkasan'}
+        <section class="section-block two-col">
+          <div>
+            <h2>Yang sudah termasuk</h2>
+            <div class="inclusion-grid">
+              {#each inclusions as item (item.title)}
+                <article class="inclusion-card">
+                  <div class="inclusion-icon">
+                    <span class="material-symbols-outlined">{item.icon}</span>
+                  </div>
+                  <div>
+                    <h3>{item.title}</h3>
+                    {#if item.description}
+                      <p>{item.description}</p>
+                    {/if}
+                  </div>
+                </article>
+              {/each}
+            </div>
+          </div>
+          <aside class="notes-card">
+            <h2>Poin penting perjalanan</h2>
+            <ul>
+              {#each importantNotes as note (note)}
+                <li>
+                  <span class="material-symbols-outlined note-ic">check_circle</span>
+                  {note}
+                </li>
+              {/each}
+            </ul>
+          </aside>
+        </section>
+      {/if}
+
+      {#if activeTab === 'itinerari'}
+        <section class="section-block">
+          <h2>Rencana perjalanan</h2>
+          {#if itineraryDays.length > 0}
+            <div class="timeline">
+              {#each itineraryDays as day, idx (day.dayLabel + idx)}
+                <div class="timeline-item">
+                  <div class="timeline-badge" class:timeline-badge--first={idx === 0}>{day.dayLabel}</div>
+                  <div class="timeline-body">
+                    <h3>{day.title}</h3>
+                    <p>{day.body}</p>
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {:else}
+            <div class="prose-card">
+              <p>Itinerari lengkap akan segera tersedia. Silakan hubungi tim kami untuk informasi lebih detail.</p>
+              <a href="/itinerary/{pkg.id}" class="inline-link">Lihat halaman itinerari →</a>
+            </div>
+          {/if}
+        </section>
+      {/if}
+
+      {#if activeTab === 'akomodasi'}
+        <!-- BL-B2C-012: Accommodation specs -->
+        <section class="section-block">
+          <h2>Informasi Akomodasi</h2>
+          <p class="section-lede">Hotel yang digunakan untuk setiap kota dalam perjalanan umroh Anda.</p>
+          <div class="accom-grid">
+            {#each accommodations as h (h.city)}
+              <article class="accom-card">
+                <div class="accom-header">
+                  <div class="accom-icon">
+                    <span class="material-symbols-outlined">hotel</span>
+                  </div>
+                  <div>
+                    <h3 class="accom-city">{h.city}</h3>
+                    <p class="accom-name">{h.name}</p>
+                  </div>
+                </div>
+                <div class="accom-details">
+                  <div class="accom-row">
+                    <span class="material-symbols-outlined">location_on</span>
+                    <span>{h.distance}</span>
+                  </div>
+                  <div class="accom-row">
+                    <span class="material-symbols-outlined">bed</span>
+                    <span>{h.roomType}</span>
+                  </div>
+                  <div class="accom-row">
+                    <span class="material-symbols-outlined">restaurant</span>
+                    <span>{h.mealPlan}</span>
+                  </div>
+                </div>
+              </article>
+            {/each}
+          </div>
+          <div class="accom-note">
+            <span class="material-symbols-outlined">info</span>
+            <p>Hotel bintang yang digunakan setara atau lebih baik dari yang tercantum. Konfirmasi hotel pasti dikirim H-14 keberangkatan.</p>
+          </div>
+        </section>
+      {/if}
+
+      {#if activeTab === 'muthawwif'}
+        <!-- BL-B2C-013: Guide profile -->
+        <section class="section-block">
+          <h2>Tim Muthawwif & Pembimbing</h2>
+          <p class="section-lede">Pembimbing berpengalaman yang akan mendampingi perjalanan ibadah Anda.</p>
+          <div class="guide-grid">
+            {#each guides as g (g.name)}
+              <article class="guide-card">
+                <div class="guide-avatar">
+                  {#if g.photo}
+                    <img src={g.photo} alt={g.name} />
+                  {:else}
+                    <span class="material-symbols-outlined guide-ic">person</span>
+                  {/if}
+                </div>
+                <div class="guide-body">
+                  <h3>{g.name}</h3>
+                  <p class="guide-creds">{g.credentials}</p>
+                  <div class="guide-meta">
+                    <span><span class="material-symbols-outlined">history_edu</span>{g.experience}</span>
+                    <span><span class="material-symbols-outlined">star</span>{g.specialty}</span>
+                  </div>
+                </div>
+              </article>
+            {/each}
+          </div>
+          <div class="guide-ratio">
+            <span class="material-symbols-outlined">groups</span>
+            <p>Rasio muthawwif : jamaah = <strong>1 : 15</strong> untuk memastikan bimbingan optimal setiap jamaah.</p>
+          </div>
+        </section>
+      {/if}
+
+      {#if activeTab === 'perlengkapan'}
+        <!-- BL-B2C-021: Logistics/kitting info -->
+        <section class="section-block">
+          <h2>Perlengkapan yang Diberikan</h2>
+          <p class="section-lede">Setiap jamaah menerima paket perlengkapan lengkap sebelum keberangkatan.</p>
+          <div class="kit-grid">
+            {#each kittingItems as item (item.name)}
+              <article class="kit-card">
+                <div class="kit-icon">
+                  <span class="material-symbols-outlined">{item.icon}</span>
+                </div>
+                <div>
+                  <h3>{item.name}</h3>
+                  <p>{item.description}</p>
+                </div>
+              </article>
+            {/each}
+          </div>
+          <div class="kit-timeline">
+            <h3>Jadwal Distribusi Perlengkapan</h3>
+            <div class="kit-steps">
+              <div class="kit-step">
+                <div class="kit-step-dot">1</div>
+                <div>
+                  <strong>H-30: Konfirmasi Ukuran</strong>
+                  <p>Tim akan menghubungi untuk konfirmasi ukuran seragam dan koper</p>
+                </div>
+              </div>
+              <div class="kit-step">
+                <div class="kit-step-dot">2</div>
+                <div>
+                  <strong>H-14: Manasik & Distribusi</strong>
+                  <p>Acara manasik sekaligus penyerahan seluruh perlengkapan perjalanan</p>
+                </div>
+              </div>
+              <div class="kit-step">
+                <div class="kit-step-dot">3</div>
+                <div>
+                  <strong>Hari H: Airport Check-in</strong>
+                  <p>Tim logistik hadir di bandara untuk membantu proses check-in</p>
+                </div>
               </div>
             </div>
-          {/each}
-        </div>
-      </section>
+          </div>
+        </section>
+      {/if}
 
-      <section id="fasilitas" class="section-block">
-        <h2>Fasilitas & layanan</h2>
-        <div class="prose-card">
-          {#if pkg.facilitiesBody}
-            <p>{pkg.facilitiesBody}</p>
-          {:else}
-            <p>Detail fasilitas mengikuti kontrak pemesanan dan brosur resmi travel untuk paket ini.</p>
-          {/if}
-        </div>
-      </section>
+      {#if activeTab === 'fasilitas'}
+        <section class="section-block">
+          <h2>Fasilitas & layanan</h2>
+          <div class="prose-card">
+            {#if pkg.facilitiesBody}
+              <p>{pkg.facilitiesBody}</p>
+            {:else}
+              <p>Detail fasilitas mengikuti kontrak pemesanan dan brosur resmi travel untuk paket ini.</p>
+            {/if}
+          </div>
+        </section>
+      {/if}
 
-      <section id="snk" class="section-block">
-        <h2>Syarat & ketentuan</h2>
-        <div class="prose-card">
-          {#if pkg.termsSummary}
-            <p>{pkg.termsSummary}</p>
-          {:else}
-            <p>Untuk teks legal lengkap, silakan unduh dari halaman konfirmasi booking atau hubungi tim kami.</p>
-          {/if}
-        </div>
-      </section>
+      {#if activeTab === 'snk'}
+        <section class="section-block">
+          <h2>Syarat & ketentuan</h2>
+          <div class="prose-card">
+            {#if pkg.termsSummary}
+              <p>{pkg.termsSummary}</p>
+            {:else}
+              <p>Untuk teks legal lengkap, silakan unduh dari halaman konfirmasi booking atau hubungi tim kami.</p>
+            {/if}
+          </div>
+        </section>
+      {/if}
 
       <section class="section-block faq-block">
         <h2>Pertanyaan umum</h2>
@@ -543,21 +710,24 @@
     background: rgba(251, 249, 248, 0.92);
     backdrop-filter: blur(8px);
   }
-  .section-tabs a {
+  .section-tabs button {
+    border: none;
+    background: transparent;
     color: #3f4943;
-    text-decoration: none;
     font-family: 'Plus Jakarta Sans', sans-serif;
     font-weight: 600;
     font-size: 0.95rem;
-    padding-bottom: 0.5rem;
+    padding: 0 0 0.5rem;
     border-bottom: 2px solid transparent;
     margin-bottom: -2px;
     white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
   }
-  .section-tabs a:hover {
+  .section-tabs button:hover {
     color: #004d34;
   }
-  .section-tabs a:first-child {
+  .section-tabs button.tab-active {
     color: #004d34;
     border-bottom-color: #775a19;
   }
@@ -729,4 +899,204 @@
     text-align: center;
     margin-bottom: 1.5rem;
   }
+
+  .inline-link {
+    display: inline-block;
+    margin-top: 0.75rem;
+    color: #006747;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+
+  /* BL-B2C-012: Accommodation */
+  .accom-grid {
+    display: grid;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  @media (min-width: 640px) {
+    .accom-grid { grid-template-columns: 1fr 1fr; }
+  }
+  .accom-card {
+    background: #fff;
+    border-radius: 1.25rem;
+    border: 1px solid rgba(190,201,193,0.2);
+    padding: 1.5rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  }
+  .accom-header {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+  .accom-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.75rem;
+    background: rgba(0,103,71,0.1);
+    color: #006747;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+  .accom-city {
+    margin: 0 0 0.2rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #004d34;
+  }
+  .accom-name {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #57534e;
+    line-height: 1.4;
+  }
+  .accom-details { display: grid; gap: 0.5rem; }
+  .accom-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #57534e;
+  }
+  .accom-row .material-symbols-outlined { font-size: 1rem; color: #006747; }
+  .accom-note {
+    display: flex;
+    gap: 0.75rem;
+    background: rgba(0,103,71,0.06);
+    border-left: 3px solid #006747;
+    border-radius: 0 0.75rem 0.75rem 0;
+    padding: 1rem 1.25rem;
+  }
+  .accom-note .material-symbols-outlined { color: #006747; font-size: 1.2rem; flex-shrink: 0; margin-top: 0.1rem; }
+  .accom-note p { margin: 0; font-size: 0.85rem; color: #57534e; line-height: 1.6; }
+
+  /* BL-B2C-013: Guide profile */
+  .guide-grid {
+    display: grid;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  @media (min-width: 640px) {
+    .guide-grid { grid-template-columns: 1fr 1fr; }
+  }
+  .guide-card {
+    display: flex;
+    gap: 1rem;
+    background: #fff;
+    border-radius: 1.25rem;
+    border: 1px solid rgba(190,201,193,0.2);
+    padding: 1.5rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+    align-items: flex-start;
+  }
+  .guide-avatar {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #004d34, #006747);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .guide-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .guide-ic { color: #fff; font-size: 1.8rem; }
+  .guide-body h3 {
+    margin: 0 0 0.2rem;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #004d34;
+  }
+  .guide-creds {
+    margin: 0 0 0.75rem;
+    font-size: 0.82rem;
+    color: #57534e;
+    line-height: 1.4;
+  }
+  .guide-meta { display: grid; gap: 0.35rem; }
+  .guide-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+  .guide-meta .material-symbols-outlined { font-size: 0.9rem; color: #006747; }
+  .guide-ratio {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(254,212,136,0.15);
+    border: 1px solid rgba(254,212,136,0.4);
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+  }
+  .guide-ratio .material-symbols-outlined { font-size: 1.5rem; color: #775a19; flex-shrink: 0; }
+  .guide-ratio p { margin: 0; font-size: 0.88rem; color: #57534e; }
+  .guide-ratio strong { color: #004d34; }
+
+  /* BL-B2C-021: Kitting */
+  .kit-grid {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  @media (min-width: 640px) { .kit-grid { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 1024px) { .kit-grid { grid-template-columns: repeat(4, 1fr); } }
+  .kit-card {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    background: #fff;
+    border: 1px solid rgba(190,201,193,0.2);
+    border-radius: 1rem;
+    padding: 1rem;
+  }
+  .kit-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.6rem;
+    background: rgba(0,103,71,0.08);
+    color: #006747;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+  .kit-card h3 { margin: 0 0 0.2rem; font-size: 0.88rem; font-weight: 700; color: #1b1c1c; }
+  .kit-card p { margin: 0; font-size: 0.78rem; color: #9ca3af; line-height: 1.4; }
+  .kit-timeline {
+    background: #fff;
+    border-radius: 1.25rem;
+    border: 1px solid rgba(190,201,193,0.2);
+    padding: 1.5rem;
+  }
+  .kit-timeline h3 {
+    margin: 0 0 1.25rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #004d34;
+  }
+  .kit-steps { display: grid; gap: 1.25rem; }
+  .kit-step {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  .kit-step-dot {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #004d34, #006747);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: 0.78rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .kit-step strong { display: block; font-size: 0.9rem; color: #004d34; margin-bottom: 0.2rem; }
+  .kit-step p { margin: 0; font-size: 0.82rem; color: #57534e; line-height: 1.5; }
 </style>

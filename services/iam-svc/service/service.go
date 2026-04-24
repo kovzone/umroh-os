@@ -91,6 +91,33 @@ type IService interface {
 
 	// SearchActivityLog returns a paginated, filtered view of iam.audit_logs (BL-IAM-011).
 	SearchActivityLog(ctx context.Context, params *SearchActivityLogParams) (*SearchActivityLogResult, error)
+
+	// GetPasswordPolicy reads the current password policy from global_config (BL-IAM-010).
+	GetPasswordPolicy(ctx context.Context) (*GetPasswordPolicyResult, error)
+
+	// SetPasswordPolicy persists password policy + MFA enforcement flag (BL-IAM-010).
+	SetPasswordPolicy(ctx context.Context, params *SetPasswordPolicyParams) (*GetPasswordPolicyResult, error)
+
+	// RecordLoginAnomaly writes an anomaly event to audit_logs (BL-IAM-012).
+	RecordLoginAnomaly(ctx context.Context, params *RecordLoginAnomalyParams) (*RecordLoginAnomalyResult, error)
+
+	// ListSessions returns active (or all) sessions for a user (BL-IAM-013).
+	ListSessions(ctx context.Context, params *ListSessionsParams) (*ListSessionsResult, error)
+
+	// RevokeSession forcibly revokes a single session (BL-IAM-013).
+	RevokeSession(ctx context.Context, params *RevokeSessionParams) (*RevokeSessionResult, error)
+
+	// UpsertCommTemplate stores a WA/email/SMS communication template (BL-IAM-015).
+	UpsertCommTemplate(ctx context.Context, params *UpsertCommTemplateParams) (*UpsertCommTemplateResult, error)
+
+	// ListCommTemplates returns communication templates, filtered by channel (BL-IAM-015).
+	ListCommTemplates(ctx context.Context, params *ListCommTemplatesParams) (*ListCommTemplatesResult, error)
+
+	// TriggerBackup schedules a database backup (BL-IAM-017).
+	TriggerBackup(ctx context.Context, params *TriggerBackupParams) (*TriggerBackupResult, error)
+
+	// GetBackupHistory returns the last N backup events from audit_logs (BL-IAM-017).
+	GetBackupHistory(ctx context.Context, limit int32) (*GetBackupStatusResult, error)
 }
 
 type Service struct {

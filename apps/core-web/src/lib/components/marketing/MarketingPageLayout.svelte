@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import FloatingChat from './FloatingChat.svelte';
   import MarketingFonts from './MarketingFonts.svelte';
   import MarketingFooter from './MarketingFooter.svelte';
   import MarketingTopNav from './MarketingTopNav.svelte';
@@ -31,6 +32,7 @@
   <div class="m-page-footer">
     <MarketingFooter />
   </div>
+  <FloatingChat />
 </div>
 
 <style>

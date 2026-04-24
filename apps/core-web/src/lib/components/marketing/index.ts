@@ -1,5 +1,6 @@
 export { default as DeparturePicker } from './DeparturePicker.svelte';
 export { default as FaqAccordion } from './FaqAccordion.svelte';
+export { default as FloatingChat } from './FloatingChat.svelte';
 export { default as MarketingFonts } from './MarketingFonts.svelte';
 export { default as MarketingFooter } from './MarketingFooter.svelte';
 export { default as MarketingPageLayout } from './MarketingPageLayout.svelte';

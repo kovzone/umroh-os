@@ -7,6 +7,14 @@
     data.packages[0] ? `/booking/${data.packages[0].id}` : '/packages'
   );
 
+  // BL-B2C-007: Reactive filter state
+  let filterMonth = $state('Semua Bulan');
+  let filterBudget = $state('Semua Budget');
+  let filterDuration = $state<string | null>(null);
+  let filterType = $state<string | null>(null);
+  let searchQuery = $state('');
+  let visibleCount = $state(6);
+
   const trustItems = [
     { title: 'Izin PPIU No. 123/2024', subtitle: 'Resmi Kemenag RI', icon: 'verified_user' },
     { title: 'Akreditasi A', subtitle: 'Standar Internasional', icon: 'workspace_premium' },
@@ -121,7 +129,7 @@
     }
   ];
 
-  const cards = Array.from({ length: 6 }, (_, idx) => {
+  const allCards = Array.from({ length: 6 }, (_, idx) => {
     const live = data.packages[idx % Math.max(1, data.packages.length)];
     const template = cardTemplates[idx % cardTemplates.length];
     const sourcePackageId = live?.id ?? data.packages[0]?.id ?? 'demo-package';
@@ -132,6 +140,73 @@
       ...template
     };
   });
+
+  // BL-B2C-007: Filtered + searched cards
+  const filteredCards = $derived.by(() => {
+    let result = allCards;
+
+    // Duration filter
+    if (filterDuration === '9') {
+      result = result.filter(c => c.title.includes('9') || c.left2.includes('9') || c.title.toLowerCase().includes('silver') || c.title.toLowerCase().includes('gold'));
+    } else if (filterDuration === '12') {
+      result = result.filter(c => c.left2.includes('12') || c.left2.includes('15'));
+    }
+
+    // Budget filter
+    if (filterBudget === 'Hemat (Rp 25jt - 30jt)') {
+      result = result.filter(c => {
+        const price = parseFloat(c.price.replace(/[^0-9.]/g, ''));
+        return price >= 24 && price <= 30;
+      });
+    } else if (filterBudget === 'Menengah (Rp 30jt - 40jt)') {
+      result = result.filter(c => {
+        const price = parseFloat(c.price.replace(/[^0-9.]/g, ''));
+        return price > 30 && price <= 40;
+      });
+    } else if (filterBudget === 'Premium (> Rp 40jt)') {
+      result = result.filter(c => {
+        const price = parseFloat(c.price.replace(/[^0-9.]/g, ''));
+        return price > 40;
+      });
+    }
+
+    // Type filter
+    if (filterType === 'Plus Turki') {
+      result = result.filter(c => c.title.toLowerCase().includes('turki'));
+    } else if (filterType === 'Reguler') {
+      result = result.filter(c => !c.title.toLowerCase().includes('turki') && !c.title.toLowerCase().includes('dubai') && !c.title.toLowerCase().includes('oman'));
+    }
+
+    // Search query
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter(c =>
+        c.title.toLowerCase().includes(q) ||
+        c.tag.toLowerCase().includes(q) ||
+        c.departure.toLowerCase().includes(q) ||
+        c.left1.toLowerCase().includes(q) ||
+        c.left2.toLowerCase().includes(q)
+      );
+    }
+
+    return result;
+  });
+
+  const visibleCards = $derived(filteredCards.slice(0, visibleCount));
+  const hasMore = $derived(filteredCards.length > visibleCount);
+
+  function showMore() {
+    visibleCount += 6;
+  }
+
+  function resetFilters() {
+    filterMonth = 'Semua Bulan';
+    filterBudget = 'Semua Budget';
+    filterDuration = null;
+    filterType = null;
+    searchQuery = '';
+    visibleCount = 6;
+  }
 </script>
 
 <svelte:head>
@@ -188,10 +263,23 @@
     </section>
 
     <section class="shell filters">
+      <div class="filter-search">
+        <span class="material-symbols-outlined search-ic">search</span>
+        <input
+          type="text"
+          placeholder="Cari paket, maskapai, atau destinasi..."
+          bind:value={searchQuery}
+        />
+        {#if searchQuery}
+          <button type="button" class="clear-search" onclick={() => searchQuery = ''}>
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        {/if}
+      </div>
       <div class="filter-wrap">
         <div class="filter-col">
           <p class="filter-label">Bulan Keberangkatan</p>
-          <select>
+          <select bind:value={filterMonth}>
             <option>Semua Bulan</option>
             <option>Januari 2025</option>
             <option>Februari 2025</option>
@@ -201,7 +289,7 @@
         </div>
         <div class="filter-col">
           <p class="filter-label">Rentang Budget</p>
-          <select>
+          <select bind:value={filterBudget}>
             <option>Semua Budget</option>
             <option>Hemat (Rp 25jt - 30jt)</option>
             <option>Menengah (Rp 30jt - 40jt)</option>
@@ -211,65 +299,102 @@
         <div class="filter-col">
           <p class="filter-label">Durasi Perjalanan</p>
           <div class="durasi-row">
-            <button class="is-active" type="button">9 Hari</button>
-            <button type="button">12 Hari</button>
+            <button
+              class:is-active={filterDuration === '9'}
+              type="button"
+              onclick={() => filterDuration = filterDuration === '9' ? null : '9'}
+            >9 Hari</button>
+            <button
+              class:is-active={filterDuration === '12'}
+              type="button"
+              onclick={() => filterDuration = filterDuration === '12' ? null : '12'}
+            >12 Hari</button>
           </div>
         </div>
         <div class="filter-col">
           <p class="filter-label">Jenis Paket</p>
           <div class="chip-row">
-            <span class="chip is-active">Reguler</span>
-            <span class="chip">Plus Turki</span>
+            <button
+              type="button"
+              class="chip"
+              class:is-active={filterType === 'Reguler'}
+              onclick={() => filterType = filterType === 'Reguler' ? null : 'Reguler'}
+            >Reguler</button>
+            <button
+              type="button"
+              class="chip"
+              class:is-active={filterType === 'Plus Turki'}
+              onclick={() => filterType = filterType === 'Plus Turki' ? null : 'Plus Turki'}
+            >Plus Turki</button>
           </div>
         </div>
       </div>
+      {#if filteredCards.length !== allCards.length}
+        <div class="filter-status">
+          <span>{filteredCards.length} paket ditemukan</span>
+          <button type="button" class="reset-btn" onclick={resetFilters}>
+            <span class="material-symbols-outlined">refresh</span> Reset filter
+          </button>
+        </div>
+      {/if}
     </section>
 
     <section id="katalog" class="shell catalog" data-testid="s1-package-catalog">
-      <ul class="cards-grid">
-        {#each cards as card (card.id)}
-          <li class="card">
-            <div class="cover-wrap">
-              <img src={card.image} alt={card.title} loading="lazy" />
-              <span class="tag" class:tag-primary={card.tagStyle === 'primary'} class:tag-secondary={card.tagStyle === 'secondary'} class:tag-neutral={card.tagStyle === 'neutral'} class:tag-amber={card.tagStyle === 'amber'}>{card.tag}</span>
-            </div>
-            <div class="content">
-              <div class="topline">
-                <div>
-                  <h3>{card.title}</h3>
-                  <p class="date"><span class="material-symbols-outlined">calendar_today</span>{card.departure}</p>
+      {#if filteredCards.length === 0}
+        <div class="empty-state">
+          <span class="material-symbols-outlined">search_off</span>
+          <h2>Tidak ada paket yang cocok</h2>
+          <p>Coba ubah filter atau kata kunci pencarian.</p>
+          <button type="button" class="more-btn" onclick={resetFilters}>Reset Filter</button>
+        </div>
+      {:else}
+        <ul class="cards-grid">
+          {#each visibleCards as card (card.id)}
+            <li class="card">
+              <div class="cover-wrap">
+                <img src={card.image} alt={card.title} loading="lazy" />
+                <span class="tag" class:tag-primary={card.tagStyle === 'primary'} class:tag-secondary={card.tagStyle === 'secondary'} class:tag-neutral={card.tagStyle === 'neutral'} class:tag-amber={card.tagStyle === 'amber'}>{card.tag}</span>
+              </div>
+              <div class="content">
+                <div class="topline">
+                  <div>
+                    <h3>{card.title}</h3>
+                    <p class="date"><span class="material-symbols-outlined">calendar_today</span>{card.departure}</p>
+                  </div>
+                  <p class="price-wrap">
+                    <span>Mulai dari</span>
+                    <strong>{card.price}</strong>
+                  </p>
                 </div>
-                <p class="price-wrap">
-                  <span>Mulai dari</span>
-                  <strong>{card.price}</strong>
-                </p>
+                <div class="meta-grid">
+                  <p><span class="material-symbols-outlined">{card.left1Icon}</span>{card.left1}</p>
+                  <p><span class="material-symbols-outlined">{card.right1Icon}</span>{card.right1}</p>
+                  <p><span class="material-symbols-outlined">{card.left2Icon}</span>{card.left2}</p>
+                  <p class:critical={card.right2Critical}>
+                    <span class="material-symbols-outlined">{card.right2Icon}</span>
+                    {card.right2}
+                  </p>
+                </div>
+                <div class="actions">
+                  <a
+                    class="btn-primary"
+                    href={`/packages/${card.sourcePackageId}`}
+                    data-testid={`package-link-${card.sourcePackageId}`}>Lihat Detail</a>
+                  <a class="btn-secondary" href={`/booking/${card.sourcePackageId}`}>Booking Cepat</a>
+                </div>
               </div>
-              <div class="meta-grid">
-                <p><span class="material-symbols-outlined">{card.left1Icon}</span>{card.left1}</p>
-                <p><span class="material-symbols-outlined">{card.right1Icon}</span>{card.right1}</p>
-                <p><span class="material-symbols-outlined">{card.left2Icon}</span>{card.left2}</p>
-                <p class:critical={card.right2Critical}>
-                  <span class="material-symbols-outlined">{card.right2Icon}</span>
-                  {card.right2}
-                </p>
-              </div>
-              <div class="actions">
-                <a
-                  class="btn-primary"
-                  href={`/packages/${card.sourcePackageId}`}
-                  data-testid={`package-link-${card.sourcePackageId}`}>Lihat Detail</a>
-                <a class="btn-secondary" href={`/booking/${card.sourcePackageId}`}>Booking Cepat</a>
-              </div>
-            </div>
-          </li>
-        {/each}
-      </ul>
-      <div class="more-row">
-        <button type="button" class="more-btn">
-          Tampilkan Lebih Banyak Paket
-          <span class="material-symbols-outlined">expand_more</span>
-        </button>
-      </div>
+            </li>
+          {/each}
+        </ul>
+        {#if hasMore}
+          <div class="more-row">
+            <button type="button" class="more-btn" onclick={showMore}>
+              Tampilkan Lebih Banyak Paket ({filteredCards.length - visibleCount} lagi)
+              <span class="material-symbols-outlined">expand_more</span>
+            </button>
+          </div>
+        {/if}
+      {/if}
     </section>
   </main>
 </MarketingPageLayout>
@@ -430,6 +555,77 @@
   .filters {
     margin-bottom: 2.8rem;
   }
+  .filter-search {
+    position: relative;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+  }
+  .filter-search .search-ic {
+    position: absolute;
+    left: 1rem;
+    color: #9ca3af;
+    font-size: 1.1rem;
+    pointer-events: none;
+  }
+  .filter-search input {
+    width: 100%;
+    border: 1px solid rgba(190,201,193,0.3);
+    border-radius: 999px;
+    padding: 0.8rem 2.8rem 0.8rem 2.8rem;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: #1b1c1c;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .filter-search input:focus { border-color: #006747; }
+  .clear-search {
+    position: absolute;
+    right: 0.8rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #9ca3af;
+    display: grid;
+    place-items: center;
+    padding: 0.25rem;
+  }
+  .filter-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: #6b7280;
+  }
+  .reset-btn {
+    border: none;
+    background: transparent;
+    color: #006747;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0;
+  }
+  .reset-btn .material-symbols-outlined { font-size: 0.9rem; }
+  .empty-state {
+    text-align: center;
+    padding: 5rem 0;
+    color: #9ca3af;
+  }
+  .empty-state .material-symbols-outlined {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 1rem;
+    color: #d1d5db;
+  }
+  .empty-state h2 { margin: 0 0 0.5rem; color: #374151; }
+  .empty-state p { margin: 0 0 1.5rem; }
   .filter-wrap {
     border-radius: 2rem;
     border: 1px solid rgba(190, 201, 193, 0.24);
@@ -482,12 +678,16 @@
     flex-wrap: wrap;
   }
   .chip {
+    border: none;
     border-radius: 999px;
     padding: 0.45rem 0.8rem;
     background: rgba(228, 226, 226, 0.3);
     color: #3f4943;
     font-size: 0.74rem;
     font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, color 0.15s;
   }
   .chip.is-active {
     background: rgba(254, 212, 136, 0.5);

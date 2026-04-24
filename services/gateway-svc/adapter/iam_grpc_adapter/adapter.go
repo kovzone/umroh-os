@@ -25,9 +25,10 @@ type Adapter struct {
 	logger *zerolog.Logger
 	tracer trace.Tracer
 
-	iamClient        pb.IamServiceClient
-	adminClient      pb.IamAdminClient
+	iamClient         pb.IamServiceClient
+	adminClient       pb.IamAdminClient
 	adminPhase6Client pb.IamAdminPhase6Client
+	securityClient    pb.IamSecurityClient
 }
 
 // NewAdapter creates a new iam-svc gRPC adapter from an already-dialled conn.
@@ -39,5 +40,6 @@ func NewAdapter(logger *zerolog.Logger, tracer trace.Tracer, cc *grpc.ClientConn
 		iamClient:         pb.NewIamServiceClient(cc),
 		adminClient:       pb.NewIamAdminClient(cc),
 		adminPhase6Client: pb.NewIamAdminPhase6Client(cc),
+		securityClient:    pb.NewIamSecurityClient(cc),
 	}
 }

@@ -40,6 +40,31 @@ export type PackageFaq = {
   answer: string;
 };
 
+/** BL-B2C-012: Accommodation spec per city */
+export type PackageAccommodation = {
+  city: string;
+  name: string;
+  distance: string;
+  roomType: string;
+  mealPlan: string;
+};
+
+/** BL-B2C-013: Guide/muthawwif profile */
+export type PackageGuide = {
+  name: string;
+  credentials: string;
+  experience: string;
+  photo: string;
+  specialty: string;
+};
+
+/** BL-B2C-021: Kitting item included with package */
+export type PackageKittingItem = {
+  icon: string;
+  name: string;
+  description: string;
+};
+
 export type PackageDetail = {
   id: string;
   kind: string;
@@ -68,6 +93,12 @@ export type PackageDetail = {
   facilitiesBody?: string;
   /** Short bullets or paragraph for S&K tab */
   termsSummary?: string;
+  /** BL-B2C-012: Hotel specs per city */
+  accommodations?: PackageAccommodation[];
+  /** BL-B2C-013: Muthawwif / guide profiles */
+  guides?: PackageGuide[];
+  /** BL-B2C-021: Kitting items included in package */
+  kittingItems?: PackageKittingItem[];
 };
 
 export type DeparturePricing = {

@@ -1,6 +1,57 @@
 /* Global reset + design tokens. Future per-page styles use these vars via var(--token).
  * Tokens are intentionally minimal — promote to a design system when the second app forces shared UI. */
 
+/* ─── BL-B2C-005: White-label theming tokens ──────────────────────────────
+ * These CSS custom properties define the brand palette for B2C marketing pages.
+ * To white-label for a different travel agency, override only this :root block
+ * (or inject a <style> at mount time). All MarketingPageLayout components read
+ * these tokens via var(--brand-*) so no other files need to change.
+ * ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Brand colors — primary green spectrum */
+  --brand-primary-darkest:  #004d34;
+  --brand-primary-dark:     #005c3d;
+  --brand-primary:          #006747;
+  --brand-primary-light:    #e0f2ec;
+  --brand-primary-subtle:   rgba(0, 103, 71, 0.08);
+
+  /* Brand colors — accent gold spectrum */
+  --brand-accent-darkest:   #5d4201;
+  --brand-accent-dark:      #775a19;
+  --brand-accent:           #fed488;
+  --brand-accent-subtle:    rgba(254, 212, 136, 0.25);
+
+  /* Neutral palette */
+  --brand-bg:               #fbf9f8;
+  --brand-surface:          #ffffff;
+  --brand-surface-muted:    #fafaf9;
+  --brand-border:           rgba(190, 201, 193, 0.25);
+  --brand-text:             #1b1c1c;
+  --brand-text-muted:       #57534e;
+  --brand-text-faint:       #9ca3af;
+
+  /* Semantic */
+  --brand-success:          #006747;
+  --brand-warning:          #c2410c;
+  --brand-info:             #1d4ed8;
+
+  /* Fonts — swap these for white-label */
+  --brand-font-heading:     'Plus Jakarta Sans', sans-serif;
+  --brand-font-body:        'Manrope', sans-serif;
+
+  /* Shape */
+  --brand-radius-sm:        0.5rem;
+  --brand-radius:           1rem;
+  --brand-radius-lg:        1.5rem;
+  --brand-radius-xl:        2rem;
+  --brand-radius-pill:      999px;
+
+  /* Gradients */
+  --brand-gradient:         linear-gradient(135deg, var(--brand-primary-darkest), var(--brand-primary));
+  --brand-gradient-accent:  linear-gradient(135deg, var(--brand-accent-dark), var(--brand-accent));
+}
+
+/* ─── Console / dark shell tokens (unchanged) ──────────────────────────── */
 :root {
   --color-bg:        #0d1117;
   --color-surface:   #161b22;
