@@ -670,6 +670,78 @@ type ServerInterface interface {
 
 	// Booking depth — Wave 3 (BL-BOOK-007 — hand-added).
 	GetSeatsByChannel(c *fiber.Ctx, departureID string) error
+
+	// Wave 4 Finance depth (BL-FIN-020..041 — hand-added).
+	// POST /v1/finance/billing/schedule
+	ScheduleBilling(c *fiber.Ctx) error
+	// POST /v1/finance/bank-transactions
+	RecordBankTransaction(c *fiber.Ctx) error
+	// GET /v1/finance/bank-reconciliation
+	GetBankReconciliation(c *fiber.Ctx) error
+	// GET /v1/finance/ar-subledger
+	GetARSubledger(c *fiber.Ctx) error
+	// POST /v1/finance/receipts
+	IssueDigitalReceipt(c *fiber.Ctx) error
+	// GET /v1/finance/receipts/:id
+	GetDigitalReceipt(c *fiber.Ctx, receiptID string) error
+	// POST /v1/finance/manual-payments
+	RecordManualPayment(c *fiber.Ctx) error
+	// POST /v1/finance/vendors
+	CreateFinanceVendor(c *fiber.Ctx) error
+	// PUT /v1/finance/vendors/:id
+	UpdateFinanceVendor(c *fiber.Ctx, vendorID string) error
+	// GET /v1/finance/vendors
+	ListFinanceVendors(c *fiber.Ctx) error
+	// DELETE /v1/finance/vendors/:id
+	DeleteFinanceVendor(c *fiber.Ctx, vendorID string) error
+	// GET /v1/finance/ap-subledger
+	GetAPSubledger(c *fiber.Ctx) error
+	// GET /v1/finance/payment-authorizations
+	ListPendingAuthorizations(c *fiber.Ctx) error
+	// PUT /v1/finance/payment-authorizations/:id/decision
+	DecidePaymentAuthorization(c *fiber.Ctx, authID string) error
+	// POST /v1/finance/petty-cash
+	RecordPettyCash(c *fiber.Ctx) error
+	// POST /v1/finance/petty-cash/close-period
+	ClosePettyCashPeriod(c *fiber.Ctx) error
+	// GET /v1/finance/project-costs/:departure_id
+	GetProjectCosts(c *fiber.Ctx, departureID string) error
+	// GET /v1/finance/departure-pl/:departure_id
+	GetDeparturePL(c *fiber.Ctx, departureID string) error
+	// GET /v1/finance/budget-vs-actual
+	GetBudgetVsActual(c *fiber.Ctx) error
+	// POST /v1/finance/auto-journal
+	TriggerAutoJournal(c *fiber.Ctx) error
+	// GET /v1/finance/revenue-recognition-policy
+	GetRevenueRecognitionPolicy(c *fiber.Ctx) error
+	// PUT /v1/finance/revenue-recognition-policy
+	SetRevenueRecognitionPolicy(c *fiber.Ctx) error
+	// POST /v1/finance/exchange-rates
+	SetExchangeRate(c *fiber.Ctx) error
+	// GET /v1/finance/exchange-rates
+	GetExchangeRate(c *fiber.Ctx) error
+	// POST /v1/finance/fixed-assets
+	CreateFixedAsset(c *fiber.Ctx) error
+	// GET /v1/finance/fixed-assets
+	ListFixedAssets(c *fiber.Ctx) error
+	// POST /v1/finance/depreciation
+	RunDepreciation(c *fiber.Ctx) error
+	// POST /v1/finance/tax/calculate
+	CalculateTax(c *fiber.Ctx) error
+	// GET /v1/finance/tax/report
+	GetTaxReport(c *fiber.Ctx) error
+	// POST /v1/finance/commission-payouts
+	CreateCommissionPayout(c *fiber.Ctx) error
+	// PUT /v1/finance/commission-payouts/:id/decision
+	DecideCommissionPayout(c *fiber.Ctx, payoutID string) error
+	// GET /v1/finance/realtime-summary
+	GetRealtimeFinancialSummary(c *fiber.Ctx) error
+	// GET /v1/finance/cashflow
+	GetCashFlowDashboard(c *fiber.Ctx) error
+	// GET /v1/finance/aging-alerts
+	GetAgingAlerts(c *fiber.Ctx) error
+	// GET /v1/finance/audit-log
+	SearchFinanceAuditLog(c *fiber.Ctx) error
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -2501,5 +2573,229 @@ func (siw *ServerInterfaceWrapper) GetSeatsByChannel(c *fiber.Ctx) error {
 
 // Booking depth strictHandler stub (BL-BOOK-007) — not used.
 func (sh *strictHandler) GetSeatsByChannel(ctx *fiber.Ctx, departureID string) error {
+	return fiber.ErrNotImplemented
+}
+
+// ---------------------------------------------------------------------------
+// Wave 4 Finance depth wrappers (BL-FIN-020..041 — hand-added)
+// ---------------------------------------------------------------------------
+
+func (siw *ServerInterfaceWrapper) ScheduleBilling(c *fiber.Ctx) error {
+	return siw.Handler.ScheduleBilling(c)
+}
+func (siw *ServerInterfaceWrapper) RecordBankTransaction(c *fiber.Ctx) error {
+	return siw.Handler.RecordBankTransaction(c)
+}
+func (siw *ServerInterfaceWrapper) GetBankReconciliation(c *fiber.Ctx) error {
+	return siw.Handler.GetBankReconciliation(c)
+}
+func (siw *ServerInterfaceWrapper) GetARSubledger(c *fiber.Ctx) error {
+	return siw.Handler.GetARSubledger(c)
+}
+func (siw *ServerInterfaceWrapper) IssueDigitalReceipt(c *fiber.Ctx) error {
+	return siw.Handler.IssueDigitalReceipt(c)
+}
+func (siw *ServerInterfaceWrapper) GetDigitalReceipt(c *fiber.Ctx) error {
+	receiptID := c.Params("id")
+	return siw.Handler.GetDigitalReceipt(c, receiptID)
+}
+func (siw *ServerInterfaceWrapper) RecordManualPayment(c *fiber.Ctx) error {
+	return siw.Handler.RecordManualPayment(c)
+}
+func (siw *ServerInterfaceWrapper) CreateFinanceVendor(c *fiber.Ctx) error {
+	return siw.Handler.CreateFinanceVendor(c)
+}
+func (siw *ServerInterfaceWrapper) UpdateFinanceVendor(c *fiber.Ctx) error {
+	vendorID := c.Params("id")
+	return siw.Handler.UpdateFinanceVendor(c, vendorID)
+}
+func (siw *ServerInterfaceWrapper) ListFinanceVendors(c *fiber.Ctx) error {
+	return siw.Handler.ListFinanceVendors(c)
+}
+func (siw *ServerInterfaceWrapper) DeleteFinanceVendor(c *fiber.Ctx) error {
+	vendorID := c.Params("id")
+	return siw.Handler.DeleteFinanceVendor(c, vendorID)
+}
+func (siw *ServerInterfaceWrapper) GetAPSubledger(c *fiber.Ctx) error {
+	return siw.Handler.GetAPSubledger(c)
+}
+func (siw *ServerInterfaceWrapper) ListPendingAuthorizations(c *fiber.Ctx) error {
+	return siw.Handler.ListPendingAuthorizations(c)
+}
+func (siw *ServerInterfaceWrapper) DecidePaymentAuthorization(c *fiber.Ctx) error {
+	authID := c.Params("id")
+	return siw.Handler.DecidePaymentAuthorization(c, authID)
+}
+func (siw *ServerInterfaceWrapper) RecordPettyCash(c *fiber.Ctx) error {
+	return siw.Handler.RecordPettyCash(c)
+}
+func (siw *ServerInterfaceWrapper) ClosePettyCashPeriod(c *fiber.Ctx) error {
+	return siw.Handler.ClosePettyCashPeriod(c)
+}
+func (siw *ServerInterfaceWrapper) GetProjectCosts(c *fiber.Ctx) error {
+	departureID := c.Params("departure_id")
+	return siw.Handler.GetProjectCosts(c, departureID)
+}
+func (siw *ServerInterfaceWrapper) GetDeparturePL(c *fiber.Ctx) error {
+	departureID := c.Params("departure_id")
+	return siw.Handler.GetDeparturePL(c, departureID)
+}
+func (siw *ServerInterfaceWrapper) GetBudgetVsActual(c *fiber.Ctx) error {
+	return siw.Handler.GetBudgetVsActual(c)
+}
+func (siw *ServerInterfaceWrapper) TriggerAutoJournal(c *fiber.Ctx) error {
+	return siw.Handler.TriggerAutoJournal(c)
+}
+func (siw *ServerInterfaceWrapper) GetRevenueRecognitionPolicy(c *fiber.Ctx) error {
+	return siw.Handler.GetRevenueRecognitionPolicy(c)
+}
+func (siw *ServerInterfaceWrapper) SetRevenueRecognitionPolicy(c *fiber.Ctx) error {
+	return siw.Handler.SetRevenueRecognitionPolicy(c)
+}
+func (siw *ServerInterfaceWrapper) SetExchangeRate(c *fiber.Ctx) error {
+	return siw.Handler.SetExchangeRate(c)
+}
+func (siw *ServerInterfaceWrapper) GetExchangeRate(c *fiber.Ctx) error {
+	return siw.Handler.GetExchangeRate(c)
+}
+func (siw *ServerInterfaceWrapper) CreateFixedAsset(c *fiber.Ctx) error {
+	return siw.Handler.CreateFixedAsset(c)
+}
+func (siw *ServerInterfaceWrapper) ListFixedAssets(c *fiber.Ctx) error {
+	return siw.Handler.ListFixedAssets(c)
+}
+func (siw *ServerInterfaceWrapper) RunDepreciation(c *fiber.Ctx) error {
+	return siw.Handler.RunDepreciation(c)
+}
+func (siw *ServerInterfaceWrapper) CalculateTax(c *fiber.Ctx) error {
+	return siw.Handler.CalculateTax(c)
+}
+func (siw *ServerInterfaceWrapper) GetTaxReport(c *fiber.Ctx) error {
+	return siw.Handler.GetTaxReport(c)
+}
+func (siw *ServerInterfaceWrapper) CreateCommissionPayout(c *fiber.Ctx) error {
+	return siw.Handler.CreateCommissionPayout(c)
+}
+func (siw *ServerInterfaceWrapper) DecideCommissionPayout(c *fiber.Ctx) error {
+	payoutID := c.Params("id")
+	return siw.Handler.DecideCommissionPayout(c, payoutID)
+}
+func (siw *ServerInterfaceWrapper) GetRealtimeFinancialSummary(c *fiber.Ctx) error {
+	return siw.Handler.GetRealtimeFinancialSummary(c)
+}
+func (siw *ServerInterfaceWrapper) GetCashFlowDashboard(c *fiber.Ctx) error {
+	return siw.Handler.GetCashFlowDashboard(c)
+}
+func (siw *ServerInterfaceWrapper) GetAgingAlerts(c *fiber.Ctx) error {
+	return siw.Handler.GetAgingAlerts(c)
+}
+func (siw *ServerInterfaceWrapper) SearchFinanceAuditLog(c *fiber.Ctx) error {
+	return siw.Handler.SearchFinanceAuditLog(c)
+}
+
+// Wave 4 Finance depth strictHandler stubs — not used (routes go through proxy_finance_wave4.go).
+func (sh *strictHandler) ScheduleBilling(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RecordBankTransaction(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetBankReconciliation(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetARSubledger(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) IssueDigitalReceipt(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetDigitalReceipt(ctx *fiber.Ctx, receiptID string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RecordManualPayment(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) CreateFinanceVendor(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) UpdateFinanceVendor(ctx *fiber.Ctx, vendorID string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ListFinanceVendors(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) DeleteFinanceVendor(ctx *fiber.Ctx, vendorID string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetAPSubledger(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ListPendingAuthorizations(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) DecidePaymentAuthorization(ctx *fiber.Ctx, authID string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RecordPettyCash(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ClosePettyCashPeriod(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetProjectCosts(ctx *fiber.Ctx, departureID string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetDeparturePL(ctx *fiber.Ctx, departureID string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetBudgetVsActual(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) TriggerAutoJournal(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetRevenueRecognitionPolicy(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) SetRevenueRecognitionPolicy(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) SetExchangeRate(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetExchangeRate(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) CreateFixedAsset(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) ListFixedAssets(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) RunDepreciation(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) CalculateTax(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetTaxReport(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) CreateCommissionPayout(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) DecideCommissionPayout(ctx *fiber.Ctx, payoutID string) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetRealtimeFinancialSummary(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetCashFlowDashboard(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetAgingAlerts(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) SearchFinanceAuditLog(ctx *fiber.Ctx) error {
 	return fiber.ErrNotImplemented
 }

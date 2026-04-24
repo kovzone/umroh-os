@@ -294,6 +294,43 @@ func runRestServer(port int, api rest_oapi.ServerInterface, iamValidator middlew
 
 		// Booking depth — Wave 3 (BL-BOOK-007) — bearer required.
 		v1Protected.Get("/bookings/departures/:id/seats-by-channel", wrapper.GetSeatsByChannel)
+
+		// Wave 4 Finance depth (BL-FIN-020..041) — bearer required.
+		v1Protected.Post("/finance/billing/schedule", wrapper.ScheduleBilling)
+		v1Protected.Post("/finance/bank-transactions", wrapper.RecordBankTransaction)
+		v1Protected.Get("/finance/bank-reconciliation", wrapper.GetBankReconciliation)
+		v1Protected.Get("/finance/ar-subledger", wrapper.GetARSubledger)
+		v1Protected.Post("/finance/receipts", wrapper.IssueDigitalReceipt)
+		v1Protected.Get("/finance/receipts/:id", wrapper.GetDigitalReceipt)
+		v1Protected.Post("/finance/manual-payments", wrapper.RecordManualPayment)
+		v1Protected.Post("/finance/vendors", wrapper.CreateFinanceVendor)
+		v1Protected.Put("/finance/vendors/:id", wrapper.UpdateFinanceVendor)
+		v1Protected.Get("/finance/vendors", wrapper.ListFinanceVendors)
+		v1Protected.Delete("/finance/vendors/:id", wrapper.DeleteFinanceVendor)
+		v1Protected.Get("/finance/ap-subledger", wrapper.GetAPSubledger)
+		v1Protected.Get("/finance/payment-authorizations", wrapper.ListPendingAuthorizations)
+		v1Protected.Put("/finance/payment-authorizations/:id/decision", wrapper.DecidePaymentAuthorization)
+		v1Protected.Post("/finance/petty-cash", wrapper.RecordPettyCash)
+		v1Protected.Post("/finance/petty-cash/close-period", wrapper.ClosePettyCashPeriod)
+		v1Protected.Get("/finance/project-costs/:departure_id", wrapper.GetProjectCosts)
+		v1Protected.Get("/finance/departure-pl/:departure_id", wrapper.GetDeparturePL)
+		v1Protected.Get("/finance/budget-vs-actual", wrapper.GetBudgetVsActual)
+		v1Protected.Post("/finance/auto-journal", wrapper.TriggerAutoJournal)
+		v1Protected.Get("/finance/revenue-recognition-policy", wrapper.GetRevenueRecognitionPolicy)
+		v1Protected.Put("/finance/revenue-recognition-policy", wrapper.SetRevenueRecognitionPolicy)
+		v1Protected.Post("/finance/exchange-rates", wrapper.SetExchangeRate)
+		v1Protected.Get("/finance/exchange-rates", wrapper.GetExchangeRate)
+		v1Protected.Post("/finance/fixed-assets", wrapper.CreateFixedAsset)
+		v1Protected.Get("/finance/fixed-assets", wrapper.ListFixedAssets)
+		v1Protected.Post("/finance/depreciation", wrapper.RunDepreciation)
+		v1Protected.Post("/finance/tax/calculate", wrapper.CalculateTax)
+		v1Protected.Get("/finance/tax/report", wrapper.GetTaxReport)
+		v1Protected.Post("/finance/commission-payouts", wrapper.CreateCommissionPayout)
+		v1Protected.Put("/finance/commission-payouts/:id/decision", wrapper.DecideCommissionPayout)
+		v1Protected.Get("/finance/realtime-summary", wrapper.GetRealtimeFinancialSummary)
+		v1Protected.Get("/finance/cashflow", wrapper.GetCashFlowDashboard)
+		v1Protected.Get("/finance/aging-alerts", wrapper.GetAgingAlerts)
+		v1Protected.Get("/finance/audit-log", wrapper.SearchFinanceAuditLog)
 	}
 
 	go func() {

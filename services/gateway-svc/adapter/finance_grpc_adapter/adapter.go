@@ -25,7 +25,7 @@ import (
 )
 
 // Adapter wraps finance-svc's FinanceReportsClient, FinanceDepthClient, FinanceGRNClient,
-// FinanceCorrectionClient, and FinanceDisbursementClient.
+// FinanceCorrectionClient, FinanceDisbursementClient, and FinanceWave4Client.
 type Adapter struct {
 	logger              *zerolog.Logger
 	tracer              trace.Tracer
@@ -34,6 +34,7 @@ type Adapter struct {
 	grnClient           pb.FinanceGRNClient
 	correctionClient    pb.FinanceCorrectionClient
 	disbursementClient  pb.FinanceDisbursementClient
+	wave4Client         pb.FinanceWave4Client
 }
 
 // NewAdapter creates a finance gRPC adapter from an already-dialled conn.
@@ -46,6 +47,7 @@ func NewAdapter(logger *zerolog.Logger, tracer trace.Tracer, cc *grpc.ClientConn
 		grnClient:          pb.NewFinanceGRNClient(cc),
 		correctionClient:   pb.NewFinanceCorrectionClient(cc),
 		disbursementClient: pb.NewFinanceDisbursementClient(cc),
+		wave4Client:        pb.NewFinanceWave4Client(cc),
 	}
 }
 

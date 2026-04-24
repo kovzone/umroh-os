@@ -38,6 +38,34 @@ type Querier interface {
 	UpdateDisbursementItemJournal(ctx context.Context, journalEntryID string, itemID int64) error
 	GetDisbursementAgingBuckets(ctx context.Context, asOfDate time.Time) (AgingBuckets, error)
 	GetARAgingBuckets(ctx context.Context, asOfDate time.Time) (AgingBuckets, error)
+
+	// Wave 4 finance depth queries (BL-FIN-020..041)
+	InsertBankTransaction(ctx context.Context, arg InsertBankTransactionParams) (BankTransactionRow, error)
+	GetBankTransactions(ctx context.Context, arg GetBankTransactionsParams) ([]BankTransactionRow, error)
+	InsertReceipt(ctx context.Context, arg InsertReceiptParams) (ReceiptRow, error)
+	GetReceiptByID(ctx context.Context, id string) (ReceiptRow, error)
+	InsertVendor(ctx context.Context, arg InsertVendorParams) (FinanceVendorRow, error)
+	UpdateVendor(ctx context.Context, arg UpdateVendorParams) (FinanceVendorRow, error)
+	ListVendors(ctx context.Context, arg ListVendorsParams) ([]FinanceVendorRow, error)
+	DeleteVendor(ctx context.Context, id string) error
+	InsertPaymentAuthorization(ctx context.Context, arg InsertPaymentAuthorizationParams) (PaymentAuthorizationRow, error)
+	ListPendingAuthorizations(ctx context.Context, level int32) ([]PaymentAuthorizationRow, error)
+	UpdateAuthorizationDecision(ctx context.Context, arg UpdateAuthorizationDecisionParams) error
+	InsertPettyCashEntry(ctx context.Context, arg InsertPettyCashEntryParams) (PettyCashEntryRow, error)
+	GetPettyCashBalance(ctx context.Context) (int64, error)
+	ClosePettyCashEntries(ctx context.Context) error
+	InsertExchangeRate(ctx context.Context, arg InsertExchangeRateParams) (ExchangeRateRow, error)
+	GetExchangeRate(ctx context.Context, arg GetExchangeRateParams) (ExchangeRateRow, error)
+	InsertFixedAsset(ctx context.Context, arg InsertFixedAssetParams) (FixedAssetRow, error)
+	ListFixedAssets(ctx context.Context, category string) ([]FixedAssetRow, error)
+	UpdateFixedAssetDepreciation(ctx context.Context, arg UpdateFixedAssetDepreciationParams) error
+	InsertCommissionPayout(ctx context.Context, arg InsertCommissionPayoutParams) (CommissionPayoutRow, error)
+	GetCommissionPayoutByID(ctx context.Context, id string) (CommissionPayoutRow, error)
+	UpdateCommissionPayoutStatus(ctx context.Context, id, newStatus string) error
+	UpsertFinanceConfig(ctx context.Context, key, value string) error
+	GetFinanceConfig(ctx context.Context, key string) (FinanceConfigRow, error)
+	InsertFinanceAuditLog(ctx context.Context, arg InsertAuditLogParams) error
+	SearchAuditLog(ctx context.Context, arg SearchAuditLogParams) ([]AuditLogEntryRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

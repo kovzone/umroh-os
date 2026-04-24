@@ -106,7 +106,7 @@ func runGrpcServer(address string, apiServer *grpc_api.Server) *grpc.Server {
 	// RegisterFinanceServiceServerWithCorrections registers all finance RPCs:
 	//   Healthz + OnPaymentReceived + reports + finance-depth + OnGRNReceived
 	//   + CorrectJournal + DeleteJournalEntry (BL-FIN-006).
-	pb.RegisterFinanceServiceServerWithCorrections(grpcServer, apiServer)
+	pb.RegisterFinanceServiceServerWithWave4(grpcServer, apiServer)
 
 	healthServer := health.NewServer()
 	health_pb.RegisterHealthServer(grpcServer, healthServer)

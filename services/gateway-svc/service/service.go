@@ -230,6 +230,43 @@ type IService interface {
 
 	// Booking depth — Wave 3 (BL-BOOK-007) — bearer required.
 	GetSeatsByChannel(ctx context.Context, departureID string) (*booking_grpc_adapter.GetSeatsByChannelResult, error)
+
+	// Wave 4 Finance depth (BL-FIN-020..041) — bearer required.
+	ScheduleBilling(ctx context.Context, params *finance_grpc_adapter.ScheduleBillingParams) (*finance_grpc_adapter.ScheduleBillingResult, error)
+	RecordBankTransaction(ctx context.Context, params *finance_grpc_adapter.RecordBankTransactionParams) (*finance_grpc_adapter.RecordBankTransactionResult, error)
+	GetBankReconciliation(ctx context.Context, params *finance_grpc_adapter.GetBankReconciliationParams) (*finance_grpc_adapter.GetBankReconciliationResult, error)
+	GetARSubledger(ctx context.Context, params *finance_grpc_adapter.GetARSubledgerParams) (*finance_grpc_adapter.GetARSubledgerResult, error)
+	IssueDigitalReceipt(ctx context.Context, params *finance_grpc_adapter.IssueDigitalReceiptParams) (*finance_grpc_adapter.IssueDigitalReceiptResult, error)
+	GetDigitalReceipt(ctx context.Context, params *finance_grpc_adapter.GetDigitalReceiptParams) (*finance_grpc_adapter.DigitalReceiptResult, error)
+	RecordManualPayment(ctx context.Context, params *finance_grpc_adapter.RecordManualPaymentParams) (*finance_grpc_adapter.RecordManualPaymentResult, error)
+	CreateFinanceVendor(ctx context.Context, params *finance_grpc_adapter.CreateVendorParams) (*finance_grpc_adapter.CreateVendorResult, error)
+	UpdateFinanceVendor(ctx context.Context, params *finance_grpc_adapter.UpdateVendorParams) (*finance_grpc_adapter.UpdateVendorResult, error)
+	ListFinanceVendors(ctx context.Context, params *finance_grpc_adapter.ListVendorsParams) (*finance_grpc_adapter.ListVendorsResult, error)
+	DeleteFinanceVendor(ctx context.Context, params *finance_grpc_adapter.DeleteVendorParams) (*finance_grpc_adapter.DeleteVendorResult, error)
+	GetAPSubledger(ctx context.Context, params *finance_grpc_adapter.GetAPSubledgerParams) (*finance_grpc_adapter.GetAPSubledgerResult, error)
+	ListPendingAuthorizations(ctx context.Context, params *finance_grpc_adapter.ListPendingAuthorizationsParams) (*finance_grpc_adapter.ListPendingAuthorizationsResult, error)
+	DecidePaymentAuthorization(ctx context.Context, params *finance_grpc_adapter.DecidePaymentAuthorizationParams) (*finance_grpc_adapter.DecidePaymentAuthorizationResult, error)
+	RecordPettyCash(ctx context.Context, params *finance_grpc_adapter.RecordPettyCashParams) (*finance_grpc_adapter.RecordPettyCashResult, error)
+	ClosePettyCashPeriod(ctx context.Context, params *finance_grpc_adapter.ClosePettyCashPeriodParams) (*finance_grpc_adapter.ClosePettyCashPeriodResult, error)
+	GetProjectCosts(ctx context.Context, params *finance_grpc_adapter.GetProjectCostsParams) (*finance_grpc_adapter.GetProjectCostsResult, error)
+	GetDeparturePL(ctx context.Context, params *finance_grpc_adapter.GetDeparturePLParams) (*finance_grpc_adapter.GetDeparturePLResult, error)
+	GetBudgetVsActual(ctx context.Context, params *finance_grpc_adapter.GetBudgetVsActualParams) (*finance_grpc_adapter.GetBudgetVsActualResult, error)
+	TriggerAutoJournal(ctx context.Context, params *finance_grpc_adapter.TriggerAutoJournalParams) (*finance_grpc_adapter.TriggerAutoJournalResult, error)
+	GetRevenueRecognitionPolicy(ctx context.Context) (*finance_grpc_adapter.RevenueRecognitionPolicyResult, error)
+	SetRevenueRecognitionPolicy(ctx context.Context, params *finance_grpc_adapter.SetRevenueRecognitionPolicyParams) error
+	SetExchangeRate(ctx context.Context, params *finance_grpc_adapter.SetExchangeRateParams) (*finance_grpc_adapter.SetExchangeRateResult, error)
+	GetExchangeRate(ctx context.Context, params *finance_grpc_adapter.GetExchangeRateParams) (*finance_grpc_adapter.GetExchangeRateResult, error)
+	CreateFixedAsset(ctx context.Context, params *finance_grpc_adapter.CreateFixedAssetParams) (*finance_grpc_adapter.CreateFixedAssetResult, error)
+	ListFixedAssets(ctx context.Context, category string) (*finance_grpc_adapter.ListFixedAssetsResult, error)
+	RunDepreciation(ctx context.Context, params *finance_grpc_adapter.RunDepreciationParams) (*finance_grpc_adapter.RunDepreciationResult, error)
+	CalculateTax(ctx context.Context, params *finance_grpc_adapter.CalculateTaxParams) (*finance_grpc_adapter.CalculateTaxResult, error)
+	GetTaxReport(ctx context.Context, params *finance_grpc_adapter.GetTaxReportParams) (*finance_grpc_adapter.GetTaxReportResult, error)
+	CreateCommissionPayout(ctx context.Context, params *finance_grpc_adapter.CreateCommissionPayoutParams) (*finance_grpc_adapter.CreateCommissionPayoutResult, error)
+	DecideCommissionPayout(ctx context.Context, params *finance_grpc_adapter.DecideCommissionPayoutParams) (*finance_grpc_adapter.DecideCommissionPayoutResult, error)
+	GetRealtimeFinancialSummary(ctx context.Context) (*finance_grpc_adapter.GetRealtimeFinancialSummaryResult, error)
+	GetCashFlowDashboard(ctx context.Context, params *finance_grpc_adapter.GetCashFlowDashboardParams) (*finance_grpc_adapter.GetCashFlowDashboardResult, error)
+	GetAgingAlerts(ctx context.Context, params *finance_grpc_adapter.GetAgingAlertsParams) (*finance_grpc_adapter.GetAgingAlertsResult, error)
+	SearchFinanceAuditLog(ctx context.Context, params *finance_grpc_adapter.SearchFinanceAuditLogParams) (*finance_grpc_adapter.SearchFinanceAuditLogResult, error)
 }
 
 // Adapters bundles the adapters this service can dispatch through.
