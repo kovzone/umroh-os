@@ -24,9 +24,11 @@ option go_package="./pb";
 //   - GetMe / EnrollTotp / VerifyTotp
 //   - SuspendUser (gateway enforces bearer + permission gate)
 service IamService {
-  // Healthz returns ok=true if the service process is alive.
-  // Placeholder for the pilot; real health checks go through gRPC health protocol.
-  rpc Healthz(HealthzRequest) returns (HealthzResponse) {}
+  // Ping — scaffold RPC used by the gateway's permission-gate smoke tests.
+  // Identity-agnostic per ADR 0009: the gateway validates the bearer and the
+  // permission tuple upstream; this handler returns a trivial
+  // {message: "ok"} proving the gateway→backend hop works.
+  rpc Ping(PingRequest) returns (PingResponse) {}
 
   // ValidateToken verifies a bearer access token and returns identity + current role names.
   //
@@ -90,10 +92,10 @@ service IamService {
   rpc SuspendUser(SuspendUserRequest) returns (SuspendUserResponse) {}
 }
 
-message HealthzRequest {}
+message PingRequest {}
 
-message HealthzResponse {
-  bool ok = 1;
+message PingResponse {
+  string message = 1;
 }
 
 message ValidateTokenRequest {

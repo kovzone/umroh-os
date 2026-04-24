@@ -19,7 +19,6 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CatalogService_Healthz_FullMethodName             = "/pb.CatalogService/Healthz"
 	CatalogService_ListPackages_FullMethodName        = "/pb.CatalogService/ListPackages"
 	CatalogService_GetPackage_FullMethodName          = "/pb.CatalogService/GetPackage"
 	CatalogService_GetPackageDeparture_FullMethodName = "/pb.CatalogService/GetPackageDeparture"
@@ -31,8 +30,7 @@ const (
 //
 // CatalogService — gateway-side consumer proto for catalog-svc. Per
 // ADR 0004 each adapter copies only the RPCs it uses; this file mirrors
-// the owner at services/catalog-svc/api/grpc_api/pb/catalog.proto but
-// omits methods gateway does not call (e.g. DiagnosticsDbTx).
+// the owner at services/catalog-svc/api/grpc_api/pb/catalog.proto.
 //
 // ListPackages / GetPackage / GetPackageDeparture are the public catalog
 // read trio the gateway REST routes /v1/packages*, /v1/package-departures
@@ -41,11 +39,6 @@ const (
 // type churn avoided; gateway's oapi-generated enum validation is the
 // authoritative gate).
 type CatalogServiceClient interface {
-	// Healthz — pilot placeholder. Retained for reflection-based probing
-	// that predates the standard grpc.health.v1.Health protocol added in
-	// BL-MON-001; the standard protocol (empty + named service) is the
-	// real health surface used by docker-compose and grpc_health_probe.
-	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
 	// ListPackages — public paginated list of active packages. Backs
 	// gateway's GET /v1/packages route.
 	ListPackages(ctx context.Context, in *ListPackagesRequest, opts ...grpc.CallOption) (*ListPackagesResponse, error)
@@ -65,16 +58,6 @@ type catalogServiceClient struct {
 
 func NewCatalogServiceClient(cc grpc.ClientConnInterface) CatalogServiceClient {
 	return &catalogServiceClient{cc}
-}
-
-func (c *catalogServiceClient) Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(HealthzResponse)
-	err := c.cc.Invoke(ctx, CatalogService_Healthz_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *catalogServiceClient) ListPackages(ctx context.Context, in *ListPackagesRequest, opts ...grpc.CallOption) (*ListPackagesResponse, error) {
@@ -113,8 +96,7 @@ func (c *catalogServiceClient) GetPackageDeparture(ctx context.Context, in *GetP
 //
 // CatalogService — gateway-side consumer proto for catalog-svc. Per
 // ADR 0004 each adapter copies only the RPCs it uses; this file mirrors
-// the owner at services/catalog-svc/api/grpc_api/pb/catalog.proto but
-// omits methods gateway does not call (e.g. DiagnosticsDbTx).
+// the owner at services/catalog-svc/api/grpc_api/pb/catalog.proto.
 //
 // ListPackages / GetPackage / GetPackageDeparture are the public catalog
 // read trio the gateway REST routes /v1/packages*, /v1/package-departures
@@ -123,11 +105,6 @@ func (c *catalogServiceClient) GetPackageDeparture(ctx context.Context, in *GetP
 // type churn avoided; gateway's oapi-generated enum validation is the
 // authoritative gate).
 type CatalogServiceServer interface {
-	// Healthz — pilot placeholder. Retained for reflection-based probing
-	// that predates the standard grpc.health.v1.Health protocol added in
-	// BL-MON-001; the standard protocol (empty + named service) is the
-	// real health surface used by docker-compose and grpc_health_probe.
-	Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error)
 	// ListPackages — public paginated list of active packages. Backs
 	// gateway's GET /v1/packages route.
 	ListPackages(context.Context, *ListPackagesRequest) (*ListPackagesResponse, error)
@@ -149,9 +126,6 @@ type CatalogServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedCatalogServiceServer struct{}
 
-func (UnimplementedCatalogServiceServer) Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Healthz not implemented")
-}
 func (UnimplementedCatalogServiceServer) ListPackages(context.Context, *ListPackagesRequest) (*ListPackagesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPackages not implemented")
 }
@@ -180,24 +154,6 @@ func RegisterCatalogServiceServer(s grpc.ServiceRegistrar, srv CatalogServiceSer
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&CatalogService_ServiceDesc, srv)
-}
-
-func _CatalogService_Healthz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HealthzRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CatalogServiceServer).Healthz(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CatalogService_Healthz_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CatalogServiceServer).Healthz(ctx, req.(*HealthzRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _CatalogService_ListPackages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -261,10 +217,6 @@ var CatalogService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "pb.CatalogService",
 	HandlerType: (*CatalogServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Healthz",
-			Handler:    _CatalogService_Healthz_Handler,
-		},
 		{
 			MethodName: "ListPackages",
 			Handler:    _CatalogService_ListPackages_Handler,

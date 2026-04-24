@@ -9,11 +9,10 @@ info:
 
     Current surface:
 
-      - 2 own probes: /system/live, /system/ready
-      - Per-backend liveness proxies for backends whose REST surface is still
-        in place: /v1/finance/system/live. The other 9 backends retired their
-        REST surfaces in BL-REFACTOR-001..008 / BL-IAM-018 (S1-E-11..13);
-        operators probe those over gRPC via grpc_health_probe.
+      - 2 own probes: /system/live, /system/ready. No per-backend REST
+        liveness proxies — every backend is gRPC-only (BL-REFACTOR-001..008 /
+        BL-IAM-018..019). Operators probe backends via grpc_health_probe
+        against each service's standard grpc.health.v1.Health endpoint.
       - Public catalog reads: /v1/packages, /v1/packages/{id},
         /v1/package-departures/{id} (BL-GTW-002 / S1-E-10).
       - Client-facing auth (BL-IAM-018 / S1-E-12): /v1/sessions (login +
@@ -21,6 +20,11 @@ info:
         /v1/users/{id}/suspend (admin). Protected routes carry the
         `bearerAuth` security scheme; the gateway enforces it once at the edge
         via `iam-svc.ValidateToken` (gRPC).
+      - Permission-gate smoke (BL-IAM-019 / S1-E-14): /v1/finance/ping —
+        bearer + `journal_entry/read/global` permission required, enforced
+        by gateway's RequireBearerToken + RequirePermission middleware
+        chain. finance-svc is identity-agnostic; gateway assembles the
+        client-visible envelope from its own auth locals.
 
     Real per-route proxies (bookings, payments, ...) land alongside each
     backend's first feature work.
@@ -57,6 +61,30 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ReadyResponse" }
+
+  /v1/system/backends:
+    get:
+      tags: [System]
+      summary: Aggregate per-backend health via grpc.health.v1.Health.Check
+      description: |
+        Fans out `grpc.health.v1.Health.Check` to every downstream backend and
+        returns a sorted array of `{name, status, error?}` entries. The Svelte
+        core-web status page polls this route instead of per-backend
+        `/v1/<svc>/system/live` proxies (retired with the ADR 0009 sweep).
+        Unauthenticated — the status page is reachable pre-login.
+        Per-backend probe timeout is 2 s; probes run concurrently so the
+        response wall-time is bounded regardless of how many backends are
+        wired. A healthy probe returns `SERVING`; a reachable-but-draining
+        backend returns `NOT_SERVING`; any transport failure surfaces as
+        `UNKNOWN` with a non-empty `error` field.
+      operationId: getSystemBackends
+      security: []
+      responses:
+        "200":
+          description: Aggregate status map (one entry per dialed backend).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SystemBackendsResponse" }
 
   # ── Client-facing auth (BL-IAM-018 / S1-E-12) ──────────────────────────
   # gateway REST → iam-svc gRPC via iam_grpc_adapter. iam-svc's own REST
@@ -464,19 +492,49 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/CatalogErrorResponse" }
 
-  /v1/finance/system/live:
+  # ── Finance permission-gate smoke (BL-IAM-019 / S1-E-14) ───────────────
+  # /v1/finance/ping is the BL-IAM-002 permission-gate acceptance route. It
+  # proves the edge middleware chain works end-to-end: RequireBearerToken
+  # validates the PASETO token via iam-svc; RequirePermission enforces
+  # `journal_entry/read/global`; only then does the gateway call finance-svc
+  # over gRPC. finance-svc returns a trivial `{message: "ok"}` — the client-
+  # visible user_id / branch_id / roles come from the bearer-populated
+  # identity locals on the gateway side. There is no REST proxy for
+  # finance liveness; container-level liveness is served by
+  # grpc.health.v1.Health (consumed by docker-compose healthchecks).
+
+  /v1/finance/ping:
     get:
       tags: [Proxy / finance]
-      summary: Proxy finance-svc liveness
-      operationId: getFinanceSystemLive
+      summary: Permission-gate smoke (bearer + journal_entry/read/global)
+      description: |
+        Acceptance route for BL-IAM-002. Protected by the edge middleware
+        chain RequireBearerToken + RequirePermission("journal_entry",
+        "read", "global"). finance-svc is identity-agnostic — the gateway
+        handler assembles `user_id` / `branch_id` / `roles` from its own
+        auth locals; `message` comes from finance-svc. If finance is
+        unreachable the adapter maps the transport error to 502.
+      operationId: getFinancePing
+      security:
+        - bearerAuth: []
       responses:
         "200":
-          description: Upstream OK
+          description: Bearer + permission both accepted; finance reachable.
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/LiveResponse" }
+              schema: { $ref: "#/components/schemas/FinancePingResponse" }
+        "401":
+          description: Missing / malformed bearer or iam-svc rejected the token.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Bearer valid but user lacks journal_entry/read/global.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
         "502":
-          description: Upstream call failed
+          description: iam-svc or finance-svc unreachable (fail-closed).
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ErrorResponse" }
@@ -677,6 +735,70 @@ components:
           required: [user]
           properties:
             user: { $ref: "#/components/schemas/UserProfile" }
+
+    # ── Aggregate backend health (BL-IAM-019 / S1-E-14) ───────────────
+    # Driven by grpc.health.v1.Health.Check on each backend (BL-MON-001);
+    # the gateway holds one gRPC conn per backend and probes them
+    # concurrently. `status` mirrors the gRPC enum names so dashboards can
+    # branch cleanly. `error` is populated only when the probe itself
+    # failed (unreachable / timeout).
+    SystemBackendsResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [backends]
+          properties:
+            backends:
+              type: array
+              items: { $ref: "#/components/schemas/BackendStatus" }
+
+    BackendStatus:
+      type: object
+      required: [name, status]
+      properties:
+        name:
+          type: string
+          description: Service name (e.g. `iam-svc`, `finance-svc`). Stable key for the UI grid.
+          example: finance-svc
+        status:
+          type: string
+          enum: [SERVING, NOT_SERVING, UNKNOWN]
+          description: Mirror of grpc_health_v1.HealthCheckResponse_ServingStatus.
+        error:
+          type: string
+          description: Non-empty when the probe itself failed (e.g. connection refused, DeadlineExceeded). Empty on a successful probe.
+
+    # ── Finance permission-gate smoke (BL-IAM-019 / S1-E-14) ───────────
+    # message comes from finance-svc.FinanceService.FinancePing; the other
+    # three fields are populated by the gateway handler from its auth
+    # locals (set by RequireBearerToken). Backend never sees caller identity.
+    FinancePingResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [message, user_id, branch_id, roles]
+          properties:
+            message:
+              type: string
+              description: Always `"ok"` on success. Sourced from finance-svc.
+              example: ok
+            user_id:
+              type: string
+              format: uuid
+              description: Caller user id from the validated bearer.
+            branch_id:
+              type: string
+              format: uuid
+              description: Caller branch id from the validated bearer.
+            roles:
+              type: array
+              description: Caller roles from the validated bearer.
+              items:
+                type: string
 
     # ── Catalog error envelope (BL-GTW-002 / S1-E-10) ──────────────────
     # Mirror of services/catalog-svc/api/rest_oapi/openapi.yaml

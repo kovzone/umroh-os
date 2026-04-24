@@ -23,6 +23,13 @@ const (
 	AddonRefSettlementCurrencyIDR AddonRefSettlementCurrency = "IDR"
 )
 
+// Defines values for BackendStatusStatus.
+const (
+	NOTSERVING BackendStatusStatus = "NOT_SERVING"
+	SERVING    BackendStatusStatus = "SERVING"
+	UNKNOWN    BackendStatusStatus = "UNKNOWN"
+)
+
 // Defines values for DepartureStatus.
 const (
 	Closed DepartureStatus = "closed"
@@ -99,6 +106,21 @@ type AirlineRef struct {
 	OperatorKind OperatorKind `json:"operator_kind"`
 }
 
+// BackendStatus defines model for BackendStatus.
+type BackendStatus struct {
+	// Error Non-empty when the probe itself failed (e.g. connection refused, DeadlineExceeded). Empty on a successful probe.
+	Error *string `json:"error,omitempty"`
+
+	// Name Service name (e.g. `iam-svc`, `finance-svc`). Stable key for the UI grid.
+	Name string `json:"name"`
+
+	// Status Mirror of grpc_health_v1.HealthCheckResponse_ServingStatus.
+	Status BackendStatusStatus `json:"status"`
+}
+
+// BackendStatusStatus Mirror of grpc_health_v1.HealthCheckResponse_ServingStatus.
+type BackendStatusStatus string
+
 // CatalogErrorResponse defines model for CatalogErrorResponse.
 type CatalogErrorResponse struct {
 	Error struct {
@@ -162,6 +184,23 @@ type ErrorResponse struct {
 		Code    string `json:"code"`
 		Message string `json:"message"`
 	} `json:"error"`
+}
+
+// FinancePingResponse defines model for FinancePingResponse.
+type FinancePingResponse struct {
+	Data struct {
+		// BranchId Caller branch id from the validated bearer.
+		BranchId openapi_types.UUID `json:"branch_id"`
+
+		// Message Always `"ok"` on success. Sourced from finance-svc.
+		Message string `json:"message"`
+
+		// Roles Caller roles from the validated bearer.
+		Roles []string `json:"roles"`
+
+		// UserId Caller user id from the validated bearer.
+		UserId openapi_types.UUID `json:"user_id"`
+	} `json:"data"`
 }
 
 // GetDepartureResponse defines model for GetDepartureResponse.
@@ -359,6 +398,13 @@ type SuspendUserResponse struct {
 	} `json:"data"`
 }
 
+// SystemBackendsResponse defines model for SystemBackendsResponse.
+type SystemBackendsResponse struct {
+	Data struct {
+		Backends []BackendStatus `json:"backends"`
+	} `json:"data"`
+}
+
 // UserProfile defines model for UserProfile.
 type UserProfile struct {
 	// BranchId Home-branch UUID. Empty for branch-less staff (super_admin seed).
@@ -427,9 +473,9 @@ type ServerInterface interface {
 	// Readiness probe
 	// (GET /system/ready)
 	Readiness(c *fiber.Ctx) error
-	// Proxy finance-svc liveness
-	// (GET /v1/finance/system/live)
-	GetFinanceSystemLive(c *fiber.Ctx) error
+	// Permission-gate smoke (bearer + journal_entry/read/global)
+	// (GET /v1/finance/ping)
+	GetFinancePing(c *fiber.Ctx) error
 	// Current user profile
 	// (GET /v1/me)
 	GetMe(c *fiber.Ctx) error
@@ -457,6 +503,9 @@ type ServerInterface interface {
 	// Rotate refresh token — issue a new access + refresh pair
 	// (POST /v1/sessions/refresh)
 	RefreshSession(c *fiber.Ctx) error
+	// Aggregate per-backend health via grpc.health.v1.Health.Check
+	// (GET /v1/system/backends)
+	GetSystemBackends(c *fiber.Ctx) error
 	// Suspend a user and revoke every active session
 	// (POST /v1/users/{id}/suspend)
 	SuspendUser(c *fiber.Ctx, id openapi_types.UUID) error
@@ -481,10 +530,12 @@ func (siw *ServerInterfaceWrapper) Readiness(c *fiber.Ctx) error {
 	return siw.Handler.Readiness(c)
 }
 
-// GetFinanceSystemLive operation middleware
-func (siw *ServerInterfaceWrapper) GetFinanceSystemLive(c *fiber.Ctx) error {
+// GetFinancePing operation middleware
+func (siw *ServerInterfaceWrapper) GetFinancePing(c *fiber.Ctx) error {
 
-	return siw.Handler.GetFinanceSystemLive(c)
+	c.Context().SetUserValue(BearerAuthScopes, []string{})
+
+	return siw.Handler.GetFinancePing(c)
 }
 
 // GetMe operation middleware
@@ -629,6 +680,12 @@ func (siw *ServerInterfaceWrapper) RefreshSession(c *fiber.Ctx) error {
 	return siw.Handler.RefreshSession(c)
 }
 
+// GetSystemBackends operation middleware
+func (siw *ServerInterfaceWrapper) GetSystemBackends(c *fiber.Ctx) error {
+
+	return siw.Handler.GetSystemBackends(c)
+}
+
 // SuspendUser operation middleware
 func (siw *ServerInterfaceWrapper) SuspendUser(c *fiber.Ctx) error {
 
@@ -672,7 +729,7 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 
 	router.Get(options.BaseURL+"/system/ready", wrapper.Readiness)
 
-	router.Get(options.BaseURL+"/v1/finance/system/live", wrapper.GetFinanceSystemLive)
+	router.Get(options.BaseURL+"/v1/finance/ping", wrapper.GetFinancePing)
 
 	router.Get(options.BaseURL+"/v1/me", wrapper.GetMe)
 
@@ -691,6 +748,8 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 	router.Post(options.BaseURL+"/v1/sessions", wrapper.Login)
 
 	router.Post(options.BaseURL+"/v1/sessions/refresh", wrapper.RefreshSession)
+
+	router.Get(options.BaseURL+"/v1/system/backends", wrapper.GetSystemBackends)
 
 	router.Post(options.BaseURL+"/v1/users/:id/suspend", wrapper.SuspendUser)
 
@@ -728,25 +787,43 @@ func (response Readiness200JSONResponse) VisitReadinessResponse(ctx *fiber.Ctx) 
 	return ctx.JSON(&response)
 }
 
-type GetFinanceSystemLiveRequestObject struct {
+type GetFinancePingRequestObject struct {
 }
 
-type GetFinanceSystemLiveResponseObject interface {
-	VisitGetFinanceSystemLiveResponse(ctx *fiber.Ctx) error
+type GetFinancePingResponseObject interface {
+	VisitGetFinancePingResponse(ctx *fiber.Ctx) error
 }
 
-type GetFinanceSystemLive200JSONResponse LiveResponse
+type GetFinancePing200JSONResponse FinancePingResponse
 
-func (response GetFinanceSystemLive200JSONResponse) VisitGetFinanceSystemLiveResponse(ctx *fiber.Ctx) error {
+func (response GetFinancePing200JSONResponse) VisitGetFinancePingResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(200)
 
 	return ctx.JSON(&response)
 }
 
-type GetFinanceSystemLive502JSONResponse ErrorResponse
+type GetFinancePing401JSONResponse ErrorResponse
 
-func (response GetFinanceSystemLive502JSONResponse) VisitGetFinanceSystemLiveResponse(ctx *fiber.Ctx) error {
+func (response GetFinancePing401JSONResponse) VisitGetFinancePingResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(401)
+
+	return ctx.JSON(&response)
+}
+
+type GetFinancePing403JSONResponse ErrorResponse
+
+func (response GetFinancePing403JSONResponse) VisitGetFinancePingResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(403)
+
+	return ctx.JSON(&response)
+}
+
+type GetFinancePing502JSONResponse ErrorResponse
+
+func (response GetFinancePing502JSONResponse) VisitGetFinancePingResponse(ctx *fiber.Ctx) error {
 	ctx.Response().Header.Set("Content-Type", "application/json")
 	ctx.Status(502)
 
@@ -1163,6 +1240,22 @@ func (response RefreshSession502JSONResponse) VisitRefreshSessionResponse(ctx *f
 	return ctx.JSON(&response)
 }
 
+type GetSystemBackendsRequestObject struct {
+}
+
+type GetSystemBackendsResponseObject interface {
+	VisitGetSystemBackendsResponse(ctx *fiber.Ctx) error
+}
+
+type GetSystemBackends200JSONResponse SystemBackendsResponse
+
+func (response GetSystemBackends200JSONResponse) VisitGetSystemBackendsResponse(ctx *fiber.Ctx) error {
+	ctx.Response().Header.Set("Content-Type", "application/json")
+	ctx.Status(200)
+
+	return ctx.JSON(&response)
+}
+
 type SuspendUserRequestObject struct {
 	Id openapi_types.UUID `json:"id"`
 }
@@ -1233,9 +1326,9 @@ type StrictServerInterface interface {
 	// Readiness probe
 	// (GET /system/ready)
 	Readiness(ctx context.Context, request ReadinessRequestObject) (ReadinessResponseObject, error)
-	// Proxy finance-svc liveness
-	// (GET /v1/finance/system/live)
-	GetFinanceSystemLive(ctx context.Context, request GetFinanceSystemLiveRequestObject) (GetFinanceSystemLiveResponseObject, error)
+	// Permission-gate smoke (bearer + journal_entry/read/global)
+	// (GET /v1/finance/ping)
+	GetFinancePing(ctx context.Context, request GetFinancePingRequestObject) (GetFinancePingResponseObject, error)
 	// Current user profile
 	// (GET /v1/me)
 	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
@@ -1263,6 +1356,9 @@ type StrictServerInterface interface {
 	// Rotate refresh token — issue a new access + refresh pair
 	// (POST /v1/sessions/refresh)
 	RefreshSession(ctx context.Context, request RefreshSessionRequestObject) (RefreshSessionResponseObject, error)
+	// Aggregate per-backend health via grpc.health.v1.Health.Check
+	// (GET /v1/system/backends)
+	GetSystemBackends(ctx context.Context, request GetSystemBackendsRequestObject) (GetSystemBackendsResponseObject, error)
 	// Suspend a user and revoke every active session
 	// (POST /v1/users/{id}/suspend)
 	SuspendUser(ctx context.Context, request SuspendUserRequestObject) (SuspendUserResponseObject, error)
@@ -1331,23 +1427,23 @@ func (sh *strictHandler) Readiness(ctx *fiber.Ctx) error {
 	return nil
 }
 
-// GetFinanceSystemLive operation middleware
-func (sh *strictHandler) GetFinanceSystemLive(ctx *fiber.Ctx) error {
-	var request GetFinanceSystemLiveRequestObject
+// GetFinancePing operation middleware
+func (sh *strictHandler) GetFinancePing(ctx *fiber.Ctx) error {
+	var request GetFinancePingRequestObject
 
 	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
-		return sh.ssi.GetFinanceSystemLive(ctx.UserContext(), request.(GetFinanceSystemLiveRequestObject))
+		return sh.ssi.GetFinancePing(ctx.UserContext(), request.(GetFinancePingRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetFinanceSystemLive")
+		handler = middleware(handler, "GetFinancePing")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
-	} else if validResponse, ok := response.(GetFinanceSystemLiveResponseObject); ok {
-		if err := validResponse.VisitGetFinanceSystemLiveResponse(ctx); err != nil {
+	} else if validResponse, ok := response.(GetFinancePingResponseObject); ok {
+		if err := validResponse.VisitGetFinancePingResponse(ctx); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
 	} else if response != nil {
@@ -1597,6 +1693,31 @@ func (sh *strictHandler) RefreshSession(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	} else if validResponse, ok := response.(RefreshSessionResponseObject); ok {
 		if err := validResponse.VisitRefreshSessionResponse(ctx); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		}
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetSystemBackends operation middleware
+func (sh *strictHandler) GetSystemBackends(ctx *fiber.Ctx) error {
+	var request GetSystemBackendsRequestObject
+
+	handler := func(ctx *fiber.Ctx, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSystemBackends(ctx.UserContext(), request.(GetSystemBackendsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSystemBackends")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	} else if validResponse, ok := response.(GetSystemBackendsResponseObject); ok {
+		if err := validResponse.VisitGetSystemBackendsResponse(ctx); err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, err.Error())
 		}
 	} else if response != nil {

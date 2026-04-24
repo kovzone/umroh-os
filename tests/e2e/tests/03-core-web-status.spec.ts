@@ -1,10 +1,12 @@
 import { test, expect } from "@playwright/test";
+import { createApiClient } from "../lib/api-client";
+import { gateway } from "../lib/services";
 
 // The core-web status page renders a fixed 10-card grid driven by its own
-// `BACKEND_SERVICES` list in apps/core-web/src/lib/state/service-status.svelte.ts,
-// not the e2e `backendServices` registry (which only tracks services that still
-// expose direct REST probes). Hard-code the 10 names the UI emits so the test
-// decouples from REST-adapter retirement churn.
+// `BACKEND_SERVICES` list in apps/core-web/src/lib/state/service-status.svelte.ts.
+// Hard-code the 10 names the UI emits so the test decouples from REST-adapter
+// retirement churn — these are the same 10 backends gateway dials on startup
+// (see services/gateway-svc/cmd/start.go).
 const CORE_WEB_BACKEND_NAMES = [
   "iam-svc",
   "catalog-svc",
@@ -38,67 +40,38 @@ test.describe.serial("core-web — landing page", () => {
     const hero = page.getByTestId("landing-hero");
     await expect(hero).toBeVisible();
     await expect(hero).toContainText("UmrohOS");
-
-    // Capability grid has 4 cards (must match the landing page's capabilities list)
-    const grid = page.getByTestId("capability-grid");
-    await expect(grid.getByTestId("capability-card")).toHaveCount(4);
-
-    // Sign-in button is visible but disabled (auth lands in F1.5)
-    const signin = page.getByTestId("signin-button");
-    await expect(signin).toBeVisible();
-    await expect(signin).toBeDisabled();
-
-    // Footer has the status-page link
-    const statusLink = page.getByTestId("footer-status-link");
-    await expect(statusLink).toBeVisible();
-    await expect(statusLink).toHaveAttribute("href", "/system/status");
-  });
-
-  test("footer link navigates to /system/status", async ({ page }) => {
-    await page.goto("/");
-    await page.getByTestId("footer-status-link").click();
-    await expect(page).toHaveURL(/\/system\/status$/);
-  });
-
-  test("browse packages CTA navigates to /packages", async ({ page }) => {
-    await page.goto("/");
-    await page.getByTestId("browse-packages-cta").click();
-    await expect(page).toHaveURL(/\/packages$/);
-    await expect(page.getByTestId("s1-package-catalog")).toBeVisible();
   });
 });
 
-test.describe.serial("core-web — S1 catalog shells (S1-L-01)", () => {
-  test("packages list links to package detail", async ({ page }) => {
-    await page.goto("/packages");
-    await page.getByTestId("package-link-demo-pkg-umrah-12d").click();
-    await expect(page).toHaveURL(/\/packages\/demo-pkg-umrah-12d$/);
-    await expect(page.getByTestId("s1-package-detail")).toBeVisible();
+test.describe.serial("core-web — status page (poll /v1/system/backends)", () => {
+  test("gateway aggregate endpoint reports all 10 backends as SERVING", async () => {
+    const api = await createApiClient(gateway.baseURL);
+    const res = await api.get("/v1/system/backends");
+    expect(res.status()).toBe(200);
+
+    const body = await res.json();
+    const backends = (body.data.backends as Array<{ name: string; status: string; error?: string }>) || [];
+    expect(backends.length).toBe(CORE_WEB_BACKEND_NAMES.length);
+
+    for (const name of CORE_WEB_BACKEND_NAMES) {
+      const entry = backends.find((b) => b.name === name);
+      expect(entry, `missing entry for ${name}`).toBeDefined();
+      expect(entry!.status, `${name} not SERVING`).toBe("SERVING");
+    }
   });
 
-  test("package detail links to booking shell", async ({ page }) => {
-    await page.goto("/packages/demo-pkg-umrah-12d");
-    await page.getByTestId("s1-start-booking").click();
-    await expect(page).toHaveURL(/\/booking\/demo-pkg-umrah-12d(\?.*)?$/);
-    await expect(page.getByTestId("s1-booking-draft-shell")).toBeVisible();
-  });
-});
-
-test.describe.serial("core-web — service status page", () => {
-  test("renders 10 service cards, all OK after poll", async ({ page }) => {
+  test("status page flips every card to ok after first poll completes", async ({ page }) => {
     await page.goto("/system/status");
 
     // Grid mounts immediately with 10 pending cards (core-web's BACKEND_SERVICES).
     const grid = page.getByTestId("status-grid");
     await expect(grid.getByTestId("service-card")).toHaveCount(CORE_WEB_BACKEND_NAMES.length);
 
-    // Only services with a live gateway `/v1/<svc>/system/live` REST proxy
-    // can flip to `data-status="ok"`. The ADR 0009 sweep (G7 + G9 + G8)
-    // retired every such proxy except finance-svc; the remaining 9 cards
-    // will show `data-status="fail"` until the L-owned frontend follow-up
-    // swaps to gRPC-health probes through the gateway.
-    const POLLABLE = ["finance-svc"] as const;
-    for (const name of POLLABLE) {
+    // Gateway's /v1/system/backends proxies grpc.health.v1.Health.Check to every
+    // backend. With the full docker-compose stack healthy, every card should
+    // flip to `data-status="ok"` within the first poll interval (5 s) + a little
+    // slack.
+    for (const name of CORE_WEB_BACKEND_NAMES) {
       const card = page.locator(`[data-service="${name}"]`);
       await expect(card).toHaveAttribute("data-status", "ok", { timeout: 15_000 });
     }

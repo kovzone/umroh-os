@@ -15,7 +15,6 @@ import (
 //
 //   - Liveness — process is up
 //   - Readiness — process is up AND the database is reachable
-//   - DbTxDiagnostic — WithTx reference implementation (§ backend-conventions)
 //   - GetPackages — § Catalog public list (active only)
 //   - GetPackageByID — § Catalog public detail (active only)
 //   - GetDepartureByID — § Catalog departure detail with live remaining_seats
@@ -25,7 +24,6 @@ import (
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
-	DbTxDiagnostic(ctx context.Context, params *DbTxDiagnosticParams) (*DbTxDiagnosticResult, error)
 
 	GetPackages(ctx context.Context, params *GetPackagesParams) (*GetPackagesResult, error)
 	GetPackageByID(ctx context.Context, params *GetPackageByIDParams) (*PackageDetail, error)

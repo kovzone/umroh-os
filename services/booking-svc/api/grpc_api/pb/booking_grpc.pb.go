@@ -19,25 +19,26 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	BookingService_Healthz_FullMethodName = "/pb.BookingService/Healthz"
+	BookingService_Ping_FullMethodName = "/pb.BookingService/Ping"
 )
 
 // BookingServiceClient is the client API for BookingService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// BookingService — internal gRPC surface for Identity, Access, Audit.
+// BookingService — internal gRPC surface for the booking domain.
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// Current scope is the scaffold Ping (proves the gateway's
+// RequireBearerToken + RequirePermission middleware chain reaches this
+// backend over gRPC). Container-level liveness is served by the standard
+// grpc.health.v1.Health protocol (BL-MON-001). Real RPCs land with the
+// booking feature slice.
 type BookingServiceClient interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
-	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
+	// Ping — scaffold RPC used by the gateway's permission-gate smoke tests.
+	// Identity-agnostic per ADR 0009: the gateway validates the bearer and the
+	// permission tuple upstream; this handler returns a trivial
+	// {message: "ok"} proving the gateway→backend hop works.
+	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 }
 
 type bookingServiceClient struct {
@@ -48,10 +49,10 @@ func NewBookingServiceClient(cc grpc.ClientConnInterface) BookingServiceClient {
 	return &bookingServiceClient{cc}
 }
 
-func (c *bookingServiceClient) Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error) {
+func (c *bookingServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(HealthzResponse)
-	err := c.cc.Invoke(ctx, BookingService_Healthz_FullMethodName, in, out, cOpts...)
+	out := new(PingResponse)
+	err := c.cc.Invoke(ctx, BookingService_Ping_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -62,18 +63,19 @@ func (c *bookingServiceClient) Healthz(ctx context.Context, in *HealthzRequest, 
 // All implementations must embed UnimplementedBookingServiceServer
 // for forward compatibility.
 //
-// BookingService — internal gRPC surface for Identity, Access, Audit.
+// BookingService — internal gRPC surface for the booking domain.
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// Current scope is the scaffold Ping (proves the gateway's
+// RequireBearerToken + RequirePermission middleware chain reaches this
+// backend over gRPC). Container-level liveness is served by the standard
+// grpc.health.v1.Health protocol (BL-MON-001). Real RPCs land with the
+// booking feature slice.
 type BookingServiceServer interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
-	Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error)
+	// Ping — scaffold RPC used by the gateway's permission-gate smoke tests.
+	// Identity-agnostic per ADR 0009: the gateway validates the bearer and the
+	// permission tuple upstream; this handler returns a trivial
+	// {message: "ok"} proving the gateway→backend hop works.
+	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	mustEmbedUnimplementedBookingServiceServer()
 }
 
@@ -84,8 +86,8 @@ type BookingServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedBookingServiceServer struct{}
 
-func (UnimplementedBookingServiceServer) Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Healthz not implemented")
+func (UnimplementedBookingServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedBookingServiceServer) mustEmbedUnimplementedBookingServiceServer() {}
 func (UnimplementedBookingServiceServer) testEmbeddedByValue()                        {}
@@ -108,20 +110,20 @@ func RegisterBookingServiceServer(s grpc.ServiceRegistrar, srv BookingServiceSer
 	s.RegisterService(&BookingService_ServiceDesc, srv)
 }
 
-func _BookingService_Healthz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HealthzRequest)
+func _BookingService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BookingServiceServer).Healthz(ctx, in)
+		return srv.(BookingServiceServer).Ping(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: BookingService_Healthz_FullMethodName,
+		FullMethod: BookingService_Ping_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BookingServiceServer).Healthz(ctx, req.(*HealthzRequest))
+		return srv.(BookingServiceServer).Ping(ctx, req.(*PingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -134,8 +136,8 @@ var BookingService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*BookingServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Healthz",
-			Handler:    _BookingService_Healthz_Handler,
+			MethodName: "Ping",
+			Handler:    _BookingService_Ping_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

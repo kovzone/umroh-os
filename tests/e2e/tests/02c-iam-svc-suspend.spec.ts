@@ -1,9 +1,10 @@
-// iam admin suspend end-to-end (BL-IAM-003 + BL-IAM-018 / S1-E-12).
+// iam admin suspend end-to-end (BL-IAM-003 + BL-IAM-018 + BL-IAM-019).
 //
 // Closes F1-W5 acceptance ("Suspended user cannot access again") across the
-// three load-bearing code paths. Post BL-IAM-018 every iam HTTP call goes
-// through gateway-svc:4000; finance-svc's REST surface is still direct until
-// BL-IAM-019 retires it.
+// three load-bearing code paths. Every HTTP call now targets gateway-svc:4000:
+// iam REST was retired in BL-IAM-018, and finance-svc's /v1/finance/ping was
+// moved to the gateway in BL-IAM-019 / S1-E-14 (behind RequireBearerToken +
+// RequirePermission("journal_entry","read","global") → finance-svc gRPC).
 //
 //   1. Downstream bearer validation — a suspended user's still-decryptable
 //      access token is rejected by iam-svc ValidateToken over gRPC (session
@@ -23,17 +24,14 @@
 //   - Self-suspend rejection: admin cannot suspend their own account.
 //
 // Prereqs (make dev-bootstrap handles all):
-//   1. docker compose dev stack up (gateway-svc :4000, finance-svc :4009)
+//   1. docker compose dev stack up (gateway-svc :4000)
 //   2. migrations 000004 + 000005 + 000006 applied (the sacrifice user
 //      `suspend-target@umrohos.dev` + the `iam.users/suspend/global`
 //      permission + grant to super_admin are in 000006).
 
 import { test, expect } from "@playwright/test";
 import { createApiClient } from "../lib/api-client";
-import { backendServices, gateway } from "../lib/services";
-
-const finance = backendServices.find((s) => s.name === "finance-svc");
-if (!finance) throw new Error("finance-svc not in backendServices registry");
+import { gateway } from "../lib/services";
 
 const ADMIN_EMAIL = "admin@umrohos.dev";
 const ADMIN_USER_ID = "33333333-3333-3333-3333-333333333333";
@@ -81,13 +79,14 @@ test.describe.serial("iam admin suspend via gateway + revoke-all (BL-IAM-003 + B
     targetRefresh = targetTokens.refreshToken;
   });
 
-  test("while active, sacrifice's bearer is valid against finance-svc (403 FORBIDDEN — auth OK, no grant)", async () => {
-    // /v1/finance/ping exercises the iam-svc gRPC ValidateToken + CheckPermission
-    // path. The sacrifice has no roles, so CheckPermission returns allowed=false
-    // and finance-svc maps that to 403. This proves the bearer was accepted
-    // (ValidateToken succeeded) — sets up the "after suspend, same call → 401"
-    // assertion below.
-    const api = await createApiClient(finance!.baseURL, targetAccess);
+  test("while active, sacrifice's bearer is valid against gateway /v1/finance/ping (403 FORBIDDEN — auth OK, no grant)", async () => {
+    // /v1/finance/ping exercises the gateway's RequireBearerToken (ValidateToken
+    // over iam-svc gRPC) + RequirePermission (CheckPermission) chain. The
+    // sacrifice has no roles, so CheckPermission returns allowed=false and the
+    // gateway maps that to 403 FORBIDDEN before finance-svc is called. This
+    // proves the bearer was accepted (ValidateToken succeeded) — sets up the
+    // "after suspend, same call → 401" assertion below.
+    const api = await createApiClient(gateway.baseURL, targetAccess);
     const res = await api.get("/v1/finance/ping");
     expect(res.status()).toBe(403);
     const body = await res.json();
@@ -105,14 +104,14 @@ test.describe.serial("iam admin suspend via gateway + revoke-all (BL-IAM-003 + B
     expect(body.data.user.status).toBe("suspended");
   });
 
-  test("sacrifice's in-flight bearer is now rejected by finance-svc (401, sanitised message)", async () => {
+  test("sacrifice's in-flight bearer is now rejected by gateway (401, sanitised message)", async () => {
     // This is the load-bearing assertion for F1-W5. After suspension, the PASETO
     // payload still decrypts (TTL hasn't elapsed), but iam-svc ValidateToken
     // rejects via (a) session revoked and (b) users.status != active. The gRPC
     // status is Unauthenticated with a constant "unauthorized" message per
-    // apperrors.GRPCMessage — finance-svc's error middleware renders that into
+    // apperrors.GRPCMessage — gateway's error middleware renders that into
     // the HTTP 401 body without the internal state-oracle strings.
-    const api = await createApiClient(finance!.baseURL, targetAccess);
+    const api = await createApiClient(gateway.baseURL, targetAccess);
     const res = await api.get("/v1/finance/ping");
     expect(res.status()).toBe(401);
 

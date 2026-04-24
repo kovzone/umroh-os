@@ -4,20 +4,21 @@ import (
 	"context"
 	"fmt"
 
-	"gateway-svc/adapter/finance_rest_adapter"
+	"gateway-svc/adapter/finance_grpc_adapter"
 	"gateway-svc/util/logging"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 )
 
-// GetFinanceSystemLive proxies a liveness probe to finance-svc through the REST
-// adapter. It's the scaffold-time proof that the REST adapter pattern works
-// end-to-end (typed call, span propagation via otelhttp, error handling).
-//
-// Future iam proxy methods land here as the gateway exposes them.
-func (s *Service) GetFinanceSystemLive(ctx context.Context) (*finance_rest_adapter.LivenessResult, error) {
-	const op = "service.Service.GetFinanceSystemLive"
+// FinancePing dispatches the permission-gate smoke call to finance-svc via
+// gRPC. Authorization was already enforced by the gateway's RequireBearerToken
+// + RequirePermission middleware before this method runs; finance-svc is
+// identity-agnostic and the request is empty. Transport errors bubble up as
+// wrapped apperrors.ErrServiceUnavailable (502) per the adapter's fail-closed
+// mapping.
+func (s *Service) FinancePing(ctx context.Context) (*finance_grpc_adapter.PingResult, error) {
+	const op = "service.Service.FinancePing"
 
 	ctx, span := s.tracer.Start(ctx, op)
 	defer span.End()
@@ -26,7 +27,7 @@ func (s *Service) GetFinanceSystemLive(ctx context.Context) (*finance_rest_adapt
 	span.SetAttributes(attribute.String("operation", op))
 	logger.Info().Str("op", op).Msg("")
 
-	result, err := s.adapters.financeRest.GetSystemLive(ctx)
+	result, err := s.adapters.financeGrpc.Ping(ctx)
 	if err != nil {
 		err = fmt.Errorf("call finance-svc: %w", err)
 		logger.Error().Err(err).Msg("")

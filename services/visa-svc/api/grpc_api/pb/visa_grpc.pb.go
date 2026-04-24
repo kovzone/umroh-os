@@ -19,25 +19,26 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	VisaService_Healthz_FullMethodName = "/pb.VisaService/Healthz"
+	VisaService_Ping_FullMethodName = "/pb.VisaService/Ping"
 )
 
 // VisaServiceClient is the client API for VisaService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// VisaService — internal gRPC surface for Identity, Access, Audit.
+// VisaService — internal gRPC surface for the visa domain.
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// Current scope is the scaffold Ping (proves the gateway's
+// RequireBearerToken + RequirePermission middleware chain reaches this
+// backend over gRPC). Container-level liveness is served by the standard
+// grpc.health.v1.Health protocol (BL-MON-001). Real RPCs land with the
+// visa feature slice.
 type VisaServiceClient interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
-	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
+	// Ping — scaffold RPC used by the gateway's permission-gate smoke tests.
+	// Identity-agnostic per ADR 0009: the gateway validates the bearer and the
+	// permission tuple upstream; this handler returns a trivial
+	// {message: "ok"} proving the gateway→backend hop works.
+	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 }
 
 type visaServiceClient struct {
@@ -48,10 +49,10 @@ func NewVisaServiceClient(cc grpc.ClientConnInterface) VisaServiceClient {
 	return &visaServiceClient{cc}
 }
 
-func (c *visaServiceClient) Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error) {
+func (c *visaServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(HealthzResponse)
-	err := c.cc.Invoke(ctx, VisaService_Healthz_FullMethodName, in, out, cOpts...)
+	out := new(PingResponse)
+	err := c.cc.Invoke(ctx, VisaService_Ping_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -62,18 +63,19 @@ func (c *visaServiceClient) Healthz(ctx context.Context, in *HealthzRequest, opt
 // All implementations must embed UnimplementedVisaServiceServer
 // for forward compatibility.
 //
-// VisaService — internal gRPC surface for Identity, Access, Audit.
+// VisaService — internal gRPC surface for the visa domain.
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// Current scope is the scaffold Ping (proves the gateway's
+// RequireBearerToken + RequirePermission middleware chain reaches this
+// backend over gRPC). Container-level liveness is served by the standard
+// grpc.health.v1.Health protocol (BL-MON-001). Real RPCs land with the
+// visa feature slice.
 type VisaServiceServer interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
-	Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error)
+	// Ping — scaffold RPC used by the gateway's permission-gate smoke tests.
+	// Identity-agnostic per ADR 0009: the gateway validates the bearer and the
+	// permission tuple upstream; this handler returns a trivial
+	// {message: "ok"} proving the gateway→backend hop works.
+	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	mustEmbedUnimplementedVisaServiceServer()
 }
 
@@ -84,8 +86,8 @@ type VisaServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedVisaServiceServer struct{}
 
-func (UnimplementedVisaServiceServer) Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Healthz not implemented")
+func (UnimplementedVisaServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedVisaServiceServer) mustEmbedUnimplementedVisaServiceServer() {}
 func (UnimplementedVisaServiceServer) testEmbeddedByValue()                     {}
@@ -108,20 +110,20 @@ func RegisterVisaServiceServer(s grpc.ServiceRegistrar, srv VisaServiceServer) {
 	s.RegisterService(&VisaService_ServiceDesc, srv)
 }
 
-func _VisaService_Healthz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HealthzRequest)
+func _VisaService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(VisaServiceServer).Healthz(ctx, in)
+		return srv.(VisaServiceServer).Ping(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: VisaService_Healthz_FullMethodName,
+		FullMethod: VisaService_Ping_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VisaServiceServer).Healthz(ctx, req.(*HealthzRequest))
+		return srv.(VisaServiceServer).Ping(ctx, req.(*PingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -134,8 +136,8 @@ var VisaService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*VisaServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Healthz",
-			Handler:    _VisaService_Healthz_Handler,
+			MethodName: "Ping",
+			Handler:    _VisaService_Ping_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

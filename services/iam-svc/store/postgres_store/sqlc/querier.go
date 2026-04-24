@@ -23,7 +23,6 @@ type Querier interface {
 	GetAuditLogByID(ctx context.Context, id pgtype.UUID) (IamAuditLog, error)
 	GetBranchByCode(ctx context.Context, code string) (IamBranch, error)
 	GetBranchByID(ctx context.Context, id pgtype.UUID) (IamBranch, error)
-	GetDbTxDiagnostic(ctx context.Context, id int64) (Diagnostic, error)
 	GetPermissionByID(ctx context.Context, id pgtype.UUID) (IamPermission, error)
 	GetPermissionByTuple(ctx context.Context, arg GetPermissionByTupleParams) (IamPermission, error)
 	GetRoleByID(ctx context.Context, id pgtype.UUID) (IamRole, error)
@@ -34,7 +33,6 @@ type Querier interface {
 	GetUserByID(ctx context.Context, id pgtype.UUID) (IamUser, error)
 	GrantPermissionToRole(ctx context.Context, arg GrantPermissionToRoleParams) error
 	InsertAuditLog(ctx context.Context, arg InsertAuditLogParams) (IamAuditLog, error)
-	InsertDbTxDiagnostic(ctx context.Context, arg InsertDbTxDiagnosticParams) (Diagnostic, error)
 	ListActiveSessionsForUser(ctx context.Context, userID pgtype.UUID) ([]IamSession, error)
 	ListBranches(ctx context.Context) ([]IamBranch, error)
 	ListPermissionIDsForRole(ctx context.Context, roleID pgtype.UUID) ([]pgtype.UUID, error)

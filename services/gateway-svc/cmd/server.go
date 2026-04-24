@@ -16,16 +16,16 @@ import (
 )
 
 // runRestServer runs the REST server using the OpenAPI-generated routes and handler.
-// gateway-svc currently exposes own probes, the finance liveness proxy (interim
-// REST adapter, retires with BL-IAM-019 / S1-E-14), the BL-GTW-002 public
-// catalog read, and — post BL-IAM-018 / S1-E-12 — the client-facing auth
-// surface backed by iam-svc gRPC with the bearer middleware mounted on every
-// protected route. As each remaining REST adapter graduates to gRPC-only, the
-// corresponding proxy disappears.
+// After BL-IAM-019 / S1-E-14 every backend is gRPC-only; gateway-svc exposes
+// its own probes, the BL-GTW-002 public catalog read, the client-facing auth
+// surface (BL-IAM-018 / S1-E-12) backed by iam-svc gRPC with the bearer
+// middleware on every protected route, and the permission-gate smoke
+// /v1/finance/ping (BL-IAM-019) which composes RequireBearerToken +
+// RequirePermission before calling finance-svc gRPC.
 //
 // The api parameter is typed as *rest_oapi.Server (not the interface) so we
-// can call RequireBearerToken() to mount the bearer middleware on protected
-// route groups.
+// can call RequireBearerToken() / RequirePermission() to mount the edge
+// middleware on protected route groups.
 func runRestServer(port int, api *rest_oapi.Server, metricsEnabled bool, serviceName string) {
 	app := fiber.New()
 
@@ -66,22 +66,23 @@ func runRestServer(port int, api *rest_oapi.Server, metricsEnabled bool, service
 		system.Get("/ready", wrapper.Readiness)
 	}
 
+	// Aggregate backend health — public, used by core-web's status page to
+	// render one card per backend without a per-backend REST proxy.
+	// Gateway fans grpc.health.v1.Health.Check out to every dialed backend.
+	app.Get("/v1/system/backends", wrapper.GetSystemBackends)
+
 	// Bearer middleware mounted per protected route below. Cached once so
 	// each route registration reuses the same handler instance.
 	bearer := api.RequireBearerToken()
 
-	// /v1 proxy routes — one per backend, dispatched via its adapter.
+	// /v1 proxy routes — one per backend, dispatched via its adapter. Every
+	// downstream backend is gRPC-only now; no per-backend REST liveness proxy
+	// exists (liveness is served uniformly by grpc.health.v1.Health and consumed
+	// by docker-compose healthchecks via grpc_health_probe).
+
+	// Public catalog read (BL-GTW-002 / S1-E-10) — gRPC adapter.
 	v1 := app.Group("/v1")
 	{
-		// System-probe proxies (REST adapters; retire with each BL-REFACTOR-* card).
-		// iam-svc's proxies were removed in BL-IAM-018 / S1-E-12 — iam is now
-		// gRPC-only; operators probe via grpc_health_probe. catalog-svc's
-		// proxy was removed in G7. The seven pure-scaffold backends
-		// (booking/crm/jamaah/logistics/ops/payment/visa) retired their
-		// REST surfaces in BL-REFACTOR-002..008 / S1-E-13.
-		v1.Get("/finance/system/live", wrapper.GetFinanceSystemLive)
-
-		// Public catalog read (BL-GTW-002 / S1-E-10) — gRPC adapter.
 		v1.Get("/packages", wrapper.ListPackages)
 		v1.Get("/packages/:id", wrapper.GetPackageById)
 		v1.Get("/package-departures/:id", wrapper.GetPackageDepartureById)
@@ -95,6 +96,15 @@ func runRestServer(port int, api *rest_oapi.Server, metricsEnabled bool, service
 		v1.Post("/me/2fa/enroll", bearer, wrapper.EnrollTotp)
 		v1.Post("/me/2fa/verify", bearer, wrapper.VerifyTotp)
 		v1.Post("/users/:id/suspend", bearer, wrapper.SuspendUser)
+
+		// Permission-gate smoke (BL-IAM-002 / BL-IAM-019 / S1-E-14) —
+		// bearer + `journal_entry/read/global`, then finance-svc gRPC.
+		v1.Get(
+			"/finance/ping",
+			bearer,
+			api.RequirePermission("journal_entry", "read", "global"),
+			wrapper.GetFinancePing,
+		)
 	}
 
 	go func() {

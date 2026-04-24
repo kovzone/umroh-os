@@ -11,24 +11,15 @@ import (
 
 // IService is the business-layer interface for finance-svc.
 //
-// Pilot scaffold surfaces the three standard scaffold endpoints:
-//
-//   - Liveness — process is up
-//   - Readiness — process is up AND the database is reachable
-//   - DbTxDiagnostic — writes + reads inside a WithTx, the canonical reference
-//     for how services should use transactions (per docs/04-backend-conventions)
-//
-// BL-IAM-002 adds FinancePing — the placeholder authenticated route that
-// exercises the iam-svc permission gate so the "finance routes denied for
-// non-finance roles" acceptance has a concrete surface. Real finance endpoints
-// (journals, AR/AP, reports) land with S3-E-03 + S3-E-07.
+// Post BL-IAM-019 / S1-E-14 the service is gRPC-only (ADR 0009). The
+// permission-gate smoke (`FinancePing`) lives on the gRPC handler directly —
+// its only job is to return `{message:"ok"}` once the gateway has already
+// approved the caller via its RequireBearerToken + RequirePermission chain.
+// Real finance endpoints (journals, AR/AP, reports) land with S3-E-03 +
+// S3-E-07 and plug into this interface.
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
-	DbTxDiagnostic(ctx context.Context, params *DbTxDiagnosticParams) (*DbTxDiagnosticResult, error)
-
-	// Finance — BL-IAM-002 placeholder.
-	FinancePing(ctx context.Context, params *FinancePingParams) (*FinancePingResult, error)
 }
 
 type Service struct {
@@ -40,10 +31,6 @@ type Service struct {
 	appName string
 
 	store postgres_store.IStore
-
-	// iamChecker is the consumer-side wrapper around iam-svc.CheckPermission.
-	// Injected so tests can supply a double without spinning up a real gRPC server.
-	iamChecker IamChecker
 }
 
 func NewService(
@@ -51,13 +38,11 @@ func NewService(
 	tracer trace.Tracer,
 	appName string,
 	store postgres_store.IStore,
-	iamChecker IamChecker,
 ) IService {
 	return &Service{
-		logger:     logger,
-		tracer:     tracer,
-		appName:    appName,
-		store:      store,
-		iamChecker: iamChecker,
+		logger:  logger,
+		tracer:  tracer,
+		appName: appName,
+		store:   store,
 	}
 }

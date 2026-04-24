@@ -1,101 +1,28 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"os"
 
-	"finance-svc/adapter/iam_grpc_adapter"
 	"finance-svc/api/grpc_api"
 	"finance-svc/api/grpc_api/pb"
-	"finance-svc/api/rest_oapi"
-	"finance-svc/api/rest_oapi/middleware"
-	"finance-svc/util/monitoring"
 
-	"github.com/gofiber/contrib/otelfiber/v2"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/adaptor"
-	"github.com/gofiber/fiber/v2/middleware/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	health_pb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 )
 
-// runRestServer runs the REST server using the OpenAPI-generated routes and handler.
+// runGrpcServer runs the gRPC server exposing the FinanceService surface plus
+// the standard gRPC health protocol. Post BL-IAM-019 / S1-E-14 finance-svc is
+// gRPC-only (ADR 0009); the REST port was retired together with the migration
+// of /v1/finance/ping onto gateway-svc.
 //
-// Public routes:
-//   - GET /system/live
-//   - GET /system/ready
-//   - GET /system/diagnostics/db-tx
-//
-// Bearer-protected routes (BL-IAM-002) — require valid iam-svc token:
-//   - GET /v1/finance/ping
-func runRestServer(port int, api rest_oapi.ServerInterface, iamAdapter *iam_grpc_adapter.Adapter, metricsEnabled bool, serviceName string) {
-	app := fiber.New()
-
-	// CORS
-	corsConfig := cors.Config{
-		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
-	}
-	app.Use(cors.New(corsConfig))
-
-	// OpenTelemetry — start an inbound span for every request so cross-service
-	// traces initiated by an upstream caller (via W3C traceparent) continue in
-	// this process's spans instead of starting a new trace. Span names are
-	// prefixed with the service name so a multi-service trace in Tempo is easy
-	// to scan (e.g. "finance-svc GET /v1/finance/ping").
-	app.Use(otelfiber.Middleware(
-		otelfiber.WithSpanNameFormatter(func(c *fiber.Ctx) string {
-			return serviceName + " " + c.Method() + " " + c.Route().Path
-		}),
-	))
-
-	if metricsEnabled {
-		app.Use(monitoring.RecoveryMiddleware())
-		app.Use(monitoring.Middleware())
-		app.Get("/metrics", adaptor.HTTPHandler(monitoring.Handler()))
-	}
-
-	app.Use(middleware.ErrorHandler())
-
-	wrapper := rest_oapi.ServerInterfaceWrapper{Handler: api}
-
-	// System routes (probes + WithTx diagnostic) — public.
-	system := app.Group("/system")
-	{
-		system.Get("/live", wrapper.Liveness)
-		system.Get("/ready", wrapper.Readiness)
-		system.Get("/diagnostics/db-tx", wrapper.DbTxDiagnostic)
-	}
-
-	// Authenticated routes (BL-IAM-002) — every handler under /v1/finance
-	// runs behind the bearer middleware, which fails closed on missing /
-	// invalid / unreachable iam-svc per F1 "never default to allow".
-	requireBearer := middleware.RequireBearerToken(iamAdapter)
-	finance := app.Group("/v1/finance", requireBearer)
-	{
-		finance.Get("/ping", wrapper.FinancePing)
-	}
-
-	go func() {
-		log.Printf("rest server started successfully 🚀")
-
-		err := app.Listen(fmt.Sprintf(":%d", port))
-		if err != nil {
-			log.Printf("failed to listen at port: %v!\n", port)
-			log.Printf("error: %v\n", err)
-			os.Exit(1)
-		}
-	}()
-}
-
-// runGrpcServer runs the gRPC server exposing the FinanceService surface plus the
-// standard gRPC health protocol. Finance-svc's own gRPC surface stays a
-// placeholder until S3-E-03 — real cross-service RPCs (e.g. the booking-saga
-// callback for `payment.received`) land with the S3 contracts.
+// FinanceService currently carries the permission-gate smoke (`FinancePing`)
+// invoked through the gateway after its RequireBearerToken + RequirePermission
+// middleware has approved the caller. Real finance RPCs (journals, AR/AP,
+// reports) land with S3-E-03 + S3-E-07.
 func runGrpcServer(address string, apiServer *grpc_api.Server) *grpc.Server {
 	grpcServer := grpc.NewServer()
 

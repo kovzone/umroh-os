@@ -47,9 +47,7 @@ func bindEnvironmentVariables() {
 	viper.BindEnv("external.logistics_svc.name", "LOGISTICS_SVC_NAME")
 	viper.BindEnv("external.logistics_svc.grpc_target", "LOGISTICS_SVC_GRPC_TARGET")
 
-	// finance-svc still exposes REST (BL-IAM-019 / S1-E-14 will remove it).
 	viper.BindEnv("external.finance_svc.name", "FINANCE_SVC_NAME")
-	viper.BindEnv("external.finance_svc.address", "FINANCE_SVC_ADDRESS")
 	viper.BindEnv("external.finance_svc.grpc_target", "FINANCE_SVC_GRPC_TARGET")
 
 	viper.BindEnv("external.crm_svc.name", "CRM_SVC_NAME")

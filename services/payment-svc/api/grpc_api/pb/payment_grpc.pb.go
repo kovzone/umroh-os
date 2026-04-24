@@ -19,25 +19,26 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PaymentService_Healthz_FullMethodName = "/pb.PaymentService/Healthz"
+	PaymentService_Ping_FullMethodName = "/pb.PaymentService/Ping"
 )
 
 // PaymentServiceClient is the client API for PaymentService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// PaymentService — internal gRPC surface for Identity, Access, Audit.
+// PaymentService — internal gRPC surface for the payment domain.
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// Current scope is the scaffold Ping (proves the gateway's
+// RequireBearerToken + RequirePermission middleware chain reaches this
+// backend over gRPC). Container-level liveness is served by the standard
+// grpc.health.v1.Health protocol (BL-MON-001). Real RPCs land with the
+// payment feature slice.
 type PaymentServiceClient interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
-	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
+	// Ping — scaffold RPC used by the gateway's permission-gate smoke tests.
+	// Identity-agnostic per ADR 0009: the gateway validates the bearer and the
+	// permission tuple upstream; this handler returns a trivial
+	// {message: "ok"} proving the gateway→backend hop works.
+	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 }
 
 type paymentServiceClient struct {
@@ -48,10 +49,10 @@ func NewPaymentServiceClient(cc grpc.ClientConnInterface) PaymentServiceClient {
 	return &paymentServiceClient{cc}
 }
 
-func (c *paymentServiceClient) Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error) {
+func (c *paymentServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(HealthzResponse)
-	err := c.cc.Invoke(ctx, PaymentService_Healthz_FullMethodName, in, out, cOpts...)
+	out := new(PingResponse)
+	err := c.cc.Invoke(ctx, PaymentService_Ping_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -62,18 +63,19 @@ func (c *paymentServiceClient) Healthz(ctx context.Context, in *HealthzRequest, 
 // All implementations must embed UnimplementedPaymentServiceServer
 // for forward compatibility.
 //
-// PaymentService — internal gRPC surface for Identity, Access, Audit.
+// PaymentService — internal gRPC surface for the payment domain.
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// Current scope is the scaffold Ping (proves the gateway's
+// RequireBearerToken + RequirePermission middleware chain reaches this
+// backend over gRPC). Container-level liveness is served by the standard
+// grpc.health.v1.Health protocol (BL-MON-001). Real RPCs land with the
+// payment feature slice.
 type PaymentServiceServer interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
-	Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error)
+	// Ping — scaffold RPC used by the gateway's permission-gate smoke tests.
+	// Identity-agnostic per ADR 0009: the gateway validates the bearer and the
+	// permission tuple upstream; this handler returns a trivial
+	// {message: "ok"} proving the gateway→backend hop works.
+	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	mustEmbedUnimplementedPaymentServiceServer()
 }
 
@@ -84,8 +86,8 @@ type PaymentServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedPaymentServiceServer struct{}
 
-func (UnimplementedPaymentServiceServer) Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Healthz not implemented")
+func (UnimplementedPaymentServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedPaymentServiceServer) mustEmbedUnimplementedPaymentServiceServer() {}
 func (UnimplementedPaymentServiceServer) testEmbeddedByValue()                        {}
@@ -108,20 +110,20 @@ func RegisterPaymentServiceServer(s grpc.ServiceRegistrar, srv PaymentServiceSer
 	s.RegisterService(&PaymentService_ServiceDesc, srv)
 }
 
-func _PaymentService_Healthz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HealthzRequest)
+func _PaymentService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaymentServiceServer).Healthz(ctx, in)
+		return srv.(PaymentServiceServer).Ping(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaymentService_Healthz_FullMethodName,
+		FullMethod: PaymentService_Ping_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaymentServiceServer).Healthz(ctx, req.(*HealthzRequest))
+		return srv.(PaymentServiceServer).Ping(ctx, req.(*PingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -134,8 +136,8 @@ var PaymentService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*PaymentServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Healthz",
-			Handler:    _PaymentService_Healthz_Handler,
+			MethodName: "Ping",
+			Handler:    _PaymentService_Ping_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

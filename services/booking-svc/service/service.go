@@ -16,8 +16,6 @@ import (
 //
 //   - Liveness — process is up
 //   - Readiness — process is up AND the database is reachable
-//   - DbTxDiagnostic — writes + reads inside a WithTx, the canonical reference
-//     for how services should use transactions (per docs/04-backend-conventions)
 //
 // Real iam responsibilities (user/role/branch CRUD, auth login/refresh/logout,
 // permission checks, session lifecycle, audit writes) land in F1.5–F1.11 and
@@ -25,7 +23,6 @@ import (
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
-	DbTxDiagnostic(ctx context.Context, params *DbTxDiagnosticParams) (*DbTxDiagnosticResult, error)
 }
 
 // IamClient is the slice of iam-svc the booking-svc service layer plans to

@@ -21,26 +21,26 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type HealthzRequest struct {
+type PingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HealthzRequest) Reset() {
-	*x = HealthzRequest{}
+func (x *PingRequest) Reset() {
+	*x = PingRequest{}
 	mi := &file_iam_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HealthzRequest) String() string {
+func (x *PingRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HealthzRequest) ProtoMessage() {}
+func (*PingRequest) ProtoMessage() {}
 
-func (x *HealthzRequest) ProtoReflect() protoreflect.Message {
+func (x *PingRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_iam_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -52,32 +52,32 @@ func (x *HealthzRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HealthzRequest.ProtoReflect.Descriptor instead.
-func (*HealthzRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use PingRequest.ProtoReflect.Descriptor instead.
+func (*PingRequest) Descriptor() ([]byte, []int) {
 	return file_iam_proto_rawDescGZIP(), []int{0}
 }
 
-type HealthzResponse struct {
+type PingResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HealthzResponse) Reset() {
-	*x = HealthzResponse{}
+func (x *PingResponse) Reset() {
+	*x = PingResponse{}
 	mi := &file_iam_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HealthzResponse) String() string {
+func (x *PingResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HealthzResponse) ProtoMessage() {}
+func (*PingResponse) ProtoMessage() {}
 
-func (x *HealthzResponse) ProtoReflect() protoreflect.Message {
+func (x *PingResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_iam_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -89,16 +89,16 @@ func (x *HealthzResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HealthzResponse.ProtoReflect.Descriptor instead.
-func (*HealthzResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use PingResponse.ProtoReflect.Descriptor instead.
+func (*PingResponse) Descriptor() ([]byte, []int) {
 	return file_iam_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *HealthzResponse) GetOk() bool {
+func (x *PingResponse) GetMessage() string {
 	if x != nil {
-		return x.Ok
+		return x.Message
 	}
-	return false
+	return ""
 }
 
 type ValidateTokenRequest struct {
@@ -1359,10 +1359,10 @@ var File_iam_proto protoreflect.FileDescriptor
 
 const file_iam_proto_rawDesc = "" +
 	"\n" +
-	"\tiam.proto\x12\x02pb\"\x10\n" +
-	"\x0eHealthzRequest\"!\n" +
-	"\x0fHealthzResponse\x12\x0e\n" +
-	"\x02ok\x18\x01 \x01(\bR\x02ok\"9\n" +
+	"\tiam.proto\x12\x02pb\"\r\n" +
+	"\vPingRequest\"(\n" +
+	"\fPingResponse\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"9\n" +
 	"\x14ValidateTokenRequest\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\"\xaa\x01\n" +
 	"\x15ValidateTokenResponse\x12\x17\n" +
@@ -1447,10 +1447,10 @@ const file_iam_proto_rawDesc = "" +
 	"\ractor_user_id\x18\x01 \x01(\tR\vactorUserId\x12$\n" +
 	"\x0etarget_user_id\x18\x02 \x01(\tR\ftargetUserId\":\n" +
 	"\x13SuspendUserResponse\x12#\n" +
-	"\x04user\x18\x01 \x01(\v2\x0f.pb.UserProfileR\x04user2\xb8\x05\n" +
+	"\x04user\x18\x01 \x01(\v2\x0f.pb.UserProfileR\x04user2\xaf\x05\n" +
 	"\n" +
-	"IamService\x124\n" +
-	"\aHealthz\x12\x12.pb.HealthzRequest\x1a\x13.pb.HealthzResponse\"\x00\x12F\n" +
+	"IamService\x12+\n" +
+	"\x04Ping\x12\x0f.pb.PingRequest\x1a\x10.pb.PingResponse\"\x00\x12F\n" +
 	"\rValidateToken\x12\x18.pb.ValidateTokenRequest\x1a\x19.pb.ValidateTokenResponse\"\x00\x12L\n" +
 	"\x0fCheckPermission\x12\x1a.pb.CheckPermissionRequest\x1a\x1b.pb.CheckPermissionResponse\"\x00\x12@\n" +
 	"\vRecordAudit\x12\x16.pb.RecordAuditRequest\x1a\x17.pb.RecordAuditResponse\"\x00\x12.\n" +
@@ -1478,8 +1478,8 @@ func file_iam_proto_rawDescGZIP() []byte {
 
 var file_iam_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_iam_proto_goTypes = []any{
-	(*HealthzRequest)(nil),          // 0: pb.HealthzRequest
-	(*HealthzResponse)(nil),         // 1: pb.HealthzResponse
+	(*PingRequest)(nil),             // 0: pb.PingRequest
+	(*PingResponse)(nil),            // 1: pb.PingResponse
 	(*ValidateTokenRequest)(nil),    // 2: pb.ValidateTokenRequest
 	(*ValidateTokenResponse)(nil),   // 3: pb.ValidateTokenResponse
 	(*CheckPermissionRequest)(nil),  // 4: pb.CheckPermissionRequest
@@ -1506,7 +1506,7 @@ var file_iam_proto_depIdxs = []int32{
 	8,  // 0: pb.LoginResponse.user:type_name -> pb.UserProfile
 	8,  // 1: pb.GetMeResponse.user:type_name -> pb.UserProfile
 	8,  // 2: pb.SuspendUserResponse.user:type_name -> pb.UserProfile
-	0,  // 3: pb.IamService.Healthz:input_type -> pb.HealthzRequest
+	0,  // 3: pb.IamService.Ping:input_type -> pb.PingRequest
 	2,  // 4: pb.IamService.ValidateToken:input_type -> pb.ValidateTokenRequest
 	4,  // 5: pb.IamService.CheckPermission:input_type -> pb.CheckPermissionRequest
 	6,  // 6: pb.IamService.RecordAudit:input_type -> pb.RecordAuditRequest
@@ -1517,7 +1517,7 @@ var file_iam_proto_depIdxs = []int32{
 	17, // 11: pb.IamService.EnrollTotp:input_type -> pb.EnrollTotpRequest
 	19, // 12: pb.IamService.VerifyTotp:input_type -> pb.VerifyTotpRequest
 	21, // 13: pb.IamService.SuspendUser:input_type -> pb.SuspendUserRequest
-	1,  // 14: pb.IamService.Healthz:output_type -> pb.HealthzResponse
+	1,  // 14: pb.IamService.Ping:output_type -> pb.PingResponse
 	3,  // 15: pb.IamService.ValidateToken:output_type -> pb.ValidateTokenResponse
 	5,  // 16: pb.IamService.CheckPermission:output_type -> pb.CheckPermissionResponse
 	7,  // 17: pb.IamService.RecordAudit:output_type -> pb.RecordAuditResponse

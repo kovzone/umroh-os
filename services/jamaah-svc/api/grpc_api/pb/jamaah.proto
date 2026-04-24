@@ -4,22 +4,23 @@ package pb;
 
 option go_package="./pb";
 
-// JamaahService — internal gRPC surface for Identity, Access, Audit.
+// JamaahService — internal gRPC surface for the jamaah domain.
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// Current scope is the scaffold Ping (proves the gateway's
+// RequireBearerToken + RequirePermission middleware chain reaches this
+// backend over gRPC). Container-level liveness is served by the standard
+// grpc.health.v1.Health protocol (BL-MON-001). Real RPCs land with the
+// jamaah feature slice.
 service JamaahService {
-  // Healthz returns ok=true if the service process is alive.
-  // Placeholder for the pilot; real health checks go through gRPC health protocol.
-  rpc Healthz(HealthzRequest) returns (HealthzResponse) {}
+  // Ping — scaffold RPC used by the gateway's permission-gate smoke tests.
+  // Identity-agnostic per ADR 0009: the gateway validates the bearer and the
+  // permission tuple upstream; this handler returns a trivial
+  // {message: "ok"} proving the gateway→backend hop works.
+  rpc Ping(PingRequest) returns (PingResponse) {}
 }
 
-message HealthzRequest {}
+message PingRequest {}
 
-message HealthzResponse {
-  bool ok = 1;
+message PingResponse {
+  string message = 1;
 }

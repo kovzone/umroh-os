@@ -4,22 +4,34 @@ package pb;
 
 option go_package="./pb";
 
-// FinanceService — internal gRPC surface for Identity, Access, Audit.
+// FinanceService — internal gRPC surface for the finance domain.
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// Per ADR 0009 this service is gRPC-only; the public REST surface lives on
+// gateway-svc (services/gateway-svc/api/rest_oapi/openapi.yaml § Proxy /
+// finance) which proxies to these RPCs. Gateway owns authentication +
+// permission gates (RequireBearerToken + RequirePermission middleware), so
+// finance-svc is identity-agnostic: requests arriving here have already been
+// authorized upstream.
+//
+// Container-level liveness is served by the standard grpc.health.v1.Health
+// protocol (BL-MON-001) — docker-compose and grpc_health_probe use it
+// directly; no custom Liveness RPC is needed here.
 service FinanceService {
-  // Healthz returns ok=true if the service process is alive.
-  // Placeholder for the pilot; real health checks go through gRPC health protocol.
-  rpc Healthz(HealthzRequest) returns (HealthzResponse) {}
+  // Ping — scaffold RPC used by the gateway's permission-gate smoke tests
+  // (BL-IAM-002 / BL-IAM-019). Identity-agnostic per ADR 0009: the gateway
+  // validates the bearer and the `journal_entry/read/global` permission
+  // before this is called; the handler returns a trivial {message: "ok"}
+  // proving the gateway→backend hop works. Real finance RPCs (journals,
+  // AR/AP, reports) land with S3-E-03 + S3-E-07.
+  rpc Ping(PingRequest) returns (PingResponse) {}
 }
 
-message HealthzRequest {}
+// -----------------------------------------------------------------------------
+// Ping
+// -----------------------------------------------------------------------------
 
-message HealthzResponse {
-  bool ok = 1;
+message PingRequest {}
+
+message PingResponse {
+  string message = 1;
 }

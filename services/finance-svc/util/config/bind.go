@@ -12,10 +12,7 @@ func bindEnvironmentVariables() {
 
 	// API config
 
-	viper.BindEnv("api.rest.host", "API_REST_HOST")
-	viper.BindEnv("api.rest.port", "API_REST_PORT")
 	viper.BindEnv("api.grpc.address", "API_GRPC_ADDRESS")
-	viper.BindEnv("api.metrics.enabled", "API_METRICS_ENABLED")
 
 	// Store config
 
@@ -30,8 +27,4 @@ func bindEnvironmentVariables() {
 
 	viper.BindEnv("otel_tracer.name", "OTEL_TRACER_NAME")
 	viper.BindEnv("otel_tracer.endpoint", "OTEL_TRACER_ENDPOINT")
-
-	// Iam consumer config (BL-IAM-002)
-
-	viper.BindEnv("iam.grpc_target", "IAM_GRPC_TARGET")
 }

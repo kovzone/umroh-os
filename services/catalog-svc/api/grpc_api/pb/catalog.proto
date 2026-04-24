@@ -13,14 +13,14 @@ option go_package="./pb";
 // (S1-E-10). Dates are ISO YYYY-MM-DD strings (matching the service
 // layer); enums stay as strings per the adapter pattern (cross-service
 // type churn avoided; gateway's oapi-generated enum validation is the
-// authoritative gate). DiagnosticsDbTx landed in BL-REFACTOR-001 (S1-E-11)
-// when the legacy REST /system/diagnostics/db-tx was retired.
+// authoritative gate). Container-level liveness is served by the standard
+// grpc.health.v1.Health protocol (BL-MON-001).
 service CatalogService {
-  // Healthz — pilot placeholder. Retained for reflection-based probing
-  // that predates the standard grpc.health.v1.Health protocol added in
-  // BL-MON-001; the standard protocol (empty + named service) is the
-  // real health surface used by docker-compose and grpc_health_probe.
-  rpc Healthz(HealthzRequest) returns (HealthzResponse) {}
+  // Ping — scaffold RPC used by the gateway's permission-gate smoke tests.
+  // Identity-agnostic per ADR 0009: the gateway validates the bearer and the
+  // permission tuple upstream; this handler returns a trivial
+  // {message: "ok"} proving the gateway→backend hop works.
+  rpc Ping(PingRequest) returns (PingResponse) {}
 
   // ListPackages — public paginated list of active packages. Mirrors
   // GET /v1/packages on the current REST surface.
@@ -35,24 +35,16 @@ service CatalogService {
   // Returns NOT_FOUND for departed/completed/cancelled/unknown.
   // Mirrors GET /v1/package-departures/{id}.
   rpc GetPackageDeparture(GetPackageDepartureRequest) returns (GetPackageDepartureResponse) {}
-
-  // DiagnosticsDbTx — state-mutating WithTx reference path. Inserts one
-  // row into public.diagnostics, reads it back inside the same
-  // transaction, echoes the message. Dev verification only (invoked via
-  // grpcurl); per ADR 0009 there is no gateway REST route for this —
-  // iam-svc's /v1/iam/system/diagnostics/db-tx already proves the
-  // cross-service trace story (S0-J-05).
-  rpc DiagnosticsDbTx(DiagnosticsDbTxRequest) returns (DiagnosticsDbTxResponse) {}
 }
 
 // -----------------------------------------------------------------------------
-// Healthz (pilot)
+// Ping
 // -----------------------------------------------------------------------------
 
-message HealthzRequest {}
+message PingRequest {}
 
-message HealthzResponse {
-  bool ok = 1;
+message PingResponse {
+  string message = 1;
 }
 
 // -----------------------------------------------------------------------------
@@ -227,19 +219,3 @@ message GetPackageDepartureResponse {
   DepartureDetail departure = 1;
 }
 
-// -----------------------------------------------------------------------------
-// DiagnosticsDbTx
-// -----------------------------------------------------------------------------
-
-message DiagnosticsDbTxRequest {
-  // Empty / unset is treated as "no message" server-side, matching the
-  // previous REST default.
-  string message = 1;
-}
-
-message DiagnosticsDbTxResponse {
-  int64 diagnostic_id = 1;
-  // Echo of the form `received '<message>' from client`, same shape as
-  // the retired REST envelope.
-  string message = 2;
-}

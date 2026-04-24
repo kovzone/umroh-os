@@ -9,47 +9,6 @@ import (
 	"context"
 )
 
-const getDbTxDiagnostic = `-- name: GetDbTxDiagnostic :one
-SELECT id, service, message, created_at
-FROM public.diagnostics
-WHERE id = $1
-`
-
-func (q *Queries) GetDbTxDiagnostic(ctx context.Context, id int64) (Diagnostic, error) {
-	row := q.db.QueryRow(ctx, getDbTxDiagnostic, id)
-	var i Diagnostic
-	err := row.Scan(
-		&i.ID,
-		&i.Service,
-		&i.Message,
-		&i.CreatedAt,
-	)
-	return i, err
-}
-
-const insertDbTxDiagnostic = `-- name: InsertDbTxDiagnostic :one
-INSERT INTO public.diagnostics (service, message)
-VALUES ($1, $2)
-RETURNING id, service, message, created_at
-`
-
-type InsertDbTxDiagnosticParams struct {
-	Service string `json:"service"`
-	Message string `json:"message"`
-}
-
-func (q *Queries) InsertDbTxDiagnostic(ctx context.Context, arg InsertDbTxDiagnosticParams) (Diagnostic, error) {
-	row := q.db.QueryRow(ctx, insertDbTxDiagnostic, arg.Service, arg.Message)
-	var i Diagnostic
-	err := row.Scan(
-		&i.ID,
-		&i.Service,
-		&i.Message,
-		&i.CreatedAt,
-	)
-	return i, err
-}
-
 const readyCheck = `-- name: ReadyCheck :one
 SELECT 1 AS ok
 `

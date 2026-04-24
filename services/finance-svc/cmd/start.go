@@ -5,21 +5,14 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"time"
 
-	"finance-svc/adapter/iam_grpc_adapter"
 	"finance-svc/api/grpc_api"
-	"finance-svc/api/rest_oapi"
 	"finance-svc/service"
 	"finance-svc/store/postgres_store"
 	"finance-svc/util/config"
 	"finance-svc/util/logging"
 	"finance-svc/util/monitoring"
 	"finance-svc/util/tracing"
-
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 func start() {
@@ -44,7 +37,7 @@ func start() {
 	}
 
 	// --- Init otel tracer ---
-	cleanup, err := tracing.InitTracer(config.OtelTracer.Name, config.OtelTracer.Endpoint)
+	cleanupTracer, err := tracing.InitTracer(config.OtelTracer.Name, config.OtelTracer.Endpoint)
 	if err != nil {
 		logger.Error().
 			Str("op", op).
@@ -53,7 +46,7 @@ func start() {
 			Msg("")
 	}
 	defer func() {
-		if err := cleanup(context.Background()); err != nil {
+		if err := cleanupTracer(context.Background()); err != nil {
 			logger.Error().
 				Str("op", op).
 				Str("scope", "Cleanup otel tracer").
@@ -63,6 +56,26 @@ func start() {
 	}()
 
 	tracer := tracing.GetTracer(config.OtelTracer.Name)
+
+	// --- Init otel meter (OTLP push → otel-collector → Prometheus exporter) ---
+	cleanupMeter, err := monitoring.InitMeter(config.App.Name, config.OtelTracer.Endpoint)
+	if err != nil {
+		logger.Error().
+			Str("op", op).
+			Str("scope", "Init otel meter").
+			Err(err).
+			Msg("")
+		os.Exit(1)
+	}
+	defer func() {
+		if err := cleanupMeter(context.Background()); err != nil {
+			logger.Error().
+				Str("op", op).
+				Str("scope", "Cleanup otel meter").
+				Err(err).
+				Msg("")
+		}
+	}()
 
 	logger.Info().
 		Str("op", op).
@@ -83,53 +96,30 @@ func start() {
 	// --- Init store layer ---
 	store := postgres_store.NewStore(logger, tracer, postgresPool)
 
-	// --- Start DB pool metrics collector (when metrics enabled) ---
-	if config.Api.Metrics.Enabled {
-		go monitoring.RegisterDBPoolStats(context.Background(), func() monitoring.DBPoolStats {
-			s := postgresPool.Stat()
-			return monitoring.DBPoolStats{
-				Acquired: s.AcquiredConns(),
-				Idle:     s.IdleConns(),
-				Total:    s.TotalConns(),
-			}
-		}, 10*time.Second)
-	}
-
-	// --- Dial iam-svc gRPC (BL-IAM-002) ---
-	//
-	// Traffic stays inside the docker-compose network — insecure is fine today;
-	// the gateway-svc hardening card adds mTLS. Unary interceptor propagates
-	// the current trace context so iam-svc spans continue the finance-svc trace.
-	iamConn, err := grpc.NewClient(
-		config.Iam.GrpcTarget,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
-	)
-	if err != nil {
+	// --- Register DB pool metrics (OTel observable gauges, pulled on each scrape) ---
+	if err := monitoring.RegisterDBPoolStats(func() monitoring.DBPoolStats {
+		s := postgresPool.Stat()
+		return monitoring.DBPoolStats{
+			Acquired: s.AcquiredConns(),
+			Idle:     s.IdleConns(),
+			Total:    s.TotalConns(),
+		}
+	}); err != nil {
 		logger.Error().
 			Str("op", op).
-			Str("scope", "Dial iam-svc gRPC").
-			Str("target", config.Iam.GrpcTarget).
+			Str("scope", "Register DB pool stats").
 			Err(err).
 			Msg("")
 		os.Exit(1)
 	}
-	defer func() {
-		if err := iamConn.Close(); err != nil {
-			logger.Error().Err(err).Msg("close iam gRPC conn")
-		}
-	}()
-	iamAdapter := iam_grpc_adapter.NewAdapter(logger, tracer, iamConn)
 
 	// --- Init service layer ---
-	svc := service.NewService(logger, tracer, config.App.Name, store, iamAdapter)
+	svc := service.NewService(logger, tracer, config.App.Name, store)
 
-	// --- Init API layers ---
-	restServer := rest_oapi.NewServer(logger, tracer, svc)
+	// --- Init API layer (gRPC only per ADR 0009) ---
 	grpcServer := grpc_api.NewServer(logger, tracer, svc)
 
-	// --- Run servers ---
-	runRestServer(config.Api.Rest.Port, restServer, iamAdapter, config.Api.Metrics.Enabled, config.OtelTracer.Name)
+	// --- Run server ---
 	runGrpcServer(config.Api.Grpc.Address, grpcServer)
 
 	// --- Wait for signal ---

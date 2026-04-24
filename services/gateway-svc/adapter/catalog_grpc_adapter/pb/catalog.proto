@@ -6,8 +6,7 @@ option go_package="./pb";
 
 // CatalogService — gateway-side consumer proto for catalog-svc. Per
 // ADR 0004 each adapter copies only the RPCs it uses; this file mirrors
-// the owner at services/catalog-svc/api/grpc_api/pb/catalog.proto but
-// omits methods gateway does not call (e.g. DiagnosticsDbTx).
+// the owner at services/catalog-svc/api/grpc_api/pb/catalog.proto.
 //
 // ListPackages / GetPackage / GetPackageDeparture are the public catalog
 // read trio the gateway REST routes /v1/packages*, /v1/package-departures
@@ -16,12 +15,6 @@ option go_package="./pb";
 // type churn avoided; gateway's oapi-generated enum validation is the
 // authoritative gate).
 service CatalogService {
-  // Healthz — pilot placeholder. Retained for reflection-based probing
-  // that predates the standard grpc.health.v1.Health protocol added in
-  // BL-MON-001; the standard protocol (empty + named service) is the
-  // real health surface used by docker-compose and grpc_health_probe.
-  rpc Healthz(HealthzRequest) returns (HealthzResponse) {}
-
   // ListPackages — public paginated list of active packages. Backs
   // gateway's GET /v1/packages route.
   rpc ListPackages(ListPackagesRequest) returns (ListPackagesResponse) {}
@@ -35,16 +28,6 @@ service CatalogService {
   // Returns NOT_FOUND for departed/completed/cancelled/unknown.
   // Mirrors GET /v1/package-departures/{id}.
   rpc GetPackageDeparture(GetPackageDepartureRequest) returns (GetPackageDepartureResponse) {}
-}
-
-// -----------------------------------------------------------------------------
-// Healthz (pilot)
-// -----------------------------------------------------------------------------
-
-message HealthzRequest {}
-
-message HealthzResponse {
-  bool ok = 1;
 }
 
 // -----------------------------------------------------------------------------

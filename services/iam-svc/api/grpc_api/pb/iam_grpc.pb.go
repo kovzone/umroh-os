@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	IamService_Healthz_FullMethodName         = "/pb.IamService/Healthz"
+	IamService_Ping_FullMethodName            = "/pb.IamService/Ping"
 	IamService_ValidateToken_FullMethodName   = "/pb.IamService/ValidateToken"
 	IamService_CheckPermission_FullMethodName = "/pb.IamService/CheckPermission"
 	IamService_RecordAudit_FullMethodName     = "/pb.IamService/RecordAudit"
@@ -56,9 +56,11 @@ const (
 //   - GetMe / EnrollTotp / VerifyTotp
 //   - SuspendUser (gateway enforces bearer + permission gate)
 type IamServiceClient interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
-	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
+	// Ping — scaffold RPC used by the gateway's permission-gate smoke tests.
+	// Identity-agnostic per ADR 0009: the gateway validates the bearer and the
+	// permission tuple upstream; this handler returns a trivial
+	// {message: "ok"} proving the gateway→backend hop works.
+	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 	// ValidateToken verifies a bearer access token and returns identity + current role names.
 	//
 	// Fails with Unauthenticated when the token is missing, malformed, expired, or the
@@ -120,10 +122,10 @@ func NewIamServiceClient(cc grpc.ClientConnInterface) IamServiceClient {
 	return &iamServiceClient{cc}
 }
 
-func (c *iamServiceClient) Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error) {
+func (c *iamServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(HealthzResponse)
-	err := c.cc.Invoke(ctx, IamService_Healthz_FullMethodName, in, out, cOpts...)
+	out := new(PingResponse)
+	err := c.cc.Invoke(ctx, IamService_Ping_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -254,9 +256,11 @@ func (c *iamServiceClient) SuspendUser(ctx context.Context, in *SuspendUserReque
 //   - GetMe / EnrollTotp / VerifyTotp
 //   - SuspendUser (gateway enforces bearer + permission gate)
 type IamServiceServer interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
-	Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error)
+	// Ping — scaffold RPC used by the gateway's permission-gate smoke tests.
+	// Identity-agnostic per ADR 0009: the gateway validates the bearer and the
+	// permission tuple upstream; this handler returns a trivial
+	// {message: "ok"} proving the gateway→backend hop works.
+	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	// ValidateToken verifies a bearer access token and returns identity + current role names.
 	//
 	// Fails with Unauthenticated when the token is missing, malformed, expired, or the
@@ -318,8 +322,8 @@ type IamServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedIamServiceServer struct{}
 
-func (UnimplementedIamServiceServer) Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Healthz not implemented")
+func (UnimplementedIamServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedIamServiceServer) ValidateToken(context.Context, *ValidateTokenRequest) (*ValidateTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ValidateToken not implemented")
@@ -372,20 +376,20 @@ func RegisterIamServiceServer(s grpc.ServiceRegistrar, srv IamServiceServer) {
 	s.RegisterService(&IamService_ServiceDesc, srv)
 }
 
-func _IamService_Healthz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HealthzRequest)
+func _IamService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(IamServiceServer).Healthz(ctx, in)
+		return srv.(IamServiceServer).Ping(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: IamService_Healthz_FullMethodName,
+		FullMethod: IamService_Ping_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IamServiceServer).Healthz(ctx, req.(*HealthzRequest))
+		return srv.(IamServiceServer).Ping(ctx, req.(*PingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -578,8 +582,8 @@ var IamService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*IamServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Healthz",
-			Handler:    _IamService_Healthz_Handler,
+			MethodName: "Ping",
+			Handler:    _IamService_Ping_Handler,
 		},
 		{
 			MethodName: "ValidateToken",

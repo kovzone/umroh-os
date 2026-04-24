@@ -19,11 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CatalogService_Healthz_FullMethodName             = "/pb.CatalogService/Healthz"
+	CatalogService_Ping_FullMethodName                = "/pb.CatalogService/Ping"
 	CatalogService_ListPackages_FullMethodName        = "/pb.CatalogService/ListPackages"
 	CatalogService_GetPackage_FullMethodName          = "/pb.CatalogService/GetPackage"
 	CatalogService_GetPackageDeparture_FullMethodName = "/pb.CatalogService/GetPackageDeparture"
-	CatalogService_DiagnosticsDbTx_FullMethodName     = "/pb.CatalogService/DiagnosticsDbTx"
 )
 
 // CatalogServiceClient is the client API for CatalogService service.
@@ -39,14 +38,14 @@ const (
 // (S1-E-10). Dates are ISO YYYY-MM-DD strings (matching the service
 // layer); enums stay as strings per the adapter pattern (cross-service
 // type churn avoided; gateway's oapi-generated enum validation is the
-// authoritative gate). DiagnosticsDbTx landed in BL-REFACTOR-001 (S1-E-11)
-// when the legacy REST /system/diagnostics/db-tx was retired.
+// authoritative gate). Container-level liveness is served by the standard
+// grpc.health.v1.Health protocol (BL-MON-001).
 type CatalogServiceClient interface {
-	// Healthz — pilot placeholder. Retained for reflection-based probing
-	// that predates the standard grpc.health.v1.Health protocol added in
-	// BL-MON-001; the standard protocol (empty + named service) is the
-	// real health surface used by docker-compose and grpc_health_probe.
-	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
+	// Ping — scaffold RPC used by the gateway's permission-gate smoke tests.
+	// Identity-agnostic per ADR 0009: the gateway validates the bearer and the
+	// permission tuple upstream; this handler returns a trivial
+	// {message: "ok"} proving the gateway→backend hop works.
+	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 	// ListPackages — public paginated list of active packages. Mirrors
 	// GET /v1/packages on the current REST surface.
 	ListPackages(ctx context.Context, in *ListPackagesRequest, opts ...grpc.CallOption) (*ListPackagesResponse, error)
@@ -58,13 +57,6 @@ type CatalogServiceClient interface {
 	// Returns NOT_FOUND for departed/completed/cancelled/unknown.
 	// Mirrors GET /v1/package-departures/{id}.
 	GetPackageDeparture(ctx context.Context, in *GetPackageDepartureRequest, opts ...grpc.CallOption) (*GetPackageDepartureResponse, error)
-	// DiagnosticsDbTx — state-mutating WithTx reference path. Inserts one
-	// row into public.diagnostics, reads it back inside the same
-	// transaction, echoes the message. Dev verification only (invoked via
-	// grpcurl); per ADR 0009 there is no gateway REST route for this —
-	// iam-svc's /v1/iam/system/diagnostics/db-tx already proves the
-	// cross-service trace story (S0-J-05).
-	DiagnosticsDbTx(ctx context.Context, in *DiagnosticsDbTxRequest, opts ...grpc.CallOption) (*DiagnosticsDbTxResponse, error)
 }
 
 type catalogServiceClient struct {
@@ -75,10 +67,10 @@ func NewCatalogServiceClient(cc grpc.ClientConnInterface) CatalogServiceClient {
 	return &catalogServiceClient{cc}
 }
 
-func (c *catalogServiceClient) Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error) {
+func (c *catalogServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(HealthzResponse)
-	err := c.cc.Invoke(ctx, CatalogService_Healthz_FullMethodName, in, out, cOpts...)
+	out := new(PingResponse)
+	err := c.cc.Invoke(ctx, CatalogService_Ping_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -115,16 +107,6 @@ func (c *catalogServiceClient) GetPackageDeparture(ctx context.Context, in *GetP
 	return out, nil
 }
 
-func (c *catalogServiceClient) DiagnosticsDbTx(ctx context.Context, in *DiagnosticsDbTxRequest, opts ...grpc.CallOption) (*DiagnosticsDbTxResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DiagnosticsDbTxResponse)
-	err := c.cc.Invoke(ctx, CatalogService_DiagnosticsDbTx_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // CatalogServiceServer is the server API for CatalogService service.
 // All implementations must embed UnimplementedCatalogServiceServer
 // for forward compatibility.
@@ -138,14 +120,14 @@ func (c *catalogServiceClient) DiagnosticsDbTx(ctx context.Context, in *Diagnost
 // (S1-E-10). Dates are ISO YYYY-MM-DD strings (matching the service
 // layer); enums stay as strings per the adapter pattern (cross-service
 // type churn avoided; gateway's oapi-generated enum validation is the
-// authoritative gate). DiagnosticsDbTx landed in BL-REFACTOR-001 (S1-E-11)
-// when the legacy REST /system/diagnostics/db-tx was retired.
+// authoritative gate). Container-level liveness is served by the standard
+// grpc.health.v1.Health protocol (BL-MON-001).
 type CatalogServiceServer interface {
-	// Healthz — pilot placeholder. Retained for reflection-based probing
-	// that predates the standard grpc.health.v1.Health protocol added in
-	// BL-MON-001; the standard protocol (empty + named service) is the
-	// real health surface used by docker-compose and grpc_health_probe.
-	Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error)
+	// Ping — scaffold RPC used by the gateway's permission-gate smoke tests.
+	// Identity-agnostic per ADR 0009: the gateway validates the bearer and the
+	// permission tuple upstream; this handler returns a trivial
+	// {message: "ok"} proving the gateway→backend hop works.
+	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	// ListPackages — public paginated list of active packages. Mirrors
 	// GET /v1/packages on the current REST surface.
 	ListPackages(context.Context, *ListPackagesRequest) (*ListPackagesResponse, error)
@@ -157,13 +139,6 @@ type CatalogServiceServer interface {
 	// Returns NOT_FOUND for departed/completed/cancelled/unknown.
 	// Mirrors GET /v1/package-departures/{id}.
 	GetPackageDeparture(context.Context, *GetPackageDepartureRequest) (*GetPackageDepartureResponse, error)
-	// DiagnosticsDbTx — state-mutating WithTx reference path. Inserts one
-	// row into public.diagnostics, reads it back inside the same
-	// transaction, echoes the message. Dev verification only (invoked via
-	// grpcurl); per ADR 0009 there is no gateway REST route for this —
-	// iam-svc's /v1/iam/system/diagnostics/db-tx already proves the
-	// cross-service trace story (S0-J-05).
-	DiagnosticsDbTx(context.Context, *DiagnosticsDbTxRequest) (*DiagnosticsDbTxResponse, error)
 	mustEmbedUnimplementedCatalogServiceServer()
 }
 
@@ -174,8 +149,8 @@ type CatalogServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedCatalogServiceServer struct{}
 
-func (UnimplementedCatalogServiceServer) Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Healthz not implemented")
+func (UnimplementedCatalogServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedCatalogServiceServer) ListPackages(context.Context, *ListPackagesRequest) (*ListPackagesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPackages not implemented")
@@ -185,9 +160,6 @@ func (UnimplementedCatalogServiceServer) GetPackage(context.Context, *GetPackage
 }
 func (UnimplementedCatalogServiceServer) GetPackageDeparture(context.Context, *GetPackageDepartureRequest) (*GetPackageDepartureResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPackageDeparture not implemented")
-}
-func (UnimplementedCatalogServiceServer) DiagnosticsDbTx(context.Context, *DiagnosticsDbTxRequest) (*DiagnosticsDbTxResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DiagnosticsDbTx not implemented")
 }
 func (UnimplementedCatalogServiceServer) mustEmbedUnimplementedCatalogServiceServer() {}
 func (UnimplementedCatalogServiceServer) testEmbeddedByValue()                        {}
@@ -210,20 +182,20 @@ func RegisterCatalogServiceServer(s grpc.ServiceRegistrar, srv CatalogServiceSer
 	s.RegisterService(&CatalogService_ServiceDesc, srv)
 }
 
-func _CatalogService_Healthz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HealthzRequest)
+func _CatalogService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CatalogServiceServer).Healthz(ctx, in)
+		return srv.(CatalogServiceServer).Ping(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CatalogService_Healthz_FullMethodName,
+		FullMethod: CatalogService_Ping_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CatalogServiceServer).Healthz(ctx, req.(*HealthzRequest))
+		return srv.(CatalogServiceServer).Ping(ctx, req.(*PingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -282,24 +254,6 @@ func _CatalogService_GetPackageDeparture_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CatalogService_DiagnosticsDbTx_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DiagnosticsDbTxRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CatalogServiceServer).DiagnosticsDbTx(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CatalogService_DiagnosticsDbTx_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CatalogServiceServer).DiagnosticsDbTx(ctx, req.(*DiagnosticsDbTxRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // CatalogService_ServiceDesc is the grpc.ServiceDesc for CatalogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -308,8 +262,8 @@ var CatalogService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*CatalogServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Healthz",
-			Handler:    _CatalogService_Healthz_Handler,
+			MethodName: "Ping",
+			Handler:    _CatalogService_Ping_Handler,
 		},
 		{
 			MethodName: "ListPackages",
@@ -322,10 +276,6 @@ var CatalogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPackageDeparture",
 			Handler:    _CatalogService_GetPackageDeparture_Handler,
-		},
-		{
-			MethodName: "DiagnosticsDbTx",
-			Handler:    _CatalogService_DiagnosticsDbTx_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

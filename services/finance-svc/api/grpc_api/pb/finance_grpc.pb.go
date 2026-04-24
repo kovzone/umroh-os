@@ -19,25 +19,33 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FinanceService_Healthz_FullMethodName = "/pb.FinanceService/Healthz"
+	FinanceService_Ping_FullMethodName = "/pb.FinanceService/Ping"
 )
 
 // FinanceServiceClient is the client API for FinanceService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// FinanceService — internal gRPC surface for Identity, Access, Audit.
+// FinanceService — internal gRPC surface for the finance domain.
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// Per ADR 0009 this service is gRPC-only; the public REST surface lives on
+// gateway-svc (services/gateway-svc/api/rest_oapi/openapi.yaml § Proxy /
+// finance) which proxies to these RPCs. Gateway owns authentication +
+// permission gates (RequireBearerToken + RequirePermission middleware), so
+// finance-svc is identity-agnostic: requests arriving here have already been
+// authorized upstream.
+//
+// Container-level liveness is served by the standard grpc.health.v1.Health
+// protocol (BL-MON-001) — docker-compose and grpc_health_probe use it
+// directly; no custom Liveness RPC is needed here.
 type FinanceServiceClient interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
-	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
+	// Ping — scaffold RPC used by the gateway's permission-gate smoke tests
+	// (BL-IAM-002 / BL-IAM-019). Identity-agnostic per ADR 0009: the gateway
+	// validates the bearer and the `journal_entry/read/global` permission
+	// before this is called; the handler returns a trivial {message: "ok"}
+	// proving the gateway→backend hop works. Real finance RPCs (journals,
+	// AR/AP, reports) land with S3-E-03 + S3-E-07.
+	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 }
 
 type financeServiceClient struct {
@@ -48,10 +56,10 @@ func NewFinanceServiceClient(cc grpc.ClientConnInterface) FinanceServiceClient {
 	return &financeServiceClient{cc}
 }
 
-func (c *financeServiceClient) Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error) {
+func (c *financeServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(HealthzResponse)
-	err := c.cc.Invoke(ctx, FinanceService_Healthz_FullMethodName, in, out, cOpts...)
+	out := new(PingResponse)
+	err := c.cc.Invoke(ctx, FinanceService_Ping_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -62,18 +70,26 @@ func (c *financeServiceClient) Healthz(ctx context.Context, in *HealthzRequest, 
 // All implementations must embed UnimplementedFinanceServiceServer
 // for forward compatibility.
 //
-// FinanceService — internal gRPC surface for Identity, Access, Audit.
+// FinanceService — internal gRPC surface for the finance domain.
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// Per ADR 0009 this service is gRPC-only; the public REST surface lives on
+// gateway-svc (services/gateway-svc/api/rest_oapi/openapi.yaml § Proxy /
+// finance) which proxies to these RPCs. Gateway owns authentication +
+// permission gates (RequireBearerToken + RequirePermission middleware), so
+// finance-svc is identity-agnostic: requests arriving here have already been
+// authorized upstream.
+//
+// Container-level liveness is served by the standard grpc.health.v1.Health
+// protocol (BL-MON-001) — docker-compose and grpc_health_probe use it
+// directly; no custom Liveness RPC is needed here.
 type FinanceServiceServer interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
-	Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error)
+	// Ping — scaffold RPC used by the gateway's permission-gate smoke tests
+	// (BL-IAM-002 / BL-IAM-019). Identity-agnostic per ADR 0009: the gateway
+	// validates the bearer and the `journal_entry/read/global` permission
+	// before this is called; the handler returns a trivial {message: "ok"}
+	// proving the gateway→backend hop works. Real finance RPCs (journals,
+	// AR/AP, reports) land with S3-E-03 + S3-E-07.
+	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	mustEmbedUnimplementedFinanceServiceServer()
 }
 
@@ -84,8 +100,8 @@ type FinanceServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedFinanceServiceServer struct{}
 
-func (UnimplementedFinanceServiceServer) Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Healthz not implemented")
+func (UnimplementedFinanceServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedFinanceServiceServer) mustEmbedUnimplementedFinanceServiceServer() {}
 func (UnimplementedFinanceServiceServer) testEmbeddedByValue()                        {}
@@ -108,20 +124,20 @@ func RegisterFinanceServiceServer(s grpc.ServiceRegistrar, srv FinanceServiceSer
 	s.RegisterService(&FinanceService_ServiceDesc, srv)
 }
 
-func _FinanceService_Healthz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HealthzRequest)
+func _FinanceService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FinanceServiceServer).Healthz(ctx, in)
+		return srv.(FinanceServiceServer).Ping(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FinanceService_Healthz_FullMethodName,
+		FullMethod: FinanceService_Ping_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FinanceServiceServer).Healthz(ctx, req.(*HealthzRequest))
+		return srv.(FinanceServiceServer).Ping(ctx, req.(*PingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -134,8 +150,8 @@ var FinanceService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*FinanceServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Healthz",
-			Handler:    _FinanceService_Healthz_Handler,
+			MethodName: "Ping",
+			Handler:    _FinanceService_Ping_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

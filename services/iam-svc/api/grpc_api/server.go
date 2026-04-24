@@ -16,6 +16,9 @@ import (
 )
 
 // Server implements pb.IamServiceServer by delegating to the service layer.
+// Container-level liveness is served by the standard grpc.health.v1.Health
+// protocol registered in cmd/server.go — no placeholder Healthz RPC is
+// needed here.
 type Server struct {
 	pb.UnimplementedIamServiceServer
 
@@ -32,20 +35,6 @@ func NewServer(logger *zerolog.Logger, tracer trace.Tracer, svc service.IService
 		tracer: tracer,
 		svc:    svc,
 	}
-}
-
-// Healthz is the pilot placeholder RPC kept from the scaffold.
-// Real health checks go through the standard gRPC health protocol.
-func (s *Server) Healthz(ctx context.Context, _ *pb.HealthzRequest) (*pb.HealthzResponse, error) {
-	const op = "grpc_api.Server.Healthz"
-
-	ctx, span := s.tracer.Start(ctx, op)
-	defer span.End()
-
-	logger := logging.LogWithTrace(ctx, s.logger)
-	logger.Info().Str("op", op).Msg("")
-
-	return &pb.HealthzResponse{Ok: true}, nil
 }
 
 // ValidateToken verifies a bearer access token and returns the caller's
