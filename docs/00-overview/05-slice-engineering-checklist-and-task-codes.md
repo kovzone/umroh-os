@@ -223,6 +223,7 @@ _Backlog alignment:_ Slice **S5** rows use `S5-J-01..S5-J-02` — the **Engineer
 |------|-------|------|------------|
 | S5-L-01 | L | UAT journeys B2C/agent | S5-J-01 |
 | S5-E-01 | E | UAT payment/finance/logistics | S5-J-01 |
+| S5-E-02 | E | **Gateway↔backend trust contract (ADR 0009)** — replace `insecure.NewCredentials()` on in-cluster gRPC dials with a signed per-hop header or mTLS, as scheduled by `BL-GTW-100`. Restores the defense-in-depth layer ADR 0009 D2 explicitly deferred. If mTLS proves operationally infeasible (cert rotation burden, debugging friction), fall back to reinstating per-service `RequireBearerToken` per ADR 0009 § "Risks / things to watch". | S1-E-14 (final REST surface retired) |
 
 ---
 

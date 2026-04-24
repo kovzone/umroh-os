@@ -133,7 +133,7 @@ That baseline includes: **repo scaffold sweep** (layout matches ADR-0004), **Ope
 
 ### Phase 5 — Hardening & readiness (S5)
 
-**Goal:** UAT, reliability, permission regression, minimum operational documentation.
+**Goal:** UAT, reliability, permission regression, minimum operational documentation, and **`BL-GTW-100` (gateway↔backend trust contract)** to close the defense-in-depth gap ADR 0009 D2 deferred.
 
 **Joint gate:** complete engineering freeze `S5-J-*`.
 

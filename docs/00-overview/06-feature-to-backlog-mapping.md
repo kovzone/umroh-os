@@ -232,6 +232,7 @@ Slice **S1** engineering-freeze rows from **05** are listed first (`BL-JNT-001`�
 | 5     | F9-UI       | Finance view: journal/payment status summary     | MH-V1    | 520      | S5    | S5-L-01   | BL-FE-FIN-001 | L     | todo   | BL-JNT-014..015 | Finance can trace booking → invoice → journal          |
 | 5     | QA          | UAT core checklist + permission/audit regression | MH-V1    | 530      | S5    | S5-L-01   | BL-QA-002     | L     | todo   | BL-JNT-014..015 | Scenario list passes + evidence                        |
 | 5     | QA          | UAT payment/finance/logistics checklist          | MH-V1    | 531      | S5    | S5-E-01   | BL-QA-003     | E     | todo   | BL-JNT-014..015 | Scenario list passes + evidence                        |
+| 5     | F1-W7 (defense-in-depth) | Gateway↔backend trust contract — signed per-hop header or mTLS between gateway and each downstream backend. Closes the defense-in-depth gap ADR 0009 D2 deferred; replaces `insecure.NewCredentials()` on the in-cluster gRPC dials. | SH | 540 | S5 | S5-E-02 | BL-GTW-100 | E | deferred | S1-E-14 | Gateway↔backend hops authenticate end-to-end (not just at the edge); `insecure.NewCredentials()` removed from every backend dial; compose stack still boots healthy; e2e suite green |
 
 
 ---
