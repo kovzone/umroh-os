@@ -698,12 +698,12 @@ func (s *Service) UpdateAddon(ctx context.Context, params *UpdateAddonParams) (*
 	}
 	// ListAmountIDR == -1 means "set to 0"; 0 means no change.
 	if params.ListAmountIDR > 0 {
-		arg.ListAmount = pgtype.Numeric{Valid: true}
-		arg.ListAmount.Int = pgtype.NewNumeric(nil, nil, false).Int
-		// Use scan to convert int64 → pgtype.Numeric cleanly.
-		if err := arg.ListAmount.Scan(params.ListAmountIDR); err != nil {
+		var amount pgtype.Numeric
+		// Use scan to convert int64 -> pgtype.Numeric cleanly.
+		if err := amount.Scan(params.ListAmountIDR); err != nil {
 			return nil, errors.Join(apperrors.ErrInternal, fmt.Errorf("convert amount: %w", err))
 		}
+		arg.ListAmount = amount
 	} else if params.ListAmountIDR == -1 {
 		if err := arg.ListAmount.Scan(int64(0)); err != nil {
 			return nil, errors.Join(apperrors.ErrInternal, fmt.Errorf("convert amount: %w", err))

@@ -194,13 +194,13 @@ func validateKindOnCreate(params *CreatePackageParams) error {
 
 // validateKindOnPublish enforces BL-CAT-008 constraints when a package is
 // transitioned to active during an update. Called when params.Status == "active".
-func validateKindOnPublish(pkg sqlc.GetActivePackageByIDRow, newAirlineID string) error {
-	if !isTravelKind(string(pkg.Kind)) {
+func validateKindOnPublish(kind string, currentAirlineID string, newAirlineID string) error {
+	if !isTravelKind(kind) {
 		return nil
 	}
 	effectiveAirline := newAirlineID
-	if effectiveAirline == "" && pkg.AirlineID.Valid {
-		effectiveAirline = pkg.AirlineID.String
+	if effectiveAirline == "" {
+		effectiveAirline = currentAirlineID
 	}
 	if effectiveAirline == "" {
 		return errors.Join(apperrors.ErrValidation, fmt.Errorf(
@@ -351,7 +351,11 @@ func (s *Service) UpdatePackage(ctx context.Context, params *UpdatePackageParams
 
 	// BL-CAT-008: publish-gate — travel-kind packages need airline_id before activating.
 	if params.Status == "active" {
-		if err := validateKindOnPublish(&existing, params.AirlineID); err != nil {
+		currentAirlineID := ""
+		if existing.AirlineID.Valid {
+			currentAirlineID = existing.AirlineID.String
+		}
+		if err := validateKindOnPublish(string(existing.Kind), currentAirlineID, params.AirlineID); err != nil {
 			return nil, err
 		}
 	}

@@ -70,7 +70,7 @@ func (s *Service) ListRolesAdmin(ctx context.Context, params *ListRolesAdminPara
 	var arg sqlc.AdminListRolesParams
 	arg.Lim = lim
 	if params.Cursor != "" {
-		ct, cid, err := decodeCursor(params.Cursor)
+		ct, cid, err := decodeAdminListCursor(params.Cursor)
 		if err != nil {
 			e := errors.Join(apperrors.ErrValidation, fmt.Errorf("parse cursor: %w", err))
 			span.RecordError(e)
@@ -99,7 +99,7 @@ func (s *Service) ListRolesAdmin(ctx context.Context, params *ListRolesAdminPara
 	nextCursor := ""
 	if int32(len(rows)) == lim && len(rows) > 0 {
 		last := rows[len(rows)-1]
-		nextCursor = encodeCursor(last.CreatedAt.Time, last.ID)
+		nextCursor = encodeAdminListCursor(last.CreatedAt.Time, last.ID)
 	}
 
 	span.SetStatus(codes.Ok, "success")

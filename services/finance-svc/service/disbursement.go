@@ -205,8 +205,8 @@ func (s *Service) ApproveDisbursement(ctx context.Context, params *ApproveDisbur
 				// In a full implementation this would be PostJournal; using
 				// OnPaymentReceived as a proxy for double-entry posting.
 				InvoiceID:   ikey,
-				AmountIdr:   item.AmountIdr,
-				PaidAt:      time.Now(),
+				Amount:      item.AmountIdr,
+				ReceivedAt:  time.Now(),
 			})
 			if err != nil {
 				logger.Error().Err(err).Str("op", op).Int64("item_id", item.ID).Msg("post AP journal for disbursement item")

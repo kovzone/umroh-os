@@ -5,6 +5,7 @@ package rest_oapi
 
 import (
 	"errors"
+	"strconv"
 
 	"gateway-svc/adapter/ops_grpc_adapter"
 	"gateway-svc/util/apperrors"
@@ -52,11 +53,12 @@ func (s *Server) StoreCollectiveDocument(c *fiber.Ctx) error {
 // BL-OPS-021: GetCollectiveDocuments — GET /v1/ops/collective-docs/:departure_id
 // ---------------------------------------------------------------------------
 
-func (s *Server) GetCollectiveDocuments(c *fiber.Ctx, departureID string) error {
+func (s *Server) GetCollectiveDocuments(c *fiber.Ctx) error {
 	const op = "rest_oapi.Server.GetCollectiveDocuments"
 	ctx, span := s.tracer.Start(c.UserContext(), op)
 	defer span.End()
 	logging.LogWithTrace(ctx, s.logger).Info().Str("op", op).Msg("")
+	departureID := c.Params("departure_id")
 
 	result, err := s.svc.GetCollectiveDocuments(ctx, &ops_grpc_adapter.GetCollectiveDocumentsParams{
 		DepartureID:  departureID,
@@ -184,11 +186,12 @@ func (s *Server) SetMahramRelation(c *fiber.Ctx) error {
 // BL-OPS-022: GetMahramRelations — GET /v1/ops/mahram-relations/:booking_id
 // ---------------------------------------------------------------------------
 
-func (s *Server) GetMahramRelations(c *fiber.Ctx, bookingID string) error {
+func (s *Server) GetMahramRelations(c *fiber.Ctx) error {
 	const op = "rest_oapi.Server.GetMahramRelations"
 	ctx, span := s.tracer.Start(c.UserContext(), op)
 	defer span.End()
 	logging.LogWithTrace(ctx, s.logger).Info().Str("op", op).Msg("")
+	bookingID := c.Params("booking_id")
 
 	result, err := s.svc.GetMahramRelations(ctx, &ops_grpc_adapter.GetMahramRelationsParams{
 		BookingID: bookingID,
@@ -214,11 +217,12 @@ func (s *Server) GetMahramRelations(c *fiber.Ctx, bookingID string) error {
 // BL-OPS-023: GetDocumentProgress — GET /v1/ops/document-progress/:departure_id
 // ---------------------------------------------------------------------------
 
-func (s *Server) GetDocumentProgress(c *fiber.Ctx, departureID string) error {
+func (s *Server) GetDocumentProgress(c *fiber.Ctx) error {
 	const op = "rest_oapi.Server.GetDocumentProgress"
 	ctx, span := s.tracer.Start(c.UserContext(), op)
 	defer span.End()
 	logging.LogWithTrace(ctx, s.logger).Info().Str("op", op).Msg("")
+	departureID := c.Params("departure_id")
 
 	result, err := s.svc.GetDocumentProgress(ctx, &ops_grpc_adapter.GetDocumentProgressParams{
 		DepartureID: departureID,
@@ -259,11 +263,11 @@ func (s *Server) GetExpiryAlerts(c *fiber.Ctx) error {
 
 	var threshold int32
 	if v := c.Query("threshold_days"); v != "" {
-		var t int
-		if _, err2 := fiber.GetReqHeaderString(c.Request(), ""); err2 != "" {
-			_ = err2
+		t, err := strconv.Atoi(v)
+		if err != nil || t < 0 {
+			return writeIamAdminError(c, span, errors.Join(apperrors.ErrValidation, errors.New("threshold_days must be a non-negative integer")))
 		}
-		_ = t
+		threshold = int32(t)
 	}
 	result, err := s.svc.GetExpiryAlerts(ctx, &ops_grpc_adapter.GetExpiryAlertsParams{
 		ThresholdDays: threshold,
@@ -328,11 +332,12 @@ func (s *Server) GenerateOfficialLetter(c *fiber.Ctx) error {
 // BL-OPS-025: GenerateImmigrationManifest — POST /v1/ops/immigration-manifest/:departure_id
 // ---------------------------------------------------------------------------
 
-func (s *Server) GenerateImmigrationManifest(c *fiber.Ctx, departureID string) error {
+func (s *Server) GenerateImmigrationManifest(c *fiber.Ctx) error {
 	const op = "rest_oapi.Server.GenerateImmigrationManifest"
 	ctx, span := s.tracer.Start(c.UserContext(), op)
 	defer span.End()
 	logging.LogWithTrace(ctx, s.logger).Info().Str("op", op).Msg("")
+	departureID := c.Params("departure_id")
 
 	var body struct {
 		Format string `json:"format"`
@@ -395,11 +400,12 @@ func (s *Server) AssignTransport(c *fiber.Ctx) error {
 // BL-OPS-027: GetTransportAssignments — GET /v1/ops/transport-assignments/:departure_id
 // ---------------------------------------------------------------------------
 
-func (s *Server) GetTransportAssignments(c *fiber.Ctx, departureID string) error {
+func (s *Server) GetTransportAssignments(c *fiber.Ctx) error {
 	const op = "rest_oapi.Server.GetTransportAssignments"
 	ctx, span := s.tracer.Start(c.UserContext(), op)
 	defer span.End()
 	logging.LogWithTrace(ctx, s.logger).Info().Str("op", op).Msg("")
+	departureID := c.Params("departure_id")
 
 	result, err := s.svc.GetTransportAssignments(ctx, &ops_grpc_adapter.GetTransportAssignmentsParams{
 		DepartureID: departureID,
@@ -523,11 +529,12 @@ func (s *Server) RecordPassportHandover(c *fiber.Ctx) error {
 // BL-OPS-030: GetPassportLog — GET /v1/ops/passport-log/:departure_id
 // ---------------------------------------------------------------------------
 
-func (s *Server) GetPassportLog(c *fiber.Ctx, departureID string) error {
+func (s *Server) GetPassportLog(c *fiber.Ctx) error {
 	const op = "rest_oapi.Server.GetPassportLog"
 	ctx, span := s.tracer.Start(c.UserContext(), op)
 	defer span.End()
 	logging.LogWithTrace(ctx, s.logger).Info().Str("op", op).Msg("")
+	departureID := c.Params("departure_id")
 
 	result, err := s.svc.GetPassportLog(ctx, &ops_grpc_adapter.GetPassportLogParams{
 		DepartureID: departureID,
@@ -555,11 +562,12 @@ func (s *Server) GetPassportLog(c *fiber.Ctx, departureID string) error {
 // BL-OPS-031: GetVisaProgress — GET /v1/ops/visa-progress/:departure_id
 // ---------------------------------------------------------------------------
 
-func (s *Server) GetVisaProgress(c *fiber.Ctx, departureID string) error {
+func (s *Server) GetVisaProgress(c *fiber.Ctx) error {
 	const op = "rest_oapi.Server.GetVisaProgress"
 	ctx, span := s.tracer.Start(c.UserContext(), op)
 	defer span.End()
 	logging.LogWithTrace(ctx, s.logger).Info().Str("op", op).Msg("")
+	departureID := c.Params("departure_id")
 
 	result, err := s.svc.GetVisaProgress(ctx, &ops_grpc_adapter.GetVisaProgressParams{
 		DepartureID: departureID,
@@ -818,11 +826,12 @@ func (s *Server) RecordLuggageScan(c *fiber.Ctx) error {
 // BL-OPS-036: GetLuggageCount — GET /v1/ops/luggage-count/:departure_id
 // ---------------------------------------------------------------------------
 
-func (s *Server) GetLuggageCount(c *fiber.Ctx, departureID string) error {
+func (s *Server) GetLuggageCount(c *fiber.Ctx) error {
 	const op = "rest_oapi.Server.GetLuggageCount"
 	ctx, span := s.tracer.Start(c.UserContext(), op)
 	defer span.End()
 	logging.LogWithTrace(ctx, s.logger).Info().Str("op", op).Msg("")
+	departureID := c.Params("departure_id")
 
 	result, err := s.svc.GetLuggageCount(ctx, &ops_grpc_adapter.GetLuggageCountParams{
 		DepartureID: departureID,

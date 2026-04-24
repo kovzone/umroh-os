@@ -30,10 +30,10 @@ func (s *Server) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.L
 	logger := logging.LogWithTrace(ctx, s.logger)
 
 	result, err := s.svc.ListUsers(ctx, &service.ListUsersParams{
-		Status:   req.GetStatus(),
-		BranchID: req.GetBranchId(),
-		Cursor:   req.GetCursor(),
-		Limit:    req.GetLimit(),
+		Status:   req.Status,
+		BranchID: req.BranchId,
+		Cursor:   req.Cursor,
+		Limit:    req.Limit,
 	})
 	if err != nil {
 		logger.Warn().Err(err).Msg("")
@@ -72,11 +72,11 @@ func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb
 
 	ctx, span := s.tracer.Start(ctx, op)
 	defer span.End()
-	span.SetAttributes(attribute.String("operation", op), attribute.String("email", req.GetEmail()))
+	span.SetAttributes(attribute.String("operation", op), attribute.String("email", req.Email))
 
 	logger := logging.LogWithTrace(ctx, s.logger)
 
-	if req.GetEmail() == "" || req.GetName() == "" || req.GetPassword() == "" || req.GetBranchId() == "" {
+	if req.Email == "" || req.Name == "" || req.Password == "" || req.BranchId == "" {
 		err := errors.Join(apperrors.ErrValidation, errors.New("email, name, password, branch_id are required"))
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
@@ -84,11 +84,11 @@ func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb
 	}
 
 	result, err := s.svc.CreateUserAdmin(ctx, &service.CreateUserAdminParams{
-		Email:    req.GetEmail(),
-		Name:     req.GetName(),
-		Password: req.GetPassword(),
-		BranchID: req.GetBranchId(),
-		RoleIDs:  req.GetRoleIds(),
+		Email:    req.Email,
+		Name:     req.Name,
+		Password: req.Password,
+		BranchID: req.BranchId,
+		RoleIDs:  req.RoleIds,
 	})
 	if err != nil {
 		logger.Warn().Err(err).Msg("")
@@ -109,11 +109,11 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 
 	ctx, span := s.tracer.Start(ctx, op)
 	defer span.End()
-	span.SetAttributes(attribute.String("operation", op), attribute.String("user_id", req.GetId()))
+	span.SetAttributes(attribute.String("operation", op), attribute.String("user_id", req.Id))
 
 	logger := logging.LogWithTrace(ctx, s.logger)
 
-	if req.GetId() == "" {
+	if req.Id == "" {
 		err := errors.Join(apperrors.ErrValidation, errors.New("id is required"))
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
@@ -121,13 +121,13 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 	}
 
 	params := &service.UpdateUserParams{
-		ID:     req.GetId(),
-		Name:   req.GetName(),
-		Status: req.GetStatus(),
+		ID:     req.Id,
+		Name:   req.Name,
+		Status: req.Status,
 	}
 	if req.RoleIds != nil {
 		params.RoleIDsProvided = true
-		params.RoleIDs = req.GetRoleIds()
+		params.RoleIDs = req.RoleIds
 	}
 
 	result, err := s.svc.UpdateUser(ctx, params)
@@ -150,18 +150,18 @@ func (s *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUs
 
 	ctx, span := s.tracer.Start(ctx, op)
 	defer span.End()
-	span.SetAttributes(attribute.String("operation", op), attribute.String("user_id", req.GetId()))
+	span.SetAttributes(attribute.String("operation", op), attribute.String("user_id", req.Id))
 
 	logger := logging.LogWithTrace(ctx, s.logger)
 
-	if req.GetId() == "" {
+	if req.Id == "" {
 		err := errors.Join(apperrors.ErrValidation, errors.New("id is required"))
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return nil, status.Error(apperrors.GRPCCode(err), apperrors.GRPCMessage(err))
 	}
 
-	result, err := s.svc.GetUser(ctx, &service.GetUserParams{ID: req.GetId()})
+	result, err := s.svc.GetUser(ctx, &service.GetUserParams{ID: req.Id})
 	if err != nil {
 		logger.Warn().Err(err).Msg("")
 		span.RecordError(err)
@@ -181,11 +181,11 @@ func (s *Server) ResetUserPassword(ctx context.Context, req *pb.ResetUserPasswor
 
 	ctx, span := s.tracer.Start(ctx, op)
 	defer span.End()
-	span.SetAttributes(attribute.String("operation", op), attribute.String("user_id", req.GetId()))
+	span.SetAttributes(attribute.String("operation", op), attribute.String("user_id", req.Id))
 
 	logger := logging.LogWithTrace(ctx, s.logger)
 
-	if req.GetId() == "" || req.GetNewPassword() == "" {
+	if req.Id == "" || req.NewPassword == "" {
 		err := errors.Join(apperrors.ErrValidation, errors.New("id and new_password are required"))
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
@@ -193,8 +193,8 @@ func (s *Server) ResetUserPassword(ctx context.Context, req *pb.ResetUserPasswor
 	}
 
 	_, err := s.svc.ResetUserPassword(ctx, &service.ResetUserPasswordParams{
-		ID:          req.GetId(),
-		NewPassword: req.GetNewPassword(),
+		ID:          req.Id,
+		NewPassword: req.NewPassword,
 	})
 	if err != nil {
 		logger.Warn().Err(err).Msg("")

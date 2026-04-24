@@ -7,37 +7,6 @@
 package pb
 
 // ---------------------------------------------------------------------------
-// Domain object
-// ---------------------------------------------------------------------------
-
-// VendorReadiness carries the ticket/hotel/visa readiness state for a
-// departure. Each field is one of: not_started | in_progress | done.
-type VendorReadiness struct {
-	TicketState string `json:"ticket_state"`
-	HotelState  string `json:"hotel_state"`
-	VisaState   string `json:"visa_state"`
-}
-
-func (x *VendorReadiness) GetTicketState() string {
-	if x == nil {
-		return ""
-	}
-	return x.TicketState
-}
-func (x *VendorReadiness) GetHotelState() string {
-	if x == nil {
-		return ""
-	}
-	return x.HotelState
-}
-func (x *VendorReadiness) GetVisaState() string {
-	if x == nil {
-		return ""
-	}
-	return x.VisaState
-}
-
-// ---------------------------------------------------------------------------
 // UpdateVendorReadiness RPC
 // ---------------------------------------------------------------------------
 

@@ -472,7 +472,7 @@ func writeCatalogError(c *fiber.Ctx, span trace.Span, err error, notFoundCode, n
 	return c.Status(status).JSON(resp)
 }
 
-func writeInvalidCatalogQueryParam(c *fiber.Ctx, span trace.Span, logger zerolog.Logger, paramName string) error {
+func writeInvalidCatalogQueryParam(c *fiber.Ctx, span trace.Span, logger *zerolog.Logger, paramName string) error {
 	logger.Warn().Str("param", paramName).Msg("invalid query param")
 	span.SetAttributes(attribute.String("invalid_query_param", paramName))
 	span.SetStatus(codes.Error, "invalid_query_param")

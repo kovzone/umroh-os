@@ -185,7 +185,13 @@
                 </td>
                 <td><span class="imei-code">{d.imei}</span></td>
                 <td>{typeLabel[d.type]}</td>
-                <td>{d.assignedTo ?? <span style="color:#b0b3c1">—</span>}</td>
+                <td>
+                  {#if d.assignedTo}
+                    {d.assignedTo}
+                  {:else}
+                    <span style="color:#b0b3c1">—</span>
+                  {/if}
+                </td>
                 <td>
                   {#if d.assignedDate}
                     <span class="timestamp">{d.assignedDate}</span>

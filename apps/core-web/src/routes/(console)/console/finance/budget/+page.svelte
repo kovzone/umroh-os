@@ -101,12 +101,11 @@
               {/each}
             </tbody>
             <tfoot>
-              {@const ts = totals.selisih}
               <tr class="totals-row">
                 <td colspan="2"><strong>Total</strong></td>
                 <td class="ar"><strong>{formatIDR(totals.budget)}</strong></td>
                 <td class="ar"><strong>{formatIDR(totals.actual)}</strong></td>
-                <td class="ar" class:pos={ts <= 0} class:neg={ts > 0}><strong>{formatIDR(Math.abs(ts))}{ts > 0 ? ' ↑' : ' ↓'}</strong></td>
+                <td class="ar" class:pos={totals.selisih <= 0} class:neg={totals.selisih > 0}><strong>{formatIDR(Math.abs(totals.selisih))}{totals.selisih > 0 ? ' ↑' : ' ↓'}</strong></td>
                 <td class="ar"><strong>{pct(totals.actual, totals.budget)}</strong></td>
               </tr>
             </tfoot>

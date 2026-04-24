@@ -113,14 +113,14 @@ func (s *Server) GetDepartureReadiness(ctx context.Context, req *pb.GetDeparture
 func readinessToProto(r *service.VendorReadiness) *pb.VendorReadiness {
 	if r == nil {
 		return &pb.VendorReadiness{
-			TicketState: "not_started",
-			HotelState:  "not_started",
-			VisaState:   "not_started",
+			Ticket: "not_started",
+			Hotel:  "not_started",
+			Visa:   "not_started",
 		}
 	}
 	return &pb.VendorReadiness{
-		TicketState: r.Ticket,
-		HotelState:  r.Hotel,
-		VisaState:   r.Visa,
+		Ticket: r.Ticket,
+		Hotel:  r.Hotel,
+		Visa:   r.Visa,
 	}
 }

@@ -126,6 +126,7 @@
 
   // Max revenue for bar chart scaling
   const maxRevenue = $derived(Math.max(...revenueChart.map((r) => r.revenue), 1));
+  const maxCashFlow = $derived(Math.max(...cashFlow.data.map((d) => Math.max(d.cash_in, d.cash_out)), 1));
 
   // BL-DASH-005 handled above via dashMode state
 
@@ -953,11 +954,10 @@
         </div>
         <div class="panel chart-panel">
           <div class="dual-section-label" style="font-size:0.7rem;font-weight:700;color:#737686;margin-bottom:0.7rem">Cash In vs Out (7 hari)</div>
-          {@const maxCF = Math.max(...cashFlow.data.map(d => Math.max(d.cash_in, d.cash_out)), 1)}
           <div class="bar-chart" style="height:7rem; gap:0.35rem">
             {#each cashFlow.data as day}
-              {@const inPct = Math.round((day.cash_in / maxCF) * 100)}
-              {@const outPct = Math.round((day.cash_out / maxCF) * 100)}
+              {@const inPct = Math.round((day.cash_in / maxCashFlow) * 100)}
+              {@const outPct = Math.round((day.cash_out / maxCashFlow) * 100)}
               <div class="bar-item" style="gap:0.1rem">
                 <div class="mini-bar-track" style="height:100%; background:transparent; gap:2px; flex-direction:row; align-items:flex-end">
                   <div style="width:50%; height:{inPct}%; background:#059669; border-radius:2px 2px 0 0; min-height:2px"></div>

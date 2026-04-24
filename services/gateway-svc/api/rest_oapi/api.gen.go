@@ -2094,7 +2094,7 @@ type StrictHandlerFunc func(ctx *fiber.Ctx, args interface{}) (interface{}, erro
 
 type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
 
-func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
+func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) *strictHandler {
 	return &strictHandler{ssi: ssi, middlewares: middlewares}
 }
 

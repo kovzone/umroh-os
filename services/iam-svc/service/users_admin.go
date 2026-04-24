@@ -114,7 +114,7 @@ func (s *Service) ListUsers(ctx context.Context, params *ListUsersParams) (*List
 	var cursorTime pgtype.Timestamptz
 	var cursorID pgtype.UUID
 	if params.Cursor != "" {
-		ct, cid, err := decodeCursor(params.Cursor)
+		ct, cid, err := decodeAdminListCursor(params.Cursor)
 		if err != nil {
 			e := errors.Join(apperrors.ErrValidation, fmt.Errorf("parse cursor: %w", err))
 			span.RecordError(e)
@@ -161,7 +161,7 @@ func (s *Service) ListUsers(ctx context.Context, params *ListUsersParams) (*List
 	nextCursor := ""
 	if int32(len(rows)) == lim && len(rows) > 0 {
 		last := rows[len(rows)-1]
-		nextCursor = encodeCursor(last.CreatedAt.Time, last.ID)
+		nextCursor = encodeAdminListCursor(last.CreatedAt.Time, last.ID)
 	}
 
 	span.SetStatus(codes.Ok, "success")
@@ -601,12 +601,12 @@ func (s *Service) ResetUserPassword(ctx context.Context, params *ResetUserPasswo
 // ── Cursor helpers ────────────────────────────────────────────────────────────
 
 // encodeCursor produces an opaque "unix:uuid" string for pagination.
-func encodeCursor(t time.Time, id pgtype.UUID) string {
+func encodeAdminListCursor(t time.Time, id pgtype.UUID) string {
 	return fmt.Sprintf("%d:%s", t.UnixMicro(), uuidToString(id))
 }
 
 // decodeCursor splits an opaque cursor into its (time, uuid) components.
-func decodeCursor(cursor string) (time.Time, pgtype.UUID, error) {
+func decodeAdminListCursor(cursor string) (time.Time, pgtype.UUID, error) {
 	idx := strings.Index(cursor, ":")
 	if idx < 0 {
 		return time.Time{}, pgtype.UUID{}, fmt.Errorf("invalid cursor format")

@@ -379,8 +379,8 @@ func (s *Service) RecordManualPayment(ctx context.Context, params *RecordManualP
 	ikey := fmt.Sprintf("manual_payment:%s:%d", params.BookingID, paymentDate.Unix())
 	result, err := s.OnPaymentReceived(ctx, &OnPaymentReceivedParams{
 		InvoiceID: ikey,
-		AmountIdr: params.Amount,
-		PaidAt:    paymentDate,
+		Amount:    params.Amount,
+		ReceivedAt: paymentDate,
 	})
 	if err != nil {
 		logger.Error().Err(err).Str("op", op).Msg("post manual payment journal")
@@ -806,8 +806,8 @@ func (s *Service) ClosePettyCashPeriod(ctx context.Context, params *ClosePettyCa
 	ikey := fmt.Sprintf("petty_cash_close:%s", params.PeriodEnd)
 	_, err = s.OnPaymentReceived(ctx, &OnPaymentReceivedParams{
 		InvoiceID: ikey,
-		AmountIdr: balance,
-		PaidAt:    time.Now().UTC(),
+		Amount:    balance,
+		ReceivedAt: time.Now().UTC(),
 	})
 	if err != nil {
 		logger.Error().Err(err).Str("op", op).Msg("post petty cash close journal")
@@ -978,8 +978,8 @@ func (s *Service) TriggerAutoJournal(ctx context.Context, params *TriggerAutoJou
 
 	result, err := s.OnPaymentReceived(ctx, &OnPaymentReceivedParams{
 		InvoiceID: ikey,
-		AmountIdr: params.Amount,
-		PaidAt:    time.Now().UTC(),
+		Amount:    params.Amount,
+		ReceivedAt: time.Now().UTC(),
 	})
 	if err != nil {
 		logger.Error().Err(err).Str("op", op).Msg("post auto journal")
@@ -1354,8 +1354,8 @@ func (s *Service) RunDepreciation(ctx context.Context, params *RunDepreciationPa
 		ikey := fmt.Sprintf("depreciation:%s", asOf.Format("2006-01"))
 		result, err := s.OnPaymentReceived(ctx, &OnPaymentReceivedParams{
 			InvoiceID: ikey,
-			AmountIdr: totalDepreciation,
-			PaidAt:    asOf,
+			Amount:    totalDepreciation,
+			ReceivedAt: asOf,
 		})
 		if err == nil {
 			journalID = result.EntryID
@@ -1548,8 +1548,8 @@ func (s *Service) DecideCommissionPayout(ctx context.Context, params *DecideComm
 		ikey := fmt.Sprintf("commission_payout:%s", params.PayoutID)
 		_, err = s.OnPaymentReceived(ctx, &OnPaymentReceivedParams{
 			InvoiceID: ikey,
-			AmountIdr: payout.Amount,
-			PaidAt:    time.Now().UTC(),
+			Amount:    payout.Amount,
+			ReceivedAt: time.Now().UTC(),
 		})
 		if err != nil {
 			logger.Error().Err(err).Str("op", op).Msg("post commission journal")

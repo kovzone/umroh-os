@@ -46,6 +46,9 @@ const (
 	OpsService_UpdateAudioDeviceStatus_FullMethodName      = "/pb.OpsService/UpdateAudioDeviceStatus"
 	OpsService_RecordZamzamDistribution_FullMethodName     = "/pb.OpsService/RecordZamzamDistribution"
 	OpsService_RecordRoomCheckIn_FullMethodName            = "/pb.OpsService/RecordRoomCheckIn"
+	OpsService_RecordScan_FullMethodName                   = "/pb.OpsService/RecordScan"
+	OpsService_RecordBusBoarding_FullMethodName            = "/pb.OpsService/RecordBusBoarding"
+	OpsService_GetBoardingRoster_FullMethodName            = "/pb.OpsService/GetBoardingRoster"
 )
 
 // OpsDepthHandler is the server-side interface for all Wave 5 ops depth RPCs.

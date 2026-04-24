@@ -64,10 +64,12 @@ func NewLogger(opts Options) zerolog.Logger {
 // LogWithTrace returns a zerolog.Logger enriched with trace_id from the Otel span context.
 // If the context has no valid span, the returned logger gets trace_id "unknown".
 // Use the returned logger for the rest of the request/operation so logs are correlated.
-func LogWithTrace(ctx context.Context, logger *zerolog.Logger) zerolog.Logger {
+func LogWithTrace(ctx context.Context, logger *zerolog.Logger) *zerolog.Logger {
 	sc := trace.SpanContextFromContext(ctx)
 	if !sc.IsValid() {
-		return logger.With().Str("trace_id", "unknown").Logger()
+		enriched := logger.With().Str("trace_id", "unknown").Logger()
+		return &enriched
 	}
-	return logger.With().Str("trace_id", sc.TraceID().String()).Logger()
+	enriched := logger.With().Str("trace_id", sc.TraceID().String()).Logger()
+	return &enriched
 }
