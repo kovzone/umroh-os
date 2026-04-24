@@ -134,6 +134,7 @@ type DepartureStatus string
 type DepartureSummary struct {
 	DepartureDate  openapi_types.Date `json:"departure_date"`
 	Id             string             `json:"id"`
+	PricePerPax    *int64             `json:"price_per_pax,omitempty"`
 	RemainingSeats int                `json:"remaining_seats"`
 	ReturnDate     openapi_types.Date `json:"return_date"`
 	Status         DepartureStatus    `json:"status"`
@@ -544,7 +545,9 @@ type ServerInterface interface {
 	// GET /v1/ops/manifest/:departure_id/export
 	ExportManifest(c *fiber.Ctx, departureID string) error
 
-	// S3 logistics routes (S3 Wave 2) — bearer required.
+	// S3 logistics routes (S3 Wave 2 / ISSUE-018) — bearer required.
+	// GET /v1/fulfillment-tasks — list with optional status/departure_id filters
+	ListFulfillmentTasks(c *fiber.Ctx) error
 	// POST /v1/logistics/ship
 	ShipFulfillmentTask(c *fiber.Ctx) error
 	// POST /v1/logistics/pickup-qr
@@ -1240,6 +1243,11 @@ func (siw *ServerInterfaceWrapper) VerifyIDCard(c *fiber.Ctx) error {
 func (siw *ServerInterfaceWrapper) ExportManifest(c *fiber.Ctx) error {
 	departureID := c.Params("departure_id")
 	return siw.Handler.ExportManifest(c, departureID)
+}
+
+// ListFulfillmentTasks operation middleware — GET /v1/fulfillment-tasks (bearer)
+func (siw *ServerInterfaceWrapper) ListFulfillmentTasks(c *fiber.Ctx) error {
+	return siw.Handler.ListFulfillmentTasks(c)
 }
 
 // ShipFulfillmentTask operation middleware — POST /v1/logistics/ship (bearer)
@@ -2214,6 +2222,10 @@ func (sh *strictHandler) VerifyIDCard(ctx *fiber.Ctx) error {
 }
 
 func (sh *strictHandler) ExportManifest(ctx *fiber.Ctx, departureID string) error {
+	return fiber.ErrNotImplemented
+}
+
+func (sh *strictHandler) ListFulfillmentTasks(ctx *fiber.Ctx) error {
 	return fiber.ErrNotImplemented
 }
 

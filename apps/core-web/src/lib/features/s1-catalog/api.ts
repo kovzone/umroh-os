@@ -43,6 +43,31 @@ export async function fetchCatalogPackageDetail(packageId: string): Promise<Pack
   const payload = await fetchJson<CatalogPackageDetailResponse>(`/v1/packages/${packageId}`);
   const pkg = payload.package;
 
+  const itineraryDays: import('./types').PackageItineraryDay[] = (pkg.itinerary?.days ?? []).map((d) => ({
+    dayLabel: `Hari ke-${d.day}`,
+    title: d.title,
+    body: d.description
+  }));
+
+  // Build facilitiesBody from hotel + airline data returned by the API.
+  const facilitiesLines: string[] = [];
+  if (pkg.hotels && pkg.hotels.length > 0) {
+    const hotelList = pkg.hotels
+      .map((h) => `${h.name} (${h.city === 'mecca' ? 'Makkah' : h.city === 'medina' ? 'Madinah' : h.city}, ${h.star_rating}★, jarak ${h.walking_distance_m}m dari masjid)`)
+      .join(' dan ');
+    facilitiesLines.push(`Hotel: ${hotelList}.`);
+  }
+  if (pkg.airline) {
+    facilitiesLines.push(`Maskapai: ${pkg.airline.name} (${pkg.airline.code}).`);
+  }
+  if (pkg.add_ons && pkg.add_ons.length > 0) {
+    const addonList = pkg.add_ons.map((a) => a.name).join(', ');
+    facilitiesLines.push(`Add-on tersedia: ${addonList}.`);
+  }
+  const facilitiesBody = facilitiesLines.length > 0
+    ? facilitiesLines.join(' ')
+    : undefined;
+
   return {
     id: pkg.id,
     kind: pkg.kind,
@@ -51,12 +76,15 @@ export async function fetchCatalogPackageDetail(packageId: string): Promise<Pack
     highlights: pkg.highlights,
     coverPhotoUrl: pkg.cover_photo_url,
     startingPriceLabel: 'Harga akan ditampilkan dari departure',
+    itineraryDays: itineraryDays.length > 0 ? itineraryDays : undefined,
+    facilitiesBody,
     departures: pkg.departures.map((dep) => ({
       id: dep.id,
       departureDate: dep.departure_date,
       returnDate: dep.return_date,
       status: dep.status,
-      remainingSeats: dep.remaining_seats
+      remainingSeats: dep.remaining_seats,
+      pricePerPaxIdr: dep.price_per_pax ?? undefined
     }))
   };
 }

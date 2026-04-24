@@ -67,14 +67,17 @@ func start() {
 	tracer := tracing.GetTracer(config.OtelTracer.Name)
 
 	// --- Init otel meter (OTLP push → otel-collector → Prometheus exporter) ---
+	// Non-fatal: if otel-collector is unavailable at startup (e.g. ordering race
+	// in docker-compose), log a warning and continue without metrics rather than
+	// crashing the service. Booking functionality is not affected.
 	cleanupMeter, err := monitoring.InitMeter(config.App.Name, config.OtelTracer.Endpoint)
 	if err != nil {
-		logger.Error().
+		logger.Warn().
 			Str("op", op).
 			Str("scope", "Init otel meter").
 			Err(err).
-			Msg("")
-		os.Exit(1)
+			Msg("metrics disabled — otel-collector unreachable at startup")
+		cleanupMeter = func(_ context.Context) error { return nil }
 	}
 	defer func() {
 		if err := cleanupMeter(context.Background()); err != nil {

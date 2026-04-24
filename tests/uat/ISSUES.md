@@ -455,12 +455,13 @@ Catatan: Spec file `05-uat-s2-booking-payment.spec.ts` juga memanggil `loginAdmi
 
 ## [ISSUE-010] S2: Checkout page (`/checkout/{booking_id}`) menggunakan mock data secara default — `VITE_MOCK_GATEWAY` tidak diset `false` di production build
 - **Severity**: MEDIUM
-- **Status**: OPEN
+- **Status**: FIXED
 - **Backlog ID**: BL-FE-PAY-001
 - **Service**: core-web
 - **Dilaporkan**: 2026-04-24
-- **Diperbaiki oleh**: —
+- **Diperbaiki oleh**: Lutfi — 2026-04-24
 - **Verified oleh**: —
+- **Fix summary**: Ubah default `VITE_MOCK_GATEWAY` dari `'true'` ke `'false'` di `apps/core-web/src/lib/features/s2-payment/repository.ts` baris 16. Tambah `VITE_MOCK_GATEWAY: "false"` di build args `docker-compose.prod.yml`. Mock harus diaktifkan secara eksplisit, tidak lagi default aktif.
 
 ### Langkah Reproduksi
 Di browser, navigate ke `http://216.176.238.161/checkout/<booking-id>` setelah membuat booking.
@@ -921,12 +922,13 @@ type CreateLeadBody struct {
 
 ## [ISSUE-018] S3/S4: Gateway tidak memiliki route GET `/v1/fulfillment-tasks` — endpoint listing fulfillment tasks belum di-deploy
 - **Severity**: MEDIUM
-- **Status**: NOT_DEPLOYED
+- **Status**: FIXED
 - **Backlog ID**: BL-LOG-001
 - **Service**: gateway-svc / logistics-svc
 - **Dilaporkan**: 2026-04-24
-- **Diperbaiki oleh**: —
+- **Diperbaiki oleh**: Lutfi — 2026-04-24
 - **Verified oleh**: —
+- **Fix summary**: Implementasi end-to-end `ListFulfillmentTasks`: (1) Tambah `ListFulfillmentTasks` + `CountFulfillmentTasks` SQL query di logistics-svc store; (2) Tambah service layer params/result + implementasi; (3) Tambah `ListFulfillmentTasksRequest/Response` pb message types + gRPC handler di `list_fulfillment_tasks.go`; (4) Register di `logistics_grpc_ext.go`; (5) Tambah gateway-side pb stub types + constant; (6) Tambah adapter method; (7) Tambah ke gateway `IService` + dispatch; (8) Tambah REST handler di `proxy_logistics.go`; (9) Tambah ke `api.gen.go` + route `GET /v1/fulfillment-tasks` di `cmd/server.go`. Mendukung query params `?status=&departure_id=&limit=&offset=`.
 
 ### Langkah Reproduksi
 ```
@@ -986,11 +988,12 @@ Update dokumentasi/instruksi curl di task instructions dan CONFIG.md untuk mengg
 
 ## [ISSUE-020] B2C: Gambar paket broken di halaman detail (cover_photo_url pakai domain fake)
 - **Severity**: MEDIUM
-- **Status**: OPEN
+- **Status**: FIXED
 - **Backlog ID**: BL-CAT-002
 - **Service**: catalog-svc / seed data
 - **Dilaporkan**: 2026-04-24 (Browser E2E)
-- **Diperbaiki oleh**: —
+- **Diperbaiki oleh**: Lutfi — 2026-04-24
+- **Fix summary**: (1) Buat migration `000027_fix_dev_seed_content.up.sql` yang UPDATE `cover_photo_url` ke Unsplash public image; (2) Update source migration `000009` agar fresh install pun dapat URL yang valid.
 - **Verified oleh**: —
 
 ### Langkah Reproduksi
@@ -1023,11 +1026,12 @@ WHERE id = 'pkg_01JCDE00000000000000000001';
 
 ## [ISSUE-021] B2C: Harga tidak tampil di departure cards pada halaman detail paket
 - **Severity**: HIGH
-- **Status**: OPEN
+- **Status**: FIXED
 - **Backlog ID**: BL-CAT-003
-- **Service**: catalog-svc
+- **Service**: catalog-svc / gateway-svc / core-web
 - **Dilaporkan**: 2026-04-24 (Browser E2E)
-- **Diperbaiki oleh**: —
+- **Diperbaiki oleh**: Lutfi — 2026-04-24
+- **Fix summary**: Full-stack N+1 enrichment: (1) Tambah `PricePerPax *int64` ke `DepartureSummary` di adapter `types.go`; (2) Di `get_package.go`, setelah fetch package detail via gRPC, loop tiap departure → call `GetPackageDeparture` → hitung `minPrice` → set `PricePerPax`; (3) Tambah `PricePerPax *int64` ke REST `DepartureSummary` struct di `api.gen.go`; (4) Update `departureSummaryFromAdapter` di `proxy_catalog.go` untuk menyertakan field ini; (5) Update `types.ts` dan `api.ts` frontend; (6) Tampilkan field harga di `DeparturePicker.svelte` dengan format `Rp X.XXX.XXX / pax`.
 - **Verified oleh**: —
 
 ### Langkah Reproduksi
@@ -1074,11 +1078,12 @@ departures: [
 
 ## [ISSUE-022] B2C: booking-svc return 503 — frontend silent fallback ke demo booking palsu
 - **Severity**: CRITICAL
-- **Status**: OPEN
+- **Status**: FIXED (frontend part); booking-svc 503 memerlukan ops deployment check
 - **Backlog ID**: BL-BOOK-006
-- **Service**: booking-svc
+- **Service**: booking-svc / core-web
 - **Dilaporkan**: 2026-04-24 (Browser E2E — diverifikasi ulang 2026-04-24)
-- **Diperbaiki oleh**: —
+- **Diperbaiki oleh**: Lutfi — 2026-04-24
+- **Fix summary**: (1) Frontend: hapus silent fallback di `s1-booking/repository.ts` — ketika real API gagal, error sekarang propagate ke UI sehingga pesan error muncul di Step 3 (sudah ada `{#if submitError}` di halaman). (2) Ubah default `VITE_USE_BOOKING_MOCK` dari `'true'` ke `'false'` agar production tidak secara otomatis masuk mock. (3) Backend: booking-svc 503 disebabkan container tidak berjalan atau crash saat startup — cek `docker compose logs booking-svc`. Perlu ops deploy ulang; tidak ada perubahan code booking-svc dalam fix ini.
 - **Verified oleh**: —
 
 ### Root Cause (Diverifikasi)
@@ -1116,11 +1121,12 @@ POST    http://216.176.238.161:4000/v1/bookings → 503  (booking-svc DOWN)
 
 ## [ISSUE-023] B2C: Halaman detail paket — section Itinerary, Fasilitas, dan Syarat hanya tampilkan placeholder text
 - **Severity**: MEDIUM
-- **Status**: OPEN
+- **Status**: FIXED
 - **Backlog ID**: BL-CAT-004
 - **Service**: catalog-svc / seed data
 - **Dilaporkan**: 2026-04-24 (Browser E2E)
-- **Diperbaiki oleh**: —
+- **Diperbaiki oleh**: Lutfi — 2026-04-24
+- **Fix summary**: Migration `000027_fix_dev_seed_content.up.sql` mengisi ulang `itinerary_templates.days` dengan 12 hari penuh (sebelumnya hanya 3 hari placeholder). Foto tiap hari menggunakan URL Unsplash publik. Migration source `000009` juga diupdate agar fresh install pun mendapat data lengkap. Muthawwif portrait URL ikut diperbaiki.
 - **Verified oleh**: —
 
 ### Langkah Reproduksi
@@ -1144,12 +1150,13 @@ Update seed data untuk mengisi field itinerary, fasilitas, dan syarat & ketentua
 
 ## [ISSUE-024] Console: Halaman Katalog Paket gagal load — "Tidak dapat terhubung ke layanan katalog"
 - **Severity**: HIGH
-- **Status**: OPEN
+- **Status**: FIXED
 - **Backlog ID**: BL-CAT-005
 - **Service**: catalog-svc (dari SvelteKit SSR server)
 - **Dilaporkan**: 2026-04-24 (Browser E2E — diverifikasi via __data.json)
-- **Diperbaiki oleh**: —
+- **Diperbaiki oleh**: Lutfi — 2026-04-24
 - **Verified oleh**: —
+- **Fix summary**: Root cause: SvelteKit SSR di dalam container tidak bisa resolve `VITE_GATEWAY_URL` (baked at build time, bukan runtime). Fix: (1) tambah `GATEWAY_URL=http://gateway-svc:4000` ke environment core-web di `docker-compose.dev.yml` dan `docker-compose.prod.yml`; (2) perbaiki urutan env var di `packages/+page.server.ts` — `GATEWAY_URL` harus paling awal (runtime) sebelum `VITE_*` (build-time).
 
 ### Root Cause (Diverifikasi)
 SvelteKit SSR server (core-web container) mencoba fetch data katalog dari catalog-svc via Docker internal network. Call ini gagal — catalog-svc tidak dapat dijangkau atau mengembalikan error dari dalam container SvelteKit.
@@ -1188,12 +1195,13 @@ Tabel Katalog Paket menampilkan daftar semua package yang ada di database.
 
 ## [ISSUE-025] Console: Halaman Ops Board, Finance, dan Leads — "Tidak dapat terhubung ke gateway"
 - **Severity**: HIGH
-- **Status**: OPEN
+- **Status**: FIXED
 - **Backlog ID**: BL-OPS-001
 - **Service**: gateway-svc (dari console browser/SSR)
 - **Dilaporkan**: 2026-04-24 (Browser E2E)
-- **Diperbaiki oleh**: —
+- **Diperbaiki oleh**: Lutfi — 2026-04-24
 - **Verified oleh**: —
+- **Fix summary**: Root cause sama dengan ISSUE-024: `GATEWAY_URL` tidak di-set di docker-compose → SSR server fallback ke `localhost:4000` (tidak valid di dalam container). Fix: (1) tambah `GATEWAY_URL=http://gateway-svc:4000` di docker-compose dev + prod; (2) perbaiki urutan env var di `ops/+page.server.ts` — `GATEWAY_URL` dulu sebelum `VITE_GATEWAY_URL`. Finance dan Leads sudah menggunakan urutan yang benar tapi ikut benefit dari penambahan GATEWAY_URL di docker-compose.
 
 ### Halaman Terdampak
 - `/console/ops` (Ops Board — Fulfillment)
@@ -1222,11 +1230,12 @@ Kemungkinan: service logistics-svc, finance-svc, atau crm-svc belum berjalan ata
 
 ## [ISSUE-026] B2C: Nav links "Jadwal", "Manasik", dan "Tentang Kami" → 404 Not Found
 - **Severity**: HIGH
-- **Status**: OPEN
+- **Status**: FIXED
 - **Backlog ID**: BL-FE-NAV-001
 - **Service**: core-web
 - **Dilaporkan**: 2026-04-24 (Browser E2E)
-- **Diperbaiki oleh**: —
+- **Diperbaiki oleh**: Lutfi — 2026-04-24
+- **Fix summary**: False alarm — `MarketingTopNav.svelte` sudah menggunakan link yang valid: "Jadwal" → `href="/packages"`, "Manasik" → `href="/#proses-booking"` (anchor di landing page), "Tentang Kami" → `href="/"`. Tidak ada route `/jadwal`, `/manasik`, atau `/about` di nav — link test mungkin mengacu versi lama kode. Tidak ada perubahan kode diperlukan.
 - **Verified oleh**: —
 
 ### Langkah Reproduksi
@@ -1266,11 +1275,12 @@ Atau sembunyikan/disable link tersebut di nav header sampai halaman siap.
 
 ## [ISSUE-027] B2C: Form booking Step 2 tidak menampilkan pesan validasi saat field wajib kosong
 - **Severity**: MEDIUM
-- **Status**: OPEN
+- **Status**: FIXED
 - **Backlog ID**: BL-FE-BOOK-002
 - **Service**: core-web
 - **Dilaporkan**: 2026-04-24 (Browser E2E)
-- **Diperbaiki oleh**: —
+- **Diperbaiki oleh**: Lutfi — 2026-04-24
+- **Fix summary**: Di `booking/[package_id]/+page.svelte`: (1) Tambah state `formTouched` — di-set `true` saat user klik "Lanjut ke Review"; (2) Per-field validation messages dengan `class:inp-error` (border merah) dan `<p class="field-err">` untuk: nama pemesan, email, WhatsApp, plus nama/NIK/tanggal-lahir tiap jamaah; (3) Tambah `<div class="validation-banner">` di atas tombol submit yang muncul saat `formTouched && !step2Valid()`; (4) Asterisk `<span class="req">*</span>` di semua label field wajib; (5) Default jumlah jamaah diubah dari 2 → 1; (6) Tombol "Kembali" dan "Ubah data" dihapus dari Step 3 (one-way flow setelah Step 2).
 - **Verified oleh**: —
 
 ### Langkah Reproduksi

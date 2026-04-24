@@ -608,13 +608,17 @@ func itineraryFromAdapter(it *catalog_grpc_adapter.Itinerary) *Itinerary {
 }
 
 func departureSummaryFromAdapter(d catalog_grpc_adapter.DepartureSummary) DepartureSummary {
-	return DepartureSummary{
+	ds := DepartureSummary{
 		Id:             d.ID,
 		DepartureDate:  mustDate(d.DepartureDate),
 		ReturnDate:     mustDate(d.ReturnDate),
 		RemainingSeats: d.RemainingSeats,
 		Status:         DepartureStatus(d.Status),
 	}
+	if d.PricePerPax != nil {
+		ds.PricePerPax = d.PricePerPax
+	}
+	return ds
 }
 
 func packageDetailFromAdapter(d *catalog_grpc_adapter.PackageDetail) PackageDetail {

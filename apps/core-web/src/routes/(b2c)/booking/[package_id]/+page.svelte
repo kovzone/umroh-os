@@ -125,9 +125,8 @@
   let leadWhatsapp = $state('');
   let leadDomicile = $state('');
   let roomType = $state<RoomType>('quad');
-  let jamaahCount = $state(2);
+  let jamaahCount = $state(1);
   let jamaahRows = $state<JamaahRow[]>([
-    { fullName: '', nik: '', dob: '', passport: '' },
     { fullName: '', nik: '', dob: '', passport: '' }
   ]);
 
@@ -176,6 +175,9 @@
       jamaahRows = rows.slice(0, n);
     }
   });
+
+  /** Set to true when user first attempts to advance from step 2; reveals validation hints. */
+  let formTouched = $state(false);
 
   let agreePassport = $state(false);
   let agreeVaccine = $state(false);
@@ -324,16 +326,43 @@
               </div>
               <div class="form-grid">
                 <div class="field">
-                  <label for="ln">Nama lengkap</label>
-                  <input id="ln" bind:value={leadName} type="text" placeholder="Contoh: Ahmad Fauzan" />
+                  <label for="ln">Nama lengkap <span class="req">*</span></label>
+                  <input
+                    id="ln"
+                    bind:value={leadName}
+                    type="text"
+                    placeholder="Contoh: Ahmad Fauzan"
+                    class:inp-error={formTouched && !leadName.trim()}
+                  />
+                  {#if formTouched && !leadName.trim()}
+                    <p class="field-err">Nama lengkap wajib diisi</p>
+                  {/if}
                 </div>
                 <div class="field">
-                  <label for="em">Email</label>
-                  <input id="em" bind:value={leadEmail} type="email" placeholder="nama@email.com" />
+                  <label for="em">Email <span class="req">*</span></label>
+                  <input
+                    id="em"
+                    bind:value={leadEmail}
+                    type="email"
+                    placeholder="nama@email.com"
+                    class:inp-error={formTouched && !leadEmail.trim()}
+                  />
+                  {#if formTouched && !leadEmail.trim()}
+                    <p class="field-err">Email wajib diisi</p>
+                  {/if}
                 </div>
                 <div class="field">
-                  <label for="wa">Nomor WhatsApp</label>
-                  <input id="wa" bind:value={leadWhatsapp} type="tel" placeholder="+62 812 3456 7890" />
+                  <label for="wa">Nomor WhatsApp <span class="req">*</span></label>
+                  <input
+                    id="wa"
+                    bind:value={leadWhatsapp}
+                    type="tel"
+                    placeholder="+62 812 3456 7890"
+                    class:inp-error={formTouched && !leadWhatsapp.trim()}
+                  />
+                  {#if formTouched && !leadWhatsapp.trim()}
+                    <p class="field-err">Nomor WhatsApp wajib diisi</p>
+                  {/if}
                 </div>
                 <div class="field">
                   <label for="dom">Alamat singkat (opsional)</label>
@@ -377,16 +406,41 @@
                   </div>
                   <div class="form-grid">
                     <div class="field">
-                      <label for="jn{i}">Nama sesuai KTP</label>
-                      <input id="jn{i}" bind:value={row.fullName} type="text" />
+                      <label for="jn{i}">Nama sesuai KTP <span class="req">*</span></label>
+                      <input
+                        id="jn{i}"
+                        bind:value={row.fullName}
+                        type="text"
+                        class:inp-error={formTouched && !row.fullName.trim()}
+                      />
+                      {#if formTouched && !row.fullName.trim()}
+                        <p class="field-err">Nama wajib diisi</p>
+                      {/if}
                     </div>
                     <div class="field">
-                      <label for="nik{i}">NIK</label>
-                      <input id="nik{i}" bind:value={row.nik} type="text" inputmode="numeric" />
+                      <label for="nik{i}">NIK <span class="req">*</span></label>
+                      <input
+                        id="nik{i}"
+                        bind:value={row.nik}
+                        type="text"
+                        inputmode="numeric"
+                        class:inp-error={formTouched && !row.nik.trim()}
+                      />
+                      {#if formTouched && !row.nik.trim()}
+                        <p class="field-err">NIK wajib diisi</p>
+                      {/if}
                     </div>
                     <div class="field">
-                      <label for="dob{i}">Tanggal lahir</label>
-                      <input id="dob{i}" bind:value={row.dob} type="date" />
+                      <label for="dob{i}">Tanggal lahir <span class="req">*</span></label>
+                      <input
+                        id="dob{i}"
+                        bind:value={row.dob}
+                        type="date"
+                        class:inp-error={formTouched && !row.dob}
+                      />
+                      {#if formTouched && !row.dob}
+                        <p class="field-err">Tanggal lahir wajib diisi</p>
+                      {/if}
                     </div>
                     <div class="field">
                       <label for="pp{i}">Paspor (opsional)</label>
@@ -396,13 +450,21 @@
                 </div>
               {/each}
             </section>
+            {#if formTouched && !step2Valid()}
+              <div class="validation-banner" role="alert">
+                <span class="material-symbols-outlined">warning</span>
+                Mohon lengkapi semua field yang wajib diisi sebelum melanjutkan.
+              </div>
+            {/if}
             <div class="actions-row">
               <a class="link-muted" href={`/packages/${pkg.id}`}>Simpan dulu (lanjut nanti)</a>
               <button
                 type="button"
                 class="btn-primary"
-                disabled={!step2Valid()}
-                onclick={() => gotoStep(3)}
+                onclick={() => {
+                  formTouched = true;
+                  if (step2Valid()) gotoStep(3);
+                }}
               >
                 Lanjut ke Review
               </button>
@@ -437,12 +499,9 @@
               </div>
             </section>
             <section class="card card-pad bordered">
-              <div class="sec-head space">
-                <div class="sec-head">
-                  <span class="material-symbols-outlined sec-ico">groups</span>
-                  <h2 class="h3">Daftar jamaah</h2>
-                </div>
-                <button type="button" class="link-btn" onclick={() => gotoStep(2)}>Ubah data</button>
+              <div class="sec-head">
+                <span class="material-symbols-outlined sec-ico">groups</span>
+                <h2 class="h3">Daftar jamaah</h2>
               </div>
               <div class="jlist">
                 {#each jamaahRows as row, i (i)}
@@ -509,11 +568,7 @@
                 <p class="err" role="alert">{submitError}</p>
               {/if}
             </section>
-            <div class="nav-2">
-              <button type="button" class="btn-outline" onclick={() => gotoStep(2)}>
-                <span class="material-symbols-outlined">arrow_back</span>
-                Kembali
-              </button>
+            <div class="nav-2 nav-2-single">
               <button
                 type="button"
                 class="btn-primary"
@@ -524,9 +579,6 @@
                 <span class="material-symbols-outlined">arrow_forward</span>
               </button>
             </div>
-            <button type="button" class="link-muted center" onclick={() => gotoStep(2)}>
-              Simpan dulu (lanjut nanti)
-            </button>
           {:else if !draftResult}
             <section class="card card-pad bordered">
               <h2 class="h3">Pembayaran belum siap</h2>
@@ -1211,6 +1263,40 @@
     background: #ffdad6;
     color: #93000a;
     font-size: 0.85rem;
+  }
+  .field-err {
+    margin: 0.25rem 0 0 0.15rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #ba1a1a;
+  }
+  .req {
+    color: #ba1a1a;
+    font-weight: 700;
+    margin-left: 0.1rem;
+  }
+  :global(.inp-error) {
+    box-shadow: 0 0 0 2px #ba1a1a !important;
+    background: #fff !important;
+  }
+  .validation-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.65rem;
+    background: #ffdad6;
+    color: #93000a;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+  }
+  .validation-banner .material-symbols-outlined {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .nav-2-single {
+    justify-content: flex-end;
   }
   .alert-time {
     display: flex;

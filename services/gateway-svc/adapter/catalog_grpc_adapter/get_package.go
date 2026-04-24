@@ -35,5 +35,27 @@ func (a *Adapter) GetPackage(ctx context.Context, params *GetPackageParams) (*Pa
 	}
 
 	span.SetStatus(codes.Ok, "success")
-	return fromProtoPackageDetail(resp.GetPackage()), nil
+	detail := fromProtoPackageDetail(resp.GetPackage())
+
+	// Enrich each DepartureSummary with its minimum list price by calling
+	// GetPackageDeparture for each departure. This is an intentional N+1:
+	// packages typically have 2–4 departures, so the cost is negligible and
+	// avoids a proto schema change on the hot path.
+	for i, dep := range detail.Departures {
+		depDetail, err := a.GetPackageDeparture(ctx, &GetPackageDepartureParams{ID: dep.ID})
+		if err != nil || len(depDetail.Pricing) == 0 {
+			continue
+		}
+		var minPrice int64 = depDetail.Pricing[0].ListAmount
+		for _, p := range depDetail.Pricing[1:] {
+			if p.ListAmount > 0 && p.ListAmount < minPrice {
+				minPrice = p.ListAmount
+			}
+		}
+		if minPrice > 0 {
+			detail.Departures[i].PricePerPax = &minPrice
+		}
+	}
+
+	return detail, nil
 }

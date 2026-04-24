@@ -88,6 +88,9 @@ type DepartureSummary struct {
 	ReturnDate     string
 	RemainingSeats int
 	Status         string
+	// PricePerPax is the minimum list_amount across all room types for this departure.
+	// Nil when pricing data is unavailable (e.g. no pricing rows yet).
+	PricePerPax *int64
 }
 
 // PackageDetail is the full detail graph for GetPackage. Pointer-valued

@@ -2,7 +2,10 @@ import { fetchCatalogDepartureDetail, fetchCatalogPackageDetail, fetchCatalogPac
 import { getMockDepartureDetail, getMockPackageDetail, listMockPackages } from './mock';
 import type { DepartureDetail, PackageCard, PackageDetail } from './types';
 
-const useMockCatalog = (import.meta.env.VITE_USE_CATALOG_MOCK ?? 'true') === 'true';
+// Default is false — mock must be explicitly enabled via VITE_USE_CATALOG_MOCK=true.
+// Catalog fallback is a graceful degradation (display-only); booking mock is removed
+// entirely per ISSUE-022 because it masks real API failures.
+const useMockCatalog = (import.meta.env.VITE_USE_CATALOG_MOCK ?? 'false') === 'true';
 
 // Adapter for S1-L-02 mock-first flow. In S1-L-03 this can switch to
 // gateway-backed requests without changing route/page consumers.

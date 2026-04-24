@@ -33,7 +33,7 @@
           selectedId = dep.id;
         }}
       />
-      <div class="dep-fields">
+      <div class="dep-fields" class:has-price={!!dep.pricePerPaxIdr}>
         <div class="dep-field">
           <span class="dep-label">Tanggal keberangkatan</span>
           <span class="dep-value">{formatDepartureRangeId(dep)}</span>
@@ -49,6 +49,14 @@
           <span class="dep-label">Status kuota</span>
           <span class="dep-seats" class:err={seats.urgent}>{seats.text}</span>
         </div>
+        {#if dep.pricePerPaxIdr}
+          <div class="dep-field dep-field-price">
+            <span class="dep-label">Mulai dari</span>
+            <span class="dep-value dep-price">
+              Rp {new Intl.NumberFormat('id-ID').format(dep.pricePerPaxIdr)} / pax
+            </span>
+          </div>
+        {/if}
       </div>
     </label>
   {/each}
@@ -87,6 +95,9 @@
   @media (min-width: 768px) {
     .dep-fields {
       grid-template-columns: 1fr 1fr 1fr;
+    }
+    .dep-fields.has-price {
+      grid-template-columns: 1fr 1fr 1fr 1fr;
     }
   }
   .departure-row:hover {
@@ -137,5 +148,21 @@
   .dep-seats.err {
     color: #ba1a1a;
     font-style: italic;
+  }
+  .dep-price {
+    color: #006747;
+    font-size: 1rem;
+  }
+  .dep-field-price {
+    border-left: 2px solid rgba(0, 103, 71, 0.25);
+    padding-left: 0.75rem;
+  }
+  @media (max-width: 767px) {
+    .dep-field-price {
+      border-left: none;
+      padding-left: 0;
+      border-top: 2px solid rgba(0, 103, 71, 0.15);
+      padding-top: 0.5rem;
+    }
   }
 </style>
