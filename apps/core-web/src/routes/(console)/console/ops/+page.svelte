@@ -217,6 +217,30 @@
         </div>
         <span class="material-symbols-outlined sp-arrow">arrow_forward</span>
       </a>
+      <a href="/console/ops/boarding" class="subpage-card">
+        <span class="material-symbols-outlined sp-icon">directions_bus</span>
+        <div class="sp-text">
+          <div class="sp-label">Boarding Bus</div>
+          <div class="sp-desc">Absensi boarding & scan QR per bus keberangkatan</div>
+        </div>
+        <span class="material-symbols-outlined sp-arrow">arrow_forward</span>
+      </a>
+      <a href="/console/ops/zamzam" class="subpage-card">
+        <span class="material-symbols-outlined sp-icon">water_drop</span>
+        <div class="sp-text">
+          <div class="sp-label">Distribusi Zamzam</div>
+          <div class="sp-desc">Catat distribusi air zamzam per jamaah</div>
+        </div>
+        <span class="material-symbols-outlined sp-arrow">arrow_forward</span>
+      </a>
+      <a href="/console/ops/devices" class="subpage-card">
+        <span class="material-symbols-outlined sp-icon">devices</span>
+        <div class="sp-text">
+          <div class="sp-label">Perangkat Komunikasi</div>
+          <div class="sp-desc">Inventaris & serah terima perangkat lapangan</div>
+        </div>
+        <span class="material-symbols-outlined sp-arrow">arrow_forward</span>
+      </a>
     </div>
 
     <!-- Summary bar -->

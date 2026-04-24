@@ -18,11 +18,19 @@
     <a class="brand" href="/">UmrohOS</a>
     <div class="nav-links">
       <a href="/packages" class:active={packagesLinkActive}>Paket Umroh</a>
-      <a href="/packages">Jadwal</a>
-      <a href="/#proses-booking">Manasik</a>
-      <a href="/">Tentang Kami</a>
+      <a href="/keberangkatan">Jadwal</a>
+      <a href="/panduan">Panduan</a>
+      <a href="/jemaah">Portal Jamaah</a>
+      <a href="/ibadah">Ibadah</a>
+      <a href="/tentang-kami">Tentang Kami</a>
     </div>
-    <a class="nav-cta" href={ctaHref} data-testid={ctaTestId}>{ctaLabel}</a>
+    <div class="nav-right">
+      <a class="nav-wa" href="https://wa.me/6281200000000" target="_blank" rel="noreferrer">
+        <span class="material-symbols-outlined">chat</span>
+        WhatsApp
+      </a>
+      <a class="nav-cta" href={ctaHref} data-testid={ctaTestId}>{ctaLabel}</a>
+    </div>
   </div>
 </nav>
 
@@ -69,6 +77,25 @@
     border-bottom: 2px solid #775a19;
     padding-bottom: 0.2rem;
   }
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .nav-wa {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-decoration: none;
+    color: #775a19;
+    font-weight: 600;
+    font-size: 0.88rem;
+    white-space: nowrap;
+  }
+  .nav-wa .material-symbols-outlined {
+    font-size: 1.1rem;
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
   .nav-cta {
     border: none;
     text-decoration: none;
@@ -82,6 +109,9 @@
   }
   @media (max-width: 1100px) {
     .nav-links {
+      display: none;
+    }
+    .nav-wa {
       display: none;
     }
   }
