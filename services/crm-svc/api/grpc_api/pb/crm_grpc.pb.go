@@ -19,25 +19,26 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CrmService_Healthz_FullMethodName = "/pb.CrmService/Healthz"
+	CrmService_Ping_FullMethodName = "/pb.CrmService/Ping"
 )
 
 // CrmServiceClient is the client API for CrmService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// CrmService — internal gRPC surface for Identity, Access, Audit.
+// CrmService — internal gRPC surface for the crm domain.
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// Current scope is the scaffold Ping (proves the gateway's
+// RequireBearerToken + RequirePermission middleware chain reaches this
+// backend over gRPC). Container-level liveness is served by the standard
+// grpc.health.v1.Health protocol (BL-MON-001). Real RPCs land with the
+// crm feature slice.
 type CrmServiceClient interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
-	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
+	// Ping — scaffold RPC used by the gateway's permission-gate smoke tests.
+	// Identity-agnostic per ADR 0009: the gateway validates the bearer and the
+	// permission tuple upstream; this handler returns a trivial
+	// {message: "ok"} proving the gateway→backend hop works.
+	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 }
 
 type crmServiceClient struct {
@@ -48,10 +49,10 @@ func NewCrmServiceClient(cc grpc.ClientConnInterface) CrmServiceClient {
 	return &crmServiceClient{cc}
 }
 
-func (c *crmServiceClient) Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error) {
+func (c *crmServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(HealthzResponse)
-	err := c.cc.Invoke(ctx, CrmService_Healthz_FullMethodName, in, out, cOpts...)
+	out := new(PingResponse)
+	err := c.cc.Invoke(ctx, CrmService_Ping_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -62,18 +63,19 @@ func (c *crmServiceClient) Healthz(ctx context.Context, in *HealthzRequest, opts
 // All implementations must embed UnimplementedCrmServiceServer
 // for forward compatibility.
 //
-// CrmService — internal gRPC surface for Identity, Access, Audit.
+// CrmService — internal gRPC surface for the crm domain.
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// Current scope is the scaffold Ping (proves the gateway's
+// RequireBearerToken + RequirePermission middleware chain reaches this
+// backend over gRPC). Container-level liveness is served by the standard
+// grpc.health.v1.Health protocol (BL-MON-001). Real RPCs land with the
+// crm feature slice.
 type CrmServiceServer interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
-	Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error)
+	// Ping — scaffold RPC used by the gateway's permission-gate smoke tests.
+	// Identity-agnostic per ADR 0009: the gateway validates the bearer and the
+	// permission tuple upstream; this handler returns a trivial
+	// {message: "ok"} proving the gateway→backend hop works.
+	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	mustEmbedUnimplementedCrmServiceServer()
 }
 
@@ -84,8 +86,8 @@ type CrmServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedCrmServiceServer struct{}
 
-func (UnimplementedCrmServiceServer) Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Healthz not implemented")
+func (UnimplementedCrmServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedCrmServiceServer) mustEmbedUnimplementedCrmServiceServer() {}
 func (UnimplementedCrmServiceServer) testEmbeddedByValue()                    {}
@@ -108,20 +110,20 @@ func RegisterCrmServiceServer(s grpc.ServiceRegistrar, srv CrmServiceServer) {
 	s.RegisterService(&CrmService_ServiceDesc, srv)
 }
 
-func _CrmService_Healthz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HealthzRequest)
+func _CrmService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CrmServiceServer).Healthz(ctx, in)
+		return srv.(CrmServiceServer).Ping(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CrmService_Healthz_FullMethodName,
+		FullMethod: CrmService_Ping_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CrmServiceServer).Healthz(ctx, req.(*HealthzRequest))
+		return srv.(CrmServiceServer).Ping(ctx, req.(*PingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -134,8 +136,8 @@ var CrmService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*CrmServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Healthz",
-			Handler:    _CrmService_Healthz_Handler,
+			MethodName: "Ping",
+			Handler:    _CrmService_Ping_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

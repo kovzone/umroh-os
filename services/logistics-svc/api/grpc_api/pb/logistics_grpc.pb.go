@@ -19,25 +19,26 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	LogisticsService_Healthz_FullMethodName = "/pb.LogisticsService/Healthz"
+	LogisticsService_Ping_FullMethodName = "/pb.LogisticsService/Ping"
 )
 
 // LogisticsServiceClient is the client API for LogisticsService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// LogisticsService — internal gRPC surface for Identity, Access, Audit.
+// LogisticsService — internal gRPC surface for the logistics domain.
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// Current scope is the scaffold Ping (proves the gateway's
+// RequireBearerToken + RequirePermission middleware chain reaches this
+// backend over gRPC). Container-level liveness is served by the standard
+// grpc.health.v1.Health protocol (BL-MON-001). Real RPCs land with the
+// logistics feature slice.
 type LogisticsServiceClient interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
-	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
+	// Ping — scaffold RPC used by the gateway's permission-gate smoke tests.
+	// Identity-agnostic per ADR 0009: the gateway validates the bearer and the
+	// permission tuple upstream; this handler returns a trivial
+	// {message: "ok"} proving the gateway→backend hop works.
+	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 }
 
 type logisticsServiceClient struct {
@@ -48,10 +49,10 @@ func NewLogisticsServiceClient(cc grpc.ClientConnInterface) LogisticsServiceClie
 	return &logisticsServiceClient{cc}
 }
 
-func (c *logisticsServiceClient) Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error) {
+func (c *logisticsServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(HealthzResponse)
-	err := c.cc.Invoke(ctx, LogisticsService_Healthz_FullMethodName, in, out, cOpts...)
+	out := new(PingResponse)
+	err := c.cc.Invoke(ctx, LogisticsService_Ping_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -62,18 +63,19 @@ func (c *logisticsServiceClient) Healthz(ctx context.Context, in *HealthzRequest
 // All implementations must embed UnimplementedLogisticsServiceServer
 // for forward compatibility.
 //
-// LogisticsService — internal gRPC surface for Identity, Access, Audit.
+// LogisticsService — internal gRPC surface for the logistics domain.
 //
-// Pilot scaffold ships a single placeholder RPC (Healthz) so the service can
-// come up and be callable over gRPC end-to-end. Real RPCs land in F1.7:
-//   - ValidateToken
-//   - CheckPermission
-//   - GetUser
-//   - RecordAudit
+// Current scope is the scaffold Ping (proves the gateway's
+// RequireBearerToken + RequirePermission middleware chain reaches this
+// backend over gRPC). Container-level liveness is served by the standard
+// grpc.health.v1.Health protocol (BL-MON-001). Real RPCs land with the
+// logistics feature slice.
 type LogisticsServiceServer interface {
-	// Healthz returns ok=true if the service process is alive.
-	// Placeholder for the pilot; real health checks go through gRPC health protocol.
-	Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error)
+	// Ping — scaffold RPC used by the gateway's permission-gate smoke tests.
+	// Identity-agnostic per ADR 0009: the gateway validates the bearer and the
+	// permission tuple upstream; this handler returns a trivial
+	// {message: "ok"} proving the gateway→backend hop works.
+	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	mustEmbedUnimplementedLogisticsServiceServer()
 }
 
@@ -84,8 +86,8 @@ type LogisticsServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedLogisticsServiceServer struct{}
 
-func (UnimplementedLogisticsServiceServer) Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Healthz not implemented")
+func (UnimplementedLogisticsServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedLogisticsServiceServer) mustEmbedUnimplementedLogisticsServiceServer() {}
 func (UnimplementedLogisticsServiceServer) testEmbeddedByValue()                          {}
@@ -108,20 +110,20 @@ func RegisterLogisticsServiceServer(s grpc.ServiceRegistrar, srv LogisticsServic
 	s.RegisterService(&LogisticsService_ServiceDesc, srv)
 }
 
-func _LogisticsService_Healthz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HealthzRequest)
+func _LogisticsService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LogisticsServiceServer).Healthz(ctx, in)
+		return srv.(LogisticsServiceServer).Ping(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: LogisticsService_Healthz_FullMethodName,
+		FullMethod: LogisticsService_Ping_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LogisticsServiceServer).Healthz(ctx, req.(*HealthzRequest))
+		return srv.(LogisticsServiceServer).Ping(ctx, req.(*PingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -134,8 +136,8 @@ var LogisticsService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*LogisticsServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Healthz",
-			Handler:    _LogisticsService_Healthz_Handler,
+			MethodName: "Ping",
+			Handler:    _LogisticsService_Ping_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

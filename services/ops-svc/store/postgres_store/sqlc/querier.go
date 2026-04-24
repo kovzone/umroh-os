@@ -9,8 +9,6 @@ import (
 )
 
 type Querier interface {
-	GetDbTxDiagnostic(ctx context.Context, id int64) (Diagnostic, error)
-	InsertDbTxDiagnostic(ctx context.Context, arg InsertDbTxDiagnosticParams) (Diagnostic, error)
 	ReadyCheck(ctx context.Context) (int32, error)
 }
 

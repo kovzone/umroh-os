@@ -12,6 +12,227 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type CatalogDepartureStatus string
+
+const (
+	CatalogDepartureStatusOpen      CatalogDepartureStatus = "open"
+	CatalogDepartureStatusClosed    CatalogDepartureStatus = "closed"
+	CatalogDepartureStatusDeparted  CatalogDepartureStatus = "departed"
+	CatalogDepartureStatusCompleted CatalogDepartureStatus = "completed"
+	CatalogDepartureStatusCancelled CatalogDepartureStatus = "cancelled"
+)
+
+func (e *CatalogDepartureStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CatalogDepartureStatus(s)
+	case string:
+		*e = CatalogDepartureStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CatalogDepartureStatus: %T", src)
+	}
+	return nil
+}
+
+type NullCatalogDepartureStatus struct {
+	CatalogDepartureStatus CatalogDepartureStatus `json:"catalog_departure_status"`
+	Valid                  bool                   `json:"valid"` // Valid is true if CatalogDepartureStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCatalogDepartureStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.CatalogDepartureStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CatalogDepartureStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCatalogDepartureStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CatalogDepartureStatus), nil
+}
+
+type CatalogOperatorKind string
+
+const (
+	CatalogOperatorKindAirline CatalogOperatorKind = "airline"
+	CatalogOperatorKindRail    CatalogOperatorKind = "rail"
+	CatalogOperatorKindBus     CatalogOperatorKind = "bus"
+)
+
+func (e *CatalogOperatorKind) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CatalogOperatorKind(s)
+	case string:
+		*e = CatalogOperatorKind(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CatalogOperatorKind: %T", src)
+	}
+	return nil
+}
+
+type NullCatalogOperatorKind struct {
+	CatalogOperatorKind CatalogOperatorKind `json:"catalog_operator_kind"`
+	Valid               bool                `json:"valid"` // Valid is true if CatalogOperatorKind is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCatalogOperatorKind) Scan(value interface{}) error {
+	if value == nil {
+		ns.CatalogOperatorKind, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CatalogOperatorKind.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCatalogOperatorKind) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CatalogOperatorKind), nil
+}
+
+type CatalogPackageKind string
+
+const (
+	CatalogPackageKindUmrahReguler CatalogPackageKind = "umrah_reguler"
+	CatalogPackageKindUmrahPlus    CatalogPackageKind = "umrah_plus"
+	CatalogPackageKindHajjFuroda   CatalogPackageKind = "hajj_furoda"
+	CatalogPackageKindHajjKhusus   CatalogPackageKind = "hajj_khusus"
+	CatalogPackageKindBadal        CatalogPackageKind = "badal"
+	CatalogPackageKindFinancial    CatalogPackageKind = "financial"
+	CatalogPackageKindRetail       CatalogPackageKind = "retail"
+)
+
+func (e *CatalogPackageKind) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CatalogPackageKind(s)
+	case string:
+		*e = CatalogPackageKind(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CatalogPackageKind: %T", src)
+	}
+	return nil
+}
+
+type NullCatalogPackageKind struct {
+	CatalogPackageKind CatalogPackageKind `json:"catalog_package_kind"`
+	Valid              bool               `json:"valid"` // Valid is true if CatalogPackageKind is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCatalogPackageKind) Scan(value interface{}) error {
+	if value == nil {
+		ns.CatalogPackageKind, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CatalogPackageKind.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCatalogPackageKind) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CatalogPackageKind), nil
+}
+
+type CatalogPackageStatus string
+
+const (
+	CatalogPackageStatusDraft    CatalogPackageStatus = "draft"
+	CatalogPackageStatusActive   CatalogPackageStatus = "active"
+	CatalogPackageStatusArchived CatalogPackageStatus = "archived"
+)
+
+func (e *CatalogPackageStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CatalogPackageStatus(s)
+	case string:
+		*e = CatalogPackageStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CatalogPackageStatus: %T", src)
+	}
+	return nil
+}
+
+type NullCatalogPackageStatus struct {
+	CatalogPackageStatus CatalogPackageStatus `json:"catalog_package_status"`
+	Valid                bool                 `json:"valid"` // Valid is true if CatalogPackageStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCatalogPackageStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.CatalogPackageStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CatalogPackageStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCatalogPackageStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CatalogPackageStatus), nil
+}
+
+type CatalogRoomType string
+
+const (
+	CatalogRoomTypeDouble CatalogRoomType = "double"
+	CatalogRoomTypeTriple CatalogRoomType = "triple"
+	CatalogRoomTypeQuad   CatalogRoomType = "quad"
+)
+
+func (e *CatalogRoomType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CatalogRoomType(s)
+	case string:
+		*e = CatalogRoomType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CatalogRoomType: %T", src)
+	}
+	return nil
+}
+
+type NullCatalogRoomType struct {
+	CatalogRoomType CatalogRoomType `json:"catalog_room_type"`
+	Valid           bool            `json:"valid"` // Valid is true if CatalogRoomType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCatalogRoomType) Scan(value interface{}) error {
+	if value == nil {
+		ns.CatalogRoomType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CatalogRoomType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCatalogRoomType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CatalogRoomType), nil
+}
+
 type IamPermissionScope string
 
 const (
@@ -96,6 +317,102 @@ func (ns NullIamUserStatus) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.IamUserStatus), nil
+}
+
+type CatalogAddon struct {
+	ID                 string             `json:"id"`
+	Name               string             `json:"name"`
+	ListAmount         pgtype.Numeric     `json:"list_amount"`
+	ListCurrency       string             `json:"list_currency"`
+	SettlementCurrency string             `json:"settlement_currency"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+}
+
+type CatalogAirline struct {
+	ID           string              `json:"id"`
+	Code         string              `json:"code"`
+	Name         string              `json:"name"`
+	OperatorKind CatalogOperatorKind `json:"operator_kind"`
+	CreatedAt    pgtype.Timestamptz  `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz  `json:"updated_at"`
+}
+
+type CatalogHotel struct {
+	ID               string             `json:"id"`
+	Name             string             `json:"name"`
+	City             string             `json:"city"`
+	StarRating       int16              `json:"star_rating"`
+	WalkingDistanceM int32              `json:"walking_distance_m"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
+type CatalogItineraryTemplate struct {
+	ID        string             `json:"id"`
+	Name      string             `json:"name"`
+	Days      []byte             `json:"days"`
+	PublicUrl string             `json:"public_url"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
+type CatalogMuthawwif struct {
+	ID          string             `json:"id"`
+	Name        string             `json:"name"`
+	PortraitUrl string             `json:"portrait_url"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+}
+
+type CatalogPackage struct {
+	ID            string               `json:"id"`
+	Kind          CatalogPackageKind   `json:"kind"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description"`
+	Highlights    []string             `json:"highlights"`
+	CoverPhotoUrl string               `json:"cover_photo_url"`
+	ItineraryID   pgtype.Text          `json:"itinerary_id"`
+	AirlineID     pgtype.Text          `json:"airline_id"`
+	MuthawwifID   pgtype.Text          `json:"muthawwif_id"`
+	Status        CatalogPackageStatus `json:"status"`
+	CreatedAt     pgtype.Timestamptz   `json:"created_at"`
+	UpdatedAt     pgtype.Timestamptz   `json:"updated_at"`
+	DeletedAt     pgtype.Timestamptz   `json:"deleted_at"`
+}
+
+type CatalogPackageAddon struct {
+	PackageID string `json:"package_id"`
+	AddonID   string `json:"addon_id"`
+}
+
+type CatalogPackageDeparture struct {
+	ID            string                 `json:"id"`
+	PackageID     string                 `json:"package_id"`
+	DepartureDate pgtype.Date            `json:"departure_date"`
+	ReturnDate    pgtype.Date            `json:"return_date"`
+	TotalSeats    int32                  `json:"total_seats"`
+	ReservedSeats int32                  `json:"reserved_seats"`
+	Status        CatalogDepartureStatus `json:"status"`
+	CreatedAt     pgtype.Timestamptz     `json:"created_at"`
+	UpdatedAt     pgtype.Timestamptz     `json:"updated_at"`
+}
+
+type CatalogPackageHotel struct {
+	PackageID string `json:"package_id"`
+	HotelID   string `json:"hotel_id"`
+	SortOrder int16  `json:"sort_order"`
+}
+
+type CatalogPackagePricing struct {
+	ID                 string             `json:"id"`
+	PackageDepartureID string             `json:"package_departure_id"`
+	RoomType           CatalogRoomType    `json:"room_type"`
+	ListAmount         pgtype.Numeric     `json:"list_amount"`
+	ListCurrency       string             `json:"list_currency"`
+	SettlementCurrency string             `json:"settlement_currency"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Diagnostic struct {

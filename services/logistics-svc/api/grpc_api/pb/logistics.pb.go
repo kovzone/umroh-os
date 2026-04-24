@@ -21,26 +21,26 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type HealthzRequest struct {
+type PingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HealthzRequest) Reset() {
-	*x = HealthzRequest{}
+func (x *PingRequest) Reset() {
+	*x = PingRequest{}
 	mi := &file_logistics_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HealthzRequest) String() string {
+func (x *PingRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HealthzRequest) ProtoMessage() {}
+func (*PingRequest) ProtoMessage() {}
 
-func (x *HealthzRequest) ProtoReflect() protoreflect.Message {
+func (x *PingRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_logistics_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -52,32 +52,32 @@ func (x *HealthzRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HealthzRequest.ProtoReflect.Descriptor instead.
-func (*HealthzRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use PingRequest.ProtoReflect.Descriptor instead.
+func (*PingRequest) Descriptor() ([]byte, []int) {
 	return file_logistics_proto_rawDescGZIP(), []int{0}
 }
 
-type HealthzResponse struct {
+type PingResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HealthzResponse) Reset() {
-	*x = HealthzResponse{}
+func (x *PingResponse) Reset() {
+	*x = PingResponse{}
 	mi := &file_logistics_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HealthzResponse) String() string {
+func (x *PingResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HealthzResponse) ProtoMessage() {}
+func (*PingResponse) ProtoMessage() {}
 
-func (x *HealthzResponse) ProtoReflect() protoreflect.Message {
+func (x *PingResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_logistics_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -89,28 +89,28 @@ func (x *HealthzResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HealthzResponse.ProtoReflect.Descriptor instead.
-func (*HealthzResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use PingResponse.ProtoReflect.Descriptor instead.
+func (*PingResponse) Descriptor() ([]byte, []int) {
 	return file_logistics_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *HealthzResponse) GetOk() bool {
+func (x *PingResponse) GetMessage() string {
 	if x != nil {
-		return x.Ok
+		return x.Message
 	}
-	return false
+	return ""
 }
 
 var File_logistics_proto protoreflect.FileDescriptor
 
 const file_logistics_proto_rawDesc = "" +
 	"\n" +
-	"\x0flogistics.proto\x12\x02pb\"\x10\n" +
-	"\x0eHealthzRequest\"!\n" +
-	"\x0fHealthzResponse\x12\x0e\n" +
-	"\x02ok\x18\x01 \x01(\bR\x02ok2H\n" +
-	"\x10LogisticsService\x124\n" +
-	"\aHealthz\x12\x12.pb.HealthzRequest\x1a\x13.pb.HealthzResponse\"\x00B\x06Z\x04./pbb\x06proto3"
+	"\x0flogistics.proto\x12\x02pb\"\r\n" +
+	"\vPingRequest\"(\n" +
+	"\fPingResponse\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage2?\n" +
+	"\x10LogisticsService\x12+\n" +
+	"\x04Ping\x12\x0f.pb.PingRequest\x1a\x10.pb.PingResponse\"\x00B\x06Z\x04./pbb\x06proto3"
 
 var (
 	file_logistics_proto_rawDescOnce sync.Once
@@ -126,12 +126,12 @@ func file_logistics_proto_rawDescGZIP() []byte {
 
 var file_logistics_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_logistics_proto_goTypes = []any{
-	(*HealthzRequest)(nil),  // 0: pb.HealthzRequest
-	(*HealthzResponse)(nil), // 1: pb.HealthzResponse
+	(*PingRequest)(nil),  // 0: pb.PingRequest
+	(*PingResponse)(nil), // 1: pb.PingResponse
 }
 var file_logistics_proto_depIdxs = []int32{
-	0, // 0: pb.LogisticsService.Healthz:input_type -> pb.HealthzRequest
-	1, // 1: pb.LogisticsService.Healthz:output_type -> pb.HealthzResponse
+	0, // 0: pb.LogisticsService.Ping:input_type -> pb.PingRequest
+	1, // 1: pb.LogisticsService.Ping:output_type -> pb.PingResponse
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name

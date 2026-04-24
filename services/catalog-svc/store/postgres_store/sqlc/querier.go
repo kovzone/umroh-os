@@ -16,7 +16,6 @@ type Querier interface {
 	GetActiveDeparture(ctx context.Context, id string) (GetActiveDepartureRow, error)
 	GetActivePackageByID(ctx context.Context, id string) (GetActivePackageByIDRow, error)
 	GetAirlineByID(ctx context.Context, id string) (CatalogAirline, error)
-	GetDbTxDiagnostic(ctx context.Context, id int64) (Diagnostic, error)
 	GetItineraryByID(ctx context.Context, id string) (CatalogItineraryTemplate, error)
 	GetMuthawwifByID(ctx context.Context, id string) (CatalogMuthawwif, error)
 	// Returns pgx.ErrNoRows when the package has no upcoming open/closed
@@ -31,7 +30,6 @@ type Querier interface {
 	// units per § Catalog). MVP single-currency (Q001) means no sub-unit
 	// loss; multi-currency handling revisits this when it lands.
 	GetStartingPriceForPackage(ctx context.Context, packageID string) (GetStartingPriceForPackageRow, error)
-	InsertDbTxDiagnostic(ctx context.Context, arg InsertDbTxDiagnosticParams) (Diagnostic, error)
 	// S1-E-02 / BL-CAT-001 — package read queries.
 	//
 	// All queries are read-only. Only `status = 'active'` rows are returned

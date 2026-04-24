@@ -33,7 +33,6 @@ type IService interface {
 	// System
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
-	DbTxDiagnostic(ctx context.Context, params *DbTxDiagnosticParams) (*DbTxDiagnosticResult, error)
 
 	// Auth — BL-IAM-001 (implemented in service/auth.go).
 	Login(ctx context.Context, params *LoginParams) (*LoginResult, error)

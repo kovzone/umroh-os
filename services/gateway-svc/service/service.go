@@ -4,7 +4,8 @@ import (
 	"context"
 
 	"gateway-svc/adapter/catalog_grpc_adapter"
-	"gateway-svc/adapter/finance_rest_adapter"
+	"gateway-svc/adapter/finance_grpc_adapter"
+	"gateway-svc/adapter/health_check_adapter"
 	"gateway-svc/adapter/iam_grpc_adapter"
 
 	"github.com/rs/zerolog"
@@ -15,8 +16,9 @@ import (
 //
 // gateway-svc fronts every backend. Methods either return process-local state
 // (Liveness, Readiness) or dispatch to a backend through the corresponding
-// adapter. Under ADR 0009 the target shape is REST-in, gRPC-out; finance-svc
-// REST is the remaining interim surface (retires with BL-IAM-019 / S1-E-14).
+// adapter. Under ADR 0009 every downstream service is gRPC-only — after
+// BL-IAM-019 / S1-E-14 finance-svc is the last backend to migrate and no
+// REST adapter remains on the gateway side.
 type IService interface {
 	Liveness(ctx context.Context, params *LivenessParams) (*LivenessResult, error)
 	Readiness(ctx context.Context, params *ReadinessParams) (*ReadinessResult, error)
@@ -40,19 +42,26 @@ type IService interface {
 	VerifyTOTP(ctx context.Context, params *iam_grpc_adapter.VerifyTOTPParams) (*iam_grpc_adapter.VerifyTOTPResult, error)
 	SuspendUser(ctx context.Context, params *iam_grpc_adapter.SuspendUserParams) (*iam_grpc_adapter.SuspendUserResult, error)
 
-	// Finance liveness proxy — interim REST adapter; retires with
-	// BL-IAM-019 / S1-E-14 when /v1/finance/* moves to gRPC.
-	GetFinanceSystemLive(ctx context.Context) (*finance_rest_adapter.LivenessResult, error)
+	// Permission-gate smoke (BL-IAM-019 / S1-E-14) — proxies to finance-svc
+	// gRPC via finance_grpc_adapter. Authorization is enforced at the
+	// gateway's RequireBearerToken + RequirePermission("journal_entry",
+	// "read", "global") middleware chain; finance-svc is identity-agnostic.
+	FinancePing(ctx context.Context) (*finance_grpc_adapter.PingResult, error)
+
+	// Aggregate backend health (BL-IAM-019 / S1-E-14) — fans out
+	// grpc.health.v1.Health.Check to every backend via health_check_adapter.
+	// Unauthenticated; core-web's status page polls it.
+	SystemBackends(ctx context.Context) []health_check_adapter.BackendStatus
 }
 
 // Adapters bundles the adapters this service can dispatch through.
 // One field per backend; populated at construction time in cmd/start.go.
-// Mixed REST + gRPC during the ADR-0009 transition — each backend
-// graduates to gRPC-only as its BL-REFACTOR-* card lands.
+// Every adapter is gRPC-based — the REST era ended with BL-IAM-019 / S1-E-14.
 type Adapters struct {
 	iamGrpc     *iam_grpc_adapter.Adapter
 	catalogGrpc *catalog_grpc_adapter.Adapter
-	financeRest *finance_rest_adapter.Adapter
+	financeGrpc *finance_grpc_adapter.Adapter
+	healthCheck *health_check_adapter.Adapter
 }
 
 type Service struct {
@@ -70,7 +79,8 @@ type NewServiceParams struct {
 	AppName     string
 	IamGrpc     *iam_grpc_adapter.Adapter
 	CatalogGrpc *catalog_grpc_adapter.Adapter
-	FinanceRest *finance_rest_adapter.Adapter
+	FinanceGrpc *finance_grpc_adapter.Adapter
+	HealthCheck *health_check_adapter.Adapter
 }
 
 func NewService(p NewServiceParams) IService {
@@ -81,7 +91,8 @@ func NewService(p NewServiceParams) IService {
 		adapters: Adapters{
 			iamGrpc:     p.IamGrpc,
 			catalogGrpc: p.CatalogGrpc,
-			financeRest: p.FinanceRest,
+			financeGrpc: p.FinanceGrpc,
+			healthCheck: p.HealthCheck,
 		},
 	}
 }

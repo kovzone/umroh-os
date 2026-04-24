@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package="./pb";
+
+// FinanceService — consumer-side mirror of finance-svc's gRPC surface.
+// Kept in sync by hand with services/finance-svc/api/grpc_api/pb/finance.proto.
+// Methods gateway does not call are omitted to keep this adapter minimal.
+service FinanceService {
+  // Ping — scaffold RPC called by /v1/finance/ping on the gateway AFTER
+  // RequireBearerToken + RequirePermission("journal_entry", "read",
+  // "global") have passed. Request is empty — finance-svc is
+  // identity-agnostic per ADR 0009; the gateway handler assembles the
+  // client-visible envelope from its own locals.
+  rpc Ping(PingRequest) returns (PingResponse) {}
+}
+
+message PingRequest {}
+
+message PingResponse {
+  string message = 1;
+}

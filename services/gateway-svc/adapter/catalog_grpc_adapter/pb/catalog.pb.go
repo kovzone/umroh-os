@@ -21,86 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type HealthzRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *HealthzRequest) Reset() {
-	*x = HealthzRequest{}
-	mi := &file_catalog_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HealthzRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HealthzRequest) ProtoMessage() {}
-
-func (x *HealthzRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HealthzRequest.ProtoReflect.Descriptor instead.
-func (*HealthzRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{0}
-}
-
-type HealthzResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *HealthzResponse) Reset() {
-	*x = HealthzResponse{}
-	mi := &file_catalog_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HealthzResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HealthzResponse) ProtoMessage() {}
-
-func (x *HealthzResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HealthzResponse.ProtoReflect.Descriptor instead.
-func (*HealthzResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *HealthzResponse) GetOk() bool {
-	if x != nil {
-		return x.Ok
-	}
-	return false
-}
-
 // Money is the display-only currency triple from § Catalog. Settlement
 // currency is always "IDR" in MVP per Q001.
 type Money struct {
@@ -114,7 +34,7 @@ type Money struct {
 
 func (x *Money) Reset() {
 	*x = Money{}
-	mi := &file_catalog_proto_msgTypes[2]
+	mi := &file_catalog_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -126,7 +46,7 @@ func (x *Money) String() string {
 func (*Money) ProtoMessage() {}
 
 func (x *Money) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[2]
+	mi := &file_catalog_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -139,7 +59,7 @@ func (x *Money) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Money.ProtoReflect.Descriptor instead.
 func (*Money) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{2}
+	return file_catalog_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Money) GetListAmount() int64 {
@@ -176,7 +96,7 @@ type HotelRef struct {
 
 func (x *HotelRef) Reset() {
 	*x = HotelRef{}
-	mi := &file_catalog_proto_msgTypes[3]
+	mi := &file_catalog_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -188,7 +108,7 @@ func (x *HotelRef) String() string {
 func (*HotelRef) ProtoMessage() {}
 
 func (x *HotelRef) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[3]
+	mi := &file_catalog_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -201,7 +121,7 @@ func (x *HotelRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HotelRef.ProtoReflect.Descriptor instead.
 func (*HotelRef) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{3}
+	return file_catalog_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *HotelRef) GetId() string {
@@ -251,7 +171,7 @@ type AirlineRef struct {
 
 func (x *AirlineRef) Reset() {
 	*x = AirlineRef{}
-	mi := &file_catalog_proto_msgTypes[4]
+	mi := &file_catalog_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -263,7 +183,7 @@ func (x *AirlineRef) String() string {
 func (*AirlineRef) ProtoMessage() {}
 
 func (x *AirlineRef) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[4]
+	mi := &file_catalog_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -276,7 +196,7 @@ func (x *AirlineRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AirlineRef.ProtoReflect.Descriptor instead.
 func (*AirlineRef) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{4}
+	return file_catalog_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *AirlineRef) GetId() string {
@@ -318,7 +238,7 @@ type MuthawwifRef struct {
 
 func (x *MuthawwifRef) Reset() {
 	*x = MuthawwifRef{}
-	mi := &file_catalog_proto_msgTypes[5]
+	mi := &file_catalog_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -330,7 +250,7 @@ func (x *MuthawwifRef) String() string {
 func (*MuthawwifRef) ProtoMessage() {}
 
 func (x *MuthawwifRef) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[5]
+	mi := &file_catalog_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -343,7 +263,7 @@ func (x *MuthawwifRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MuthawwifRef.ProtoReflect.Descriptor instead.
 func (*MuthawwifRef) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{5}
+	return file_catalog_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *MuthawwifRef) GetId() string {
@@ -380,7 +300,7 @@ type AddonRef struct {
 
 func (x *AddonRef) Reset() {
 	*x = AddonRef{}
-	mi := &file_catalog_proto_msgTypes[6]
+	mi := &file_catalog_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -392,7 +312,7 @@ func (x *AddonRef) String() string {
 func (*AddonRef) ProtoMessage() {}
 
 func (x *AddonRef) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[6]
+	mi := &file_catalog_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -405,7 +325,7 @@ func (x *AddonRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddonRef.ProtoReflect.Descriptor instead.
 func (*AddonRef) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{6}
+	return file_catalog_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *AddonRef) GetId() string {
@@ -455,7 +375,7 @@ type ItineraryDay struct {
 
 func (x *ItineraryDay) Reset() {
 	*x = ItineraryDay{}
-	mi := &file_catalog_proto_msgTypes[7]
+	mi := &file_catalog_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -467,7 +387,7 @@ func (x *ItineraryDay) String() string {
 func (*ItineraryDay) ProtoMessage() {}
 
 func (x *ItineraryDay) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[7]
+	mi := &file_catalog_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -480,7 +400,7 @@ func (x *ItineraryDay) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ItineraryDay.ProtoReflect.Descriptor instead.
 func (*ItineraryDay) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{7}
+	return file_catalog_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ItineraryDay) GetDay() int32 {
@@ -522,7 +442,7 @@ type Itinerary struct {
 
 func (x *Itinerary) Reset() {
 	*x = Itinerary{}
-	mi := &file_catalog_proto_msgTypes[8]
+	mi := &file_catalog_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -534,7 +454,7 @@ func (x *Itinerary) String() string {
 func (*Itinerary) ProtoMessage() {}
 
 func (x *Itinerary) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[8]
+	mi := &file_catalog_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -547,7 +467,7 @@ func (x *Itinerary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Itinerary.ProtoReflect.Descriptor instead.
 func (*Itinerary) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{8}
+	return file_catalog_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Itinerary) GetId() string {
@@ -587,7 +507,7 @@ type ListPackagesRequest struct {
 
 func (x *ListPackagesRequest) Reset() {
 	*x = ListPackagesRequest{}
-	mi := &file_catalog_proto_msgTypes[9]
+	mi := &file_catalog_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -599,7 +519,7 @@ func (x *ListPackagesRequest) String() string {
 func (*ListPackagesRequest) ProtoMessage() {}
 
 func (x *ListPackagesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[9]
+	mi := &file_catalog_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -612,7 +532,7 @@ func (x *ListPackagesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPackagesRequest.ProtoReflect.Descriptor instead.
 func (*ListPackagesRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{9}
+	return file_catalog_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ListPackagesRequest) GetKind() string {
@@ -679,7 +599,7 @@ type NextDeparture struct {
 
 func (x *NextDeparture) Reset() {
 	*x = NextDeparture{}
-	mi := &file_catalog_proto_msgTypes[10]
+	mi := &file_catalog_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -691,7 +611,7 @@ func (x *NextDeparture) String() string {
 func (*NextDeparture) ProtoMessage() {}
 
 func (x *NextDeparture) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[10]
+	mi := &file_catalog_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -704,7 +624,7 @@ func (x *NextDeparture) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NextDeparture.ProtoReflect.Descriptor instead.
 func (*NextDeparture) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{10}
+	return file_catalog_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *NextDeparture) GetId() string {
@@ -750,7 +670,7 @@ type PackageListItem struct {
 
 func (x *PackageListItem) Reset() {
 	*x = PackageListItem{}
-	mi := &file_catalog_proto_msgTypes[11]
+	mi := &file_catalog_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -762,7 +682,7 @@ func (x *PackageListItem) String() string {
 func (*PackageListItem) ProtoMessage() {}
 
 func (x *PackageListItem) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[11]
+	mi := &file_catalog_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -775,7 +695,7 @@ func (x *PackageListItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PackageListItem.ProtoReflect.Descriptor instead.
 func (*PackageListItem) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{11}
+	return file_catalog_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *PackageListItem) GetId() string {
@@ -837,7 +757,7 @@ type PageMeta struct {
 
 func (x *PageMeta) Reset() {
 	*x = PageMeta{}
-	mi := &file_catalog_proto_msgTypes[12]
+	mi := &file_catalog_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -849,7 +769,7 @@ func (x *PageMeta) String() string {
 func (*PageMeta) ProtoMessage() {}
 
 func (x *PageMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[12]
+	mi := &file_catalog_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -862,7 +782,7 @@ func (x *PageMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PageMeta.ProtoReflect.Descriptor instead.
 func (*PageMeta) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{12}
+	return file_catalog_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *PageMeta) GetNextCursor() string {
@@ -889,7 +809,7 @@ type ListPackagesResponse struct {
 
 func (x *ListPackagesResponse) Reset() {
 	*x = ListPackagesResponse{}
-	mi := &file_catalog_proto_msgTypes[13]
+	mi := &file_catalog_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -901,7 +821,7 @@ func (x *ListPackagesResponse) String() string {
 func (*ListPackagesResponse) ProtoMessage() {}
 
 func (x *ListPackagesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[13]
+	mi := &file_catalog_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -914,7 +834,7 @@ func (x *ListPackagesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPackagesResponse.ProtoReflect.Descriptor instead.
 func (*ListPackagesResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{13}
+	return file_catalog_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ListPackagesResponse) GetPackages() []*PackageListItem {
@@ -940,7 +860,7 @@ type GetPackageRequest struct {
 
 func (x *GetPackageRequest) Reset() {
 	*x = GetPackageRequest{}
-	mi := &file_catalog_proto_msgTypes[14]
+	mi := &file_catalog_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -952,7 +872,7 @@ func (x *GetPackageRequest) String() string {
 func (*GetPackageRequest) ProtoMessage() {}
 
 func (x *GetPackageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[14]
+	mi := &file_catalog_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -965,7 +885,7 @@ func (x *GetPackageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPackageRequest.ProtoReflect.Descriptor instead.
 func (*GetPackageRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{14}
+	return file_catalog_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetPackageRequest) GetId() string {
@@ -989,7 +909,7 @@ type DepartureSummary struct {
 
 func (x *DepartureSummary) Reset() {
 	*x = DepartureSummary{}
-	mi := &file_catalog_proto_msgTypes[15]
+	mi := &file_catalog_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1001,7 +921,7 @@ func (x *DepartureSummary) String() string {
 func (*DepartureSummary) ProtoMessage() {}
 
 func (x *DepartureSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[15]
+	mi := &file_catalog_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1014,7 +934,7 @@ func (x *DepartureSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DepartureSummary.ProtoReflect.Descriptor instead.
 func (*DepartureSummary) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{15}
+	return file_catalog_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *DepartureSummary) GetId() string {
@@ -1072,7 +992,7 @@ type PackageDetail struct {
 
 func (x *PackageDetail) Reset() {
 	*x = PackageDetail{}
-	mi := &file_catalog_proto_msgTypes[16]
+	mi := &file_catalog_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1084,7 +1004,7 @@ func (x *PackageDetail) String() string {
 func (*PackageDetail) ProtoMessage() {}
 
 func (x *PackageDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[16]
+	mi := &file_catalog_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1097,7 +1017,7 @@ func (x *PackageDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PackageDetail.ProtoReflect.Descriptor instead.
 func (*PackageDetail) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{16}
+	return file_catalog_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *PackageDetail) GetId() string {
@@ -1193,7 +1113,7 @@ type GetPackageResponse struct {
 
 func (x *GetPackageResponse) Reset() {
 	*x = GetPackageResponse{}
-	mi := &file_catalog_proto_msgTypes[17]
+	mi := &file_catalog_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1205,7 +1125,7 @@ func (x *GetPackageResponse) String() string {
 func (*GetPackageResponse) ProtoMessage() {}
 
 func (x *GetPackageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[17]
+	mi := &file_catalog_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1218,7 +1138,7 @@ func (x *GetPackageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPackageResponse.ProtoReflect.Descriptor instead.
 func (*GetPackageResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{17}
+	return file_catalog_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *GetPackageResponse) GetPackage() *PackageDetail {
@@ -1237,7 +1157,7 @@ type GetPackageDepartureRequest struct {
 
 func (x *GetPackageDepartureRequest) Reset() {
 	*x = GetPackageDepartureRequest{}
-	mi := &file_catalog_proto_msgTypes[18]
+	mi := &file_catalog_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1249,7 +1169,7 @@ func (x *GetPackageDepartureRequest) String() string {
 func (*GetPackageDepartureRequest) ProtoMessage() {}
 
 func (x *GetPackageDepartureRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[18]
+	mi := &file_catalog_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1262,7 +1182,7 @@ func (x *GetPackageDepartureRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPackageDepartureRequest.ProtoReflect.Descriptor instead.
 func (*GetPackageDepartureRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{18}
+	return file_catalog_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GetPackageDepartureRequest) GetId() string {
@@ -1284,7 +1204,7 @@ type PackagePricing struct {
 
 func (x *PackagePricing) Reset() {
 	*x = PackagePricing{}
-	mi := &file_catalog_proto_msgTypes[19]
+	mi := &file_catalog_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1296,7 +1216,7 @@ func (x *PackagePricing) String() string {
 func (*PackagePricing) ProtoMessage() {}
 
 func (x *PackagePricing) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[19]
+	mi := &file_catalog_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1309,7 +1229,7 @@ func (x *PackagePricing) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PackagePricing.ProtoReflect.Descriptor instead.
 func (*PackagePricing) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{19}
+	return file_catalog_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *PackagePricing) GetRoomType() string {
@@ -1351,7 +1271,7 @@ type VendorReadiness struct {
 
 func (x *VendorReadiness) Reset() {
 	*x = VendorReadiness{}
-	mi := &file_catalog_proto_msgTypes[20]
+	mi := &file_catalog_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1363,7 +1283,7 @@ func (x *VendorReadiness) String() string {
 func (*VendorReadiness) ProtoMessage() {}
 
 func (x *VendorReadiness) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[20]
+	mi := &file_catalog_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1376,7 +1296,7 @@ func (x *VendorReadiness) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VendorReadiness.ProtoReflect.Descriptor instead.
 func (*VendorReadiness) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{20}
+	return file_catalog_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *VendorReadiness) GetTicket() string {
@@ -1417,7 +1337,7 @@ type DepartureDetail struct {
 
 func (x *DepartureDetail) Reset() {
 	*x = DepartureDetail{}
-	mi := &file_catalog_proto_msgTypes[21]
+	mi := &file_catalog_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1429,7 +1349,7 @@ func (x *DepartureDetail) String() string {
 func (*DepartureDetail) ProtoMessage() {}
 
 func (x *DepartureDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[21]
+	mi := &file_catalog_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1442,7 +1362,7 @@ func (x *DepartureDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DepartureDetail.ProtoReflect.Descriptor instead.
 func (*DepartureDetail) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{21}
+	return file_catalog_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *DepartureDetail) GetId() string {
@@ -1517,7 +1437,7 @@ type GetPackageDepartureResponse struct {
 
 func (x *GetPackageDepartureResponse) Reset() {
 	*x = GetPackageDepartureResponse{}
-	mi := &file_catalog_proto_msgTypes[22]
+	mi := &file_catalog_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1529,7 +1449,7 @@ func (x *GetPackageDepartureResponse) String() string {
 func (*GetPackageDepartureResponse) ProtoMessage() {}
 
 func (x *GetPackageDepartureResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_proto_msgTypes[22]
+	mi := &file_catalog_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1542,7 +1462,7 @@ func (x *GetPackageDepartureResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPackageDepartureResponse.ProtoReflect.Descriptor instead.
 func (*GetPackageDepartureResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_proto_rawDescGZIP(), []int{22}
+	return file_catalog_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *GetPackageDepartureResponse) GetDeparture() *DepartureDetail {
@@ -1556,10 +1476,7 @@ var File_catalog_proto protoreflect.FileDescriptor
 
 const file_catalog_proto_rawDesc = "" +
 	"\n" +
-	"\rcatalog.proto\x12\x02pb\"\x10\n" +
-	"\x0eHealthzRequest\"!\n" +
-	"\x0fHealthzResponse\x12\x0e\n" +
-	"\x02ok\x18\x01 \x01(\bR\x02ok\"~\n" +
+	"\rcatalog.proto\x12\x02pb\"~\n" +
 	"\x05Money\x12\x1f\n" +
 	"\vlist_amount\x18\x01 \x01(\x03R\n" +
 	"listAmount\x12#\n" +
@@ -1683,9 +1600,8 @@ const file_catalog_proto_rawDesc = "" +
 	"\apricing\x18\b \x03(\v2\x12.pb.PackagePricingR\apricing\x12>\n" +
 	"\x10vendor_readiness\x18\t \x01(\v2\x13.pb.VendorReadinessR\x0fvendorReadiness\"P\n" +
 	"\x1bGetPackageDepartureResponse\x121\n" +
-	"\tdeparture\x18\x01 \x01(\v2\x13.pb.DepartureDetailR\tdeparture2\xa4\x02\n" +
-	"\x0eCatalogService\x124\n" +
-	"\aHealthz\x12\x12.pb.HealthzRequest\x1a\x13.pb.HealthzResponse\"\x00\x12C\n" +
+	"\tdeparture\x18\x01 \x01(\v2\x13.pb.DepartureDetailR\tdeparture2\xee\x01\n" +
+	"\x0eCatalogService\x12C\n" +
 	"\fListPackages\x12\x17.pb.ListPackagesRequest\x1a\x18.pb.ListPackagesResponse\"\x00\x12=\n" +
 	"\n" +
 	"GetPackage\x12\x15.pb.GetPackageRequest\x1a\x16.pb.GetPackageResponse\"\x00\x12X\n" +
@@ -1703,58 +1619,54 @@ func file_catalog_proto_rawDescGZIP() []byte {
 	return file_catalog_proto_rawDescData
 }
 
-var file_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_catalog_proto_goTypes = []any{
-	(*HealthzRequest)(nil),              // 0: pb.HealthzRequest
-	(*HealthzResponse)(nil),             // 1: pb.HealthzResponse
-	(*Money)(nil),                       // 2: pb.Money
-	(*HotelRef)(nil),                    // 3: pb.HotelRef
-	(*AirlineRef)(nil),                  // 4: pb.AirlineRef
-	(*MuthawwifRef)(nil),                // 5: pb.MuthawwifRef
-	(*AddonRef)(nil),                    // 6: pb.AddonRef
-	(*ItineraryDay)(nil),                // 7: pb.ItineraryDay
-	(*Itinerary)(nil),                   // 8: pb.Itinerary
-	(*ListPackagesRequest)(nil),         // 9: pb.ListPackagesRequest
-	(*NextDeparture)(nil),               // 10: pb.NextDeparture
-	(*PackageListItem)(nil),             // 11: pb.PackageListItem
-	(*PageMeta)(nil),                    // 12: pb.PageMeta
-	(*ListPackagesResponse)(nil),        // 13: pb.ListPackagesResponse
-	(*GetPackageRequest)(nil),           // 14: pb.GetPackageRequest
-	(*DepartureSummary)(nil),            // 15: pb.DepartureSummary
-	(*PackageDetail)(nil),               // 16: pb.PackageDetail
-	(*GetPackageResponse)(nil),          // 17: pb.GetPackageResponse
-	(*GetPackageDepartureRequest)(nil),  // 18: pb.GetPackageDepartureRequest
-	(*PackagePricing)(nil),              // 19: pb.PackagePricing
-	(*VendorReadiness)(nil),             // 20: pb.VendorReadiness
-	(*DepartureDetail)(nil),             // 21: pb.DepartureDetail
-	(*GetPackageDepartureResponse)(nil), // 22: pb.GetPackageDepartureResponse
+	(*Money)(nil),                       // 0: pb.Money
+	(*HotelRef)(nil),                    // 1: pb.HotelRef
+	(*AirlineRef)(nil),                  // 2: pb.AirlineRef
+	(*MuthawwifRef)(nil),                // 3: pb.MuthawwifRef
+	(*AddonRef)(nil),                    // 4: pb.AddonRef
+	(*ItineraryDay)(nil),                // 5: pb.ItineraryDay
+	(*Itinerary)(nil),                   // 6: pb.Itinerary
+	(*ListPackagesRequest)(nil),         // 7: pb.ListPackagesRequest
+	(*NextDeparture)(nil),               // 8: pb.NextDeparture
+	(*PackageListItem)(nil),             // 9: pb.PackageListItem
+	(*PageMeta)(nil),                    // 10: pb.PageMeta
+	(*ListPackagesResponse)(nil),        // 11: pb.ListPackagesResponse
+	(*GetPackageRequest)(nil),           // 12: pb.GetPackageRequest
+	(*DepartureSummary)(nil),            // 13: pb.DepartureSummary
+	(*PackageDetail)(nil),               // 14: pb.PackageDetail
+	(*GetPackageResponse)(nil),          // 15: pb.GetPackageResponse
+	(*GetPackageDepartureRequest)(nil),  // 16: pb.GetPackageDepartureRequest
+	(*PackagePricing)(nil),              // 17: pb.PackagePricing
+	(*VendorReadiness)(nil),             // 18: pb.VendorReadiness
+	(*DepartureDetail)(nil),             // 19: pb.DepartureDetail
+	(*GetPackageDepartureResponse)(nil), // 20: pb.GetPackageDepartureResponse
 }
 var file_catalog_proto_depIdxs = []int32{
-	7,  // 0: pb.Itinerary.days:type_name -> pb.ItineraryDay
-	2,  // 1: pb.PackageListItem.starting_price:type_name -> pb.Money
-	10, // 2: pb.PackageListItem.next_departure:type_name -> pb.NextDeparture
-	11, // 3: pb.ListPackagesResponse.packages:type_name -> pb.PackageListItem
-	12, // 4: pb.ListPackagesResponse.page:type_name -> pb.PageMeta
-	8,  // 5: pb.PackageDetail.itinerary:type_name -> pb.Itinerary
-	3,  // 6: pb.PackageDetail.hotels:type_name -> pb.HotelRef
-	4,  // 7: pb.PackageDetail.airline:type_name -> pb.AirlineRef
-	5,  // 8: pb.PackageDetail.muthawwif:type_name -> pb.MuthawwifRef
-	6,  // 9: pb.PackageDetail.add_ons:type_name -> pb.AddonRef
-	15, // 10: pb.PackageDetail.departures:type_name -> pb.DepartureSummary
-	16, // 11: pb.GetPackageResponse.package:type_name -> pb.PackageDetail
-	19, // 12: pb.DepartureDetail.pricing:type_name -> pb.PackagePricing
-	20, // 13: pb.DepartureDetail.vendor_readiness:type_name -> pb.VendorReadiness
-	21, // 14: pb.GetPackageDepartureResponse.departure:type_name -> pb.DepartureDetail
-	0,  // 15: pb.CatalogService.Healthz:input_type -> pb.HealthzRequest
-	9,  // 16: pb.CatalogService.ListPackages:input_type -> pb.ListPackagesRequest
-	14, // 17: pb.CatalogService.GetPackage:input_type -> pb.GetPackageRequest
-	18, // 18: pb.CatalogService.GetPackageDeparture:input_type -> pb.GetPackageDepartureRequest
-	1,  // 19: pb.CatalogService.Healthz:output_type -> pb.HealthzResponse
-	13, // 20: pb.CatalogService.ListPackages:output_type -> pb.ListPackagesResponse
-	17, // 21: pb.CatalogService.GetPackage:output_type -> pb.GetPackageResponse
-	22, // 22: pb.CatalogService.GetPackageDeparture:output_type -> pb.GetPackageDepartureResponse
-	19, // [19:23] is the sub-list for method output_type
-	15, // [15:19] is the sub-list for method input_type
+	5,  // 0: pb.Itinerary.days:type_name -> pb.ItineraryDay
+	0,  // 1: pb.PackageListItem.starting_price:type_name -> pb.Money
+	8,  // 2: pb.PackageListItem.next_departure:type_name -> pb.NextDeparture
+	9,  // 3: pb.ListPackagesResponse.packages:type_name -> pb.PackageListItem
+	10, // 4: pb.ListPackagesResponse.page:type_name -> pb.PageMeta
+	6,  // 5: pb.PackageDetail.itinerary:type_name -> pb.Itinerary
+	1,  // 6: pb.PackageDetail.hotels:type_name -> pb.HotelRef
+	2,  // 7: pb.PackageDetail.airline:type_name -> pb.AirlineRef
+	3,  // 8: pb.PackageDetail.muthawwif:type_name -> pb.MuthawwifRef
+	4,  // 9: pb.PackageDetail.add_ons:type_name -> pb.AddonRef
+	13, // 10: pb.PackageDetail.departures:type_name -> pb.DepartureSummary
+	14, // 11: pb.GetPackageResponse.package:type_name -> pb.PackageDetail
+	17, // 12: pb.DepartureDetail.pricing:type_name -> pb.PackagePricing
+	18, // 13: pb.DepartureDetail.vendor_readiness:type_name -> pb.VendorReadiness
+	19, // 14: pb.GetPackageDepartureResponse.departure:type_name -> pb.DepartureDetail
+	7,  // 15: pb.CatalogService.ListPackages:input_type -> pb.ListPackagesRequest
+	12, // 16: pb.CatalogService.GetPackage:input_type -> pb.GetPackageRequest
+	16, // 17: pb.CatalogService.GetPackageDeparture:input_type -> pb.GetPackageDepartureRequest
+	11, // 18: pb.CatalogService.ListPackages:output_type -> pb.ListPackagesResponse
+	15, // 19: pb.CatalogService.GetPackage:output_type -> pb.GetPackageResponse
+	20, // 20: pb.CatalogService.GetPackageDeparture:output_type -> pb.GetPackageDepartureResponse
+	18, // [18:21] is the sub-list for method output_type
+	15, // [15:18] is the sub-list for method input_type
 	15, // [15:15] is the sub-list for extension type_name
 	15, // [15:15] is the sub-list for extension extendee
 	0,  // [0:15] is the sub-list for field type_name
@@ -1771,7 +1683,7 @@ func file_catalog_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_catalog_proto_rawDesc), len(file_catalog_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   23,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
