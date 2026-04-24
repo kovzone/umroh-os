@@ -371,12 +371,16 @@ services:
         VITE_BOOKING_API_BASE_URL: ${VITE_PUBLIC_GATEWAY_URL}
         VITE_USE_CATALOG_MOCK: "false"
         VITE_USE_BOOKING_MOCK: "false"
+        VITE_MOCK_GATEWAY: "false"
     image: core-web:prod
     container_name: core-web
     ports: ["3001:3000"]
     environment:
       APP_NAME: core-web
       IAM_API_BASE_URL: http://gateway-svc:4000
+      # SSR server-side fetch target (Node.js process inside the container).
+      # Must use Docker internal hostname; VITE_GATEWAY_URL is baked at build time for browser.
+      GATEWAY_URL: http://gateway-svc:4000
       ORIGIN: ${CORE_WEB_ORIGIN:-http://216.176.238.161}
     depends_on:
       gateway-svc: {condition: service_healthy}

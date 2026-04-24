@@ -68,6 +68,10 @@ func (s *Service) RedeemPickupQR(ctx context.Context, token string) (*logistics_
 	return s.adapters.logisticsGrpc.RedeemPickupQR(ctx, token)
 }
 
+func (s *Service) ListFulfillmentTasks(ctx context.Context, params *logistics_grpc_adapter.ListFulfillmentTasksParams) (*logistics_grpc_adapter.ListFulfillmentTasksResult, error) {
+	return s.adapters.logisticsGrpc.ListFulfillmentTasks(ctx, params)
+}
+
 // ---------------------------------------------------------------------------
 // finance-svc — GRN
 // ---------------------------------------------------------------------------

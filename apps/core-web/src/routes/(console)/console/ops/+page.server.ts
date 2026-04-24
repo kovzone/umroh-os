@@ -6,8 +6,10 @@ import type { Departure, FulfillmentTaskList } from '$lib/features/s3-ops/types'
 type LoadEvent = { cookies: Cookies; fetch: RequestEvent['fetch'] };
 
 const MOCK = process.env.VITE_MOCK_OPS === 'true';
+// GATEWAY_URL must come first: set at runtime in docker-compose for SSR.
+// VITE_GATEWAY_URL is baked at build time for the browser bundle, not available SSR.
 const baseUrl =
-  process.env.VITE_GATEWAY_URL ?? process.env.GATEWAY_URL ?? 'http://localhost:4000';
+  process.env.GATEWAY_URL ?? process.env.VITE_GATEWAY_URL ?? 'http://localhost:4000';
 
 // Server-side mock — mirrors the client mock but uses process.env
 async function loadMockData(): Promise<{ tasks: FulfillmentTaskList; departures: Departure[] }> {

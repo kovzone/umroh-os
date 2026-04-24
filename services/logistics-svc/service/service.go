@@ -53,6 +53,9 @@ type IService interface {
 
 	// CreateKitAssembly atomically creates an idempotent kit assembly (BL-LOG-012).
 	CreateKitAssembly(ctx context.Context, params *CreateKitAssemblyParams) (*CreateKitAssemblyResult, error)
+
+	// ListFulfillmentTasks returns a paginated, filtered list of fulfillment tasks (ISSUE-018).
+	ListFulfillmentTasks(ctx context.Context, params *ListFulfillmentTasksParams) (*ListFulfillmentTasksResult, error)
 }
 
 type Service struct {

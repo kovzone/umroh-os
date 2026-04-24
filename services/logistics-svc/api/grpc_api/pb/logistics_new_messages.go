@@ -145,3 +145,127 @@ func (x *RedeemPickupQRResponse) GetErrorReason() string {
 	}
 	return x.ErrorReason
 }
+
+// ---------------------------------------------------------------------------
+// ListFulfillmentTasks — ISSUE-018
+// ---------------------------------------------------------------------------
+
+// ListFulfillmentTasksRequest requests a paginated list of fulfillment tasks.
+type ListFulfillmentTasksRequest struct {
+	StatusFilter      string // "" → no filter
+	DepartureIdFilter string // "" → no filter
+	Limit             int32  // 0 → default 50
+	Offset            int32
+}
+
+func (x *ListFulfillmentTasksRequest) GetStatusFilter() string {
+	if x == nil {
+		return ""
+	}
+	return x.StatusFilter
+}
+func (x *ListFulfillmentTasksRequest) GetDepartureIdFilter() string {
+	if x == nil {
+		return ""
+	}
+	return x.DepartureIdFilter
+}
+func (x *ListFulfillmentTasksRequest) GetLimit() int32 {
+	if x == nil {
+		return 0
+	}
+	return x.Limit
+}
+func (x *ListFulfillmentTasksRequest) GetOffset() int32 {
+	if x == nil {
+		return 0
+	}
+	return x.Offset
+}
+
+// FulfillmentTaskProto is a single task in the list response.
+type FulfillmentTaskProto struct {
+	Id             string
+	BookingId      string
+	DepartureId    string
+	Status         string
+	TrackingNumber string
+	ShippedAt      string // RFC3339 or ""
+	DeliveredAt    string // RFC3339 or ""
+	CreatedAt      string
+	UpdatedAt      string
+}
+
+func (x *FulfillmentTaskProto) GetId() string {
+	if x == nil {
+		return ""
+	}
+	return x.Id
+}
+func (x *FulfillmentTaskProto) GetBookingId() string {
+	if x == nil {
+		return ""
+	}
+	return x.BookingId
+}
+func (x *FulfillmentTaskProto) GetDepartureId() string {
+	if x == nil {
+		return ""
+	}
+	return x.DepartureId
+}
+func (x *FulfillmentTaskProto) GetStatus() string {
+	if x == nil {
+		return ""
+	}
+	return x.Status
+}
+func (x *FulfillmentTaskProto) GetTrackingNumber() string {
+	if x == nil {
+		return ""
+	}
+	return x.TrackingNumber
+}
+func (x *FulfillmentTaskProto) GetShippedAt() string {
+	if x == nil {
+		return ""
+	}
+	return x.ShippedAt
+}
+func (x *FulfillmentTaskProto) GetDeliveredAt() string {
+	if x == nil {
+		return ""
+	}
+	return x.DeliveredAt
+}
+func (x *FulfillmentTaskProto) GetCreatedAt() string {
+	if x == nil {
+		return ""
+	}
+	return x.CreatedAt
+}
+func (x *FulfillmentTaskProto) GetUpdatedAt() string {
+	if x == nil {
+		return ""
+	}
+	return x.UpdatedAt
+}
+
+// ListFulfillmentTasksResponse returns the task page + total count.
+type ListFulfillmentTasksResponse struct {
+	Tasks []*FulfillmentTaskProto
+	Total int64
+}
+
+func (x *ListFulfillmentTasksResponse) GetTasks() []*FulfillmentTaskProto {
+	if x == nil {
+		return nil
+	}
+	return x.Tasks
+}
+func (x *ListFulfillmentTasksResponse) GetTotal() int64 {
+	if x == nil {
+		return 0
+	}
+	return x.Total
+}

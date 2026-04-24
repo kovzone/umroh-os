@@ -70,13 +70,14 @@ func _CatalogService_GetDepartureReadiness_Handler(srv interface{}, ctx context.
 }
 
 // RegisterCatalogServiceServerWithAll registers the full CatalogService surface:
-// original RPCs + master data RPCs + vendor readiness RPCs.
-// Use this instead of RegisterCatalogServiceServerWithMasters when vendor
-// readiness is wired.
+// original RPCs + master data RPCs + vendor readiness RPCs + bulk RPCs +
+// package version RPC.
 func RegisterCatalogServiceServerWithAll(s grpc.ServiceRegistrar, srv interface {
 	CatalogServiceServer
 	MastersHandler
 	VendorReadinessHandler
+	BulkPackagesHandler
+	PackageVersionHandler
 }) {
 	desc := grpc.ServiceDesc{
 		ServiceName: "pb.CatalogService",
@@ -280,6 +281,11 @@ func RegisterCatalogServiceServerWithAll(s grpc.ServiceRegistrar, srv interface 
 			// Vendor readiness RPCs (BL-OPS-020)
 			{MethodName: "UpdateVendorReadiness", Handler: _CatalogService_UpdateVendorReadiness_Handler},
 			{MethodName: "GetDepartureReadiness", Handler: _CatalogService_GetDepartureReadiness_Handler},
+			// Bulk package RPCs (BL-CAT-010 / BL-CAT-011)
+			{MethodName: "BulkImportPackages", Handler: _CatalogService_BulkImportPackages_Handler},
+			{MethodName: "BulkUpdatePackages", Handler: _CatalogService_BulkUpdatePackages_Handler},
+			// Package versioning RPC (BL-CAT-013)
+			{MethodName: "GetPackageVersion", Handler: _CatalogService_GetPackageVersion_Handler},
 		},
 		Streams:  []grpc.StreamDesc{},
 		Metadata: "catalog.proto",

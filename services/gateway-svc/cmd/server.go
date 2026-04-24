@@ -216,7 +216,9 @@ func runRestServer(port int, api rest_oapi.ServerInterface, iamValidator middlew
 		v1Protected.Post("/ops/id-cards/verify", wrapper.VerifyIDCard)
 		v1Protected.Get("/ops/manifest/:departure_id/export", wrapper.ExportManifest)
 
-		// S3 logistics routes (S3 Wave 2) — bearer required.
+		// S3 logistics routes (S3 Wave 2 / ISSUE-018) — bearer required.
+		// GET /v1/fulfillment-tasks — list all tasks, optional ?status=&departure_id= filters.
+		v1Protected.Get("/fulfillment-tasks", wrapper.ListFulfillmentTasks)
 		v1Protected.Post("/logistics/ship", wrapper.ShipFulfillmentTask)
 		v1Protected.Post("/logistics/pickup-qr", wrapper.GeneratePickupQR)
 		v1Protected.Post("/logistics/pickup-qr/redeem", wrapper.RedeemPickupQR)
@@ -249,6 +251,17 @@ func runRestServer(port int, api rest_oapi.ServerInterface, iamValidator middlew
 		v1Protected.Put("/admin/config/:key", wrapper.SetGlobalConfig)
 		v1Protected.Get("/admin/activity-log", wrapper.SearchActivityLog)
 
+		// IAM security depth (BL-IAM-010/012/013/015/017) — bearer required.
+		v1Protected.Get("/admin/security/password-policy", wrapper.GetPasswordPolicy)
+		v1Protected.Put("/admin/security/password-policy", wrapper.SetPasswordPolicy)
+		v1Protected.Post("/admin/security/anomalies", wrapper.RecordLoginAnomaly)
+		v1Protected.Get("/admin/security/sessions", wrapper.ListSessions)
+		v1Protected.Delete("/admin/security/sessions/:id", wrapper.RevokeSession)
+		v1Protected.Get("/admin/comm-templates", wrapper.ListCommTemplates)
+		v1Protected.Put("/admin/comm-templates/:channel/:name", wrapper.UpsertCommTemplate)
+		v1Protected.Get("/admin/backups", wrapper.GetBackupHistory)
+		v1Protected.Post("/admin/backups", wrapper.TriggerBackup)
+
 		// Phase 6 Finance disbursement + aging (BL-FIN-010/011) — bearer required.
 		v1Protected.Post("/finance/disbursements", wrapper.CreateDisbursementBatch)
 		v1Protected.Put("/finance/disbursements/:id/decision", wrapper.ApproveDisbursement)
@@ -273,6 +286,14 @@ func runRestServer(port int, api rest_oapi.ServerInterface, iamValidator middlew
 		// Vendor readiness (BL-OPS-020) — bearer required.
 		v1Protected.Get("/departures/:id/readiness", wrapper.GetDepartureReadiness)
 		v1Protected.Put("/departures/:id/readiness", wrapper.UpdateDepartureReadiness)
+
+		// Catalog depth — Wave 3 (BL-CAT-010/011/013) — bearer required.
+		v1Protected.Post("/admin/catalog/packages/bulk-import", wrapper.BulkImportPackages)
+		v1Protected.Post("/admin/catalog/packages/bulk-update", wrapper.BulkUpdatePackages)
+		v1Protected.Get("/admin/catalog/packages/:id/version", wrapper.GetPackageVersion)
+
+		// Booking depth — Wave 3 (BL-BOOK-007) — bearer required.
+		v1Protected.Get("/bookings/departures/:id/seats-by-channel", wrapper.GetSeatsByChannel)
 	}
 
 	go func() {

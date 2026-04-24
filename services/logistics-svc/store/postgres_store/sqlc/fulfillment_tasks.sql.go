@@ -136,3 +136,78 @@ func (q *Queries) InsertFulfillmentTask(ctx context.Context, arg InsertFulfillme
 	)
 	return r, err
 }
+
+// ---------------------------------------------------------------------------
+// ListFulfillmentTasks
+// ---------------------------------------------------------------------------
+
+// ListFulfillmentTasksParams holds optional filters + pagination for ListFulfillmentTasks.
+type ListFulfillmentTasksParams struct {
+	StatusFilter      pgtype.Text // nullable — omit to return all statuses
+	DepartureIDFilter pgtype.Text // nullable — omit to return all departures
+	Limit             int32
+	Offset            int32
+}
+
+// CountFulfillmentTasksParams mirrors the filter fields of ListFulfillmentTasksParams.
+type CountFulfillmentTasksParams struct {
+	StatusFilter      pgtype.Text
+	DepartureIDFilter pgtype.Text
+}
+
+const listFulfillmentTasks = `-- name: ListFulfillmentTasks :many
+SELECT id, booking_id, departure_id, status, tracking_number,
+       shipped_at, delivered_at, created_at, updated_at
+FROM logistics.fulfillment_tasks
+WHERE ($1::text IS NULL OR status = $1)
+  AND ($2::text IS NULL OR departure_id = $2)
+ORDER BY created_at DESC
+LIMIT $3 OFFSET $4`
+
+// ListFulfillmentTasks returns a page of fulfillment tasks with optional filters.
+func (q *Queries) ListFulfillmentTasks(ctx context.Context, arg ListFulfillmentTasksParams) ([]FulfillmentTaskRow, error) {
+	rows, err := q.db.Query(ctx, listFulfillmentTasks,
+		arg.StatusFilter,
+		arg.DepartureIDFilter,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []FulfillmentTaskRow
+	for rows.Next() {
+		var r FulfillmentTaskRow
+		if err := rows.Scan(
+			&r.ID,
+			&r.BookingID,
+			&r.DepartureID,
+			&r.Status,
+			&r.TrackingNumber,
+			&r.ShippedAt,
+			&r.DeliveredAt,
+			&r.CreatedAt,
+			&r.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		result = append(result, r)
+	}
+	return result, rows.Err()
+}
+
+const countFulfillmentTasks = `-- name: CountFulfillmentTasks :one
+SELECT COUNT(*)
+FROM logistics.fulfillment_tasks
+WHERE ($1::text IS NULL OR status = $1)
+  AND ($2::text IS NULL OR departure_id = $2)`
+
+// CountFulfillmentTasks returns the total row count for the given filters.
+func (q *Queries) CountFulfillmentTasks(ctx context.Context, arg CountFulfillmentTasksParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countFulfillmentTasks, arg.StatusFilter, arg.DepartureIDFilter)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}

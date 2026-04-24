@@ -70,6 +70,48 @@
 
   // Max revenue for bar chart scaling
   const maxRevenue = $derived(Math.max(...revenueChart.map((r) => r.revenue), 1));
+
+  // ---- BL-DASH-005: Dual View ----
+  let dualView = $state(false);
+
+  // Mock data for dual view panels
+  const salesMetrics = {
+    bookingsMonth: 47,
+    revenue: 1_342_500_000,
+    conversionRate: 38,
+    avgTicket: 28_563_830,
+    topPackages: [
+      { name: 'Umroh Ramadhan Premium', bookings: 18, revenue: 585_000_000 },
+      { name: 'Umroh Reguler April', bookings: 14, revenue: 343_000_000 },
+      { name: 'Umroh Plus Turki', bookings: 8, revenue: 304_000_000 },
+      { name: 'Umroh Hemat Juni', bookings: 7, revenue: 139_300_000 }
+    ],
+    weeklyTrend: [
+      { week: 'Mg 1', bookings: 9 },
+      { week: 'Mg 2', bookings: 14 },
+      { week: 'Mg 3', bookings: 11 },
+      { week: 'Mg 4', bookings: 13 }
+    ]
+  };
+
+  const opsMetrics = {
+    departuresThisWeek: 3,
+    paxConfirmed: 127,
+    pendingTasks: 8,
+    logisticsStatus: [
+      { label: 'Dokumen Lengkap', count: 103, total: 127, color: '#065f46' },
+      { label: 'Visa Selesai', count: 98, total: 127, color: '#0369a1' },
+      { label: 'Kit Terpacking', count: 89, total: 127, color: '#7c3aed' },
+      { label: 'Boarding Pass', count: 67, total: 127, color: '#b45309' }
+    ],
+    upcomingDepartsThisWeek: [
+      { name: 'Umroh Ramadhan Premium', date: '2026-03-01', pax: 45, status: 'ready' },
+      { name: 'Umroh Reguler April', date: '2026-04-10', pax: 42, status: 'prep' },
+      { name: 'Umroh Plus Turki', date: '2026-05-05', pax: 40, status: 'pending' }
+    ]
+  };
+
+  const maxSalesBookings = $derived(Math.max(...salesMetrics.weeklyTrend.map(w => w.bookings), 1));
 </script>
 
 <main class="page-shell">
@@ -80,6 +122,29 @@
       <span class="topbar-current">Dashboard</span>
     </nav>
     <div class="top-actions">
+      <!-- BL-DASH-005: Dual view toggle -->
+      <div class="view-toggle" role="group" aria-label="Pilih tampilan">
+        <button
+          type="button"
+          class="view-toggle-btn"
+          class:active={!dualView}
+          onclick={() => { dualView = false; }}
+          title="Tampilan Standar"
+        >
+          <span class="material-symbols-outlined">dashboard</span>
+          Standar
+        </button>
+        <button
+          type="button"
+          class="view-toggle-btn"
+          class:active={dualView}
+          onclick={() => { dualView = true; }}
+          title="Dual View"
+        >
+          <span class="material-symbols-outlined">view_column</span>
+          Dual View
+        </button>
+      </div>
       <button class="icon-btn" title="Notifikasi">
         <span class="material-symbols-outlined">notifications</span>
       </button>
@@ -93,7 +158,153 @@
         <h2>Executive Dashboard</h2>
         <p>Ringkasan performa bisnis bulan ini</p>
       </div>
+      {#if dualView}
+        <span class="dual-badge">
+          <span class="material-symbols-outlined">view_column</span>
+          Dual View Aktif
+        </span>
+      {/if}
     </div>
+
+    <!-- ================================================================
+         BL-DASH-005: Dual View — Sales & Ops side by side
+    ================================================================= -->
+    {#if dualView}
+      <div class="dual-layout">
+        <!-- LEFT: Sales & Bookings Panel -->
+        <div class="dual-panel dual-sales">
+          <div class="dual-panel-header">
+            <span class="material-symbols-outlined">trending_up</span>
+            <h3>Sales & Booking</h3>
+          </div>
+
+          <!-- Sales KPIs -->
+          <div class="dual-kpi-row">
+            <div class="dual-kpi">
+              <span class="dkpi-val">{salesMetrics.bookingsMonth}</span>
+              <span class="dkpi-lbl">Booking Bulan Ini</span>
+            </div>
+            <div class="dual-kpi">
+              <span class="dkpi-val dkpi-idr">{formatIDR(salesMetrics.revenue)}</span>
+              <span class="dkpi-lbl">Revenue</span>
+            </div>
+            <div class="dual-kpi">
+              <span class="dkpi-val">{salesMetrics.conversionRate}%</span>
+              <span class="dkpi-lbl">Konversi</span>
+            </div>
+          </div>
+
+          <!-- Weekly trend -->
+          <div class="dual-section">
+            <div class="dual-section-label">Booking Mingguan</div>
+            <div class="mini-bar-chart">
+              {#each salesMetrics.weeklyTrend as w}
+                {@const pct = Math.round((w.bookings / maxSalesBookings) * 100)}
+                <div class="mini-bar-item">
+                  <span class="mini-bar-val">{w.bookings}</span>
+                  <div class="mini-bar-track">
+                    <div class="mini-bar-fill" style="height:{pct}%; background: linear-gradient(180deg, #2563eb, #004ac6)"></div>
+                  </div>
+                  <span class="mini-bar-lbl">{w.week}</span>
+                </div>
+              {/each}
+            </div>
+          </div>
+
+          <!-- Top packages -->
+          <div class="dual-section">
+            <div class="dual-section-label">Top Paket</div>
+            <div class="top-pkg-list">
+              {#each salesMetrics.topPackages as pkg, i}
+                <div class="top-pkg-row">
+                  <span class="top-pkg-rank">#{i + 1}</span>
+                  <div class="top-pkg-info">
+                    <span class="top-pkg-name">{pkg.name}</span>
+                    <span class="top-pkg-rev">{formatIDR(pkg.revenue)}</span>
+                  </div>
+                  <span class="top-pkg-count">{pkg.bookings}</span>
+                </div>
+              {/each}
+            </div>
+          </div>
+
+          <a href="/console/bookings" class="dual-view-link">
+            Lihat semua booking
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </a>
+        </div>
+
+        <!-- RIGHT: Operations & Logistics Panel -->
+        <div class="dual-panel dual-ops">
+          <div class="dual-panel-header">
+            <span class="material-symbols-outlined">local_shipping</span>
+            <h3>Operasional & Logistik</h3>
+          </div>
+
+          <!-- Ops KPIs -->
+          <div class="dual-kpi-row">
+            <div class="dual-kpi">
+              <span class="dkpi-val">{opsMetrics.departuresThisWeek}</span>
+              <span class="dkpi-lbl">Keberangkatan Minggu Ini</span>
+            </div>
+            <div class="dual-kpi">
+              <span class="dkpi-val">{opsMetrics.paxConfirmed}</span>
+              <span class="dkpi-lbl">Pax Confirmed</span>
+            </div>
+            <div class="dual-kpi">
+              <span class="dkpi-val ops-pending">{opsMetrics.pendingTasks}</span>
+              <span class="dkpi-lbl">Tugas Pending</span>
+            </div>
+          </div>
+
+          <!-- Logistics status progress -->
+          <div class="dual-section">
+            <div class="dual-section-label">Status Persiapan Jamaah</div>
+            <div class="logistics-status-list">
+              {#each opsMetrics.logisticsStatus as ls}
+                {@const pct = Math.round((ls.count / ls.total) * 100)}
+                <div class="ls-row">
+                  <span class="ls-label">{ls.label}</span>
+                  <div class="ls-bar-track">
+                    <div class="ls-bar-fill" style="width:{pct}%; background:{ls.color}"></div>
+                  </div>
+                  <span class="ls-count" style="color:{ls.color}">{ls.count}/{ls.total}</span>
+                  <span class="ls-pct">{pct}%</span>
+                </div>
+              {/each}
+            </div>
+          </div>
+
+          <!-- Upcoming departures this week -->
+          <div class="dual-section">
+            <div class="dual-section-label">Keberangkatan Mendatang</div>
+            <div class="ops-dep-list">
+              {#each opsMetrics.upcomingDepartsThisWeek as dep}
+                <div class="ops-dep-row">
+                  <div class="ops-dep-info">
+                    <span class="ops-dep-name">{dep.name}</span>
+                    <span class="ops-dep-date">{formatDate(dep.date)} · {dep.pax} pax</span>
+                  </div>
+                  <span
+                    class="ops-dep-status"
+                    class:status-ready={dep.status === 'ready'}
+                    class:status-prep={dep.status === 'prep'}
+                    class:status-pending={dep.status === 'pending'}
+                  >
+                    {dep.status === 'ready' ? 'Siap' : dep.status === 'prep' ? 'Persiapan' : 'Pending'}
+                  </span>
+                </div>
+              {/each}
+            </div>
+          </div>
+
+          <a href="/console/ops" class="dual-view-link ops-link">
+            Lihat Ops Board
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+    {/if}
 
     {#if data.error}
       <div class="error-banner" role="alert">
@@ -421,6 +632,10 @@
 
   .page-head {
     margin-bottom: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
   }
 
   .page-head h2 {
@@ -828,4 +1043,318 @@
 
   .empty-state .material-symbols-outlined { font-size: 2.5rem; }
   .empty-state p { margin: 0; font-size: 0.82rem; }
+
+  /* ---- BL-DASH-005: View toggle ---- */
+  .view-toggle {
+    display: inline-flex;
+    border: 1px solid rgb(195 198 215 / 0.55);
+    border-radius: 0.3rem;
+    overflow: hidden;
+    background: #f2f4f6;
+  }
+
+  .view-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem 0.65rem;
+    border: 0;
+    background: transparent;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #434655;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.1s, color 0.1s;
+  }
+
+  .view-toggle-btn .material-symbols-outlined { font-size: 0.85rem; }
+
+  .view-toggle-btn:hover { background: #e6e8ea; }
+
+  .view-toggle-btn.active {
+    background: #2563eb;
+    color: #fff;
+  }
+
+  /* ---- dual badge ---- */
+  .dual-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.55rem;
+    background: #ede9fe;
+    color: #4c1d95;
+    border-radius: 0.2rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+  }
+  .dual-badge .material-symbols-outlined { font-size: 0.8rem; }
+
+  /* ---- dual view layout ---- */
+  .dual-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  @media (max-width: 900px) {
+    .dual-layout { grid-template-columns: 1fr; }
+  }
+
+  .dual-panel {
+    background: #fff;
+    border: 1px solid rgb(195 198 215 / 0.45);
+    border-radius: 0.4rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dual-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid rgb(195 198 215 / 0.35);
+  }
+
+  .dual-sales .dual-panel-header {
+    background: #eff6ff;
+  }
+
+  .dual-ops .dual-panel-header {
+    background: #f0fdf4;
+  }
+
+  .dual-sales .dual-panel-header .material-symbols-outlined {
+    font-size: 1.1rem;
+    color: #2563eb;
+  }
+
+  .dual-ops .dual-panel-header .material-symbols-outlined {
+    font-size: 1.1rem;
+    color: #065f46;
+  }
+
+  .dual-panel-header h3 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #191c1e;
+  }
+
+  /* dual KPIs row */
+  .dual-kpi-row {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid rgb(195 198 215 / 0.35);
+  }
+
+  .dual-kpi {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+    padding: 0.85rem 0.5rem;
+    border-right: 1px solid rgb(195 198 215 / 0.35);
+  }
+
+  .dual-kpi:last-child { border-right: 0; }
+
+  .dkpi-val {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #191c1e;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .dkpi-idr { font-size: 0.78rem; }
+
+  .ops-pending { color: #b45309; }
+
+  .dkpi-lbl {
+    font-size: 0.6rem;
+    color: #737686;
+    text-align: center;
+    line-height: 1.3;
+    max-width: 6rem;
+  }
+
+  /* sections within dual panel */
+  .dual-section {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid rgb(195 198 215 / 0.25);
+  }
+
+  .dual-section:last-of-type { border-bottom: 0; }
+
+  .dual-section-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #737686;
+    margin-bottom: 0.65rem;
+  }
+
+  /* mini bar chart */
+  .mini-bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    height: 5rem;
+  }
+
+  .mini-bar-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    gap: 0.2rem;
+  }
+
+  .mini-bar-val { font-size: 0.6rem; color: #434655; font-weight: 700; }
+
+  .mini-bar-track {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    background: #f2f4f6;
+    border-radius: 0.15rem 0.15rem 0 0;
+    overflow: hidden;
+  }
+
+  .mini-bar-fill {
+    width: 100%;
+    border-radius: 0.15rem 0.15rem 0 0;
+    min-height: 2px;
+  }
+
+  .mini-bar-lbl { font-size: 0.6rem; color: #737686; font-weight: 600; }
+
+  /* top packages */
+  .top-pkg-list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .top-pkg-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .top-pkg-rank {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #b0b3c1;
+    width: 1.4rem;
+    flex-shrink: 0;
+  }
+
+  .top-pkg-info { flex: 1; min-width: 0; }
+
+  .top-pkg-name {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #191c1e;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .top-pkg-rev { font-size: 0.65rem; color: #065f46; font-weight: 600; }
+
+  .top-pkg-count {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #2563eb;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+  }
+
+  /* logistics status */
+  .logistics-status-list { display: flex; flex-direction: column; gap: 0.55rem; }
+
+  .ls-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .ls-label { font-size: 0.72rem; color: #191c1e; min-width: 8rem; flex-shrink: 0; }
+
+  .ls-bar-track {
+    flex: 1;
+    height: 0.45rem;
+    background: #f2f4f6;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .ls-bar-fill { height: 100%; border-radius: 999px; min-width: 2px; transition: width 0.3s; }
+
+  .ls-count { font-size: 0.68rem; font-weight: 700; min-width: 3rem; text-align: right; font-variant-numeric: tabular-nums; }
+
+  .ls-pct { font-size: 0.62rem; color: #737686; min-width: 2rem; text-align: right; }
+
+  /* ops departures */
+  .ops-dep-list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .ops-dep-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .ops-dep-info { flex: 1; min-width: 0; }
+
+  .ops-dep-name {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #191c1e;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ops-dep-date { font-size: 0.65rem; color: #737686; }
+
+  .ops-dep-status {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.12rem 0.4rem;
+    border-radius: 0.2rem;
+    flex-shrink: 0;
+  }
+
+  .status-ready { background: #d1fae5; color: #065f46; }
+  .status-prep { background: #fef3c7; color: #b45309; }
+  .status-pending { background: #fee2e2; color: #991b1b; }
+
+  /* dual view link */
+  .dual-view-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #2563eb;
+    text-decoration: none;
+    border-top: 1px solid rgb(195 198 215 / 0.35);
+    background: #f7f9fb;
+    margin-top: auto;
+  }
+
+  .dual-view-link:hover { text-decoration: underline; }
+  .dual-view-link .material-symbols-outlined { font-size: 0.85rem; }
+
+  .ops-link { color: #065f46; }
 </style>

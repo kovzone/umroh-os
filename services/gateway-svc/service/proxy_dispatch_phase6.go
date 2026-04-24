@@ -20,6 +20,7 @@ package service
 import (
 	"context"
 
+	"gateway-svc/adapter/booking_grpc_adapter"
 	"gateway-svc/adapter/catalog_grpc_adapter"
 	"gateway-svc/adapter/finance_grpc_adapter"
 	"gateway-svc/adapter/iam_grpc_adapter"
@@ -282,6 +283,46 @@ func (s *Service) SearchActivityLog(ctx context.Context, params *iam_grpc_adapte
 }
 
 // ---------------------------------------------------------------------------
+// IAM — security depth (BL-IAM-010/012/013/015/017)
+// ---------------------------------------------------------------------------
+
+func (s *Service) GetPasswordPolicy(ctx context.Context) (*iam_grpc_adapter.PasswordPolicyResult, error) {
+	return s.adapters.iamGrpc.GetPasswordPolicy(ctx)
+}
+
+func (s *Service) SetPasswordPolicy(ctx context.Context, params *iam_grpc_adapter.SetPasswordPolicyParams) (*iam_grpc_adapter.PasswordPolicyResult, error) {
+	return s.adapters.iamGrpc.SetPasswordPolicy(ctx, params)
+}
+
+func (s *Service) RecordLoginAnomaly(ctx context.Context, params *iam_grpc_adapter.RecordLoginAnomalyParams) (*iam_grpc_adapter.RecordLoginAnomalyResult, error) {
+	return s.adapters.iamGrpc.RecordLoginAnomaly(ctx, params)
+}
+
+func (s *Service) ListSessions(ctx context.Context, params *iam_grpc_adapter.ListSessionsParams) (*iam_grpc_adapter.ListSessionsResult, error) {
+	return s.adapters.iamGrpc.ListSessions(ctx, params)
+}
+
+func (s *Service) RevokeSession(ctx context.Context, params *iam_grpc_adapter.RevokeSessionParams) (*iam_grpc_adapter.RevokeSessionResult, error) {
+	return s.adapters.iamGrpc.RevokeSession(ctx, params)
+}
+
+func (s *Service) UpsertCommTemplate(ctx context.Context, params *iam_grpc_adapter.UpsertCommTemplateParams) (*iam_grpc_adapter.UpsertCommTemplateResult, error) {
+	return s.adapters.iamGrpc.UpsertCommTemplate(ctx, params)
+}
+
+func (s *Service) ListCommTemplates(ctx context.Context, params *iam_grpc_adapter.ListCommTemplatesParams) (*iam_grpc_adapter.ListCommTemplatesResult, error) {
+	return s.adapters.iamGrpc.ListCommTemplates(ctx, params)
+}
+
+func (s *Service) TriggerBackup(ctx context.Context, params *iam_grpc_adapter.TriggerBackupParams) (*iam_grpc_adapter.TriggerBackupResult, error) {
+	return s.adapters.iamGrpc.TriggerBackup(ctx, params)
+}
+
+func (s *Service) GetBackupHistory(ctx context.Context, limit int32) (*iam_grpc_adapter.GetBackupHistoryResult, error) {
+	return s.adapters.iamGrpc.GetBackupHistory(ctx, limit)
+}
+
+// ---------------------------------------------------------------------------
 // Visa — pipeline (BL-VISA-001..003)
 // ---------------------------------------------------------------------------
 
@@ -307,4 +348,28 @@ func (s *Service) UpdateVendorReadiness(ctx context.Context, params *catalog_grp
 
 func (s *Service) GetDepartureReadiness(ctx context.Context, params *catalog_grpc_adapter.GetDepartureReadinessParams) (*catalog_grpc_adapter.ReadinessResult, error) {
 	return s.adapters.catalogGrpc.GetDepartureReadiness(ctx, params)
+}
+
+// ---------------------------------------------------------------------------
+// Catalog depth — Wave 3 (BL-CAT-010/011/013)
+// ---------------------------------------------------------------------------
+
+func (s *Service) BulkImportPackages(ctx context.Context, params *catalog_grpc_adapter.BulkImportPackagesParams) (*catalog_grpc_adapter.BulkImportPackagesResult, error) {
+	return s.adapters.catalogGrpc.BulkImportPackages(ctx, params)
+}
+
+func (s *Service) BulkUpdatePackages(ctx context.Context, params *catalog_grpc_adapter.BulkUpdatePackagesParams) (*catalog_grpc_adapter.BulkUpdatePackagesResult, error) {
+	return s.adapters.catalogGrpc.BulkUpdatePackages(ctx, params)
+}
+
+func (s *Service) GetPackageVersion(ctx context.Context, packageID string) (*catalog_grpc_adapter.PackageVersionResult, error) {
+	return s.adapters.catalogGrpc.GetPackageVersion(ctx, packageID)
+}
+
+// ---------------------------------------------------------------------------
+// Booking depth — Wave 3 (BL-BOOK-007)
+// ---------------------------------------------------------------------------
+
+func (s *Service) GetSeatsByChannel(ctx context.Context, departureID string) (*booking_grpc_adapter.GetSeatsByChannelResult, error) {
+	return s.adapters.bookingGrpc.GetSeatsByChannel(ctx, departureID)
 }

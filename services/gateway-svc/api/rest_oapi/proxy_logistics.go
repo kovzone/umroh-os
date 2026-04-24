@@ -1,6 +1,7 @@
-// proxy_logistics.go — gateway REST handlers for logistics-svc RPCs (S3 Wave 2).
+// proxy_logistics.go — gateway REST handlers for logistics-svc RPCs (S3 Wave 2 / ISSUE-018).
 //
 // Route topology (all bearer-protected):
+//   GET  /v1/fulfillment-tasks           — ListFulfillmentTasks (ISSUE-018)
 //   POST /v1/logistics/ship              — ShipFulfillmentTask
 //   POST /v1/logistics/pickup-qr         — GeneratePickupQR
 //   POST /v1/logistics/pickup-qr/redeem  — RedeemPickupQR
@@ -10,7 +11,9 @@ package rest_oapi
 
 import (
 	"errors"
+	"strconv"
 
+	"gateway-svc/adapter/logistics_grpc_adapter"
 	"gateway-svc/util/apperrors"
 	"gateway-svc/util/logging"
 
@@ -61,6 +64,75 @@ type RedeemPickupQRResponseData struct {
 	BookingID   string `json:"booking_id"`
 	TaskID      string `json:"task_id"`
 	ErrorReason string `json:"error_reason,omitempty"`
+}
+
+// ---------------------------------------------------------------------------
+// ListFulfillmentTasks — GET /v1/fulfillment-tasks (bearer) — ISSUE-018
+// ---------------------------------------------------------------------------
+
+// FulfillmentTaskResponseItem is a single task in the API response.
+type FulfillmentTaskResponseItem struct {
+	ID             string `json:"id"`
+	BookingID      string `json:"booking_id"`
+	DepartureID    string `json:"departure_id"`
+	Status         string `json:"status"`
+	TrackingNumber string `json:"tracking_number,omitempty"`
+	ShippedAt      string `json:"shipped_at,omitempty"`
+	DeliveredAt    string `json:"delivered_at,omitempty"`
+	CreatedAt      string `json:"created_at"`
+	UpdatedAt      string `json:"updated_at"`
+}
+
+func (s *Server) ListFulfillmentTasks(c *fiber.Ctx) error {
+	const op = "rest_oapi.Server.ListFulfillmentTasks"
+
+	ctx, span := s.tracer.Start(c.UserContext(), op)
+	defer span.End()
+
+	logger := logging.LogWithTrace(ctx, s.logger)
+	span.SetAttributes(attribute.String("endpoint", "GET /v1/fulfillment-tasks"))
+	logger.Info().Str("op", op).Msg("")
+
+	limit := int32(50)
+	offset := int32(0)
+	if l := c.QueryInt("limit", 50); l > 0 {
+		limit = int32(l)
+	}
+	if o, err := strconv.Atoi(c.Query("offset", "0")); err == nil && o >= 0 {
+		offset = int32(o)
+	}
+
+	result, err := s.svc.ListFulfillmentTasks(ctx, &logistics_grpc_adapter.ListFulfillmentTasksParams{
+		StatusFilter:      c.Query("status", ""),
+		DepartureIDFilter: c.Query("departure_id", ""),
+		Limit:             limit,
+		Offset:            offset,
+	})
+	if err != nil {
+		logger.Error().Err(err).Str("op", op).Msg("")
+		return writeLogisticsError(c, span, err)
+	}
+
+	items := make([]FulfillmentTaskResponseItem, 0, len(result.Tasks))
+	for _, t := range result.Tasks {
+		items = append(items, FulfillmentTaskResponseItem{
+			ID:             t.ID,
+			BookingID:      t.BookingID,
+			DepartureID:    t.DepartureID,
+			Status:         t.Status,
+			TrackingNumber: t.TrackingNumber,
+			ShippedAt:      t.ShippedAt,
+			DeliveredAt:    t.DeliveredAt,
+			CreatedAt:      t.CreatedAt,
+			UpdatedAt:      t.UpdatedAt,
+		})
+	}
+
+	span.SetStatus(codes.Ok, "ok")
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"tasks": items,
+		"total": result.Total,
+	})
 }
 
 // ---------------------------------------------------------------------------

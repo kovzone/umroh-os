@@ -288,6 +288,13 @@ func (s *Service) CreatePackage(ctx context.Context, params *CreatePackageParams
 		}
 	}
 	for _, aid := range params.AddonIDs {
+		// BL-CAT-009: validate addon existence before linking.
+		if _, err := s.store.GetAddonByID(ctx, aid); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, errors.Join(apperrors.ErrValidation, fmt.Errorf("addon_id %q does not exist in catalog", aid))
+			}
+			return nil, fmt.Errorf("lookup addon %s: %w", aid, postgres_store.WrapDBError(err))
+		}
 		if err := s.store.InsertPackageAddon(ctx, sqlc.InsertPackageAddonParams{
 			PackageID: id, AddonID: aid,
 		}); err != nil {
@@ -302,6 +309,10 @@ func (s *Service) CreatePackage(ctx context.Context, params *CreatePackageParams
 
 	span.SetStatus(codes.Ok, "success")
 	span.SetAttributes(attribute.String("output.package_id", id))
+
+	// BL-CAT-012: emit catalog.updated webhook (best-effort).
+	s.emitCatalogUpdated(ctx, "package.created", id, "package")
+
 	return detail, nil
 }
 
@@ -394,6 +405,15 @@ func (s *Service) UpdatePackage(ctx context.Context, params *UpdatePackageParams
 		}
 	}
 	if params.AddonIDs != nil {
+		// BL-CAT-009: validate all addon IDs before performing any writes.
+		for _, aid := range params.AddonIDs {
+			if _, err := s.store.GetAddonByID(ctx, aid); err != nil {
+				if errors.Is(err, pgx.ErrNoRows) {
+					return nil, errors.Join(apperrors.ErrValidation, fmt.Errorf("addon_id %q does not exist in catalog", aid))
+				}
+				return nil, fmt.Errorf("lookup addon %s: %w", aid, postgres_store.WrapDBError(err))
+			}
+		}
 		if err := s.store.DeletePackageAddons(ctx, params.ID); err != nil {
 			return nil, fmt.Errorf("clear addons: %w", postgres_store.WrapDBError(err))
 		}
@@ -412,6 +432,10 @@ func (s *Service) UpdatePackage(ctx context.Context, params *UpdatePackageParams
 	}
 
 	span.SetStatus(codes.Ok, "success")
+
+	// BL-CAT-012: emit catalog.updated webhook (best-effort).
+	s.emitCatalogUpdated(ctx, "package.updated", params.ID, "package")
+
 	return detail, nil
 }
 
@@ -450,6 +474,10 @@ func (s *Service) DeletePackage(ctx context.Context, params *DeletePackageParams
 
 	span.SetStatus(codes.Ok, "success")
 	span.SetAttributes(attribute.String("output.status", string(row.Status)))
+
+	// BL-CAT-012: emit catalog.updated webhook (best-effort).
+	s.emitCatalogUpdated(ctx, "package.deleted", params.ID, "package")
+
 	return nil
 }
 
@@ -555,6 +583,10 @@ func (s *Service) CreateDeparture(ctx context.Context, params *CreateDeparturePa
 
 	span.SetStatus(codes.Ok, "success")
 	span.SetAttributes(attribute.String("output.departure_id", id))
+
+	// BL-CAT-012: emit catalog.updated webhook (best-effort).
+	s.emitCatalogUpdated(ctx, "departure.created", id, "departure")
+
 	return detail, nil
 }
 
@@ -664,6 +696,10 @@ func (s *Service) UpdateDeparture(ctx context.Context, params *UpdateDeparturePa
 	}
 
 	span.SetStatus(codes.Ok, "success")
+
+	// BL-CAT-012: emit catalog.updated webhook (best-effort).
+	s.emitCatalogUpdated(ctx, "departure.updated", params.ID, "departure")
+
 	return detail, nil
 }
 

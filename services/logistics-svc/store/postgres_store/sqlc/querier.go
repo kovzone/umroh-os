@@ -17,6 +17,9 @@ type Querier interface {
 	GetFulfillmentTaskByBookingID(ctx context.Context, bookingID string) (FulfillmentTaskRow, error)
 	GetFulfillmentTaskByID(ctx context.Context, id string) (FulfillmentTaskRow, error)
 	InsertFulfillmentTask(ctx context.Context, arg InsertFulfillmentTaskParams) (FulfillmentTaskRow, error)
+	// ListFulfillmentTasks returns a paginated, filtered list of fulfillment tasks (ISSUE-018).
+	ListFulfillmentTasks(ctx context.Context, arg ListFulfillmentTasksParams) ([]FulfillmentTaskRow, error)
+	CountFulfillmentTasks(ctx context.Context, arg CountFulfillmentTasksParams) (int64, error)
 
 	// Shipment queries (BL-LOG-002 / migration 000019)
 	InsertShipment(ctx context.Context, arg InsertShipmentParams) (ShipmentRow, error)

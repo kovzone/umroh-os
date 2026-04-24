@@ -29,6 +29,7 @@ type Adapter struct {
 	catalogClient          pb.CatalogServiceClient
 	catalogMastersClient   pb.CatalogMastersClient
 	catalogReadinessClient pb.CatalogReadinessClient
+	catalogBulkClient      pb.CatalogBulkClient
 }
 
 // NewAdapter creates a new catalog-svc gRPC adapter from an already-dialled
@@ -40,5 +41,6 @@ func NewAdapter(logger *zerolog.Logger, tracer trace.Tracer, cc *grpc.ClientConn
 		catalogClient:          pb.NewCatalogServiceClient(cc),
 		catalogMastersClient:   pb.NewCatalogMastersClient(cc),
 		catalogReadinessClient: pb.NewCatalogReadinessClient(cc),
+		catalogBulkClient:      pb.NewCatalogBulkClient(cc),
 	}
 }

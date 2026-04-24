@@ -22,10 +22,11 @@ import (
 )
 
 const (
-	LogisticsService_OnBookingPaid_FullMethodName         = "/pb.LogisticsService/OnBookingPaid"
-	LogisticsService_ShipFulfillmentTask_FullMethodName   = "/pb.LogisticsService/ShipFulfillmentTask"
-	LogisticsService_GeneratePickupQR_FullMethodName      = "/pb.LogisticsService/GeneratePickupQR"
-	LogisticsService_RedeemPickupQR_FullMethodName        = "/pb.LogisticsService/RedeemPickupQR"
+	LogisticsService_OnBookingPaid_FullMethodName          = "/pb.LogisticsService/OnBookingPaid"
+	LogisticsService_ShipFulfillmentTask_FullMethodName    = "/pb.LogisticsService/ShipFulfillmentTask"
+	LogisticsService_GeneratePickupQR_FullMethodName       = "/pb.LogisticsService/GeneratePickupQR"
+	LogisticsService_RedeemPickupQR_FullMethodName         = "/pb.LogisticsService/RedeemPickupQR"
+	LogisticsService_ListFulfillmentTasks_FullMethodName   = "/pb.LogisticsService/ListFulfillmentTasks"
 )
 
 // OnBookingPaidClient adds OnBookingPaid to the generated client interface.
@@ -188,6 +189,37 @@ func _LogisticsService_RedeemPickupQR_Handler(srv interface{}, ctx context.Conte
 }
 
 // ---------------------------------------------------------------------------
+// ListFulfillmentTasks
+// ---------------------------------------------------------------------------
+
+// ListFulfillmentTasksHandler is the server-side interface for ListFulfillmentTasks.
+type ListFulfillmentTasksHandler interface {
+	ListFulfillmentTasks(context.Context, *ListFulfillmentTasksRequest) (*ListFulfillmentTasksResponse, error)
+}
+
+// UnimplementedListFulfillmentTasksHandler provides a safe default.
+type UnimplementedListFulfillmentTasksHandler struct{}
+
+func (UnimplementedListFulfillmentTasksHandler) ListFulfillmentTasks(context.Context, *ListFulfillmentTasksRequest) (*ListFulfillmentTasksResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListFulfillmentTasks not implemented")
+}
+
+func _LogisticsService_ListFulfillmentTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFulfillmentTasksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ListFulfillmentTasksHandler).ListFulfillmentTasks(ctx, req.(*ListFulfillmentTasksRequest))
+	}
+	if interceptor == nil {
+		return handler(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{Server: srv, FullMethod: LogisticsService_ListFulfillmentTasks_FullMethodName}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ---------------------------------------------------------------------------
 // Method descriptors
 // ---------------------------------------------------------------------------
 
@@ -207,6 +239,7 @@ func RegisterLogisticsServiceServerWithExtensions(s grpc.ServiceRegistrar, srv i
 	ShipFulfillmentTaskHandler
 	GeneratePickupQRHandler
 	RedeemPickupQRHandler
+	ListFulfillmentTasksHandler
 }) {
 	desc := grpc.ServiceDesc{
 		ServiceName: "pb.LogisticsService",
@@ -241,6 +274,10 @@ func RegisterLogisticsServiceServerWithExtensions(s grpc.ServiceRegistrar, srv i
 			{
 				MethodName: "RedeemPickupQR",
 				Handler:    _LogisticsService_RedeemPickupQR_Handler,
+			},
+			{
+				MethodName: "ListFulfillmentTasks",
+				Handler:    _LogisticsService_ListFulfillmentTasks_Handler,
 			},
 		},
 		Streams:  []grpc.StreamDesc{},

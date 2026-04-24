@@ -205,6 +205,9 @@ services:
       - APP_NAME=core-web
       # S1-E-12: IAM auth routes now proxied via gateway-svc. iam-svc is gRPC-only.
       - IAM_API_BASE_URL=http://gateway-svc:4000
+      # SSR server-side fetch target (Node.js process inside the container).
+      # Must use the Docker internal hostname, not localhost.
+      - GATEWAY_URL=http://gateway-svc:4000
       # Browser-side fetch target. The bundle JS runs in the user's browser
       # (not inside the container), so it hits the host-mapped gateway port.
       - VITE_GATEWAY_URL=http://localhost:4000

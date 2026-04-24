@@ -122,6 +122,87 @@ func (a *Adapter) GeneratePickupQR(ctx context.Context, bookingID string) (*Gene
 // RedeemPickupQR
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// ListFulfillmentTasks
+// ---------------------------------------------------------------------------
+
+// ListFulfillmentTasksParams holds the gateway-local inputs for ListFulfillmentTasks.
+type ListFulfillmentTasksParams struct {
+	StatusFilter      string
+	DepartureIDFilter string
+	Limit             int32
+	Offset            int32
+}
+
+// FulfillmentTaskItem is a single task in the gateway-local result.
+type FulfillmentTaskItem struct {
+	ID             string
+	BookingID      string
+	DepartureID    string
+	Status         string
+	TrackingNumber string
+	ShippedAt      string
+	DeliveredAt    string
+	CreatedAt      string
+	UpdatedAt      string
+}
+
+// ListFulfillmentTasksResult holds the page of tasks + total count.
+type ListFulfillmentTasksResult struct {
+	Tasks []FulfillmentTaskItem
+	Total int64
+}
+
+// ListFulfillmentTasks returns a paginated list of fulfillment tasks from logistics-svc.
+func (a *Adapter) ListFulfillmentTasks(ctx context.Context, params *ListFulfillmentTasksParams) (*ListFulfillmentTasksResult, error) {
+	const op = "logistics_grpc_adapter.Adapter.ListFulfillmentTasks"
+
+	ctx, span := a.tracer.Start(ctx, op)
+	defer span.End()
+	span.SetAttributes(
+		attribute.String("operation", op),
+		attribute.String("rpc", "ListFulfillmentTasks"),
+		attribute.String("status_filter", params.StatusFilter),
+	)
+
+	logger := logging.LogWithTrace(ctx, a.logger)
+
+	resp, err := a.logisticsClient.ListFulfillmentTasks(ctx, &pb.ListFulfillmentTasksRequest{
+		StatusFilter:      params.StatusFilter,
+		DepartureIdFilter: params.DepartureIDFilter,
+		Limit:             params.Limit,
+		Offset:            params.Offset,
+	})
+	if err != nil {
+		wrapped := mapLogisticsError(err)
+		logger.Warn().Err(wrapped).Msg("")
+		span.RecordError(wrapped)
+		span.SetStatus(codes.Error, wrapped.Error())
+		return nil, wrapped
+	}
+
+	items := make([]FulfillmentTaskItem, 0, len(resp.GetTasks()))
+	for _, t := range resp.GetTasks() {
+		items = append(items, FulfillmentTaskItem{
+			ID:             t.GetId(),
+			BookingID:      t.GetBookingId(),
+			DepartureID:    t.GetDepartureId(),
+			Status:         t.GetStatus(),
+			TrackingNumber: t.GetTrackingNumber(),
+			ShippedAt:      t.GetShippedAt(),
+			DeliveredAt:    t.GetDeliveredAt(),
+			CreatedAt:      t.GetCreatedAt(),
+			UpdatedAt:      t.GetUpdatedAt(),
+		})
+	}
+
+	span.SetStatus(codes.Ok, "ok")
+	return &ListFulfillmentTasksResult{
+		Tasks: items,
+		Total: resp.GetTotal(),
+	}, nil
+}
+
 // RedeemPickupQR redeems a single-use pickup QR token.
 func (a *Adapter) RedeemPickupQR(ctx context.Context, token string) (*RedeemPickupQRResult, error) {
 	const op = "logistics_grpc_adapter.Adapter.RedeemPickupQR"

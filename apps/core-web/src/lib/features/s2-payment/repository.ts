@@ -13,7 +13,9 @@ function useMock(): boolean {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const env = (import.meta as any).env ?? {};
-    return (env['VITE_MOCK_GATEWAY'] ?? 'true') === 'true';
+    // Default to 'false' — mock must be explicitly opted-in via VITE_MOCK_GATEWAY=true.
+    // Previously defaulted to 'true', causing checkout to always use mock data in production.
+    return (env['VITE_MOCK_GATEWAY'] ?? 'false') === 'true';
   } catch {
     return true;
   }

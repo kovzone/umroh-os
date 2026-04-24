@@ -26,10 +26,13 @@ type CatalogListResponse = {
   packages: CatalogPackageItem[];
 };
 
+// GATEWAY_URL must come first: it's set at runtime in docker-compose (server-side).
+// VITE_* vars are baked into the client bundle at build time and NOT available
+// to the SSR Node.js process at runtime in production containers.
 const baseUrl =
+  process.env.GATEWAY_URL ??
   process.env.VITE_CATALOG_API_BASE_URL ??
   process.env.VITE_GATEWAY_URL ??
-  process.env.GATEWAY_URL ??
   'http://localhost:4000';
 
 export const load: PageServerLoad = async ({ cookies, fetch }) => {

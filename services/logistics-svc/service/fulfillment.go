@@ -22,6 +22,7 @@ import (
 	"logistics-svc/util/logging"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"go.opentelemetry.io/otel/attribute"
 	otelCodes "go.opentelemetry.io/otel/codes"
 )
@@ -119,5 +120,114 @@ func (svc *Service) OnBookingPaid(ctx context.Context, params *OnBookingPaidPara
 		TaskID:   task.ID,
 		Status:   task.Status,
 		Replayed: false,
+	}, nil
+}
+
+// ---------------------------------------------------------------------------
+// ListFulfillmentTasks — ISSUE-018
+// ---------------------------------------------------------------------------
+
+// FulfillmentTaskItem is a single task in the list response.
+type FulfillmentTaskItem struct {
+	ID             string
+	BookingID      string
+	DepartureID    string
+	Status         string
+	TrackingNumber string // empty when not shipped
+	ShippedAt      string // RFC3339 or ""
+	DeliveredAt    string // RFC3339 or ""
+	CreatedAt      string
+	UpdatedAt      string
+}
+
+// ListFulfillmentTasksParams holds optional filters + pagination.
+type ListFulfillmentTasksParams struct {
+	StatusFilter      string // "" means no filter
+	DepartureIDFilter string // "" means no filter
+	Limit             int32  // 0 → default 50
+	Offset            int32
+}
+
+// ListFulfillmentTasksResult holds the page of tasks + total count.
+type ListFulfillmentTasksResult struct {
+	Tasks []FulfillmentTaskItem
+	Total int64
+}
+
+// ListFulfillmentTasks returns a paginated, optionally filtered list of fulfillment tasks.
+func (svc *Service) ListFulfillmentTasks(ctx context.Context, params *ListFulfillmentTasksParams) (*ListFulfillmentTasksResult, error) {
+	const op = "service.Service.ListFulfillmentTasks"
+
+	ctx, span := svc.tracer.Start(ctx, op)
+	defer span.End()
+
+	span.SetAttributes(attribute.String("operation", op))
+
+	limit := params.Limit
+	if limit <= 0 {
+		limit = 50
+	}
+
+	statusFilter := pgtype.Text{}
+	if params.StatusFilter != "" {
+		statusFilter = pgtype.Text{String: params.StatusFilter, Valid: true}
+	}
+	departureFilter := pgtype.Text{}
+	if params.DepartureIDFilter != "" {
+		departureFilter = pgtype.Text{String: params.DepartureIDFilter, Valid: true}
+	}
+
+	rows, err := svc.store.ListFulfillmentTasks(ctx, sqlc.ListFulfillmentTasksParams{
+		StatusFilter:      statusFilter,
+		DepartureIDFilter: departureFilter,
+		Limit:             limit,
+		Offset:            params.Offset,
+	})
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(otelCodes.Error, err.Error())
+		return nil, fmt.Errorf("%s: list tasks: %w", op, err)
+	}
+
+	total, err := svc.store.CountFulfillmentTasks(ctx, sqlc.CountFulfillmentTasksParams{
+		StatusFilter:      statusFilter,
+		DepartureIDFilter: departureFilter,
+	})
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(otelCodes.Error, err.Error())
+		return nil, fmt.Errorf("%s: count tasks: %w", op, err)
+	}
+
+	items := make([]FulfillmentTaskItem, 0, len(rows))
+	for _, r := range rows {
+		item := FulfillmentTaskItem{
+			ID:          r.ID,
+			BookingID:   r.BookingID,
+			DepartureID: r.DepartureID,
+			Status:      r.Status,
+		}
+		if r.TrackingNumber.Valid {
+			item.TrackingNumber = r.TrackingNumber.String
+		}
+		if r.ShippedAt.Valid {
+			item.ShippedAt = r.ShippedAt.Time.Format("2006-01-02T15:04:05Z07:00")
+		}
+		if r.DeliveredAt.Valid {
+			item.DeliveredAt = r.DeliveredAt.Time.Format("2006-01-02T15:04:05Z07:00")
+		}
+		if r.CreatedAt.Valid {
+			item.CreatedAt = r.CreatedAt.Time.Format("2006-01-02T15:04:05Z07:00")
+		}
+		if r.UpdatedAt.Valid {
+			item.UpdatedAt = r.UpdatedAt.Time.Format("2006-01-02T15:04:05Z07:00")
+		}
+		items = append(items, item)
+	}
+
+	span.SetStatus(otelCodes.Ok, "ok")
+	return &ListFulfillmentTasksResult{
+		Tasks: items,
+		Total: total,
 	}, nil
 }

@@ -29,6 +29,9 @@ type Querier interface {
 	GetBookingByIdempotencyKey(ctx context.Context, arg GetBookingByIdempotencyKeyParams) (BookingRow, error)
 	// Booking status transition (S2 / BL-BOOK-005)
 	UpdateBookingStatus(ctx context.Context, arg UpdateBookingStatusParams) error
+
+	// Cross-channel seat tracking (BL-BOOK-007)
+	GetSeatsByChannelForDeparture(ctx context.Context, departureID string) ([]ChannelSeatStats, error)
 }
 
 var _ Querier = (*Queries)(nil)

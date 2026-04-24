@@ -23,6 +23,7 @@ type Adapter struct {
 	tracer trace.Tracer
 
 	bookingClient pb.BookingServiceClient
+	channelClient pb.BookingChannelClient
 }
 
 // NewAdapter creates a new booking-svc gRPC adapter from an already-dialled
@@ -32,5 +33,6 @@ func NewAdapter(logger *zerolog.Logger, tracer trace.Tracer, cc *grpc.ClientConn
 		logger:        logger,
 		tracer:        tracer,
 		bookingClient: pb.NewBookingServiceClient(cc),
+		channelClient: pb.NewBookingChannelClient(cc),
 	}
 }

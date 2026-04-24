@@ -36,6 +36,10 @@ type IService interface {
 	// SYNCHRONOUSLY (ADR-0006 / §S3-J-01). Errors are returned to the caller
 	// so the webhook pipeline can surface a 500 and trigger gateway retry.
 	FanOutBookingPaid(ctx context.Context, params *FanOutBookingPaidParams) (*FanOutBookingPaidResult, error)
+
+	// GetSeatsByChannel returns seat counts grouped by booking channel for a
+	// given departure (BL-BOOK-007).
+	GetSeatsByChannel(ctx context.Context, params *GetSeatsByChannelParams) (*GetSeatsByChannelResult, error)
 }
 
 // IamClient is the slice of iam-svc the booking-svc service layer calls.

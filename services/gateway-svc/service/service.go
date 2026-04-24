@@ -151,6 +151,8 @@ type IService interface {
 	ShipFulfillmentTask(ctx context.Context, bookingID, carrier, notes string) (*logistics_grpc_adapter.ShipFulfillmentTaskResult, error)
 	GeneratePickupQR(ctx context.Context, bookingID string) (*logistics_grpc_adapter.GeneratePickupQRResult, error)
 	RedeemPickupQR(ctx context.Context, token string) (*logistics_grpc_adapter.RedeemPickupQRResult, error)
+	// ListFulfillmentTasks returns a paginated list of fulfillment tasks (ISSUE-018).
+	ListFulfillmentTasks(ctx context.Context, params *logistics_grpc_adapter.ListFulfillmentTasksParams) (*logistics_grpc_adapter.ListFulfillmentTasksResult, error)
 
 	// S3 finance GRN (S3 Wave 2) — bearer required.
 	OnGRNReceived(ctx context.Context, grnID, departureID string, amountIdr int64) (*finance_grpc_adapter.OnGRNReceivedResult, error)
@@ -201,6 +203,17 @@ type IService interface {
 	SetGlobalConfig(ctx context.Context, params *iam_grpc_adapter.SetGlobalConfigParams) (*iam_grpc_adapter.SetGlobalConfigResult, error)
 	SearchActivityLog(ctx context.Context, params *iam_grpc_adapter.SearchActivityLogParams) (*iam_grpc_adapter.SearchActivityLogResult, error)
 
+	// IAM security depth (BL-IAM-010/012/013/015/017) — Wave 2.
+	GetPasswordPolicy(ctx context.Context) (*iam_grpc_adapter.PasswordPolicyResult, error)
+	SetPasswordPolicy(ctx context.Context, params *iam_grpc_adapter.SetPasswordPolicyParams) (*iam_grpc_adapter.PasswordPolicyResult, error)
+	RecordLoginAnomaly(ctx context.Context, params *iam_grpc_adapter.RecordLoginAnomalyParams) (*iam_grpc_adapter.RecordLoginAnomalyResult, error)
+	ListSessions(ctx context.Context, params *iam_grpc_adapter.ListSessionsParams) (*iam_grpc_adapter.ListSessionsResult, error)
+	RevokeSession(ctx context.Context, params *iam_grpc_adapter.RevokeSessionParams) (*iam_grpc_adapter.RevokeSessionResult, error)
+	UpsertCommTemplate(ctx context.Context, params *iam_grpc_adapter.UpsertCommTemplateParams) (*iam_grpc_adapter.UpsertCommTemplateResult, error)
+	ListCommTemplates(ctx context.Context, params *iam_grpc_adapter.ListCommTemplatesParams) (*iam_grpc_adapter.ListCommTemplatesResult, error)
+	TriggerBackup(ctx context.Context, params *iam_grpc_adapter.TriggerBackupParams) (*iam_grpc_adapter.TriggerBackupResult, error)
+	GetBackupHistory(ctx context.Context, limit int32) (*iam_grpc_adapter.GetBackupHistoryResult, error)
+
 	// Phase 6 visa pipeline (BL-VISA-001..003) — bearer required.
 	TransitionVisaStatus(ctx context.Context, params *visa_grpc_adapter.TransitionStatusParams) (*visa_grpc_adapter.TransitionStatusResult, error)
 	BulkSubmitVisa(ctx context.Context, params *visa_grpc_adapter.BulkSubmitParams) (*visa_grpc_adapter.BulkSubmitResult, error)
@@ -209,6 +222,14 @@ type IService interface {
 	// Vendor readiness (BL-OPS-020) — bearer required.
 	UpdateVendorReadiness(ctx context.Context, params *catalog_grpc_adapter.UpdateVendorReadinessParams) (*catalog_grpc_adapter.ReadinessResult, error)
 	GetDepartureReadiness(ctx context.Context, params *catalog_grpc_adapter.GetDepartureReadinessParams) (*catalog_grpc_adapter.ReadinessResult, error)
+
+	// Catalog depth — Wave 3 (BL-CAT-010/011/013) — bearer required.
+	BulkImportPackages(ctx context.Context, params *catalog_grpc_adapter.BulkImportPackagesParams) (*catalog_grpc_adapter.BulkImportPackagesResult, error)
+	BulkUpdatePackages(ctx context.Context, params *catalog_grpc_adapter.BulkUpdatePackagesParams) (*catalog_grpc_adapter.BulkUpdatePackagesResult, error)
+	GetPackageVersion(ctx context.Context, packageID string) (*catalog_grpc_adapter.PackageVersionResult, error)
+
+	// Booking depth — Wave 3 (BL-BOOK-007) — bearer required.
+	GetSeatsByChannel(ctx context.Context, departureID string) (*booking_grpc_adapter.GetSeatsByChannelResult, error)
 }
 
 // Adapters bundles the adapters this service can dispatch through.

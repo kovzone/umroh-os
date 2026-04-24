@@ -574,3 +574,52 @@ func (q *Queries) UpdateBookingStatus(ctx context.Context, arg UpdateBookingStat
 	}
 	return nil
 }
+
+// ---------------------------------------------------------------------------
+// GetSeatsByChannelForDeparture — cross-channel seat tracking (BL-BOOK-007)
+// ---------------------------------------------------------------------------
+
+// ChannelSeatStats is one row of the per-channel seat breakdown.
+type ChannelSeatStats struct {
+	Channel      BookingChannel `json:"channel"`
+	Seats        int32          `json:"seats"`
+	BookingCount int32          `json:"booking_count"`
+}
+
+// getSeatsByChannelForDeparture groups bookings by channel and sums pax_count
+// (approximated by counting booking items per booking, since bookings table
+// does not carry a direct pax_count column; the number of items = seats used).
+//
+// NOTE: For bookings that have no items yet (draft), the seat count is 0 for
+// that booking. The query counts booking_items rows as a proxy for seats.
+const getSeatsByChannelForDeparture = `-- name: GetSeatsByChannelForDeparture :many
+SELECT
+    b.channel,
+    COUNT(DISTINCT b.id)::int          AS booking_count,
+    COUNT(bi.id)::int                  AS seats
+FROM booking.bookings b
+LEFT JOIN booking.booking_items bi
+    ON bi.booking_id = b.id
+   AND bi.status = 'active'
+WHERE b.departure_id = $1
+  AND b.status NOT IN ('cancelled', 'failed', 'expired')
+GROUP BY b.channel
+ORDER BY b.channel`
+
+func (q *Queries) GetSeatsByChannelForDeparture(ctx context.Context, departureID string) ([]ChannelSeatStats, error) {
+	rows, err := q.db.Query(ctx, getSeatsByChannelForDeparture, departureID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var stats []ChannelSeatStats
+	for rows.Next() {
+		var s ChannelSeatStats
+		if err := rows.Scan(&s.Channel, &s.BookingCount, &s.Seats); err != nil {
+			return nil, err
+		}
+		stats = append(stats, s)
+	}
+	return stats, rows.Err()
+}

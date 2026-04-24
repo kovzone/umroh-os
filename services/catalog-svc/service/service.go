@@ -60,6 +60,13 @@ type IService interface {
 	// Vendor readiness (BL-OPS-020)
 	UpdateVendorReadiness(ctx context.Context, params *UpdateVendorReadinessParams) (*VendorReadiness, error)
 	GetDepartureReadiness(ctx context.Context, params *GetDepartureReadinessParams) (*VendorReadiness, error)
+
+	// Bulk package operations (BL-CAT-010 / BL-CAT-011)
+	BulkImportPackages(ctx context.Context, params *BulkImportPackagesParams) (*BulkImportPackagesResult, error)
+	BulkUpdatePackages(ctx context.Context, params *BulkUpdatePackagesParams) (*BulkUpdatePackagesResult, error)
+
+	// Package versioning (BL-CAT-013)
+	GetPackageVersion(ctx context.Context, params *GetPackageVersionParams) (*PackageVersionResult, error)
 }
 
 type Service struct {

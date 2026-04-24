@@ -603,6 +603,26 @@ type ServerInterface interface {
 	// GET /v1/admin/activity-log
 	SearchActivityLog(c *fiber.Ctx) error
 
+	// IAM security depth (BL-IAM-010/012/013/015/017) — bearer required.
+	// GET /v1/admin/security/password-policy
+	GetPasswordPolicy(c *fiber.Ctx) error
+	// PUT /v1/admin/security/password-policy
+	SetPasswordPolicy(c *fiber.Ctx) error
+	// POST /v1/admin/security/anomalies
+	RecordLoginAnomaly(c *fiber.Ctx) error
+	// GET /v1/admin/security/sessions
+	ListSessions(c *fiber.Ctx) error
+	// DELETE /v1/admin/security/sessions/:id
+	RevokeSession(c *fiber.Ctx, sessionID string) error
+	// GET /v1/admin/comm-templates
+	ListCommTemplates(c *fiber.Ctx) error
+	// PUT /v1/admin/comm-templates/:channel/:name
+	UpsertCommTemplate(c *fiber.Ctx, channel string, name string) error
+	// GET /v1/admin/backups
+	GetBackupHistory(c *fiber.Ctx) error
+	// POST /v1/admin/backups
+	TriggerBackup(c *fiber.Ctx) error
+
 	// Phase 6 Finance disbursement + aging (BL-FIN-010/011) — bearer required.
 	// POST /v1/finance/disbursements
 	CreateDisbursementBatch(c *fiber.Ctx) error
@@ -642,6 +662,14 @@ type ServerInterface interface {
 	// PUT  /v1/departures/:id/readiness — update one readiness kind
 	GetDepartureReadiness(c *fiber.Ctx, departureID string) error
 	UpdateDepartureReadiness(c *fiber.Ctx, departureID string) error
+
+	// Catalog depth — Wave 3 (BL-CAT-010/011/013 — hand-added).
+	BulkImportPackages(c *fiber.Ctx) error
+	BulkUpdatePackages(c *fiber.Ctx) error
+	GetPackageVersion(c *fiber.Ctx, packageID string) error
+
+	// Booking depth — Wave 3 (BL-BOOK-007 — hand-added).
+	GetSeatsByChannel(c *fiber.Ctx, departureID string) error
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -1357,6 +1385,56 @@ func (siw *ServerInterfaceWrapper) SetGlobalConfig(c *fiber.Ctx) error {
 // SearchActivityLog operation middleware — GET /v1/admin/activity-log (bearer)
 func (siw *ServerInterfaceWrapper) SearchActivityLog(c *fiber.Ctx) error {
 	return siw.Handler.SearchActivityLog(c)
+}
+
+// IAM security depth wrappers (BL-IAM-010/012/013/015/017 — hand-added).
+
+// GetPasswordPolicy operation middleware — GET /v1/admin/security/password-policy (bearer)
+func (siw *ServerInterfaceWrapper) GetPasswordPolicy(c *fiber.Ctx) error {
+	return siw.Handler.GetPasswordPolicy(c)
+}
+
+// SetPasswordPolicy operation middleware — PUT /v1/admin/security/password-policy (bearer)
+func (siw *ServerInterfaceWrapper) SetPasswordPolicy(c *fiber.Ctx) error {
+	return siw.Handler.SetPasswordPolicy(c)
+}
+
+// RecordLoginAnomaly operation middleware — POST /v1/admin/security/anomalies (bearer)
+func (siw *ServerInterfaceWrapper) RecordLoginAnomaly(c *fiber.Ctx) error {
+	return siw.Handler.RecordLoginAnomaly(c)
+}
+
+// ListSessions operation middleware — GET /v1/admin/security/sessions (bearer)
+func (siw *ServerInterfaceWrapper) ListSessions(c *fiber.Ctx) error {
+	return siw.Handler.ListSessions(c)
+}
+
+// RevokeSession operation middleware — DELETE /v1/admin/security/sessions/:id (bearer)
+func (siw *ServerInterfaceWrapper) RevokeSession(c *fiber.Ctx) error {
+	sessionID := c.Params("id")
+	return siw.Handler.RevokeSession(c, sessionID)
+}
+
+// ListCommTemplates operation middleware — GET /v1/admin/comm-templates (bearer)
+func (siw *ServerInterfaceWrapper) ListCommTemplates(c *fiber.Ctx) error {
+	return siw.Handler.ListCommTemplates(c)
+}
+
+// UpsertCommTemplate operation middleware — PUT /v1/admin/comm-templates/:channel/:name (bearer)
+func (siw *ServerInterfaceWrapper) UpsertCommTemplate(c *fiber.Ctx) error {
+	channel := c.Params("channel")
+	name := c.Params("name")
+	return siw.Handler.UpsertCommTemplate(c, channel, name)
+}
+
+// GetBackupHistory operation middleware — GET /v1/admin/backups (bearer)
+func (siw *ServerInterfaceWrapper) GetBackupHistory(c *fiber.Ctx) error {
+	return siw.Handler.GetBackupHistory(c)
+}
+
+// TriggerBackup operation middleware — POST /v1/admin/backups (bearer)
+func (siw *ServerInterfaceWrapper) TriggerBackup(c *fiber.Ctx) error {
+	return siw.Handler.TriggerBackup(c)
 }
 
 // Phase 6 Finance disbursement + aging wrappers (BL-FIN-010/011 — hand-added).
@@ -2377,5 +2455,51 @@ func (sh *strictHandler) GetDepartureReadiness(ctx *fiber.Ctx, departureID strin
 }
 
 func (sh *strictHandler) UpdateDepartureReadiness(ctx *fiber.Ctx, departureID string) error {
+	return fiber.ErrNotImplemented
+}
+
+// ---------------------------------------------------------------------------
+// Catalog depth wrappers (BL-CAT-010/011/013 — hand-added)
+// ---------------------------------------------------------------------------
+
+// BulkImportPackages operation middleware — POST /v1/admin/catalog/packages/bulk-import
+func (siw *ServerInterfaceWrapper) BulkImportPackages(c *fiber.Ctx) error {
+	return siw.Handler.BulkImportPackages(c)
+}
+
+// BulkUpdatePackages operation middleware — POST /v1/admin/catalog/packages/bulk-update
+func (siw *ServerInterfaceWrapper) BulkUpdatePackages(c *fiber.Ctx) error {
+	return siw.Handler.BulkUpdatePackages(c)
+}
+
+// GetPackageVersion operation middleware — GET /v1/admin/catalog/packages/:id/version
+func (siw *ServerInterfaceWrapper) GetPackageVersion(c *fiber.Ctx) error {
+	packageID := c.Params("id")
+	return siw.Handler.GetPackageVersion(c, packageID)
+}
+
+// Catalog depth strictHandler stubs (BL-CAT-010/011/013) — not used.
+func (sh *strictHandler) BulkImportPackages(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) BulkUpdatePackages(ctx *fiber.Ctx) error {
+	return fiber.ErrNotImplemented
+}
+func (sh *strictHandler) GetPackageVersion(ctx *fiber.Ctx, packageID string) error {
+	return fiber.ErrNotImplemented
+}
+
+// ---------------------------------------------------------------------------
+// Booking depth wrappers (BL-BOOK-007 — hand-added)
+// ---------------------------------------------------------------------------
+
+// GetSeatsByChannel operation middleware — GET /v1/bookings/departures/:id/seats-by-channel
+func (siw *ServerInterfaceWrapper) GetSeatsByChannel(c *fiber.Ctx) error {
+	departureID := c.Params("id")
+	return siw.Handler.GetSeatsByChannel(c, departureID)
+}
+
+// Booking depth strictHandler stub (BL-BOOK-007) — not used.
+func (sh *strictHandler) GetSeatsByChannel(ctx *fiber.Ctx, departureID string) error {
 	return fiber.ErrNotImplemented
 }
