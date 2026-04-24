@@ -2,9 +2,9 @@
 
 ## Implementation checklist
 
-- [ ] Scaffolded
-- [ ] Wired into compose
-- [ ] **ADR 0009 realignment** — REST + local bearer-auth middleware + local `iam_grpc_adapter` removed; `/v1/finance/ping` migrated to gateway REST with `RequirePermission` middleware; `FinancePing` gRPC RPC added; `02b`/`02c` e2e specs routed through `gateway-svc:4000` (`BL-IAM-019` / S1-E-14 — fenced off G9 sweep to keep BL-IAM-002 coverage intact)
+- [x] Scaffolded
+- [x] Wired into compose
+- [x] **ADR 0009 realignment** — REST + local bearer-auth middleware + local `iam_grpc_adapter` removed; `/v1/finance/ping` migrated to gateway REST with `RequirePermission` middleware; `FinancePing` gRPC RPC added; monitoring migrated from Prometheus-SDK to OTLP push (catalog G7 clone); `02b`/`02c` e2e specs routed through `gateway-svc:4000` (`BL-IAM-019` / S1-E-14)
 - [ ] DDL with double-entry check
 - [ ] Initial chart of accounts seed (PSAK-aligned)
 - [ ] sqlc queries
@@ -22,4 +22,10 @@
 
 ## Current status
 
-**Not started.** This is the most complex domain — likely the last MVP service.
+**Scaffold only, gRPC-only per ADR 0009** as of BL-IAM-019 / S1-E-14.
+finance-svc exposes `FinancePing` (the permission-gate smoke surface
+called by gateway's `/v1/finance/ping`) over gRPC and the standard
+`grpc.health.v1.Health` container liveness. No REST, no direct
+Prometheus scrape. Real finance work (double-entry schema, chart of
+accounts, journal entries, AR/AP, tax, FX, reports) is the most complex
+domain in the platform and is likely the last MVP service to start.

@@ -1,29 +1,29 @@
-// iam permission-gate end-to-end (BL-IAM-002 + BL-IAM-018 / S1-E-12).
+// iam permission-gate end-to-end (BL-IAM-002 + BL-IAM-018 + BL-IAM-019).
 //
 // Proves the "finance routes denied for non-finance roles" F1 acceptance
-// across the iam-svc gRPC hops and the finance-svc consumer surface. Login
-// now goes through gateway-svc:4000 (iam REST was retired in BL-IAM-018);
-// /v1/finance/ping still hits finance-svc directly until BL-IAM-019 moves
-// that route to gateway too.
+// across the iam-svc gRPC hops. Every call targets gateway-svc:4000:
+// login hits gateway REST (iam REST was retired in BL-IAM-018) and
+// /v1/finance/ping now hits gateway too (moved from finance-svc:4009 in
+// BL-IAM-019 / S1-E-14). Authorization is enforced by the gateway's
+// RequireBearerToken + RequirePermission("journal_entry","read","global")
+// middleware chain before finance-svc is called over gRPC.
 //
 //   1. finance@umrohos.dev logs in (gateway REST → iam gRPC) → GET
-//      /v1/finance/ping (finance-svc REST) calls iam-svc.ValidateToken +
-//      CheckPermission over gRPC and returns 200.
-//   2. cs@umrohos.dev logs in → same call → 403 FORBIDDEN (no grant).
-//   3. No bearer → 401 UNAUTHORIZED (middleware fails closed).
-//   4. Garbage bearer → 401 UNAUTHORIZED (PASETO verify fails inside iam-svc).
+//      /v1/finance/ping on the gateway passes both middleware checks and
+//      returns 200 with an envelope assembled from the bearer's identity.
+//   2. cs@umrohos.dev logs in → same call → 403 FORBIDDEN from
+//      RequirePermission (no grant).
+//   3. No bearer → 401 UNAUTHORIZED (RequireBearerToken fails first).
+//   4. Garbage bearer → 401 UNAUTHORIZED (iam-svc.ValidateToken rejects).
 //
 // Prereqs (make dev-bootstrap handles them):
 //   1. docker compose dev stack up
 //   2. migrations 000004 + 000005 applied (fixture users/roles/permission)
-//   3. gateway-svc on :4000, finance-svc on :4009
+//   3. gateway-svc on :4000
 
 import { test, expect } from "@playwright/test";
 import { createApiClient } from "../lib/api-client";
-import { backendServices, gateway } from "../lib/services";
-
-const finance = backendServices.find((s) => s.name === "finance-svc");
-if (!finance) throw new Error("finance-svc not in backendServices registry");
+import { gateway } from "../lib/services";
 
 const FINANCE_EMAIL = "finance@umrohos.dev";
 const FINANCE_USER_ID = "77777777-7777-7777-7777-777777777777";
@@ -41,10 +41,10 @@ async function login(email: string): Promise<string> {
   return body.data.access_token as string;
 }
 
-test.describe.serial("finance-svc /v1/finance/ping — permission gate (BL-IAM-002)", () => {
+test.describe.serial("gateway /v1/finance/ping — permission gate (BL-IAM-002)", () => {
   test("finance_admin can hit /v1/finance/ping (200, identity echoed back)", async () => {
     const token = await login(FINANCE_EMAIL);
-    const api = await createApiClient(finance!.baseURL, token);
+    const api = await createApiClient(gateway.baseURL, token);
 
     const res = await api.get("/v1/finance/ping");
     expect(res.status()).toBe(200);
@@ -57,7 +57,7 @@ test.describe.serial("finance-svc /v1/finance/ping — permission gate (BL-IAM-0
 
   test("cs_agent is denied /v1/finance/ping (403 FORBIDDEN)", async () => {
     const token = await login(CS_EMAIL);
-    const api = await createApiClient(finance!.baseURL, token);
+    const api = await createApiClient(gateway.baseURL, token);
 
     const res = await api.get("/v1/finance/ping");
     expect(res.status()).toBe(403);
@@ -67,7 +67,7 @@ test.describe.serial("finance-svc /v1/finance/ping — permission gate (BL-IAM-0
   });
 
   test("no bearer → 401 UNAUTHORIZED (middleware fails closed before iam-svc)", async () => {
-    const api = await createApiClient(finance!.baseURL);
+    const api = await createApiClient(gateway.baseURL);
     const res = await api.get("/v1/finance/ping");
     expect(res.status()).toBe(401);
 
@@ -76,7 +76,7 @@ test.describe.serial("finance-svc /v1/finance/ping — permission gate (BL-IAM-0
   });
 
   test("garbage bearer → 401 UNAUTHORIZED (iam-svc rejects token)", async () => {
-    const api = await createApiClient(finance!.baseURL, "not-a-real-paseto-token");
+    const api = await createApiClient(gateway.baseURL, "not-a-real-paseto-token");
     const res = await api.get("/v1/finance/ping");
     expect(res.status()).toBe(401);
 
